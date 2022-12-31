@@ -1,0 +1,17 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.embeddedt.modernfix.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "refmap": "modernfix.refmap.json",
+  "mixins": [
+    "ModFileResourcePackMixin",
+    "VanillaPackMixin"
+  ],
+  "client": [
+    "MinecraftMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

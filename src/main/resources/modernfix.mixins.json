@@ -6,7 +6,9 @@
   "refmap": "modernfix.refmap.json",
   "mixins": [
     "ModFileResourcePackMixin",
-    "VanillaPackMixin"
+    "VanillaPackMixin",
+    "LevelSaveMixin",
+    "SaveFormatAccessor"
   ],
   "client": [
     "MinecraftMixin"

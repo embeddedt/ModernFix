@@ -5,6 +5,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "modernfix.refmap.json",
   "mixins": [
+    "BiomeMixin",
     "ModFileResourcePackMixin",
     "VanillaPackMixin",
     "LevelSaveMixin",

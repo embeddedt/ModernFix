@@ -13,7 +13,8 @@
   ],
   "client": [
     "MinecraftMixin",
-    "RenderTypeMixin"
+    "RenderTypeMixin",
+    "ModelBakeryMixin"
   ],
   "injectors": {
     "defaultRequire": 1

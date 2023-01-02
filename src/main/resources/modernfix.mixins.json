@@ -11,7 +11,8 @@
     "SaveFormatAccessor"
   ],
   "client": [
-    "MinecraftMixin"
+    "MinecraftMixin",
+    "RenderTypeMixin"
   ],
   "injectors": {
     "defaultRequire": 1

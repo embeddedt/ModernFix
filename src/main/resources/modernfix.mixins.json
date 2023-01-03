@@ -9,7 +9,10 @@
     "ModFileResourcePackMixin",
     "VanillaPackMixin",
     "LevelSaveMixin",
-    "SaveFormatAccessor"
+    "SaveFormatAccessor",
+    "AbstractBlockStateMixin",
+    "GameDataMixin",
+    "BlockCallbacksMixin"
   ],
   "client": [
     "MinecraftMixin",

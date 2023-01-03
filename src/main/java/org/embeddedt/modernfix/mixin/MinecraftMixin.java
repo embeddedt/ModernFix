@@ -52,7 +52,9 @@ public abstract class MinecraftMixin {
     private Minecraft.PackManager skipFirstReload(Minecraft client, DynamicRegistries.Impl dynamicRegistries, Function<SaveFormat.LevelSave, DatapackCodec> worldStorageToDatapackFunction, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> quadFunction, boolean vanillaOnly, SaveFormat.LevelSave levelSave, String worldName, DynamicRegistries.Impl originalRegistries, Function<SaveFormat.LevelSave, DatapackCodec> levelSaveToDatapackFunction, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> quadFunction2, boolean vanillaOnly2, Minecraft.WorldSelectionType selectionType, boolean creating) throws InterruptedException, ExecutionException {
         if(!creating) {
             ModernFix.LOGGER.warn("Skipping first reload, this is still experimental");
+            ModernFix.runningFirstInjection = true;
             ((ILevelSave)levelSave).runWorldPersistenceHooks();
+            ModernFix.runningFirstInjection = false;
             return null;
         } else {
             /* allow reload */

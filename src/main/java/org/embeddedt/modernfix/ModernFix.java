@@ -38,6 +38,9 @@ public class ModernFix {
 
     public static ModernFix INSTANCE;
 
+    // Used to skip computing the blockstate caches twice
+    public static boolean runningFirstInjection = false;
+
 
     public ModernFix() {
         INSTANCE = this;

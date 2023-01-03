@@ -29,11 +29,11 @@ import java.util.stream.Stream;
 
 @Mixin(VanillaPack.class)
 public class VanillaPackMixin {
-    @Shadow @Final private static Map<ResourcePackType, FileSystem> FILE_SYSTEMS_BY_PACK_TYPE;
+    @Shadow @Final private static Map<ResourcePackType, FileSystem> JAR_FILESYSTEM_BY_TYPE;
     private static LoadingCache<Pair<Path, Integer>, List<Path>> pathStreamLoadingCache = CacheBuilder.newBuilder()
             .build(FileWalker.INSTANCE);
 
-    @Redirect(method = "collectResources", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;walk(Ljava/nio/file/Path;I[Ljava/nio/file/FileVisitOption;)Ljava/util/stream/Stream;"))
+    @Redirect(method = "getResources(Ljava/util/Collection;ILjava/lang/String;Ljava/nio/file/Path;Ljava/lang/String;Ljava/util/function/Predicate;)V", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;walk(Ljava/nio/file/Path;I[Ljava/nio/file/FileVisitOption;)Ljava/util/stream/Stream;"))
     private static Stream<Path> useCacheForLoading(Path path, int maxDepth, FileVisitOption[] fileVisitOptions) throws IOException {
         try {
             return pathStreamLoadingCache.get(Pair.of(path, maxDepth)).stream();
@@ -45,9 +45,9 @@ public class VanillaPackMixin {
         }
     }
 
-    @Inject(method = "resourceExists", at = @At(value = "INVOKE", target = "Ljava/lang/Class;getResource(Ljava/lang/String;)Ljava/net/URL;"), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD)
+    @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Ljava/lang/Class;getResource(Ljava/lang/String;)Ljava/net/URL;"), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD)
     private void useCacheForExistence(ResourcePackType type, ResourceLocation location, CallbackInfoReturnable<Boolean> cir, String path) {
-        FileSystem fs = FILE_SYSTEMS_BY_PACK_TYPE.get(type);
+        FileSystem fs = JAR_FILESYSTEM_BY_TYPE.get(type);
         cir.setReturnValue(Files.exists(fs.getPath(path)));
     }
 }

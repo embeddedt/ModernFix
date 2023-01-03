@@ -18,53 +18,53 @@ import java.util.Set;
 
 public class DummyServerConfiguration implements IServerConfiguration {
     @Override
-    public DatapackCodec getDatapackCodec() {
-        return DatapackCodec.VANILLA_CODEC;
+    public DatapackCodec getDataPackConfig() {
+        return DatapackCodec.DEFAULT;
     }
 
     @Override
-    public void setDatapackCodec(DatapackCodec codec) {
+    public void setDataPackConfig(DatapackCodec codec) {
 
     }
 
     @Override
-    public boolean isModded() {
+    public boolean wasModded() {
         return true;
     }
 
     @Override
-    public Set<String> getServerBranding() {
+    public Set<String> getKnownServerBrands() {
         return ImmutableSet.of("forge");
     }
 
     @Override
-    public void addServerBranding(String name, boolean isModded) {
+    public void setModdedInfo(String name, boolean isModded) {
 
     }
 
     @Nullable
     @Override
-    public CompoundNBT getCustomBossEventData() {
+    public CompoundNBT getCustomBossEvents() {
         return null;
     }
 
     @Override
-    public void setCustomBossEventData(@Nullable CompoundNBT nbt) {
+    public void setCustomBossEvents(@Nullable CompoundNBT nbt) {
 
     }
 
     @Override
-    public IServerWorldInfo getServerWorldInfo() {
+    public IServerWorldInfo overworldData() {
         return null;
     }
 
     @Override
-    public WorldSettings getWorldSettings() {
+    public WorldSettings getLevelSettings() {
         return null;
     }
 
     @Override
-    public CompoundNBT serialize(DynamicRegistries registries, @Nullable CompoundNBT hostPlayerNBT) {
+    public CompoundNBT createTag(DynamicRegistries registries, @Nullable CompoundNBT hostPlayerNBT) {
         return null;
     }
 
@@ -74,12 +74,12 @@ public class DummyServerConfiguration implements IServerConfiguration {
     }
 
     @Override
-    public int getStorageVersionId() {
+    public int getVersion() {
         return 0;
     }
 
     @Override
-    public String getWorldName() {
+    public String getLevelName() {
         return null;
     }
 
@@ -94,7 +94,7 @@ public class DummyServerConfiguration implements IServerConfiguration {
     }
 
     @Override
-    public boolean areCommandsAllowed() {
+    public boolean getAllowCommands() {
         return false;
     }
 
@@ -119,32 +119,32 @@ public class DummyServerConfiguration implements IServerConfiguration {
     }
 
     @Override
-    public GameRules getGameRulesInstance() {
+    public GameRules getGameRules() {
         return null;
     }
 
     @Override
-    public CompoundNBT getHostPlayerNBT() {
+    public CompoundNBT getLoadedPlayerTag() {
         return null;
     }
 
     @Override
-    public CompoundNBT getDragonFightData() {
+    public CompoundNBT endDragonFightData() {
         return null;
     }
 
     @Override
-    public void setDragonFightData(CompoundNBT nbt) {
+    public void setEndDragonFightData(CompoundNBT nbt) {
 
     }
 
     @Override
-    public DimensionGeneratorSettings getDimensionGeneratorSettings() {
+    public DimensionGeneratorSettings worldGenSettings() {
         return null;
     }
 
     @Override
-    public Lifecycle getLifecycle() {
+    public Lifecycle worldGenSettingsLifecycle() {
         return Lifecycle.stable();
     }
 }

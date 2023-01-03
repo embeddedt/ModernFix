@@ -16,11 +16,11 @@ import java.nio.file.Path;
 
 @Mixin(SaveFormat.LevelSave.class)
 public class LevelSaveMixin implements ILevelSave {
-    @Shadow @Final private Path saveDir;
+    @Shadow @Final private Path levelPath;
 
     public void runWorldPersistenceHooks() {
-        SaveFormat saveFormat = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getInstance(), "field_71469_aa");
-        ((SaveFormatAccessor)saveFormat).invokeReadFromLevelData(this.saveDir.toFile(), (file, dataFixer) -> {
+        SaveFormat saveFormat = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getInstance(), "levelSource");
+        ((SaveFormatAccessor)saveFormat).invokeReadLevelData(this.levelPath.toFile(), (file, dataFixer) -> {
             try {
                 CompoundNBT compoundTag = CompressedStreamTools.readCompressed(file);
                 net.minecraftforge.fml.WorldPersistenceHooks.handleWorldDataLoad((SaveFormat.LevelSave)(Object)this, new DummyServerConfiguration(), compoundTag);

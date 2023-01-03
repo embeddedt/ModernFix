@@ -27,7 +27,7 @@ import java.util.stream.Stream;
 
 @Mixin(ModFileResourcePack.class)
 public abstract class ModFileResourcePackMixin {
-    @Shadow public abstract Set<String> getResourceNamespaces(ResourcePackType type);
+    @Shadow public abstract Set<String> getNamespaces(ResourcePackType type);
 
     @Shadow(remap = false) @Final private ModFile modFile;
     private EnumMap<ResourcePackType, Set<String>> namespacesByType;
@@ -39,7 +39,7 @@ public abstract class ModFileResourcePackMixin {
         this.useNamespaceCaches = false;
         this.namespacesByType = new EnumMap<>(ResourcePackType.class);
         for(ResourcePackType type : ResourcePackType.values()) {
-            this.namespacesByType.put(type, this.getResourceNamespaces(type));
+            this.namespacesByType.put(type, this.getNamespaces(type));
         }
         this.useNamespaceCaches = true;
         this.rootListingByNamespaceAndType = new EnumMap<>(ResourcePackType.class);
@@ -48,7 +48,7 @@ public abstract class ModFileResourcePackMixin {
             HashMap<String, List<Path>> rootListingForNamespaces = new HashMap<>();
             for(String namespace : namespaces) {
                 try {
-                    Path root = modFile.getLocator().findPath(modFile, type.getDirectoryName(), namespace).toAbsolutePath();
+                    Path root = modFile.getLocator().findPath(modFile, type.getDirectory(), namespace).toAbsolutePath();
                     try (Stream<Path> stream = Files.walk(root)) {
                         rootListingForNamespaces.put(namespace, stream
                                 .map(path -> root.relativize(path.toAbsolutePath()))
@@ -63,7 +63,7 @@ public abstract class ModFileResourcePackMixin {
         }
     }
 
-    @Inject(method = "getResourceNamespaces", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
     private void useCacheForNamespaces(ResourcePackType type, CallbackInfoReturnable<Set<String>> cir) {
         if(useNamespaceCaches) {
             cir.setReturnValue(this.namespacesByType.get(type));
@@ -75,9 +75,9 @@ public abstract class ModFileResourcePackMixin {
      * @reason Use cached listing of mod resources
      */
     @Overwrite
-    public Collection<ResourceLocation> getAllResourceLocations(ResourcePackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter)
+    public Collection<ResourceLocation> getResources(ResourcePackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter)
     {
-        Path root = modFile.getLocator().findPath(modFile, type.getDirectoryName(), resourceNamespace).toAbsolutePath();
+        Path root = modFile.getLocator().findPath(modFile, type.getDirectory(), resourceNamespace).toAbsolutePath();
         Path inputPath = root.getFileSystem().getPath(pathIn);
         return this.rootListingByNamespaceAndType.get(type).getOrDefault(resourceNamespace, Collections.emptyList()).stream().
                 filter(path -> path.getNameCount() <= maxDepth). // Make sure the depth is within bounds

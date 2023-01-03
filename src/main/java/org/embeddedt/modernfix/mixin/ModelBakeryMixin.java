@@ -1,10 +1,8 @@
 package org.embeddedt.modernfix.mixin;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Sets;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockModelShapes;
 import net.minecraft.client.renderer.model.*;
 import net.minecraft.client.renderer.texture.SpriteMap;
 import net.minecraft.profiler.IProfiler;
@@ -38,23 +36,23 @@ import java.util.stream.Stream;
 
 @Mixin(ModelBakery.class)
 public abstract class ModelBakeryMixin {
-    @Shadow protected abstract BlockModel loadModel(ResourceLocation location) throws IOException;
+    @Shadow protected abstract BlockModel loadBlockModel(ResourceLocation location) throws IOException;
 
-    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> unbakedModels;
-    @Shadow @Final public static ModelResourceLocation MODEL_MISSING;
+    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> unbakedCache;
+    @Shadow @Final public static ModelResourceLocation MISSING_MODEL_LOCATION;
 
-    @Shadow public abstract IUnbakedModel getUnbakedModel(ResourceLocation modelLocation);
+    @Shadow public abstract IUnbakedModel getModel(ResourceLocation modelLocation);
 
-    @Shadow @Final public static BlockModel MODEL_GENERATED;
+    @Shadow @Final public static BlockModel GENERATION_MARKER;
     @Shadow @Final private static ItemModelGenerator ITEM_MODEL_GENERATOR;
-    @Shadow @Nullable private SpriteMap spriteMap;
-    @Shadow @Final private Map<Triple<ResourceLocation, TransformationMatrix, Boolean>, IBakedModel> bakedModels;
-    @Shadow @Final private Map<ResourceLocation, IBakedModel> topBakedModels;
-    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topUnbakedModels;
+    @Shadow @Nullable private SpriteMap atlasSet;
+    @Shadow @Final private Map<Triple<ResourceLocation, TransformationMatrix, Boolean>, IBakedModel> bakedCache;
+    @Shadow @Final private Map<ResourceLocation, IBakedModel> bakedTopLevelModels;
+    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topLevelModels;
     private Map<ResourceLocation, BlockModel> deserializedModelCache = null;
     private boolean useModelCache = false;
 
-    @Inject(method = "loadModel", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "loadBlockModel", at = @At("HEAD"), cancellable = true)
     private void useCachedModel(ResourceLocation location, CallbackInfoReturnable<BlockModel> cir) {
         if(useModelCache && deserializedModelCache != null) {
             BlockModel model = deserializedModelCache.get(location);
@@ -65,24 +63,24 @@ public abstract class ModelBakeryMixin {
 
     private BlockModel loadModelSafely(ResourceLocation location) {
         try {
-            return this.loadModel(location);
+            return this.loadBlockModel(location);
         } catch(Throwable e) {
             ModernFix.LOGGER.warn("Model " + location + " will not be preloaded", e);
             return null;
         }
     }
 
-    @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;endStartSection(Ljava/lang/String;)V", ordinal = 1))
+    @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;popPush(Ljava/lang/String;)V", ordinal = 1))
     private void preloadJsonModels(IProfiler profilerIn, int maxMipmapLevel, CallbackInfo ci) {
-        profilerIn.endStartSection("loadjsons");
+        profilerIn.popPush("loadjsons");
         ModernFix.LOGGER.warn("Preloading JSONs in parallel...");
         Stopwatch stopwatch = Stopwatch.createStarted();
         useModelCache = false;
-        deserializedModelCache = Minecraft.getInstance().getResourceManager().getAllResourceLocations("models", p -> {
+        deserializedModelCache = Minecraft.getInstance().getResourceManager().listResources("models", p -> {
             if(!p.endsWith(".json"))
                 return false;
             for(int i = 0; i < p.length(); i++) {
-                if(!ResourceLocation.validatePathChar(p.charAt(i)))
+                if(!ResourceLocation.validPathChar(p.charAt(i)))
                     return false;
             }
             return true;
@@ -106,30 +104,30 @@ public abstract class ModelBakeryMixin {
     @Redirect(method = "uploadTextures", at = @At(value = "INVOKE", target = "Ljava/util/Set;forEach(Ljava/util/function/Consumer;)V", ordinal = 0))
     private void parallelBake(Set<ResourceLocation> locationSet, Consumer consumer) {
         final IModelTransform transform = ModelRotation.X0_Y0;
-        if(this.spriteMap == null)
+        if(this.atlasSet == null)
             throw new IllegalStateException("no sprite map");
         ModernFix.LOGGER.warn("Baking models in parallel...");
         Stopwatch stopwatch = Stopwatch.createStarted();
-        locationSet.forEach(this::getUnbakedModel); /* make sure every unbaked model is loaded, should be fast */
+        locationSet.forEach(this::getModel); /* make sure every unbaked model is loaded, should be fast */
         List<Pair<ResourceLocation, IBakedModel>> models = CompletableFuture.supplyAsync(() -> {
             return locationSet.parallelStream().map(location -> {
-                IUnbakedModel iunbakedmodel = this.unbakedModels.get(location);
+                IUnbakedModel iunbakedmodel = this.unbakedCache.get(location);
                 if (iunbakedmodel instanceof BlockModel) {
                     BlockModel blockmodel = (BlockModel)iunbakedmodel;
-                    if (blockmodel.getRootModel() == MODEL_GENERATED) {
-                        return Pair.of(location, ITEM_MODEL_GENERATOR.makeItemModel(this.spriteMap::getSprite, blockmodel).bakeModel((ModelBakery)(Object)this, blockmodel, this.spriteMap::getSprite, transform, location, false));
+                    if (blockmodel.getRootModel() == GENERATION_MARKER) {
+                        return Pair.of(location, ITEM_MODEL_GENERATOR.generateBlockModel(this.atlasSet::getSprite, blockmodel).bake((ModelBakery)(Object)this, blockmodel, this.atlasSet::getSprite, transform, location, false));
                     }
                 }
 
-                IBakedModel ibakedmodel = iunbakedmodel.bakeModel((ModelBakery)(Object)this, this.spriteMap::getSprite, transform, location);
+                IBakedModel ibakedmodel = iunbakedmodel.bake((ModelBakery)(Object)this, this.atlasSet::getSprite, transform, location);
                 return Pair.of(location, ibakedmodel);
             }).collect(Collectors.toList());
-        }, Util.getServerExecutor()).join();
+        }, Util.backgroundExecutor()).join();
         models.forEach(pair -> {
-            Triple<ResourceLocation, TransformationMatrix, Boolean> triple = Triple.of(pair.getKey(), transform.getRotation(), transform.isUvLock());
-            this.bakedModels.put(triple, pair.getValue());
+            Triple<ResourceLocation, TransformationMatrix, Boolean> triple = Triple.of(pair.getKey(), transform.getRotation(), transform.isUvLocked());
+            this.bakedCache.put(triple, pair.getValue());
             if(pair.getValue() != null)
-                this.topBakedModels.put(pair.getKey(), pair.getValue());
+                this.bakedTopLevelModels.put(pair.getKey(), pair.getValue());
         });
         ModernFix.LOGGER.warn("Baking in parallel took " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds");
         stopwatch.stop();
@@ -139,21 +137,21 @@ public abstract class ModelBakeryMixin {
     private Object collectTexturesParallel(Stream instance, Collector arCollector) {
         ModernFix.LOGGER.warn("Collecting textures in parallel...");
         Stopwatch stopwatch = Stopwatch.createStarted();
-        ConcurrentHashMap<ResourceLocation, IUnbakedModel> threadedUnbakedModels = new ConcurrentHashMap<>(this.unbakedModels);
+        ConcurrentHashMap<ResourceLocation, IUnbakedModel> threadedunbakedCache = new ConcurrentHashMap<>(this.unbakedCache);
         Function<ResourceLocation, IUnbakedModel> safeUnbakedGetter = (location) -> {
-            IUnbakedModel candidate = threadedUnbakedModels.get(location);
+            IUnbakedModel candidate = threadedunbakedCache.get(location);
             if(candidate == null) {
-                synchronized (this.unbakedModels) {
-                    candidate = this.getUnbakedModel(location);
-                    threadedUnbakedModels.put(location, candidate);
+                synchronized (this.unbakedCache) {
+                    candidate = this.getModel(location);
+                    threadedunbakedCache.put(location, candidate);
                 }
             }
             return candidate;
         };
         Set<com.mojang.datafixers.util.Pair<String, String>> set = Collections.synchronizedSet(Sets.newLinkedHashSet());
-        String modelMissingString = MODEL_MISSING.toString();
-        Set<RenderMaterial> materials = this.topUnbakedModels.values().parallelStream().flatMap((unbaked) -> {
-            return unbaked.getTextures(safeUnbakedGetter, set).stream();
+        String modelMissingString = MISSING_MODEL_LOCATION.toString();
+        Set<RenderMaterial> materials = this.topLevelModels.values().parallelStream().flatMap((unbaked) -> {
+            return unbaked.getMaterials(safeUnbakedGetter, set).stream();
         }).collect(Collectors.toSet());
         set.stream().filter((stringPair) -> {
             return !stringPair.getSecond().equals(modelMissingString);

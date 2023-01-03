@@ -11,5 +11,5 @@ import java.util.function.BiFunction;
 @Mixin(SaveFormat.class)
 public interface SaveFormatAccessor {
     @Invoker
-    <T> T invokeReadFromLevelData(File saveDir, BiFunction<File, DataFixer, T> levelDatReader);
+    <T> T invokeReadLevelData(File saveDir, BiFunction<File, DataFixer, T> levelDatReader);
 }

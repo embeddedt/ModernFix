@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.mixin;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Sets;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockModelShapes;
 import net.minecraft.client.renderer.model.*;
@@ -21,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
@@ -30,6 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -47,6 +50,7 @@ public abstract class ModelBakeryMixin {
     @Shadow @Nullable private SpriteMap spriteMap;
     @Shadow @Final private Map<Triple<ResourceLocation, TransformationMatrix, Boolean>, IBakedModel> bakedModels;
     @Shadow @Final private Map<ResourceLocation, IBakedModel> topBakedModels;
+    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topUnbakedModels;
     private Map<ResourceLocation, BlockModel> deserializedModelCache = null;
     private boolean useModelCache = false;
 
@@ -121,5 +125,35 @@ public abstract class ModelBakeryMixin {
         });
         ModernFix.LOGGER.warn("Baking in parallel took " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds");
         stopwatch.stop();
+    }
+
+    @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;collect(Ljava/util/stream/Collector;)Ljava/lang/Object;", ordinal = 0), remap = false)
+    private Object collectTexturesParallel(Stream instance, Collector arCollector) {
+        ModernFix.LOGGER.warn("Collecting textures in parallel...");
+        Stopwatch stopwatch = Stopwatch.createStarted();
+        ConcurrentHashMap<ResourceLocation, IUnbakedModel> threadedUnbakedModels = new ConcurrentHashMap<>(this.unbakedModels);
+        Function<ResourceLocation, IUnbakedModel> safeUnbakedGetter = (location) -> {
+            IUnbakedModel candidate = threadedUnbakedModels.get(location);
+            if(candidate == null) {
+                synchronized (this.unbakedModels) {
+                    candidate = this.getUnbakedModel(location);
+                    threadedUnbakedModels.put(location, candidate);
+                }
+            }
+            return candidate;
+        };
+        Set<com.mojang.datafixers.util.Pair<String, String>> set = Collections.synchronizedSet(Sets.newLinkedHashSet());
+        String modelMissingString = MODEL_MISSING.toString();
+        Set<RenderMaterial> materials = this.topUnbakedModels.values().parallelStream().flatMap((unbaked) -> {
+            return unbaked.getTextures(safeUnbakedGetter, set).stream();
+        }).collect(Collectors.toSet());
+        set.stream().filter((stringPair) -> {
+            return !stringPair.getSecond().equals(modelMissingString);
+        }).forEach((textureReferenceErrors) -> {
+            ModernFix.LOGGER.warn("Unable to resolve texture reference: {} in {}", textureReferenceErrors.getFirst(), textureReferenceErrors.getSecond());
+        });
+        ModernFix.LOGGER.warn("Collecting textures took " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds");
+        stopwatch.stop();
+        return materials;
     }
 }

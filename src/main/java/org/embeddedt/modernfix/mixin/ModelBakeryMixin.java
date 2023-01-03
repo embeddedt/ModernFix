@@ -78,7 +78,15 @@ public abstract class ModelBakeryMixin {
         ModernFix.LOGGER.warn("Preloading JSONs in parallel...");
         Stopwatch stopwatch = Stopwatch.createStarted();
         useModelCache = false;
-        deserializedModelCache = Minecraft.getInstance().getResourceManager().getAllResourceLocations("models", p -> p.endsWith(".json"))
+        deserializedModelCache = Minecraft.getInstance().getResourceManager().getAllResourceLocations("models", p -> {
+            if(!p.endsWith(".json"))
+                return false;
+            for(int i = 0; i < p.length(); i++) {
+                if(!ResourceLocation.validatePathChar(p.charAt(i)))
+                    return false;
+            }
+            return true;
+        })
                 .parallelStream()
                 .map(location -> new ResourceLocation(location.getNamespace(), location.getPath().substring(7, location.getPath().length() - 5)))
                 .map(location -> Pair.of(location, this.loadModelSafely(location)))

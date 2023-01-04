@@ -59,7 +59,7 @@ public abstract class ModFileResourcePackMixin {
                     try (Stream<Path> stream = Files.walk(root)) {
                         List<Path> paths = stream
                                 .map(path -> root.relativize(path.toAbsolutePath()))
-                                .filter(path -> !path.toString().endsWith(".mcmeta"))
+                                .filter(this::isValidCachedResourcePath)
                                 .collect(Collectors.toList());
                         rootListingForNamespaces.put(namespace, paths);
                         for(Path path : paths) {
@@ -73,6 +73,19 @@ public abstract class ModFileResourcePackMixin {
             }
             this.rootListingByNamespaceAndType.put(type, rootListingForNamespaces);
         }
+    }
+
+    private boolean isValidCachedResourcePath(Path path) {
+        String str = path.toString();
+        if(str.endsWith(".mcmeta"))
+            return false;
+        for(int i = 0; i < str.length(); i++) {
+            if(!ResourceLocation.validPathChar(str.charAt(i))) {
+                ModernFix.LOGGER.warn("Asset " + str + " does not have a valid resource path and will not be listed");
+                return false;
+            }
+        }
+        return true;
     }
 
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)

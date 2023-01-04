@@ -65,7 +65,7 @@ public abstract class ModelBakeryMixin {
         try {
             return this.loadBlockModel(location);
         } catch(Throwable e) {
-            ModernFix.LOGGER.warn("Model " + location + " will not be preloaded", e);
+            ModernFix.LOGGER.warn("Model " + location + " will not be preloaded");
             return null;
         }
     }

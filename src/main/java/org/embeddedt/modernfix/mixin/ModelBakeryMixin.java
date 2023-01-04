@@ -101,38 +101,6 @@ public abstract class ModelBakeryMixin {
         useModelCache = false;
     }
 
-    @Redirect(method = "uploadTextures", at = @At(value = "INVOKE", target = "Ljava/util/Set;forEach(Ljava/util/function/Consumer;)V", ordinal = 0))
-    private void parallelBake(Set<ResourceLocation> locationSet, Consumer consumer) {
-        final IModelTransform transform = ModelRotation.X0_Y0;
-        if(this.atlasSet == null)
-            throw new IllegalStateException("no sprite map");
-        ModernFix.LOGGER.warn("Baking models in parallel...");
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        locationSet.forEach(this::getModel); /* make sure every unbaked model is loaded, should be fast */
-        List<Pair<ResourceLocation, IBakedModel>> models = CompletableFuture.supplyAsync(() -> {
-            return locationSet.parallelStream().map(location -> {
-                IUnbakedModel iunbakedmodel = this.unbakedCache.get(location);
-                if (iunbakedmodel instanceof BlockModel) {
-                    BlockModel blockmodel = (BlockModel)iunbakedmodel;
-                    if (blockmodel.getRootModel() == GENERATION_MARKER) {
-                        return Pair.of(location, ITEM_MODEL_GENERATOR.generateBlockModel(this.atlasSet::getSprite, blockmodel).bake((ModelBakery)(Object)this, blockmodel, this.atlasSet::getSprite, transform, location, false));
-                    }
-                }
-
-                IBakedModel ibakedmodel = iunbakedmodel.bake((ModelBakery)(Object)this, this.atlasSet::getSprite, transform, location);
-                return Pair.of(location, ibakedmodel);
-            }).collect(Collectors.toList());
-        }, Util.backgroundExecutor()).join();
-        models.forEach(pair -> {
-            Triple<ResourceLocation, TransformationMatrix, Boolean> triple = Triple.of(pair.getKey(), transform.getRotation(), transform.isUvLocked());
-            this.bakedCache.put(triple, pair.getValue());
-            if(pair.getValue() != null)
-                this.bakedTopLevelModels.put(pair.getKey(), pair.getValue());
-        });
-        ModernFix.LOGGER.warn("Baking in parallel took " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds");
-        stopwatch.stop();
-    }
-
     @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;collect(Ljava/util/stream/Collector;)Ljava/lang/Object;", ordinal = 0), remap = false)
     private Object collectTexturesParallel(Stream instance, Collector arCollector) {
         ModernFix.LOGGER.warn("Collecting textures in parallel...");

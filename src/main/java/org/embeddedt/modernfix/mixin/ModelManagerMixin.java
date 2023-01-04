@@ -29,9 +29,9 @@ public class ModelManagerMixin {
     }
     @Inject(method = "apply(Lnet/minecraft/client/renderer/model/ModelBakery;Lnet/minecraft/resources/IResourceManager;Lnet/minecraft/profiler/IProfiler;)V", at = @At("RETURN"))
     private void trimModelCaches(ModelBakery bakery, IResourceManager p_212853_2_, IProfiler p_212853_3_, CallbackInfo ci) {
-        trimBakeryMap(bakery, "unbakedCache");
-        trimBakeryMap(bakery, "bakedCache");
-        trimBakeryMap(bakery, "topLevelModels");
+        trimBakeryMap(bakery, "field_217849_F"); // unbakedCache
+        trimBakeryMap(bakery, "field_217850_G"); // bakedCache
+        trimBakeryMap(bakery, "field_217851_H"); // topLevelModels
         // bakedTopLevelModels is used as the model registry
     }
 }

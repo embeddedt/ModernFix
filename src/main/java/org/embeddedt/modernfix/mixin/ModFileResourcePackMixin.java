@@ -17,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.IOException;
+import java.nio.file.FileSystem;
 import java.nio.file.FileVisitOption;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -32,10 +33,15 @@ public abstract class ModFileResourcePackMixin {
     @Shadow(remap = false) @Final private ModFile modFile;
     private EnumMap<ResourcePackType, Set<String>> namespacesByType;
     private EnumMap<ResourcePackType, HashMap<String, List<Path>>> rootListingByNamespaceAndType;
+    private Set<String> containedPaths;
     private boolean useNamespaceCaches;
+    private FileSystem resourcePackFS;
+    private static Joiner slashJoiner = Joiner.on('/');
+
     @Inject(method = "<init>", at = @At("TAIL"))
     private void cacheResources(ModFile modFile, CallbackInfo ci) {
         ModernFix.LOGGER.warn("Generating resource cache for " + modFile.getFileName());
+        this.resourcePackFS = modFile.getLocator().findPath(modFile, "").getFileSystem();
         this.useNamespaceCaches = false;
         this.namespacesByType = new EnumMap<>(ResourcePackType.class);
         for(ResourcePackType type : ResourcePackType.values()) {
@@ -43,6 +49,7 @@ public abstract class ModFileResourcePackMixin {
         }
         this.useNamespaceCaches = true;
         this.rootListingByNamespaceAndType = new EnumMap<>(ResourcePackType.class);
+        this.containedPaths = new HashSet<>();
         for(ResourcePackType type : ResourcePackType.values()) {
             Set<String> namespaces = this.namespacesByType.get(type);
             HashMap<String, List<Path>> rootListingForNamespaces = new HashMap<>();
@@ -50,10 +57,15 @@ public abstract class ModFileResourcePackMixin {
                 try {
                     Path root = modFile.getLocator().findPath(modFile, type.getDirectory(), namespace).toAbsolutePath();
                     try (Stream<Path> stream = Files.walk(root)) {
-                        rootListingForNamespaces.put(namespace, stream
+                        List<Path> paths = stream
                                 .map(path -> root.relativize(path.toAbsolutePath()))
                                 .filter(path -> !path.toString().endsWith(".mcmeta"))
-                                .collect(Collectors.toList()));
+                                .collect(Collectors.toList());
+                        rootListingForNamespaces.put(namespace, paths);
+                        for(Path path : paths) {
+                            String mergedPath = slashJoiner.join(type.getDirectory(), namespace, path);
+                            this.containedPaths.add(mergedPath);
+                        }
                     }
                 } catch(IOException e) {
                     rootListingForNamespaces.put(namespace, Collections.emptyList());
@@ -70,6 +82,11 @@ public abstract class ModFileResourcePackMixin {
         }
     }
 
+    @Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
+    private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
+        cir.setReturnValue(this.containedPaths.contains(path));
+    }
+
     /**
      * @author embeddedt
      * @reason Use cached listing of mod resources
@@ -77,8 +94,7 @@ public abstract class ModFileResourcePackMixin {
     @Overwrite
     public Collection<ResourceLocation> getResources(ResourcePackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter)
     {
-        Path root = modFile.getLocator().findPath(modFile, type.getDirectory(), resourceNamespace).toAbsolutePath();
-        Path inputPath = root.getFileSystem().getPath(pathIn);
+        Path inputPath = this.resourcePackFS.getPath(pathIn);
         return this.rootListingByNamespaceAndType.get(type).getOrDefault(resourceNamespace, Collections.emptyList()).stream().
                 filter(path -> path.getNameCount() <= maxDepth). // Make sure the depth is within bounds
                 filter(path -> path.startsWith(inputPath)). // Make sure the target path is inside this one
@@ -86,7 +102,7 @@ public abstract class ModFileResourcePackMixin {
                 // Finally we need to form the RL, so use the first name as the domain, and the rest as the path
                 // It is VERY IMPORTANT that we do not rely on Path.toString as this is inconsistent between operating systems
                 // Join the path names ourselves to force forward slashes
-                map(path -> new ResourceLocation(resourceNamespace, Joiner.on('/').join(path))).
+                map(path -> new ResourceLocation(resourceNamespace, slashJoiner.join(path))).
                 collect(Collectors.toList());
     }
 }

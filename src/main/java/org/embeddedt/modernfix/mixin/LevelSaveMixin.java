@@ -19,7 +19,7 @@ public class LevelSaveMixin implements ILevelSave {
     @Shadow @Final private Path levelPath;
 
     public void runWorldPersistenceHooks() {
-        SaveFormat saveFormat = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getInstance(), "levelSource");
+        SaveFormat saveFormat = ObfuscationReflectionHelper.getPrivateValue(Minecraft.class, Minecraft.getInstance(), "field_71469_aa");
         ((SaveFormatAccessor)saveFormat).invokeReadLevelData(this.levelPath.toFile(), (file, dataFixer) -> {
             try {
                 CompoundNBT compoundTag = CompressedStreamTools.readCompressed(file);

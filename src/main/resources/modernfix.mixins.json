@@ -12,7 +12,8 @@
     "SaveFormatAccessor",
     "AbstractBlockStateMixin",
     "GameDataMixin",
-    "BlockCallbacksMixin"
+    "BlockCallbacksMixin",
+    "UtilMixin"
   ],
   "client": [
     "MinecraftMixin",

@@ -57,15 +57,18 @@ public abstract class ModFileResourcePackMixin {
                 try {
                     Path root = modFile.getLocator().findPath(modFile, type.getDirectory(), namespace).toAbsolutePath();
                     try (Stream<Path> stream = Files.walk(root)) {
-                        List<Path> paths = stream
+                        ArrayList<Path> rootListingPaths = new ArrayList<>();
+                        stream
                                 .map(path -> root.relativize(path.toAbsolutePath()))
                                 .filter(this::isValidCachedResourcePath)
-                                .collect(Collectors.toList());
-                        rootListingForNamespaces.put(namespace, paths);
-                        for(Path path : paths) {
-                            String mergedPath = slashJoiner.join(type.getDirectory(), namespace, path);
-                            this.containedPaths.add(mergedPath);
-                        }
+                                .forEach(path -> {
+                                    if(!path.toString().endsWith(".mcmeta"))
+                                        rootListingPaths.add(path);
+                                    String mergedPath = slashJoiner.join(type.getDirectory(), namespace, path);
+                                    this.containedPaths.add(mergedPath);
+                                });
+                        rootListingPaths.trimToSize();
+                        rootListingForNamespaces.put(namespace, rootListingPaths);
                     }
                 } catch(IOException e) {
                     rootListingForNamespaces.put(namespace, Collections.emptyList());
@@ -77,8 +80,6 @@ public abstract class ModFileResourcePackMixin {
 
     private boolean isValidCachedResourcePath(Path path) {
         String str = path.toString();
-        if(str.endsWith(".mcmeta"))
-            return false;
         for(int i = 0; i < str.length(); i++) {
             if(!ResourceLocation.validPathChar(str.charAt(i))) {
                 ModernFix.LOGGER.warn("Asset " + str + " does not have a valid resource path and will not be listed");

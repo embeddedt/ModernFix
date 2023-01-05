@@ -49,7 +49,6 @@ public class VanillaPackMixin {
                 try(Stream<Path> stream = Files.walk(root)) {
                     stream
                             .map(path -> root.relativize(path.toAbsolutePath()))
-                            .filter(path -> !path.toString().endsWith(".mcmeta"))
                             .forEach(path -> containedPaths.add(slashJoiner.join(type.getDirectory(), path)));
                 }
             } catch(IOException e) {

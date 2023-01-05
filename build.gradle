@@ -12,6 +12,7 @@ buildscript {
 plugins {
     id 'net.minecraftforge.gradle' version '5.1.+'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
+    id 'com.matthewprenger.cursegradle' version '1.4.0'
 }
 
 apply plugin: 'org.spongepowered.mixin'
@@ -164,4 +165,18 @@ jar.finalizedBy('reobfJar')
 
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
+}
+
+curseforge {
+    if (System.getenv("CURSEFORGE_TOKEN") != null) {
+        apiKey = System.getenv("CURSEFORGE_TOKEN")
+        project {
+            id = "790626"
+            changelog = '[Changelog is not currently available]'
+            changelogType = "markdown"
+            releaseType = "release"
+            addGameVersion "Forge"
+            addGameVersion minecraft_version
+        }
+    }
 }

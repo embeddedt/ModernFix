@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.Sets;
@@ -43,11 +43,6 @@ public abstract class ModelBakeryMixin {
 
     @Shadow public abstract IUnbakedModel getModel(ResourceLocation modelLocation);
 
-    @Shadow @Final public static BlockModel GENERATION_MARKER;
-    @Shadow @Final private static ItemModelGenerator ITEM_MODEL_GENERATOR;
-    @Shadow @Nullable private SpriteMap atlasSet;
-    @Shadow @Final private Map<Triple<ResourceLocation, TransformationMatrix, Boolean>, IBakedModel> bakedCache;
-    @Shadow @Final private Map<ResourceLocation, IBakedModel> bakedTopLevelModels;
     @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topLevelModels;
     private Map<ResourceLocation, BlockModel> deserializedModelCache = null;
     private boolean useModelCache = false;

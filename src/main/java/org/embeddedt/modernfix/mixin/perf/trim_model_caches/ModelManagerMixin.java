@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.trim_model_caches;
 
 import net.minecraft.client.renderer.model.ModelBakery;
 import net.minecraft.client.renderer.model.ModelManager;

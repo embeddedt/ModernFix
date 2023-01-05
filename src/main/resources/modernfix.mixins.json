@@ -2,24 +2,26 @@
   "required": true,
   "minVersion": "0.8",
   "package": "org.embeddedt.modernfix.mixin",
+  "plugin": "org.embeddedt.modernfix.core.ModernFixMixinPlugin",
   "compatibilityLevel": "JAVA_8",
   "refmap": "modernfix.refmap.json",
   "mixins": [
-    "BiomeMixin",
-    "ModFileResourcePackMixin",
-    "VanillaPackMixin",
-    "LevelSaveMixin",
-    "SaveFormatAccessor",
-    "AbstractBlockStateMixin",
-    "GameDataMixin",
-    "BlockCallbacksMixin",
-    "UtilMixin"
+    "feature.measure_time.MinecraftMixin",
+    "perf.remove_biome_temperature_cache.BiomeMixin",
+    "perf.resourcepacks.ModFileResourcePackMixin",
+    "perf.resourcepacks.VanillaPackMixin",
+    "perf.skip_first_datapack_reload.LevelSaveMixin",
+    "perf.skip_first_datapack_reload.SaveFormatAccessor",
+    "perf.reduce_blockstate_cache_rebuilds.AbstractBlockStateMixin",
+    "perf.reduce_blockstate_cache_rebuilds.GameDataMixin",
+    "perf.reduce_blockstate_cache_rebuilds.BlockCallbacksMixin",
+    "perf.boost_worker_count.UtilMixin"
   ],
   "client": [
-    "MinecraftMixin",
-    "RenderTypeMixin",
-    "ModelBakeryMixin",
-    "ModelManagerMixin"
+    "perf.skip_first_datapack_reload.MinecraftMixin",
+    "bugfix.concurrency.RenderTypeMixin",
+    "perf.parallelize_model_loading.ModelBakeryMixin",
+    "perf.trim_model_caches.ModelManagerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.skip_first_datapack_reload;
 
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.world.storage.SaveFormat;

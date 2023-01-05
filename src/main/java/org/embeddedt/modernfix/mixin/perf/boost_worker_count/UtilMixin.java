@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.boost_worker_count;
 
 import net.minecraft.util.Util;
 import org.embeddedt.modernfix.ModernFix;

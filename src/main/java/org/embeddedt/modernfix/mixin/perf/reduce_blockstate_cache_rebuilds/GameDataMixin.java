@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.reduce_blockstate_cache_rebuilds;
 
 import com.google.common.collect.Multimap;
 import net.minecraft.util.ResourceLocation;

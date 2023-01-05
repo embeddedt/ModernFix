@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.skip_first_datapack_reload;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundNBT;

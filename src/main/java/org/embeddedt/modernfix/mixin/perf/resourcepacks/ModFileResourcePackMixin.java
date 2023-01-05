@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.resourcepacks;
 
 import com.google.common.base.Joiner;
 import net.minecraft.resources.ResourcePackType;

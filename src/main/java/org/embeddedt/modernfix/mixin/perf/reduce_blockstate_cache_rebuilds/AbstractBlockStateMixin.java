@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.reduce_blockstate_cache_rebuilds;
 
 import net.minecraft.block.AbstractBlock;
 import org.embeddedt.modernfix.duck.IBlockState;

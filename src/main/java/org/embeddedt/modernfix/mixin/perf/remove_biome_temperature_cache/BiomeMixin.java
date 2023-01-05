@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin;
+package org.embeddedt.modernfix.mixin.perf.remove_biome_temperature_cache;
 
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.biome.Biome;

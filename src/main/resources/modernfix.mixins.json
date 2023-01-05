@@ -6,6 +6,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "modernfix.refmap.json",
   "mixins": [
+    "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
     "feature.measure_time.MinecraftMixin",
     "perf.remove_biome_temperature_cache.BiomeMixin",
     "perf.resourcepacks.ModFileResourcePackMixin",

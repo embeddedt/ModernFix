@@ -60,7 +60,7 @@ minecraft {
             // Recommended logging level for the console
             // You can set various levels here.
             // Please read: https://stackoverflow.com/questions/2031163/when-to-use-the-different-log-levels
-            property 'forge.logging.console.level', 'debug'
+            property 'forge.logging.console.level', 'info'
 
 
             mods {
@@ -140,6 +140,10 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     runtimeOnly fg.deobf("curse.maven:lazydfu-460819:${lazydfu_version}")
+    runtimeOnly fg.deobf("curse.maven:roadrunner-529754:3683120")
+    runtimeOnly fg.deobf("curse.maven:starlight-529754:3683120")
+    runtimeOnly fg.deobf("curse.maven:rubidium-574856:3949659")
+    runtimeOnly fg.deobf("curse.maven:noexperimental-407174:3188120")
 
     runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}")// core
     runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:generators")// Mekanism: Generators

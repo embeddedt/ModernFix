@@ -68,6 +68,8 @@ public class ClientLifecycleHandlerMixin {
         }
     }
 
+    private static int numReloads = 1;
+
     private void startJEIAsync(Runnable whenFinishedCb) {
         cancelPreviousStart();
         Thread newThread = new Thread(() -> {
@@ -88,7 +90,7 @@ public class ClientLifecycleHandlerMixin {
             }
             whenFinishedCb.run();
             reloadThread = null;
-        }, "JEI Reload Thread");
+        }, "ModernFix JEI Reload Thread " + numReloads++);
         newThread.setPriority(Thread.MIN_PRIORITY);
         reloadThread = newThread;
         newThread.start();

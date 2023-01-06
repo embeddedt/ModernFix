@@ -16,7 +16,8 @@
     "perf.reduce_blockstate_cache_rebuilds.AbstractBlockStateMixin",
     "perf.reduce_blockstate_cache_rebuilds.GameDataMixin",
     "perf.reduce_blockstate_cache_rebuilds.BlockCallbacksMixin",
-    "perf.boost_worker_count.UtilMixin"
+    "perf.boost_worker_count.UtilMixin",
+    "perf.thread_priorities.UtilMixin"
   ],
   "client": [
     "perf.skip_first_datapack_reload.MinecraftMixin",
@@ -29,7 +30,8 @@
     "perf.async_jei.ClientLifecycleHandlerMixin",
     "perf.async_jei.JeiStarterMixin",
     "perf.async_jei.PluginCallerMixin",
-    "perf.async_jei.RecipeManagerInternalMixin"
+    "perf.async_jei.RecipeManagerInternalMixin",
+    "perf.thread_priorities.IntegratedServerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

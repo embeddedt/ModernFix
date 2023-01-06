@@ -22,16 +22,20 @@ public class ModernFixConfig {
 
     public static ForgeConfigSpec.ConfigValue<List<? extends String>> BLACKLIST_ASYNC_JEI_PLUGINS;
 
+    public static ForgeConfigSpec.IntValue INTEGRATED_SERVER_PRIORITY;
+    public static ForgeConfigSpec.IntValue BACKGROUND_WORKER_PRIORITY;
+
     public static Set<ResourceLocation> jeiPluginBlacklist;
 
     static {
-        List<? extends String> empty = Collections.emptyList();
         Predicate<Object> locationValidator = o -> o instanceof String && ((String)o).contains(":");
         BLACKLIST_ASYNC_JEI_PLUGINS = COMMON_BUILDER
                 .comment("These JEI plugins will be loaded on the main thread")
                 .defineList("blacklist_async_jei_plugins", ImmutableList.of(
                         "jepb:jei_plugin"
                 ), locationValidator);
+        INTEGRATED_SERVER_PRIORITY = COMMON_BUILDER.comment("Thread priority to use for the integrated server. By default this is one less than the client thread, to help prevent the server from lowering FPS.").defineInRange("integratedServerPriority", 4, 1, 10);
+        BACKGROUND_WORKER_PRIORITY = COMMON_BUILDER.comment("Priority to use for the background workers that complete various tasks. By default this is one less than the client thread.").defineInRange("backgroundWorkerPriority", 4, 1, 10);
     }
 
     static {

@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.core.config;
 
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -27,6 +28,12 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
         this.addMixinRule("perf.async_jei", true);
+        this.addMixinRule("perf.thread_priorities", true);
+
+        /* Mod compat */
+        if(FMLLoader.getLoadingModList().getModFileById("smoothboot") != null) {
+            this.options.get("mixin.perf.thread_priorities").addModOverride(false, "smoothboot");
+        }
     }
 
     /**

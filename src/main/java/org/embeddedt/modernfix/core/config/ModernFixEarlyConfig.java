@@ -29,6 +29,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
         this.addMixinRule("perf.async_jei", true);
         this.addMixinRule("perf.thread_priorities", true);
+        this.addMixinRule("perf.preload_block_classes", true);
 
         /* Mod compat */
         if(FMLLoader.getLoadingModList().getModFileById("smoothboot") != null) {

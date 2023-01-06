@@ -86,7 +86,7 @@ public abstract class ModelBakeryMixin {
                 .filter(pair -> pair.getValue() != null)
                 .collect(Collectors.toConcurrentMap(Pair::getKey, Pair::getValue));
         useModelCache = true;
-        ModernFix.LOGGER.warn("Preloading JSONs took " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds");
+        ModernFix.LOGGER.warn("Preloading JSONs took " + stopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
         stopwatch.stop();
     }
 
@@ -121,7 +121,7 @@ public abstract class ModelBakeryMixin {
         }).forEach((textureReferenceErrors) -> {
             ModernFix.LOGGER.warn("Unable to resolve texture reference: {} in {}", textureReferenceErrors.getFirst(), textureReferenceErrors.getSecond());
         });
-        ModernFix.LOGGER.warn("Collecting textures took " + stopwatch.elapsed(TimeUnit.SECONDS) + " seconds");
+        ModernFix.LOGGER.warn("Collecting textures took " + stopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
         stopwatch.stop();
         return materials;
     }

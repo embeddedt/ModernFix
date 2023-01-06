@@ -17,7 +17,8 @@
     "perf.reduce_blockstate_cache_rebuilds.GameDataMixin",
     "perf.reduce_blockstate_cache_rebuilds.BlockCallbacksMixin",
     "perf.boost_worker_count.UtilMixin",
-    "perf.thread_priorities.UtilMixin"
+    "perf.thread_priorities.UtilMixin",
+    "perf.preload_block_classes.GameDataMixin"
   ],
   "client": [
     "perf.skip_first_datapack_reload.MinecraftMixin",

@@ -28,6 +28,7 @@ public class ModernFixConfig {
         this.addMixinRule("perf.trim_model_caches", true);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
+        this.addMixinRule("perf.async_jei", true);
     }
 
     /**

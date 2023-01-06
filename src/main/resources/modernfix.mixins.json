@@ -22,7 +22,12 @@
     "perf.skip_first_datapack_reload.MinecraftMixin",
     "bugfix.concurrency.RenderTypeMixin",
     "perf.parallelize_model_loading.ModelBakeryMixin",
-    "perf.trim_model_caches.ModelManagerMixin"
+    "perf.trim_model_caches.ModelManagerMixin",
+    "perf.async_jei.IngredientListElementFactoryMixin",
+    "perf.async_jei.ClientLifecycleHandlerMixin",
+    "perf.async_jei.JeiStarterMixin",
+    "perf.async_jei.PluginCallerMixin",
+    "perf.async_jei.RecipeManagerInternalMixin"
   ],
   "injectors": {
     "defaultRequire": 1

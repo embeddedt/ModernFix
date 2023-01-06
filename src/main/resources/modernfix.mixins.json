@@ -23,6 +23,7 @@
     "bugfix.concurrency.RenderTypeMixin",
     "bugfix.concurrency.MinecraftMixin",
     "perf.parallelize_model_loading.ModelBakeryMixin",
+    "perf.parallelize_model_loading.OBJLoaderMixin",
     "perf.trim_model_caches.ModelManagerMixin",
     "perf.async_jei.IngredientListElementFactoryMixin",
     "perf.async_jei.ClientLifecycleHandlerMixin",

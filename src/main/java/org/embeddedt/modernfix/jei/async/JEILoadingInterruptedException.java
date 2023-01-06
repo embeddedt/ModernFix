@@ -1,4 +1,4 @@
 package org.embeddedt.modernfix.jei.async;
 
-public class JEILoadingInterruptedException extends RuntimeException {
+public class JEILoadingInterruptedException extends Error {
 }

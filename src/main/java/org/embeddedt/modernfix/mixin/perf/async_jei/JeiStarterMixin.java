@@ -26,7 +26,7 @@ import java.util.function.Consumer;
 
 @Mixin(JeiStarter.class)
 public class JeiStarterMixin {
-    @Shadow private boolean started;
+    @Shadow(remap = false) private boolean started;
 
     @Inject(method = "start", at = @At(value = "INVOKE", target = "Lmezz/jei/util/ErrorUtil;checkNotEmpty(Ljava/util/Collection;Ljava/lang/String;)V", ordinal = 0, shift = At.Shift.AFTER), remap = false)
     private void setStartedFlag(List<IModPlugin> plugins, Textures textures, IClientConfig clientConfig, IEditModeConfig editModeConfig, IIngredientFilterConfig ingredientFilterConfig, IWorldConfig worldConfig, BookmarkConfig bookmarkConfig, IModIdHelper modIdHelper, RecipeCategorySortingConfig recipeCategorySortingConfig, IIngredientSorter ingredientSorter, CallbackInfo ci) {

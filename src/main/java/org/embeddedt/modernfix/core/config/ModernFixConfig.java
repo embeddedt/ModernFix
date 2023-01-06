@@ -1,179 +1,52 @@
 package org.embeddedt.modernfix.core.config;
 
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import com.google.common.collect.ImmutableList;
+import com.google.common.collect.ImmutableSet;
+import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.common.ForgeConfigSpec;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.config.ModConfig;
+import org.embeddedt.modernfix.ModernFix;
 
-import net.minecraftforge.fml.loading.FMLLoader;
-
-import java.io.*;
-import java.util.*;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
+@Mod.EventBusSubscriber(modid = ModernFix.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModernFixConfig {
-    private static final Logger LOGGER = LogManager.getLogger("ModernFixConfig");
+    private static final ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
+    public static ForgeConfigSpec COMMON_CONFIG;
 
-    private final Map<String, Option> options = new HashMap<>();
+    public static ForgeConfigSpec.ConfigValue<List<? extends String>> BLACKLIST_ASYNC_JEI_PLUGINS;
 
-    private ModernFixConfig() {
-        // Defines the default rules which can be configured by the user or other mods.
-        // You must manually add a rule for any new mixins not covered by an existing package rule.
-        this.addMixinRule("core", true); // TODO: Don't actually allow the user to disable this
-        this.addMixinRule("feature.measure_time", true);
-        this.addMixinRule("perf.remove_biome_temperature_cache", true);
-        this.addMixinRule("perf.resourcepacks", true);
-        this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
-        this.addMixinRule("perf.boost_worker_count", true);
-        this.addMixinRule("perf.skip_first_datapack_reload", true);
-        this.addMixinRule("perf.parallelize_model_loading", true);
-        this.addMixinRule("perf.trim_model_caches", true);
-        this.addMixinRule("bugfix.concurrency", true);
-        this.addMixinRule("bugfix.edge_chunk_not_saved", true);
-        this.addMixinRule("perf.async_jei", true);
+    public static Set<ResourceLocation> jeiPluginBlacklist;
+
+    static {
+        List<? extends String> empty = Collections.emptyList();
+        Predicate<Object> locationValidator = o -> o instanceof String && ((String)o).contains(":");
+        BLACKLIST_ASYNC_JEI_PLUGINS = COMMON_BUILDER
+                .comment("These JEI plugins will be loaded on the main thread")
+                .defineList("blacklist_async_jei_plugins", ImmutableList.of(
+                        "jepb:jei_plugin"
+                ), locationValidator);
     }
 
-    /**
-     * Defines a Mixin rule which can be configured by users and other mods.
-     * @throws IllegalStateException If a rule with that name already exists
-     * @param mixin The name of the mixin package which will be controlled by this rule
-     * @param enabled True if the rule will be enabled by default, otherwise false
-     */
-    private void addMixinRule(String mixin, boolean enabled) {
-        String name = getMixinRuleName(mixin);
+    static {
+        COMMON_CONFIG = COMMON_BUILDER.build();
+    }
 
-        if (this.options.putIfAbsent(name, new Option(name, enabled, false)) != null) {
-            throw new IllegalStateException("Mixin rule already defined: " + mixin);
+    @SubscribeEvent
+    public static void onModConfigEvent(final ModConfig.ModConfigEvent configEvent) {
+        if (configEvent.getConfig().getSpec() == COMMON_CONFIG) {
+            bakeConfig();
         }
     }
 
-    private void readProperties(Properties props) {
-        for (Map.Entry<Object, Object> entry : props.entrySet()) {
-            String key = (String) entry.getKey();
-            String value = (String) entry.getValue();
-
-            Option option = this.options.get(key);
-
-            if (option == null) {
-                LOGGER.warn("No configuration key exists with name '{}', ignoring", key);
-                continue;
-            }
-
-            boolean enabled;
-
-            if (value.equalsIgnoreCase("true")) {
-                enabled = true;
-            } else if (value.equalsIgnoreCase("false")) {
-                enabled = false;
-            } else {
-                LOGGER.warn("Invalid value '{}' encountered for configuration key '{}', ignoring", value, key);
-                continue;
-            }
-
-            option.setEnabled(enabled, true);
-        }
+    public static void bakeConfig() {
+        jeiPluginBlacklist = BLACKLIST_ASYNC_JEI_PLUGINS.get().stream().map(ResourceLocation::new).collect(Collectors.toSet());
     }
 
-    /**
-     * Returns the effective option for the specified class name. This traverses the package path of the given mixin
-     * and checks each root for configuration rules. If a configuration rule disables a package, all mixins located in
-     * that package and its children will be disabled. The effective option is that of the highest-priority rule, either
-     * a enable rule at the end of the chain or a disable rule at the earliest point in the chain.
-     *
-     * @return Null if no options matched the given mixin name, otherwise the effective option for this Mixin
-     */
-    public Option getEffectiveOptionForMixin(String mixinClassName) {
-        int lastSplit = 0;
-        int nextSplit;
-
-        Option rule = null;
-
-        while ((nextSplit = mixinClassName.indexOf('.', lastSplit)) != -1) {
-            String key = getMixinRuleName(mixinClassName.substring(0, nextSplit));
-
-            Option candidate = this.options.get(key);
-
-            if (candidate != null) {
-                rule = candidate;
-
-                if (!rule.isEnabled()) {
-                    return rule;
-                }
-            }
-
-            lastSplit = nextSplit + 1;
-        }
-
-        return rule;
-    }
-
-    /**
-     * Loads the configuration file from the specified location. If it does not exist, a new configuration file will be
-     * created. The file on disk will then be updated to include any new options.
-     */
-    public static ModernFixConfig load(File file) {
-        ModernFixConfig config = new ModernFixConfig();
-        Properties props = new Properties();
-        if(file.exists()) {
-            try (FileInputStream fin = new FileInputStream(file)){
-                props.load(fin);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not load config file", e);
-            }
-            config.readProperties(props);
-        }
-
-        try {
-            config.writeConfig(file, props);
-        } catch (IOException e) {
-            LOGGER.warn("Could not write configuration file", e);
-        }
-
-        return config;
-    }
-
-    private void writeConfig(File file, Properties props) throws IOException {
-        File dir = file.getParentFile();
-
-        if (!dir.exists()) {
-            if (!dir.mkdirs()) {
-                throw new IOException("Could not create parent directories");
-            }
-        } else if (!dir.isDirectory()) {
-            throw new IOException("The parent file is not a directory");
-        }
-
-        try (Writer writer = new FileWriter(file)) {
-            writer.write("# This is the configuration file for ModernFix.\n");
-            writer.write("#\n");
-            writer.write("# The following options are enabled by default and should only be disabled if there is a.\n");
-            writer.write("# compatibility issue. Add a line mixin.example_name=false without the # sign to disable a rule.\n");
-            List<String> lines = this.options.keySet().stream()
-                    .filter(key -> !key.equals("mixin.core"))
-                    .sorted()
-                    .map(key -> "#   " + key + "\n")
-                    .collect(Collectors.toList());
-            for(String line : lines) {
-                writer.write(line);
-            }
-            for (Map.Entry<Object, Object> entry : props.entrySet()) {
-                String key = (String) entry.getKey();
-                String value = (String) entry.getValue();
-                writer.write(key + "=" + value + "\n");
-            }
-        }
-    }
-
-    private static String getMixinRuleName(String name) {
-        return "mixin." + name;
-    }
-
-    public int getOptionCount() {
-        return this.options.size();
-    }
-
-    public int getOptionOverrideCount() {
-        return (int) this.options.values()
-                .stream()
-                .filter(Option::isOverridden)
-                .count();
-    }
 }

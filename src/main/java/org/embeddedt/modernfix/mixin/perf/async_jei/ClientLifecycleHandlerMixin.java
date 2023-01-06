@@ -27,17 +27,17 @@ import java.util.List;
 
 @Mixin(ClientLifecycleHandler.class)
 public class ClientLifecycleHandlerMixin {
-    @Shadow @Final private JeiStarter starter;
-    @Shadow @Final private List<IModPlugin> plugins;
-    @Shadow @Final private Textures textures;
-    @Shadow @Final private IClientConfig clientConfig;
-    @Shadow @Final private IEditModeConfig editModeConfig;
-    @Shadow @Final private IngredientFilterConfig ingredientFilterConfig;
-    @Shadow @Final private WorldConfig worldConfig;
-    @Shadow @Final private BookmarkConfig bookmarkConfig;
-    @Shadow @Final private IModIdHelper modIdHelper;
-    @Shadow @Final private RecipeCategorySortingConfig recipeCategorySortingConfig;
-    @Shadow @Final private IIngredientSorter ingredientSorter;
+    @Shadow(remap = false) @Final private JeiStarter starter;
+    @Shadow(remap = false) @Final private List<IModPlugin> plugins;
+    @Shadow(remap = false) @Final private Textures textures;
+    @Shadow(remap = false) @Final private IClientConfig clientConfig;
+    @Shadow(remap = false) @Final private IEditModeConfig editModeConfig;
+    @Shadow(remap = false) @Final private IngredientFilterConfig ingredientFilterConfig;
+    @Shadow(remap = false) @Final private WorldConfig worldConfig;
+    @Shadow(remap = false) @Final private BookmarkConfig bookmarkConfig;
+    @Shadow(remap = false) @Final private IModIdHelper modIdHelper;
+    @Shadow(remap = false) @Final private RecipeCategorySortingConfig recipeCategorySortingConfig;
+    @Shadow(remap = false) @Final private IIngredientSorter ingredientSorter;
     private volatile Thread reloadThread = null;
     @Inject(method = "setupJEI", at = @At(value = "INVOKE", target = "Lmezz/jei/startup/ClientLifecycleHandler;startJEI()V"), cancellable = true, remap = false)
     private void startAsync(CallbackInfo ci) {

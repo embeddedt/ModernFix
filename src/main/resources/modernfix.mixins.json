@@ -21,6 +21,7 @@
   "client": [
     "perf.skip_first_datapack_reload.MinecraftMixin",
     "bugfix.concurrency.RenderTypeMixin",
+    "bugfix.concurrency.MinecraftMixin",
     "perf.parallelize_model_loading.ModelBakeryMixin",
     "perf.trim_model_caches.ModelManagerMixin",
     "perf.async_jei.IngredientListElementFactoryMixin",

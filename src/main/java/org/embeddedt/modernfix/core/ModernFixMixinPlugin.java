@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.core;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.embeddedt.modernfix.core.config.ModernFixConfig;
+import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
@@ -16,12 +16,12 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     private static final String MIXIN_PACKAGE_ROOT = "org.embeddedt.modernfix.mixin.";
 
     private final Logger logger = LogManager.getLogger("ModernFix");
-    public static ModernFixConfig config = null;
+    public static ModernFixEarlyConfig config = null;
 
     @Override
     public void onLoad(String mixinPackage) {
         try {
-            config = ModernFixConfig.load(new File("./config/modernfix-mixins.properties"));
+            config = ModernFixEarlyConfig.load(new File("./config/modernfix-mixins.properties"));
         } catch (Exception e) {
             throw new RuntimeException("Could not load configuration file for ModernFix", e);
         }

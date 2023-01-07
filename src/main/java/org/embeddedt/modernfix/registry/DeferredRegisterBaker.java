@@ -10,6 +10,7 @@ import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.forgespi.language.IModInfo;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.util.AsyncStopwatch;
 import org.embeddedt.modernfix.util.CachedSupplier;
 import org.embeddedt.modernfix.util.OrderedParallelModDispatcher;
 
@@ -39,21 +40,24 @@ public class DeferredRegisterBaker {
             if(registrySupplierMap == null)
                 return;
             Stopwatch realtimeStopwatch = Stopwatch.createStarted();
-            AtomicLong cpuLong = new AtomicLong(0);
-            OrderedParallelModDispatcher.dispatchBlocking(modId -> {
+            AsyncStopwatch cpuStopwatch = new AsyncStopwatch();
+            OrderedParallelModDispatcher.dispatchBlocking(ModWorkManager.parallelExecutor(), modId -> {
                 List<CachedSupplier<?>> suppliersToCompute = registrySupplierMap.get(modId);
                 if (suppliersToCompute == null || suppliersToCompute.size() == 0) {
                     return;
                 }
-                Stopwatch stopwatch = Stopwatch.createStarted();
+                cpuStopwatch.startMeasuringAsync();
                 for (CachedSupplier<?> supplier : suppliersToCompute) {
-                    supplier.compute();
+                    try {
+                        supplier.compute();
+                    } catch(RuntimeException e) {
+                        e.printStackTrace();
+                    }
                 }
-                stopwatch.stop();
-                cpuLong.addAndGet(stopwatch.elapsed(TimeUnit.MILLISECONDS));
+                cpuStopwatch.stopMeasuringAsync();
             });
             realtimeStopwatch.stop();
-            ModernFix.LOGGER.info("CPU time spent constructing " + registry + " suppliers: " + cpuLong.get()/1000f + " seconds");
+            ModernFix.LOGGER.info("CPU time spent constructing " + registry + " suppliers: " + cpuStopwatch.getCpuTime()/1000f + " seconds");
             ModernFix.LOGGER.info("Real time spent constructing " + registry + " suppliers: " + realtimeStopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
         }
     }

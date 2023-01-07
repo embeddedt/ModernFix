@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.parallel_deferred_suppliers;
+package org.embeddedt.modernfix.mixin.perf.parallel_potentially_unsafe.parallel_deferred_suppliers;
 
 import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.fml.ModLoadingStage;

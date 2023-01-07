@@ -19,8 +19,10 @@
     "perf.boost_worker_count.UtilMixin",
     "perf.thread_priorities.UtilMixin",
     "perf.preload_block_classes.GameDataMixin",
-    "perf.parallel_deferred_suppliers.DeferredRegisterMixin",
-    "perf.parallel_deferred_suppliers.GameDataMixin"
+    "perf.parallel_potentially_unsafe.parallel_deferred_suppliers.DeferredRegisterMixin",
+    "perf.parallel_potentially_unsafe.parallel_deferred_suppliers.GameDataMixin",
+    "perf.parallel_potentially_unsafe.parallel_blockstate_cache_rebuild.BlocksMixin",
+    "perf.parallel_potentially_unsafe.parallel_blockstate_cache_rebuild.BlockCallbacksMixin"
   ],
   "client": [
     "perf.skip_first_datapack_reload.MinecraftMixin",

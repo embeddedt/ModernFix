@@ -148,6 +148,8 @@ dependencies {
 
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
+
+    runtimeOnly fg.deobf("curse.maven:spark-361579:3767277")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.

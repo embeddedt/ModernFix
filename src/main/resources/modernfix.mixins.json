@@ -23,7 +23,8 @@
     "perf.parallel_potentially_unsafe.parallel_deferred_suppliers.EventDispatcherMixin",
     "perf.parallel_potentially_unsafe.parallel_blockstate_cache_rebuild.BlocksMixin",
     "perf.parallel_potentially_unsafe.parallel_blockstate_cache_rebuild.BlockCallbacksMixin",
-    "perf.parallel_potentially_unsafe.parallel_blockstate_cache_rebuild.ShapeCacheMixin"
+    "perf.parallel_potentially_unsafe.parallel_blockstate_cache_rebuild.ShapeCacheMixin",
+    "perf.parallel_potentially_unsafe.parallel_deferred_suppliers.DispenserBlockMixin"
   ],
   "client": [
     "perf.skip_first_datapack_reload.MinecraftMixin",

@@ -25,7 +25,7 @@ public class EventDispatcherMixin {
         if(registry == null)
             return;
         ResourceLocation location = registry.getRegistryName();
-        if(location == null)
+        if(location == null || !(location.getNamespace().equals("minecraft") && location.getPath().equals("block")))
             return;
         if(!hasRegistryBaked.getOrDefault(location, false)) {
             DeferredRegisterBaker.bakeSuppliers(location);

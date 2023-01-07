@@ -35,10 +35,9 @@ public class OrderedParallelModDispatcher {
     public static void dispatchBlocking(Executor executor, Consumer<String> task, Collection<String> modIDsToFilter) {
         Set<String> finishedMods = Collections.synchronizedSet(new HashSet<>(modIDsToFilter));
         HashMap<String, CompletableFuture<?>> submittedFutures = new HashMap<>();
-        int numMods = ModList.get().getMods().size();
         Semaphore jobWaitingSemaphore = new Semaphore(0);
         ArrayList<ModInfo> remainingModList = new ArrayList<>(ModList.get().getMods());
-        while(finishedMods.size() < numMods) {
+        while(remainingModList.size() > 0) {
             remainingModList.removeIf(modInfo -> {
                 if(finishedMods.contains(modInfo.getModId()))
                     return true;
@@ -48,14 +47,14 @@ public class OrderedParallelModDispatcher {
                         .filter(modId -> !finishedMods.contains(modId))
                         .collect(Collectors.toList());
                 if(missingDependencies.size() > 0) {
-                    //ModernFix.LOGGER.debug(DISPATCHER, "Cannot process " + modInfo.getModId() + ", as it is waiting on mods: [" + String.join(", ", missingDependencies) + "]");
+                    ModernFix.LOGGER.debug(DISPATCHER, "Cannot process " + modInfo.getModId() + ", as it is waiting on mods: [" + String.join(", ", missingDependencies) + "]");
                     return false;
                 }
                 Optional<? extends ModContainer> modContainerOpt = ModList.get().getModContainerById(modInfo.getModId());
                 if(!modContainerOpt.isPresent())
                     throw new IllegalStateException("Can't find mod container");
                 ModContainer container = modContainerOpt.get();
-                //ModernFix.LOGGER.debug(DISPATCHER, "Submitting job for " + modInfo.getModId());
+                ModernFix.LOGGER.debug(DISPATCHER, "Submitting job for " + modInfo.getModId());
                 submittedFutures.put(modInfo.getModId(), CompletableFuture.runAsync(() -> {
                     Supplier<?> contextExtension = ObfuscationReflectionHelper.getPrivateValue(ModContainer.class, container, "contextExtension");
                     ModLoadingContext.get().setActiveContainer(container, contextExtension.get());
@@ -75,7 +74,7 @@ public class OrderedParallelModDispatcher {
                 return true;
             });
             Preconditions.checkState(submittedFutures.size() > 0, "The semaphore will block forever!");
-            //ModernFix.LOGGER.debug(DISPATCHER, "Waiting for one of [" + String.join(", ", submittedFutures.keySet()) + "] to finish...");
+            ModernFix.LOGGER.debug(DISPATCHER, "Waiting for one of [" + String.join(", ", submittedFutures.keySet()) + "] to finish...");
             try {
                 jobWaitingSemaphore.acquire();
             } catch(InterruptedException e) {
@@ -83,12 +82,13 @@ public class OrderedParallelModDispatcher {
             }
             submittedFutures.entrySet().removeIf(entry -> {
                 if(entry.getValue().isDone()) {
-                    //ModernFix.LOGGER.debug(DISPATCHER, "Job finished for " + entry.getKey());
+                    ModernFix.LOGGER.debug(DISPATCHER, "Job finished for " + entry.getKey());
                     return true;
                 }
                 return false;
             });
         }
+        submittedFutures.values().forEach(CompletableFuture::join);
     }
 
     public static void dispatchBlocking(Executor executor, Consumer<String> task) {

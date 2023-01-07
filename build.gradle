@@ -121,11 +121,6 @@ repositories {
             includeGroup "curse.maven"
         }
     }
-    maven {
-        // location of the maven that hosts JEI files
-        name = "Progwml6 maven"
-        url = "https://dvs1.progwml6.com/files/maven/"
-    }
 }
 
 dependencies {
@@ -150,6 +145,8 @@ dependencies {
     runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     runtimeOnly fg.deobf("curse.maven:spark-361579:3767277")
+
+    compileOnly fg.deobf("curse.maven:refinedstorage-243076:3807951")
 }
 
 // Example for how to get properties into the manifest for reading at runtime.

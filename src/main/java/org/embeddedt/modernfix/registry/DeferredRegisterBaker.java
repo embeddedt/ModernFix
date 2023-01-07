@@ -2,24 +2,14 @@ package org.embeddedt.modernfix.registry;
 
 import com.google.common.base.Stopwatch;
 import net.minecraft.util.ResourceLocation;
-import net.minecraftforge.fml.ModContainer;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.ModWorkManager;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
-import net.minecraftforge.forgespi.language.IModInfo;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.AsyncStopwatch;
 import org.embeddedt.modernfix.util.CachedSupplier;
 import org.embeddedt.modernfix.util.OrderedParallelModDispatcher;
 
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Supplier;
 
 public class DeferredRegisterBaker {
@@ -36,6 +26,7 @@ public class DeferredRegisterBaker {
 
     public static void bakeSuppliers(ResourceLocation registry) {
         synchronized (supplierMap) {
+            Set<String> modErrors = Collections.synchronizedSet(new HashSet<>());
             HashMap<String, List<CachedSupplier<?>>> registrySupplierMap = supplierMap.get(registry);
             if(registrySupplierMap == null)
                 return;
@@ -51,12 +42,15 @@ public class DeferredRegisterBaker {
                     try {
                         supplier.compute();
                     } catch(RuntimeException e) {
-                        e.printStackTrace();
+                        ModernFix.LOGGER.debug("Exception encountered while caching supplier", e);
+                        modErrors.add(modId);
                     }
                 }
                 cpuStopwatch.stopMeasuringAsync();
             });
             realtimeStopwatch.stop();
+            if(modErrors.size() > 0)
+                ModernFix.LOGGER.warn("The following mods had errors while caching suppliers (this is likely safe): [" + String.join(", ", modErrors) + "]");
             ModernFix.LOGGER.info("CPU time spent constructing " + registry + " suppliers: " + cpuStopwatch.getCpuTime()/1000f + " seconds");
             ModernFix.LOGGER.info("Real time spent constructing " + registry + " suppliers: " + realtimeStopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
         }

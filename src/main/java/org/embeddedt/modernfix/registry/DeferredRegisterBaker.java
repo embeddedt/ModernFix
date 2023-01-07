@@ -30,6 +30,7 @@ public class DeferredRegisterBaker {
             HashMap<String, List<CachedSupplier<?>>> registrySupplierMap = supplierMap.get(registry);
             if(registrySupplierMap == null)
                 return;
+            ModernFix.LOGGER.info("Caching suppliers for " + registry);
             Stopwatch realtimeStopwatch = Stopwatch.createStarted();
             AsyncStopwatch cpuStopwatch = new AsyncStopwatch();
             OrderedParallelModDispatcher.dispatchBlocking(ModWorkManager.parallelExecutor(), modId -> {
@@ -50,7 +51,7 @@ public class DeferredRegisterBaker {
             });
             realtimeStopwatch.stop();
             if(modErrors.size() > 0)
-                ModernFix.LOGGER.warn("The following mods had errors while caching suppliers (this is likely safe): [" + String.join(", ", modErrors) + "]");
+                ModernFix.LOGGER.warn("The following mods had errors while caching " + registry + " suppliers (this is likely safe): [" + String.join(", ", modErrors) + "]");
             ModernFix.LOGGER.info("CPU time spent constructing " + registry + " suppliers: " + cpuStopwatch.getCpuTime()/1000f + " seconds");
             ModernFix.LOGGER.info("Real time spent constructing " + registry + " suppliers: " + realtimeStopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
         }

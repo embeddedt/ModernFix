@@ -30,6 +30,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.async_jei", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.preload_block_classes", true);
+        this.addMixinRule("perf.parallel_deferred_suppliers", true);
 
         /* Mod compat */
         if(FMLLoader.getLoadingModList().getModFileById("smoothboot") != null) {

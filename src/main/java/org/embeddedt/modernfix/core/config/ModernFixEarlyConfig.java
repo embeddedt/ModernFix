@@ -31,6 +31,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.preload_block_classes", true);
         this.addMixinRule("perf.parallel_potentially_unsafe", false);
+        this.addMixinRule("perf.parallel_blockstate_cache_rebuild", true);
 
         /* Mod compat */
         if(FMLLoader.getLoadingModList().getModFileById("smoothboot") != null) {

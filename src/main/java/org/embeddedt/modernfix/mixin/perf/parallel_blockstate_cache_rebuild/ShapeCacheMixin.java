@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.parallel_potentially_unsafe.parallel_blockstate_cache_rebuild;
+package org.embeddedt.modernfix.mixin.perf.parallel_blockstate_cache_rebuild;
 
 import com.refinedmods.refinedstorage.block.shape.ShapeCache;
 import net.minecraft.block.BlockState;

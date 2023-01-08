@@ -29,7 +29,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
         this.addMixinRule("perf.async_jei", true);
         this.addMixinRule("perf.thread_priorities", true);
-        this.addMixinRule("perf.preload_block_classes", true);
+        this.addMixinRule("perf.preload_block_classes", false);
         this.addMixinRule("perf.parallel_potentially_unsafe", false);
         this.addMixinRule("perf.parallel_blockstate_cache_rebuild", true);
         this.addMixinRule("safety", true);

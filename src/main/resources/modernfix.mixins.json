@@ -38,7 +38,8 @@
     "perf.async_jei.JeiStarterMixin",
     "perf.async_jei.PluginCallerMixin",
     "perf.async_jei.RecipeManagerInternalMixin",
-    "perf.thread_priorities.IntegratedServerMixin"
+    "perf.thread_priorities.IntegratedServerMixin",
+    "safety.BlockColorsMixin"
   ],
   "injectors": {
     "defaultRequire": 1

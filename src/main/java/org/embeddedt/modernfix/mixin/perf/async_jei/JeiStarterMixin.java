@@ -40,7 +40,7 @@ public class JeiStarterMixin {
             try {
                 Minecraft.getInstance().executeBlocking(() -> func.accept(plugin));
             } catch(CancellationException | CompletionException e) {
-                Thread.currentThread().interrupt();
+                throw new RuntimeException(e);
             }
         });
     }

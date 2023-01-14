@@ -18,7 +18,7 @@ plugins {
 apply plugin: 'org.spongepowered.mixin'
 
 group = 'org.embeddedt'
-version = '1.4.2'
+version = '1.4.3'
 
 java {
     archivesBaseName = 'modernfix-mc' + minecraft_version

@@ -35,8 +35,15 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("safety", true);
 
         /* Mod compat */
-        if(FMLLoader.getLoadingModList().getModFileById("smoothboot") != null) {
-            this.options.get("mixin.perf.thread_priorities").addModOverride(false, "smoothboot");
+        disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
+        disableIfModPresent("mixin.perf.async_jei", "modernui");
+    }
+
+    private void disableIfModPresent(String configName, String... ids) {
+        for(String id : ids) {
+            if(FMLLoader.getLoadingModList().getModFileById(id) != null) {
+                this.options.get(configName).addModOverride(false, id);
+            }
         }
     }
 

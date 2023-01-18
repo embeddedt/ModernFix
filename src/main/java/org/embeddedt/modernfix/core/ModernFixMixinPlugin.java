@@ -54,6 +54,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     }
 
     private Function<String, Enumeration<URL>> constructResourceFinder() throws ReflectiveOperationException {
+        ModernFixResourceFinder.init();
         Field servicesHandlerField = Launcher.class.getDeclaredField("transformationServicesHandler");
         servicesHandlerField.setAccessible(true);
         Object servicesHandler = servicesHandlerField.get(Launcher.INSTANCE);

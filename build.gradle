@@ -147,8 +147,6 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:spark-361579:3767277")
 
     compileOnly fg.deobf("curse.maven:refinedstorage-243076:3807951")
-
-    implementation group: 'net.bytebuddy', name: 'byte-buddy', version: '1.12.22'
 }
 
 // Example for how to get properties into the manifest for reading at runtime.

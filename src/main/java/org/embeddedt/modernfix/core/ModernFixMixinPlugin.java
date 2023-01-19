@@ -27,7 +27,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     public static ModernFixEarlyConfig config = null;
 
     private static final boolean USE_TRANSFORMER_CACHE = false;
-    private static final boolean USE_CLASS_LOCATION_CACHE = false;
+    private static final boolean USE_CLASS_LOCATION_CACHE = true;
 
     public ModernFixMixinPlugin() {
         /* We abuse the constructor of a mixin plugin as a safe location to start modifying the classloader */

@@ -30,6 +30,15 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     private static final boolean USE_CLASS_LOCATION_CACHE = false;
 
     public ModernFixMixinPlugin() {
+        try {
+            config = ModernFixEarlyConfig.load(new File("./config/modernfix-mixins.properties"));
+        } catch (Exception e) {
+            throw new RuntimeException("Could not load configuration file for ModernFix", e);
+        }
+
+        this.logger.info("Loaded configuration file for ModernFix: {} options available, {} override(s) found",
+                config.getOptionCount(), config.getOptionOverrideCount());
+
         /* We abuse the constructor of a mixin plugin as a safe location to start modifying the classloader */
         /* Swap the transformer for ours */
         ClassLoader loader = Thread.currentThread().getContextClassLoader();
@@ -37,7 +46,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             throw new IllegalStateException("Expected a TransformingClassLoader");
         }
         try {
-            if(USE_TRANSFORMER_CACHE) {
+            if(isOptionEnabled("launch.transformer_cache.ModernFixClassTransformer")) {
                 Field classTransformerField = TransformingClassLoader.class.getDeclaredField("classTransformer");
                 classTransformerField.setAccessible(true);
                 ClassTransformer t = (ClassTransformer)classTransformerField.get(loader);
@@ -46,7 +55,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 TransformerAuditTrail trail = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "auditTrail");
                 classTransformerField.set(loader, new ModernFixCachingClassTransformer(store, pluginHandler, (TransformingClassLoader)loader, trail));
             }
-            if(USE_CLASS_LOCATION_CACHE) {
+            if(isOptionEnabled("launch.class_search_cache.ModernFixResourceFinder")) {
                 Field resourceFinderField = TransformingClassLoader.class.getDeclaredField("resourceFinder");
                 /* Construct a new list of resource finders, using similar logic to ML */
                 resourceFinderField.setAccessible(true);
@@ -85,14 +94,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-        try {
-            config = ModernFixEarlyConfig.load(new File("./config/modernfix-mixins.properties"));
-        } catch (Exception e) {
-            throw new RuntimeException("Could not load configuration file for ModernFix", e);
-        }
 
-        this.logger.info("Loaded configuration file for ModernFix: {} options available, {} override(s) found",
-                config.getOptionCount(), config.getOptionOverrideCount());
     }
 
     @Override
@@ -110,6 +112,10 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         }
 
         String mixin = mixinClassName.substring(MIXIN_PACKAGE_ROOT.length());
+        return isOptionEnabled(mixin);
+    }
+
+    public boolean isOptionEnabled(String mixin) {
         Option option = config.getEffectiveOptionForMixin(mixin);
 
         if (option == null) {

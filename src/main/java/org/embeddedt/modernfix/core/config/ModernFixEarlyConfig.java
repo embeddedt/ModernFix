@@ -33,6 +33,8 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.parallel_potentially_unsafe", false);
         this.addMixinRule("perf.parallel_blockstate_cache_rebuild", true);
         this.addMixinRule("safety", true);
+        this.addMixinRule("launch.transformer_cache", false);
+        this.addMixinRule("launch.class_search_cache", false);
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
@@ -160,8 +162,8 @@ public class ModernFixEarlyConfig {
         try (Writer writer = new FileWriter(file)) {
             writer.write("# This is the configuration file for ModernFix.\n");
             writer.write("#\n");
-            writer.write("# The following options are enabled by default and should only be disabled if there is a.\n");
-            writer.write("# compatibility issue. Add a line mixin.example_name=false without the # sign to disable a rule.\n");
+            writer.write("# The following options can be enabled or disabled if there is a compatibility issue.\n");
+            writer.write("# Add a line mixin.example_name=true/false without the # sign to enable/disable a rule.\n");
             List<String> lines = this.options.keySet().stream()
                     .filter(key -> !key.equals("mixin.core"))
                     .sorted()

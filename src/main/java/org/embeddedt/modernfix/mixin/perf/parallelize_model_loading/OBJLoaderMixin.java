@@ -20,12 +20,12 @@ public class OBJLoaderMixin {
 
     @Shadow private Map<OBJModel.ModelSettings, OBJModel> modelCache;
 
-    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/OBJLoader;materialCache:Ljava/util/Map;"))
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/OBJLoader;materialCache:Ljava/util/Map;", remap = false))
     private void useConcMap1(OBJLoader instance, Map<ResourceLocation, MaterialLibrary> value) {
         this.materialCache = new ConcurrentHashMap<>();
     }
 
-    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/OBJLoader;modelCache:Ljava/util/Map;"))
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/OBJLoader;modelCache:Ljava/util/Map;", remap = false))
     private void useConcMap2(OBJLoader instance, Map<ResourceLocation, MaterialLibrary> value) {
         this.modelCache = new ConcurrentHashMap<>();
     }

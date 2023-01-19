@@ -132,19 +132,23 @@ dependencies {
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
 
     runtimeOnly fg.deobf("curse.maven:lazydfu-460819:${lazydfu_version}")
-    runtimeOnly fg.deobf("curse.maven:roadrunner-529754:3683120")
-    runtimeOnly fg.deobf("curse.maven:starlight-529754:3683120")
-    runtimeOnly fg.deobf("curse.maven:rubidium-574856:3949659")
-    runtimeOnly fg.deobf("curse.maven:noexperimental-407174:3188120")
-
-    runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}")// core
-    runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:generators")// Mekanism: Generators
-    runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:tools")// Mekanism: Tools
 
     compileOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
-    runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
-    runtimeOnly fg.deobf("curse.maven:spark-361579:3767277")
+    if(include_optimization_mods.toBoolean()) {
+        runtimeOnly fg.deobf("curse.maven:roadrunner-529754:3683120")
+        runtimeOnly fg.deobf("curse.maven:starlight-529754:3683120")
+        runtimeOnly fg.deobf("curse.maven:rubidium-574856:3949659")
+        runtimeOnly fg.deobf("curse.maven:noexperimental-407174:3188120")
+        runtimeOnly fg.deobf("curse.maven:spark-361579:3767277")
+        runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
+    }
+
+    if(include_content_mods.toBoolean()) {
+        runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}")// core
+        runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:generators")// Mekanism: Generators
+        runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:tools")// Mekanism: Tools
+    }
 
     compileOnly fg.deobf("curse.maven:refinedstorage-243076:3807951")
 }

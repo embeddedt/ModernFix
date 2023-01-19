@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.core;
 
 import cpw.mods.modlauncher.*;
+import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -15,6 +16,7 @@ import java.io.File;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
+import java.net.URLClassLoader;
 import java.util.*;
 import java.util.function.Function;
 
@@ -25,6 +27,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     public static ModernFixEarlyConfig config = null;
 
     private static final boolean USE_TRANSFORMER_CACHE = false;
+    private static final boolean USE_CLASS_LOCATION_CACHE = false;
 
     public ModernFixMixinPlugin() {
         /* We abuse the constructor of a mixin plugin as a safe location to start modifying the classloader */
@@ -43,13 +46,20 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 TransformerAuditTrail trail = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "auditTrail");
                 classTransformerField.set(loader, new ModernFixCachingClassTransformer(store, pluginHandler, (TransformingClassLoader)loader, trail));
             }
-            Field resourceFinderField = TransformingClassLoader.class.getDeclaredField("resourceFinder");
-            /* Construct a new list of resource finders, using similar logic to ML */
-            resourceFinderField.setAccessible(true);
-            Function<String, Enumeration<URL>> resourceFinder = constructResourceFinder();
-            resourceFinderField.set(loader, resourceFinder);
-        } catch(ReflectiveOperationException e) {
-            e.printStackTrace();
+            if(USE_CLASS_LOCATION_CACHE) {
+                Field resourceFinderField = TransformingClassLoader.class.getDeclaredField("resourceFinder");
+                /* Construct a new list of resource finders, using similar logic to ML */
+                resourceFinderField.setAccessible(true);
+                Function<String, Enumeration<URL>> resourceFinder = constructResourceFinder();
+                /* Merge with the findResources implementation provided by the DelegatedClassLoader */
+                Field dclField = TransformingClassLoader.class.getDeclaredField("delegatedClassLoader");
+                dclField.setAccessible(true);
+                URLClassLoader dcl = (URLClassLoader)dclField.get(loader);
+                resourceFinder = EnumerationHelper.mergeFunctors(resourceFinder, LamdbaExceptionUtils.rethrowFunction(dcl::findResources));
+                resourceFinderField.set(loader, resourceFinder);
+            }
+        } catch(RuntimeException | ReflectiveOperationException e) {
+            logger.error("Failed to make classloading changes", e);
         }
     }
 
@@ -66,10 +76,10 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         Function<String, Enumeration<URL>> resourceEnumeratorLocator = ModernFixResourceFinder::findAllURLsForResource;
         for(TransformationServiceDecorator decorator : serviceLookup.values()) {
             Function<String, Optional<URL>> func = (Function<String, Optional<URL>>)getClassLoaderMethod.invoke(decorator);
-            if(func != null)
+            if(func != null) {
                 resourceEnumeratorLocator = EnumerationHelper.mergeFunctors(resourceEnumeratorLocator, EnumerationHelper.fromOptional(func));
+            }
         }
-        System.out.println(EnumerationHelper.firstElementOrNull(resourceEnumeratorLocator.apply("net.minecraft.client.Minecraft")));
         return resourceEnumeratorLocator;
     }
 

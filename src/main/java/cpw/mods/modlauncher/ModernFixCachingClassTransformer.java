@@ -41,6 +41,8 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
 
     private ConcurrentHashMap<String, Pair<List<byte[]>, byte[]>> transformationCache;
 
+    public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
     private static File childFile(File file) {
         file.getParentFile().mkdirs();
         return file;
@@ -85,6 +87,19 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
         this.transformationCache = new ConcurrentHashMap<>();
         try(ObjectInputStream inStream = new ObjectInputStream(new FileInputStream(CLASS_CACHE_DAT))) {
             this.transformationCache = (ConcurrentHashMap<String, Pair<List<byte[]>,byte[]>>)inStream.readObject();
+            /* Deduplicate any empty byte arrays to minimize impact of empty classes */
+            List<String> keys = new ArrayList<>(this.transformationCache.keySet());
+            for(String key : keys) {
+                Pair<List<byte[]>,byte[]> pair = this.transformationCache.get(key);
+                for(int i = 0; i < pair.getLeft().size(); i++) {
+                    if(pair.getLeft().get(i).length == 0) {
+                        pair.getLeft().set(i, EMPTY_BYTE_ARRAY);
+                    }
+                }
+                if(pair.getRight().length == 0) {
+                    this.transformationCache.put(key, Pair.of(pair.getLeft(), EMPTY_BYTE_ARRAY));
+                }
+            }
             int size = 0;
             /* Approximate the size in bytes */
             for(Map.Entry<String, Pair<List<byte[]>,byte[]>> entry : this.transformationCache.entrySet()) {
@@ -172,6 +187,8 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
                    LOGGER.warn("Hashes have changed, discarding cached version of " + name);
                }
                byte[] transformed = super.transform(inputClass, name, reason);
+               if(transformed.length == 0)
+                   transformed = EMPTY_BYTE_ARRAY; /* deduplicate */
                return Pair.of(hashList, transformed);
             }
         }).getRight();

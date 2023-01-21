@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.classloading.hashers;
 
 import com.google.common.collect.HashMultimap;
 import com.google.common.io.Resources;
+import cpw.mods.modlauncher.ModernFixCachingClassTransformer;
 import org.spongepowered.asm.launch.IClassProcessor;
 import org.spongepowered.asm.launch.MixinLaunchPluginLegacy;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -92,6 +93,6 @@ public class MixinTransformerHasher {
                 }
             }
         }
-        return hashesByClass.getOrDefault(className, new byte[0]);
+        return hashesByClass.getOrDefault(className, ModernFixCachingClassTransformer.EMPTY_BYTE_ARRAY);
     }
 }

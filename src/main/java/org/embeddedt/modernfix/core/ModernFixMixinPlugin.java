@@ -13,6 +13,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -25,9 +26,6 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     private final Logger logger = LogManager.getLogger("ModernFix");
     public static ModernFixEarlyConfig config = null;
-
-    private static final boolean USE_TRANSFORMER_CACHE = false;
-    private static final boolean USE_CLASS_LOCATION_CACHE = false;
 
     public ModernFixMixinPlugin() {
         try {
@@ -53,7 +51,11 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 TransformStore store = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "transformers");
                 LaunchPluginHandler pluginHandler = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "pluginHandler");
                 TransformerAuditTrail trail = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "auditTrail");
-                classTransformerField.set(loader, new ModernFixCachingClassTransformer(store, pluginHandler, (TransformingClassLoader)loader, trail));
+                Class<?> newTransformerClass = Class.forName("cpw.mods.modlauncher.ModernFixCachingClassTransformer", true, ClassTransformer.class.getClassLoader());
+                Constructor<?> constructor = newTransformerClass.getConstructor(TransformStore.class, LaunchPluginHandler.class, TransformingClassLoader.class, TransformerAuditTrail.class);
+                ClassTransformer newTransformer = (ClassTransformer)constructor.newInstance(store, pluginHandler, loader, trail);
+                classTransformerField.set(loader, newTransformer);
+                logger.info("Successfully injected caching transformer");
             }
             if(isOptionEnabled("launch.class_search_cache.ModernFixResourceFinder")) {
                 Field resourceFinderField = TransformingClassLoader.class.getDeclaredField("resourceFinder");

@@ -27,6 +27,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.classloading.api.IHashableTransformer;
 import org.embeddedt.modernfix.classloading.hashers.CoreModTransformerHasher;
 import org.embeddedt.modernfix.classloading.hashers.MixinTransformerHasher;
+import org.embeddedt.modernfix.util.FileUtil;
 import org.objectweb.asm.Type;
 import org.spongepowered.asm.launch.MixinLaunchPluginLegacy;
 
@@ -35,7 +36,7 @@ import javax.lang.model.SourceVersion;
 public class ModernFixCachingClassTransformer extends ClassTransformer {
     private static final Logger LOGGER = LogManager.getLogger("ModernFixCachingTransformer");
 
-    private final File CLASS_CACHE_FOLDER = childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classCacheV1").toFile());
+    private final File CLASS_CACHE_FOLDER = FileUtil.childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classCacheV1").toFile());
     private final LaunchPluginHandler pluginHandler;
     private final Map<String, ILaunchPluginService> plugins;
     private final TransformStore transformStore;
@@ -55,11 +56,6 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
             throw new RuntimeException(e);
         }
     });
-
-    private static File childFile(File file) {
-        file.getParentFile().mkdirs();
-        return file;
-    }
 
     public ModernFixCachingClassTransformer(TransformStore transformStore, LaunchPluginHandler pluginHandler, TransformingClassLoader transformingClassLoader, TransformerAuditTrail trail) {
         super(transformStore, pluginHandler, transformingClassLoader, trail);

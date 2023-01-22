@@ -28,6 +28,7 @@ public class MixinTransformerHasher {
     }
 
     public static byte[] obtainHash(MixinLaunchPluginLegacy plugin, String className) {
+        /* FIXME runs too early right now, and therefore doesn't pick up the list of mixins correctly */
         synchronized (MixinTransformerHasher.class) {
             if(hashesByClass == null) {
                 hashesByClass = new HashMap<>();

@@ -6,6 +6,7 @@ import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ForkJoinPool;
 
 import cpw.mods.modlauncher.api.ITransformer;
 import cpw.mods.modlauncher.api.ITransformerActivity;
@@ -30,30 +31,21 @@ import javax.lang.model.SourceVersion;
 public class ModernFixCachingClassTransformer extends ClassTransformer {
     private static final Logger LOGGER = LogManager.getLogger("ModernFixCachingTransformer");
 
-    private final File CLASS_CACHE_DAT = childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classTransformerV1.cache").toFile());
+    private final File CLASS_CACHE_FOLDER = childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classCacheV1").toFile());
     private final LaunchPluginHandler pluginHandler;
     private final TransformStore transformStore;
     private final TransformerAuditTrail auditTrail;
     private final TransformingClassLoader transformingClassLoader;
     private final HashMap<String, List<ITransformer<?>>> transformersByClass;
 
-    private static final int MAX_NUM_CLASSES = 10000;
-
     private ConcurrentHashMap<String, Pair<List<byte[]>, byte[]>> transformationCache;
+    private ForkJoinPool classSaverPool = ForkJoinPool.commonPool();
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
 
     private static File childFile(File file) {
         file.getParentFile().mkdirs();
         return file;
-    }
-
-    public static boolean isValidClassName(String className) {
-        final String DOT_PACKAGE_INFO = ".package-info";
-        if(className.endsWith(DOT_PACKAGE_INFO)) {
-            className = className.substring(0, className.length() - DOT_PACKAGE_INFO.length());
-        }
-        return SourceVersion.isName(className);
     }
 
     public ModernFixCachingClassTransformer(TransformStore transformStore, LaunchPluginHandler pluginHandler, TransformingClassLoader transformingClassLoader, TransformerAuditTrail trail) {
@@ -84,43 +76,6 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
         } catch(ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }
-        this.transformationCache = new ConcurrentHashMap<>();
-        try(ObjectInputStream inStream = new ObjectInputStream(new FileInputStream(CLASS_CACHE_DAT))) {
-            this.transformationCache = (ConcurrentHashMap<String, Pair<List<byte[]>,byte[]>>)inStream.readObject();
-            /* Deduplicate any empty byte arrays to minimize impact of empty classes */
-            List<String> keys = new ArrayList<>(this.transformationCache.keySet());
-            for(String key : keys) {
-                Pair<List<byte[]>,byte[]> pair = this.transformationCache.get(key);
-                for(int i = 0; i < pair.getLeft().size(); i++) {
-                    if(pair.getLeft().get(i).length == 0) {
-                        pair.getLeft().set(i, EMPTY_BYTE_ARRAY);
-                    }
-                }
-                if(pair.getRight().length == 0) {
-                    this.transformationCache.put(key, Pair.of(pair.getLeft(), EMPTY_BYTE_ARRAY));
-                }
-            }
-            int size = 0;
-            /* Approximate the size in bytes */
-            for(Map.Entry<String, Pair<List<byte[]>,byte[]>> entry : this.transformationCache.entrySet()) {
-                size += entry.getKey().length();
-                size += entry.getValue().getRight().length;
-                for(byte[] hash : entry.getValue().getLeft()) {
-                    size += hash.length;
-                }
-            }
-            LOGGER.info("Loaded transformer cache, contains " + this.transformationCache.size() + " classes and in-memory size is approximately " + FileUtils.byteCountToDisplaySize(size));
-        } catch(IOException | ClassNotFoundException e) {
-            LOGGER.error("An error occured while loading transform cache", e);
-        }
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            LOGGER.info("Serializing transform cache to disk");
-            try(ObjectOutputStream outStream = new ObjectOutputStream(new FileOutputStream(CLASS_CACHE_DAT))) {
-                outStream.writeObject(transformationCache);
-            } catch(IOException e) {
-                LOGGER.error("An error occured while serializing transform cache", e);
-            }
-        }, "ModernFix transformer shutdown thread"));
     }
 
     /**
@@ -169,28 +124,38 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
             }
         }
         /* Check if the cache contains a transformed class matching these hashes */
-        Pair<List<byte[]>, byte[]> oldPair = transformationCache.get(className);
+        /* TODO maybe sanitize the class name? */
+        File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/'));
         boolean hashesMatch = true;
-        if(oldPair == null || oldPair.getLeft().size() != hashList.size()) {
-            hashesMatch = false;
-        } else {
-            for(int i = 0; i < oldPair.getLeft().size(); i++) {
-                if(!Arrays.equals(oldPair.getLeft().get(i), hashList.get(i))) {
+        try(ObjectInputStream stream = new ObjectInputStream(new FileInputStream(cacheLocation))) {
+            ArrayList<byte[]> savedHash = (ArrayList<byte[]>)stream.readObject();
+            for(int i = 0; i < savedHash.size(); i++) {
+                if(!Arrays.equals(savedHash.get(i), hashList.get(i))) {
                     hashesMatch = false;
+                    break;
                 }
             }
+            if(hashesMatch)
+                inputClass = (byte[])stream.readObject();
+        } catch(IOException | ClassNotFoundException | ClassCastException e) {
+            if(!(e instanceof FileNotFoundException))
+                e.printStackTrace();
+            hashesMatch = false;
         }
         if(!hashesMatch) {
-            if(oldPair != null) {
-                LOGGER.warn("Hashes have changed, discarding cached version of " + className);
-            }
-            byte[] transformed = super.transform(inputClass, className, reason);
-            if(transformed.length == 0)
-                transformed = EMPTY_BYTE_ARRAY; /* deduplicate */
-            oldPair = Pair.of(hashList, transformed);
-            transformationCache.put(className, oldPair);
+            inputClass = super.transform(inputClass, className, reason);
+            final byte[] classToSave = inputClass;
+            classSaverPool.submit(() -> {
+                cacheLocation.getParentFile().mkdirs();
+                try(ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(cacheLocation))) {
+                    stream.writeObject(hashList);
+                    stream.writeObject(classToSave);
+                } catch(IOException e) {
+                    e.printStackTrace();
+                }
+            });
         }
-        return oldPair.getRight();
+        return inputClass;
     }
 
     private final byte[] FORGE_HASH = LoadingModList.get().getModFileById("forge").getMods().get(0).getVersion().toString().getBytes(StandardCharsets.UTF_8);

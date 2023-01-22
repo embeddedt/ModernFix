@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.classloading.hashers;
 
+import cpw.mods.modlauncher.ModernFixCachingClassTransformer;
 import net.minecraftforge.coremod.CoreMod;
 import net.minecraftforge.coremod.transformer.CoreModBaseTransformer;
 
@@ -13,13 +14,6 @@ import java.util.concurrent.ConcurrentHashMap;
 public class CoreModTransformerHasher {
     private static final ConcurrentHashMap<CoreMod, byte[]> hashForCoremod;
     private static Field coremodField;
-    private static ThreadLocal<MessageDigest> coremodHasher = ThreadLocal.withInitial(() -> {
-        try {
-            return MessageDigest.getInstance("SHA-256");
-        } catch(NoSuchAlgorithmException e) {
-            throw new RuntimeException(e);
-        }
-    });
 
     static {
         hashForCoremod = new ConcurrentHashMap<>();
@@ -38,10 +32,9 @@ public class CoreModTransformerHasher {
         } catch(IOException e) {
             throw new RuntimeException(e);
         }
-        MessageDigest hasher = coremodHasher.get();
-        byte[] hash = hasher.digest(coreModContents);
+        MessageDigest hasher = ModernFixCachingClassTransformer.systemHasher.get();
         hasher.reset();
-        return hash;
+        return hasher.digest(coreModContents);
     }
 
     public static byte[] obtainHash(CoreModBaseTransformer<?> transformer) {

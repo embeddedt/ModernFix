@@ -1,12 +1,11 @@
 package org.embeddedt.modernfix.classloading.hashers;
 
-import com.google.common.collect.HashMultimap;
 import com.google.common.io.Resources;
 import cpw.mods.modlauncher.ModernFixCachingClassTransformer;
 import org.spongepowered.asm.launch.IClassProcessor;
 import org.spongepowered.asm.launch.MixinLaunchPluginLegacy;
+import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
-import org.spongepowered.asm.service.MixinService;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -18,6 +17,10 @@ import java.util.*;
 public class MixinTransformerHasher {
     private static HashMap<String, byte[]> hashesByClass = null;
     private final static MessageDigest hasher;
+
+    private static Field processorsListField, transformerField, processorField, environmentField;
+
+    private static final byte[] NO_MIXINS = new byte[] {(byte)0xde, (byte)0xad, (byte)0xbe, (byte)0xef};
 
     static {
         try {
@@ -31,12 +34,12 @@ public class MixinTransformerHasher {
         /* FIXME runs too early right now, and therefore doesn't pick up the list of mixins correctly */
         synchronized (MixinTransformerHasher.class) {
             if(hashesByClass == null) {
-                hashesByClass = new HashMap<>();
-                HashMap<String, ArrayList<IMixinInfo>> mixinsByClass = new HashMap<>();
                 try {
-                    Field processorsField = MixinLaunchPluginLegacy.class.getDeclaredField("processors");
-                    processorsField.setAccessible(true);
-                    List<IClassProcessor> processors = (List<IClassProcessor>)processorsField.get(plugin);
+                    if(processorsListField == null) {
+                        processorsListField = MixinLaunchPluginLegacy.class.getDeclaredField("processors");
+                        processorsListField.setAccessible(true);
+                    }
+                    List<IClassProcessor> processors = (List<IClassProcessor>) processorsListField.get(plugin);
                     Object transformHandler = null;
                     for(IClassProcessor processor : processors) {
                         if(processor.getClass().getName().equals("org.spongepowered.asm.service.modlauncher.MixinTransformationHandler")) {
@@ -46,12 +49,24 @@ public class MixinTransformerHasher {
                     }
                     if(transformHandler == null)
                         throw new IllegalStateException("Mixin transform handler not found");
-                    Field transformerField = transformHandler.getClass().getDeclaredField("transformer");
-                    transformerField.setAccessible(true);
+                    if(transformerField == null) {
+                        transformerField = transformHandler.getClass().getDeclaredField("transformer");
+                        transformerField.setAccessible(true);
+                    }
                     Object transformer = transformerField.get(transformHandler);
-                    Field processorField = transformer.getClass().getDeclaredField("processor");
-                    processorField.setAccessible(true);
+                    if(processorField == null) {
+                        processorField = transformer.getClass().getDeclaredField("processor");
+                        processorField.setAccessible(true);
+                    }
                     Object processor = processorField.get(transformer);
+                    if(environmentField == null) {
+                        environmentField = processor.getClass().getDeclaredField("currentEnvironment");
+                        environmentField.setAccessible(true);
+                    }
+                    MixinEnvironment currentEnv = (MixinEnvironment)environmentField.get(processor);
+                    if(currentEnv == null || currentEnv.getPhase() != MixinEnvironment.Phase.DEFAULT) {
+                        return null; /* no hash obtained until mixin is ready */
+                    }
                     Field configsField = processor.getClass().getDeclaredField("configs");
                     configsField.setAccessible(true);
                     List<?> configs = (List<?>)configsField.get(processor);
@@ -60,6 +75,7 @@ public class MixinTransformerHasher {
                     /* getTargetClasses can't be used because it's package-private */
                     Field classNamesField = Class.forName("org.spongepowered.asm.mixin.transformer.MixinInfo").getDeclaredField("targetClassNames");
                     classNamesField.setAccessible(true);
+                    HashMap<String, ArrayList<IMixinInfo>> mixinsByClass = new HashMap<>();
                     for(Object config : configs) {
                         List<? extends IMixinInfo> mixins = (List<? extends IMixinInfo>)mixinsField.get(config);
                         for(IMixinInfo mixin : mixins) {
@@ -73,6 +89,7 @@ public class MixinTransformerHasher {
                         infos.sort((info1, info2) -> Comparator.<String>naturalOrder().compare(info1.getClassName(), info2.getClassName()));
                     }
                     /* Now go through each class name and hash it */
+                    HashMap<String, byte[]> hashesByClassInit = new HashMap<>();
                     for(Map.Entry<String, ArrayList<IMixinInfo>> mixinsForClass : mixinsByClass.entrySet()) {
                         hasher.reset();
                         for(IMixinInfo mixin : mixinsForClass.getValue()) {
@@ -87,13 +104,14 @@ public class MixinTransformerHasher {
                             }
                             hasher.update(bytecode);
                         }
-                        hashesByClass.put(mixinsForClass.getKey().replace('/', '.'), hasher.digest());
+                        hashesByClassInit.put(mixinsForClass.getKey().replace('/', '.'), hasher.digest());
                     }
+                    hashesByClass = hashesByClassInit;
                 } catch(ReflectiveOperationException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
-        return hashesByClass.getOrDefault(className, ModernFixCachingClassTransformer.EMPTY_BYTE_ARRAY);
+        return hashesByClass.getOrDefault(className, NO_MIXINS);
     }
 }

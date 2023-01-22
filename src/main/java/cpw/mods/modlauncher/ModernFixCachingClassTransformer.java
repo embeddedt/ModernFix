@@ -4,8 +4,12 @@ import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ForkJoinPool;
 
 import cpw.mods.modlauncher.api.ITransformer;
@@ -43,6 +47,14 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
     private ForkJoinPool classSaverPool = ForkJoinPool.commonPool();
 
     public static final byte[] EMPTY_BYTE_ARRAY = new byte[0];
+
+    public static ThreadLocal<MessageDigest> systemHasher = ThreadLocal.withInitial(() -> {
+        try {
+            return MessageDigest.getInstance("SHA-256");
+        } catch(NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
+        }
+    });
 
     private static File childFile(File file) {
         file.getParentFile().mkdirs();
@@ -82,12 +94,12 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
         }
     }
 
-    private ArrayList<byte[]> computeHash(String className, boolean isEmpty, String reason) {
+    private ArrayList<byte[]> computeHash(String className, byte[] inputClass, String reason) {
         final String internalName = className.replace('.', '/');
         final Type classDesc = Type.getObjectType(internalName);
         ArrayList<ILaunchPluginService> pluginList = new ArrayList<>();
         for(ILaunchPluginService plugin : plugins.values()) {
-            if(!plugin.handlesClass(classDesc, isEmpty, reason).isEmpty()) {
+            if(!plugin.handlesClass(classDesc, inputClass.length == 0, reason).isEmpty()) {
                 pluginList.add(plugin);
             }
         }
@@ -117,6 +129,10 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
                 }
             }
         }
+        /* Hash the class itself last, so that we bail out early if plugins can't hash */
+        MessageDigest hasher = systemHasher.get();
+        hasher.reset();
+        hashList.add(hasher.digest(inputClass));
         return hashList;
     }
 
@@ -132,42 +148,52 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
     public byte[] transform(byte[] inputClass, String className, String reason) {
         /* We only want to cache actual transformations */
         if(ITransformerActivity.CLASSLOADING_REASON.equals(reason)) {
-            ArrayList<byte[]> hashList = computeHash(className, inputClass.length == 0, reason);
-            if(hashList != null) {
-                /* Check if the cache contains a transformed class matching these hashes */
-                /* TODO maybe sanitize the class name? */
-                File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/'));
-                boolean hashesMatch = true;
-                try(ObjectInputStream stream = new ObjectInputStream(new FileInputStream(cacheLocation))) {
-                    ArrayList<byte[]> savedHash = (ArrayList<byte[]>)stream.readObject();
+            final byte[] classToHash = inputClass;
+            CompletableFuture<ArrayList<byte[]>> futureHashList = CompletableFuture.supplyAsync(() -> computeHash(className, classToHash, reason), ForkJoinPool.commonPool());
+            ArrayList<byte[]> hashList = null;
+            /* Check if the cache contains a transformed class matching these hashes */
+            /* TODO maybe sanitize the class name? */
+            File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/'));
+            boolean hashesMatch = true;
+            try(ObjectInputStream stream = new ObjectInputStream(new FileInputStream(cacheLocation))) {
+                ArrayList<byte[]> savedHash = (ArrayList<byte[]>)stream.readObject();
+                byte[] savedInputClass = (byte[])stream.readObject();
+                hashList = futureHashList.get();
+                if(hashList != null) {
                     for(int i = 0; i < savedHash.size(); i++) {
                         if(!Arrays.equals(savedHash.get(i), hashList.get(i))) {
                             hashesMatch = false;
                             break;
                         }
                     }
-                    if(hashesMatch)
-                        inputClass = (byte[])stream.readObject();
-                } catch(IOException | ClassNotFoundException | ClassCastException e) {
-                    if(!(e instanceof FileNotFoundException))
-                        e.printStackTrace();
+                } else
                     hashesMatch = false;
-                }
-                if(!hashesMatch) {
-                    inputClass = super.transform(inputClass, className, reason);
+                if(hashesMatch)
+                    inputClass = savedInputClass;
+            } catch(IOException | ClassNotFoundException | ClassCastException | InterruptedException |
+                    ExecutionException e) {
+                if(!(e instanceof FileNotFoundException))
+                    e.printStackTrace();
+                hashesMatch = false;
+            }
+            if(!hashesMatch) {
+                inputClass = super.transform(inputClass, className, reason);
+                if(hashList != null) {
                     final byte[] classToSave = inputClass;
+                    final ArrayList<byte[]> hashListToSave = hashList;
                     classSaverPool.submit(() -> {
                         cacheLocation.getParentFile().mkdirs();
                         try(ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(cacheLocation))) {
-                            stream.writeObject(hashList);
+                            stream.writeObject(hashListToSave);
                             stream.writeObject(classToSave);
                         } catch(IOException e) {
                             e.printStackTrace();
                         }
                     });
                 }
-                return inputClass;
+
             }
+            return inputClass;
         }
         return super.transform(inputClass, className, reason);
     }

@@ -59,23 +59,6 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             throw new IllegalStateException("Expected a TransformingClassLoader");
         }
         try {
-            if(isOptionEnabled("launch.transformer_cache.ModernFixClassTransformer")) {
-                Field classTransformerField = TransformingClassLoader.class.getDeclaredField("classTransformer");
-                classTransformerField.setAccessible(true);
-                ClassTransformer t = (ClassTransformer)classTransformerField.get(loader);
-                TransformStore store = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "transformers");
-                LaunchPluginHandler pluginHandler = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "pluginHandler");
-                TransformerAuditTrail trail = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "auditTrail");
-                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.api.IHashableTransformer");
-                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.CoreModTransformerHasher");
-                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.MixinTransformerHasher");
-                Class<?> newTransformerClass = injectClassIntoSystemLoader("cpw.mods.modlauncher.ModernFixCachingClassTransformer");
-                Constructor<?> constructor = newTransformerClass.getConstructor(TransformStore.class, LaunchPluginHandler.class, TransformingClassLoader.class, TransformerAuditTrail.class);
-                ClassTransformer newTransformer = (ClassTransformer)constructor.newInstance(store, pluginHandler, loader, trail);
-                classTransformerField.set(loader, newTransformer);
-
-                logger.info("Successfully injected caching transformer");
-            }
             if(isOptionEnabled("launch.class_search_cache.ModernFixResourceFinder")) {
                 Field resourceFinderField = TransformingClassLoader.class.getDeclaredField("resourceFinder");
                 /* Construct a new list of resource finders, using similar logic to ML */
@@ -88,7 +71,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 resourceFinder = EnumerationHelper.mergeFunctors(resourceFinder, LamdbaExceptionUtils.rethrowFunction(dcl::findResources));
                 resourceFinderField.set(loader, resourceFinder);
             }
-        } catch(RuntimeException | ReflectiveOperationException | IOException e) {
+        } catch(RuntimeException | ReflectiveOperationException e) {
             logger.error("Failed to make classloading changes", e);
         }
     }
@@ -127,7 +110,28 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
+        try {
+            if(isOptionEnabled("launch.transformer_cache.ModernFixClassTransformer")) {
+                ClassLoader loader = Thread.currentThread().getContextClassLoader();
+                Field classTransformerField = TransformingClassLoader.class.getDeclaredField("classTransformer");
+                classTransformerField.setAccessible(true);
+                ClassTransformer t = (ClassTransformer)classTransformerField.get(loader);
+                TransformStore store = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "transformers");
+                LaunchPluginHandler pluginHandler = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "pluginHandler");
+                TransformerAuditTrail trail = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "auditTrail");
+                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.api.IHashableTransformer");
+                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.CoreModTransformerHasher");
+                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.MixinTransformerHasher");
+                Class<?> newTransformerClass = injectClassIntoSystemLoader("cpw.mods.modlauncher.ModernFixCachingClassTransformer");
+                Constructor<?> constructor = newTransformerClass.getConstructor(TransformStore.class, LaunchPluginHandler.class, TransformingClassLoader.class, TransformerAuditTrail.class);
+                ClassTransformer newTransformer = (ClassTransformer)constructor.newInstance(store, pluginHandler, loader, trail);
+                classTransformerField.set(loader, newTransformer);
 
+                logger.info("Successfully injected caching transformer");
+            }
+        } catch(RuntimeException | ReflectiveOperationException | IOException e) {
+            logger.error("Failed to make classloading changes", e);
+        }
     }
 
     @Override

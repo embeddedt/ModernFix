@@ -19,12 +19,9 @@
     "perf.boost_worker_count.UtilMixin",
     "perf.thread_priorities.UtilMixin",
     "perf.preload_block_classes.GameDataMixin",
-    "perf.parallel_potentially_unsafe.parallel_deferred_suppliers.DeferredRegisterMixin",
-    "perf.parallel_potentially_unsafe.parallel_deferred_suppliers.EventDispatcherMixin",
     "perf.parallel_blockstate_cache_rebuild.BlocksMixin",
     "perf.parallel_blockstate_cache_rebuild.BlockCallbacksMixin",
     "perf.parallel_blockstate_cache_rebuild.ShapeCacheMixin",
-    "perf.parallel_potentially_unsafe.parallel_deferred_suppliers.DispenserBlockMixin",
     "perf.deduplicate_location.MixinResourceLocation"
   ],
   "client": [

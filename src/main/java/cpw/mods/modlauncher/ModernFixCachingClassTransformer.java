@@ -82,6 +82,44 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
         }
     }
 
+    private ArrayList<byte[]> computeHash(String className, boolean isEmpty, String reason) {
+        final String internalName = className.replace('.', '/');
+        final Type classDesc = Type.getObjectType(internalName);
+        ArrayList<ILaunchPluginService> pluginList = new ArrayList<>();
+        for(ILaunchPluginService plugin : plugins.values()) {
+            if(!plugin.handlesClass(classDesc, isEmpty, reason).isEmpty()) {
+                pluginList.add(plugin);
+            }
+        }
+        final boolean needsTransforming = transformStore.needsTransforming(internalName);
+        if (!needsTransforming && pluginList.isEmpty()) {
+            return null;
+        }
+        /* Now compute the hash list for the required transformers */
+        ArrayList<byte[]> hashList = new ArrayList<>();
+        pluginList.sort((service1, service2) -> Comparator.<String>naturalOrder().compare(service1.name(), service2.name()));
+        for(ILaunchPluginService service : pluginList) {
+            byte[] hash = obtainHash(service, className);
+            if(hash == null) {
+                return null;
+            }
+            hashList.add(hash);
+        }
+        if(needsTransforming) {
+            List<ITransformer<?>> transformers = this.transformersByClass.get(internalName);
+            if(transformers != null) {
+                for(ITransformer<?> transformer : transformers) {
+                    byte[] hash = obtainHash(transformer, className);
+                    if(hash == null) {
+                        return null;
+                    }
+                    hashList.add(hash);
+                }
+            }
+        }
+        return hashList;
+    }
+
     /**
      * Check the hashed list of transformers and use a cached version of the class if possible. This code needs
      * to be very fast as the entire point is to spend very little time doing transformation work that was done before.
@@ -93,76 +131,45 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
     @Override
     public byte[] transform(byte[] inputClass, String className, String reason) {
         /* We only want to cache actual transformations */
-        if(!ITransformerActivity.CLASSLOADING_REASON.equals(reason)) {
-            return super.transform(inputClass, className, reason);
-        }
-        final String internalName = className.replace('.', '/');
-        final Type classDesc = Type.getObjectType(internalName);
-        ArrayList<ILaunchPluginService> pluginList = new ArrayList<>();
-        for(ILaunchPluginService plugin : plugins.values()) {
-            if(!plugin.handlesClass(classDesc, inputClass.length == 0, reason).isEmpty()) {
-                pluginList.add(plugin);
-            }
-        }
-        final boolean needsTransforming = transformStore.needsTransforming(internalName);
-        if (!needsTransforming && pluginList.isEmpty()) {
-            return inputClass;
-        }
-        /* Now compute the hash list for the required transformers */
-        ArrayList<byte[]> hashList = new ArrayList<>();
-        pluginList.sort((service1, service2) -> Comparator.<String>naturalOrder().compare(service1.name(), service2.name()));
-        for(ILaunchPluginService service : pluginList) {
-            byte[] hash = obtainHash(service, className);
-            if(hash == null) {
-                return super.transform(inputClass, className, reason);
-            }
-            hashList.add(hash);
-        }
-        if(needsTransforming) {
-            List<ITransformer<?>> transformers = this.transformersByClass.get(internalName);
-            if(transformers != null) {
-                for(ITransformer<?> transformer : transformers) {
-                    byte[] hash = obtainHash(transformer, className);
-                    if(hash == null) {
-                        return super.transform(inputClass, className, reason);
+        if(ITransformerActivity.CLASSLOADING_REASON.equals(reason)) {
+            ArrayList<byte[]> hashList = computeHash(className, inputClass.length == 0, reason);
+            if(hashList != null) {
+                /* Check if the cache contains a transformed class matching these hashes */
+                /* TODO maybe sanitize the class name? */
+                File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/'));
+                boolean hashesMatch = true;
+                try(ObjectInputStream stream = new ObjectInputStream(new FileInputStream(cacheLocation))) {
+                    ArrayList<byte[]> savedHash = (ArrayList<byte[]>)stream.readObject();
+                    for(int i = 0; i < savedHash.size(); i++) {
+                        if(!Arrays.equals(savedHash.get(i), hashList.get(i))) {
+                            hashesMatch = false;
+                            break;
+                        }
                     }
-                    hashList.add(hash);
-                }
-            }
-        }
-        /* Check if the cache contains a transformed class matching these hashes */
-        /* TODO maybe sanitize the class name? */
-        File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/'));
-        boolean hashesMatch = true;
-        try(ObjectInputStream stream = new ObjectInputStream(new FileInputStream(cacheLocation))) {
-            ArrayList<byte[]> savedHash = (ArrayList<byte[]>)stream.readObject();
-            for(int i = 0; i < savedHash.size(); i++) {
-                if(!Arrays.equals(savedHash.get(i), hashList.get(i))) {
+                    if(hashesMatch)
+                        inputClass = (byte[])stream.readObject();
+                } catch(IOException | ClassNotFoundException | ClassCastException e) {
+                    if(!(e instanceof FileNotFoundException))
+                        e.printStackTrace();
                     hashesMatch = false;
-                    break;
                 }
+                if(!hashesMatch) {
+                    inputClass = super.transform(inputClass, className, reason);
+                    final byte[] classToSave = inputClass;
+                    classSaverPool.submit(() -> {
+                        cacheLocation.getParentFile().mkdirs();
+                        try(ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(cacheLocation))) {
+                            stream.writeObject(hashList);
+                            stream.writeObject(classToSave);
+                        } catch(IOException e) {
+                            e.printStackTrace();
+                        }
+                    });
+                }
+                return inputClass;
             }
-            if(hashesMatch)
-                inputClass = (byte[])stream.readObject();
-        } catch(IOException | ClassNotFoundException | ClassCastException e) {
-            if(!(e instanceof FileNotFoundException))
-                e.printStackTrace();
-            hashesMatch = false;
         }
-        if(!hashesMatch) {
-            inputClass = super.transform(inputClass, className, reason);
-            final byte[] classToSave = inputClass;
-            classSaverPool.submit(() -> {
-                cacheLocation.getParentFile().mkdirs();
-                try(ObjectOutputStream stream = new ObjectOutputStream(new FileOutputStream(cacheLocation))) {
-                    stream.writeObject(hashList);
-                    stream.writeObject(classToSave);
-                } catch(IOException e) {
-                    e.printStackTrace();
-                }
-            });
-        }
-        return inputClass;
+        return super.transform(inputClass, className, reason);
     }
 
     private final byte[] FORGE_HASH = LoadingModList.get().getModFileById("forge").getMods().get(0).getVersion().toString().getBytes(StandardCharsets.UTF_8);

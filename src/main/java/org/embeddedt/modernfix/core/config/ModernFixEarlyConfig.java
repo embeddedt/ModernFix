@@ -32,6 +32,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.preload_block_classes", false);
         this.addMixinRule("perf.parallel_potentially_unsafe", false);
         this.addMixinRule("perf.parallel_blockstate_cache_rebuild", true);
+        this.addMixinRule("perf.deduplicate_location", true);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", false);

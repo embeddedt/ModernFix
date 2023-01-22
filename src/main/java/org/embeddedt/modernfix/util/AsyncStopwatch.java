@@ -21,6 +21,12 @@ public class AsyncStopwatch {
         watch.reset();
     }
 
+    public void ensureStoppedAsync() {
+        Stopwatch watch = threadStopwatch.get();
+        if(watch.isRunning())
+            stopMeasuringAsync();
+    }
+
     public long getCpuTime() {
         return cpuTimeMs.get();
     }

@@ -33,6 +33,7 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
 
     private final File CLASS_CACHE_FOLDER = childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classCacheV1").toFile());
     private final LaunchPluginHandler pluginHandler;
+    private final Map<String, ILaunchPluginService> plugins;
     private final TransformStore transformStore;
     private final TransformerAuditTrail auditTrail;
     private final TransformingClassLoader transformingClassLoader;
@@ -57,6 +58,9 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
         /* Build a lookup table of all transformers for a given class */
         this.transformersByClass = new HashMap<>();
         try {
+            Field pluginsField = LaunchPluginHandler.class.getDeclaredField("plugins");
+            pluginsField.setAccessible(true);
+            this.plugins = (Map<String, ILaunchPluginService>)pluginsField.get(this.pluginHandler);
             Field transformersByTypeField = TransformStore.class.getDeclaredField("transformers");
             transformersByTypeField.setAccessible(true);
             Field transformersMapField = TransformList.class.getDeclaredField("transformers");
@@ -94,22 +98,25 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
         }
         final String internalName = className.replace('.', '/');
         final Type classDesc = Type.getObjectType(internalName);
-        final EnumMap<ILaunchPluginService.Phase, List<ILaunchPluginService>> launchPluginTransformerSet = pluginHandler.computeLaunchPluginTransformerSet(classDesc, false, reason, this.auditTrail);
+        ArrayList<ILaunchPluginService> pluginList = new ArrayList<>();
+        for(ILaunchPluginService plugin : plugins.values()) {
+            if(!plugin.handlesClass(classDesc, inputClass.length == 0, reason).isEmpty()) {
+                pluginList.add(plugin);
+            }
+        }
         final boolean needsTransforming = transformStore.needsTransforming(internalName);
-        if (!needsTransforming && launchPluginTransformerSet.isEmpty()) {
+        if (!needsTransforming && pluginList.isEmpty()) {
             return inputClass;
         }
         /* Now compute the hash list for the required transformers */
         ArrayList<byte[]> hashList = new ArrayList<>();
-        for(List<ILaunchPluginService> pluginList : launchPluginTransformerSet.values()) {
-            pluginList.sort((service1, service2) -> Comparator.<String>naturalOrder().compare(service1.name(), service2.name()));
-            for(ILaunchPluginService service : pluginList) {
-                byte[] hash = obtainHash(service, className);
-                if(hash == null) {
-                    return super.transform(inputClass, className, reason);
-                }
-                hashList.add(hash);
+        pluginList.sort((service1, service2) -> Comparator.<String>naturalOrder().compare(service1.name(), service2.name()));
+        for(ILaunchPluginService service : pluginList) {
+            byte[] hash = obtainHash(service, className);
+            if(hash == null) {
+                return super.transform(inputClass, className, reason);
             }
+            hashList.add(hash);
         }
         if(needsTransforming) {
             List<ITransformer<?>> transformers = this.transformersByClass.get(internalName);

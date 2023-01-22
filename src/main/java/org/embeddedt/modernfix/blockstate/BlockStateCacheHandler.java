@@ -30,7 +30,7 @@ public class BlockStateCacheHandler {
         if(reason == BakeReason.FREEZE
                 || reason == BakeReason.REMOTE_SNAPSHOT_INJECT
                 || (reason == BakeReason.LOCAL_SNAPSHOT_INJECT && ModernFix.runningFirstInjection)) {
-            ((IBlockState)state).clearCache();
+            //((IBlockState)state).clearCache();
         } else {
             state.initCache();
         }

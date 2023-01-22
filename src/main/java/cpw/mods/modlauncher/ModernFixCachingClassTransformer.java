@@ -30,7 +30,7 @@ import javax.lang.model.SourceVersion;
 public class ModernFixCachingClassTransformer extends ClassTransformer {
     private static final Logger LOGGER = LogManager.getLogger("ModernFixCachingTransformer");
 
-    private static final File CLASS_CACHE_DAT = childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classTransformerV1.cache").toFile());
+    private final File CLASS_CACHE_DAT = childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classTransformerV1.cache").toFile());
     private final LaunchPluginHandler pluginHandler;
     private final TransformStore transformStore;
     private final TransformerAuditTrail auditTrail;
@@ -169,32 +169,31 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
             }
         }
         /* Check if the cache contains a transformed class matching these hashes */
-        return transformationCache.compute(className, (name, oldPair) -> {
-            boolean hashesMatch = true;
-            if(oldPair == null || oldPair.getLeft().size() != hashList.size()) {
-                hashesMatch = false;
-            } else {
-                for(int i = 0; i < oldPair.getLeft().size(); i++) {
-                    if(!Arrays.equals(oldPair.getLeft().get(i), hashList.get(i))) {
-                        hashesMatch = false;
-                    }
+        Pair<List<byte[]>, byte[]> oldPair = transformationCache.get(className);
+        boolean hashesMatch = true;
+        if(oldPair == null || oldPair.getLeft().size() != hashList.size()) {
+            hashesMatch = false;
+        } else {
+            for(int i = 0; i < oldPair.getLeft().size(); i++) {
+                if(!Arrays.equals(oldPair.getLeft().get(i), hashList.get(i))) {
+                    hashesMatch = false;
                 }
             }
-            if(hashesMatch)
-               return oldPair;
-            else {
-               if(oldPair != null) {
-                   LOGGER.warn("Hashes have changed, discarding cached version of " + name);
-               }
-               byte[] transformed = super.transform(inputClass, name, reason);
-               if(transformed.length == 0)
-                   transformed = EMPTY_BYTE_ARRAY; /* deduplicate */
-               return Pair.of(hashList, transformed);
+        }
+        if(!hashesMatch) {
+            if(oldPair != null) {
+                LOGGER.warn("Hashes have changed, discarding cached version of " + className);
             }
-        }).getRight();
+            byte[] transformed = super.transform(inputClass, className, reason);
+            if(transformed.length == 0)
+                transformed = EMPTY_BYTE_ARRAY; /* deduplicate */
+            oldPair = Pair.of(hashList, transformed);
+            transformationCache.put(className, oldPair);
+        }
+        return oldPair.getRight();
     }
 
-    private static final byte[] FORGE_HASH = LoadingModList.get().getModFileById("forge").getMods().get(0).getVersion().toString().getBytes(StandardCharsets.UTF_8);
+    private final byte[] FORGE_HASH = LoadingModList.get().getModFileById("forge").getMods().get(0).getVersion().toString().getBytes(StandardCharsets.UTF_8);
 
     private byte[] obtainHash(Object o, String className) {
         if(o instanceof CoreModBaseTransformer) {

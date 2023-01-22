@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.core;
 
+import com.google.common.io.Resources;
 import cpw.mods.modlauncher.*;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
@@ -11,8 +12,10 @@ import org.embeddedt.modernfix.core.config.Option;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import sun.misc.Unsafe;
 
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -26,6 +29,18 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     private final Logger logger = LogManager.getLogger("ModernFix");
     public static ModernFixEarlyConfig config = null;
+
+    private static Unsafe unsafe;
+
+    static{
+        try{
+            final Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
+            unsafeField.setAccessible(true);
+            unsafe = (Unsafe) unsafeField.get(null);
+        }catch(Exception ex){
+            ex.printStackTrace();
+        }
+    }
 
     public ModernFixMixinPlugin() {
         try {
@@ -51,10 +66,14 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 TransformStore store = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "transformers");
                 LaunchPluginHandler pluginHandler = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "pluginHandler");
                 TransformerAuditTrail trail = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "auditTrail");
-                Class<?> newTransformerClass = Class.forName("cpw.mods.modlauncher.ModernFixCachingClassTransformer", true, ClassTransformer.class.getClassLoader());
+                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.api.IHashableTransformer");
+                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.CoreModTransformerHasher");
+                injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.MixinTransformerHasher");
+                Class<?> newTransformerClass = injectClassIntoSystemLoader("cpw.mods.modlauncher.ModernFixCachingClassTransformer");
                 Constructor<?> constructor = newTransformerClass.getConstructor(TransformStore.class, LaunchPluginHandler.class, TransformingClassLoader.class, TransformerAuditTrail.class);
                 ClassTransformer newTransformer = (ClassTransformer)constructor.newInstance(store, pluginHandler, loader, trail);
                 classTransformerField.set(loader, newTransformer);
+
                 logger.info("Successfully injected caching transformer");
             }
             if(isOptionEnabled("launch.class_search_cache.ModernFixResourceFinder")) {
@@ -69,9 +88,21 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 resourceFinder = EnumerationHelper.mergeFunctors(resourceFinder, LamdbaExceptionUtils.rethrowFunction(dcl::findResources));
                 resourceFinderField.set(loader, resourceFinder);
             }
-        } catch(RuntimeException | ReflectiveOperationException e) {
+        } catch(RuntimeException | ReflectiveOperationException | IOException e) {
             logger.error("Failed to make classloading changes", e);
         }
+    }
+
+    private Method defineClassMethod = null;
+
+    private Class<?> injectClassIntoSystemLoader(String className) throws ReflectiveOperationException, IOException {
+        ClassLoader systemLoader = ClassTransformer.class.getClassLoader();
+        if(defineClassMethod == null) {
+            defineClassMethod = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, int.class, int.class);
+            defineClassMethod.setAccessible(true);
+        }
+        byte[] newTransformerBytes = Resources.toByteArray(ModernFixMixinPlugin.class.getResource("/" + className.replace('.', '/') + ".class"));
+        return (Class<?>)defineClassMethod.invoke(systemLoader, className, newTransformerBytes, 0, newTransformerBytes.length);
     }
 
     private Function<String, Enumeration<URL>> constructResourceFinder() throws ReflectiveOperationException {

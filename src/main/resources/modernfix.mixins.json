@@ -22,7 +22,8 @@
     "perf.parallel_blockstate_cache_rebuild.BlocksMixin",
     "perf.parallel_blockstate_cache_rebuild.BlockCallbacksMixin",
     "perf.parallel_blockstate_cache_rebuild.ShapeCacheMixin",
-    "perf.deduplicate_location.MixinResourceLocation"
+    "perf.deduplicate_location.MixinResourceLocation",
+    "perf.sync_executor_sleep.SyncExecutorMixin"
   ],
   "client": [
     "perf.skip_first_datapack_reload.MinecraftMixin",

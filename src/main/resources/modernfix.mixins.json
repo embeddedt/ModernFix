@@ -7,7 +7,6 @@
   "refmap": "modernfix.refmap.json",
   "mixins": [
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
-    "feature.measure_time.MinecraftMixin",
     "perf.remove_biome_temperature_cache.BiomeMixin",
     "perf.resourcepacks.ModFileResourcePackMixin",
     "perf.resourcepacks.VanillaPackMixin",
@@ -28,6 +27,7 @@
     "perf.nuke_empty_chunk_sections.MixinChunk"
   ],
   "client": [
+    "feature.measure_time.MinecraftMixin",
     "perf.skip_first_datapack_reload.MinecraftMixin",
     "bugfix.concurrency.RenderTypeMixin",
     "bugfix.concurrency.MinecraftMixin",
@@ -40,7 +40,10 @@
     "perf.async_jei.PluginCallerMixin",
     "perf.async_jei.RecipeManagerInternalMixin",
     "perf.thread_priorities.IntegratedServerMixin",
-    "safety.BlockColorsMixin"
+    "safety.BlockColorsMixin",
+    "perf.flatten_model_predicates.AndConditionMixin",
+    "perf.flatten_model_predicates.OrConditionMixin",
+    "perf.flatten_model_predicates.PropertyValueConditionMixin"
   ],
   "injectors": {
     "defaultRequire": 1

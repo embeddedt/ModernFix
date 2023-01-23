@@ -141,6 +141,7 @@ dependencies {
         runtimeOnly fg.deobf("curse.maven:rubidium-574856:3949659")
         runtimeOnly fg.deobf("curse.maven:noexperimental-407174:3188120")
         runtimeOnly fg.deobf("curse.maven:spark-361579:3767277")
+        runtimeOnly fg.deobf("curse.maven:ferritecore-429235:4074330")
         runtimeOnly fg.deobf("mezz.jei:jei-${minecraft_version}:${jei_version}")
     }
 

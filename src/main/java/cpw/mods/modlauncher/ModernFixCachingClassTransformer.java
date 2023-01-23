@@ -145,8 +145,9 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
         /* We only want to cache actual transformations */
         if(ITransformerActivity.CLASSLOADING_REASON.equals(reason)) {
             final byte[] classToHash = inputClass;
-            CompletableFuture<ArrayList<byte[]>> futureHashList = CompletableFuture.supplyAsync(() -> computeHash(className, classToHash, reason), ForkJoinPool.commonPool());
-            ArrayList<byte[]> hashList = null;
+            ArrayList<byte[]> hashList = computeHash(className, classToHash, reason);
+            if(hashList == null)
+                return super.transform(inputClass, className, reason);
             /* Check if the cache contains a transformed class matching these hashes */
             /* TODO maybe sanitize the class name? */
             File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/'));
@@ -154,7 +155,6 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
             try(ObjectInputStream stream = new ObjectInputStream(new FileInputStream(cacheLocation))) {
                 ArrayList<byte[]> savedHash = (ArrayList<byte[]>)stream.readObject();
                 byte[] savedInputClass = (byte[])stream.readObject();
-                hashList = futureHashList.get();
                 if(hashList != null) {
                     for(int i = 0; i < savedHash.size(); i++) {
                         if(!Arrays.equals(savedHash.get(i), hashList.get(i))) {
@@ -166,8 +166,7 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
                     hashesMatch = false;
                 if(hashesMatch)
                     inputClass = savedInputClass;
-            } catch(IOException | ClassNotFoundException | ClassCastException | InterruptedException |
-                    ExecutionException e) {
+            } catch(IOException | ClassNotFoundException | ClassCastException e) {
                 if(!(e instanceof FileNotFoundException))
                     e.printStackTrace();
                 hashesMatch = false;

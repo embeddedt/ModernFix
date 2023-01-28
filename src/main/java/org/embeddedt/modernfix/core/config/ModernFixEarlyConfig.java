@@ -18,6 +18,7 @@ public class ModernFixEarlyConfig {
         // You must manually add a rule for any new mixins not covered by an existing package rule.
         this.addMixinRule("core", true); // TODO: Don't actually allow the user to disable this
         this.addMixinRule("feature.measure_time", true);
+        this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.resourcepacks", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);

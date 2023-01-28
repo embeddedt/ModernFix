@@ -6,19 +6,26 @@ import org.spongepowered.asm.launch.IClassProcessor;
 import org.spongepowered.asm.launch.MixinLaunchPluginLegacy;
 import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import org.spongepowered.asm.mixin.injection.invoke.arg.ArgsClassGenerator;
+import org.spongepowered.asm.mixin.transformer.ext.Extensions;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.*;
+import java.util.stream.Stream;
 
 public class MixinTransformerHasher {
     private static HashMap<String, byte[]> hashesByClass = null;
     private final static MessageDigest hasher;
 
     private static Field processorsListField, transformerField, processorField, environmentField;
+
+    private static boolean fixedArgsClassCount = false;
 
     private static final byte[] NO_MIXINS = new byte[] {(byte)0xde, (byte)0xad, (byte)0xbe, (byte)0xef};
 
@@ -54,6 +61,36 @@ public class MixinTransformerHasher {
                         transformerField.setAccessible(true);
                     }
                     Object transformer = transformerField.get(transformHandler);
+                    if(!fixedArgsClassCount) {
+                        Path syntheticFolderPath = ModernFixCachingClassTransformer.CLASS_CACHE_FOLDER.toPath().resolve("org").resolve("spongepowered").resolve("asm").resolve("synthetic");
+                        if(Files.exists(syntheticFolderPath)) {
+                            Field extensionsField = transformer.getClass().getDeclaredField("extensions");
+                            extensionsField.setAccessible(true);
+                            Extensions extensions = (Extensions)extensionsField.get(transformer);
+                            ArgsClassGenerator argsGen = extensions.getGenerator(ArgsClassGenerator.class);
+                            Field nextIndexField = ArgsClassGenerator.class.getDeclaredField("nextIndex");
+                            try(Stream<Path> argsStream = Files.find(syntheticFolderPath, 1, (path, attr) -> path.getFileName().toString().startsWith("Args$"))) {
+                                int[] startIndex = new int[1];
+                                startIndex[0] = 1;
+                                argsStream.forEach(path -> {
+                                    String fileName = path.getFileName().toString();
+                                    try {
+                                        int idx = Integer.parseInt(fileName.replace("Args$", ""));
+                                        startIndex[0] = Math.max(startIndex[0], idx + 1);
+                                    } catch(NumberFormatException e) {
+                                        ModernFixCachingClassTransformer.LOGGER.warn("Unexpected classname: " + fileName);
+                                    }
+                                });
+                                nextIndexField.setAccessible(true);
+                                nextIndexField.set(argsGen, startIndex[0]);
+                                ModernFixCachingClassTransformer.LOGGER.debug("Patched ArgsClassGenerator to start at index " + startIndex[0]);
+                            } catch(IOException e) {
+                                ModernFixCachingClassTransformer.LOGGER.error("Failed to adjust Mixin synthetic args");
+                            }
+                        }
+
+                        fixedArgsClassCount = true;
+                    }
                     if(processorField == null) {
                         processorField = transformer.getClass().getDeclaredField("processor");
                         processorField.setAccessible(true);

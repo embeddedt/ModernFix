@@ -34,9 +34,9 @@ import org.spongepowered.asm.launch.MixinLaunchPluginLegacy;
 import javax.lang.model.SourceVersion;
 
 public class ModernFixCachingClassTransformer extends ClassTransformer {
-    private static final Logger LOGGER = LogManager.getLogger("ModernFixCachingTransformer");
+    public static final Logger LOGGER = LogManager.getLogger("ModernFixCachingTransformer");
 
-    private final File CLASS_CACHE_FOLDER = FileUtil.childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classCacheV1").toFile());
+    public static File CLASS_CACHE_FOLDER = null;
     private final LaunchPluginHandler pluginHandler;
     private final Map<String, ILaunchPluginService> plugins;
     private final TransformStore transformStore;
@@ -59,6 +59,7 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
 
     public ModernFixCachingClassTransformer(TransformStore transformStore, LaunchPluginHandler pluginHandler, TransformingClassLoader transformingClassLoader, TransformerAuditTrail trail) {
         super(transformStore, pluginHandler, transformingClassLoader, trail);
+        CLASS_CACHE_FOLDER = FileUtil.childFile(FMLPaths.GAMEDIR.get().resolve("modernfix").resolve("classCacheV1").toFile());
         this.transformStore = transformStore;
         this.pluginHandler = pluginHandler;
         this.transformingClassLoader = transformingClassLoader;

@@ -10,8 +10,10 @@ import org.embeddedt.modernfix.classloading.ModernFixResourceFinder;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
 import org.objectweb.asm.tree.ClassNode;
+import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import org.spongepowered.asm.mixin.injection.invoke.arg.ArgsClassGenerator;
 import sun.misc.Unsafe;
 
 import java.io.File;
@@ -119,6 +121,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 TransformStore store = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "transformers");
                 LaunchPluginHandler pluginHandler = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "pluginHandler");
                 TransformerAuditTrail trail = ObfuscationReflectionHelper.getPrivateValue(ClassTransformer.class, t, "auditTrail");
+                injectClassIntoSystemLoader("org.embeddedt.modernfix.util.FileUtil");
                 injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.api.IHashableTransformer");
                 injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.CoreModTransformerHasher");
                 injectClassIntoSystemLoader("org.embeddedt.modernfix.classloading.hashers.MixinTransformerHasher");

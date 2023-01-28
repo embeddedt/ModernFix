@@ -39,6 +39,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.nuke_empty_chunk_sections", true);
         this.addMixinRule("perf.flatten_model_predicates", true);
         this.addMixinRule("perf.deduplicate_location", true);
+        this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);

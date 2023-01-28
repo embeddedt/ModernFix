@@ -24,7 +24,8 @@
     "perf.deduplicate_location.MixinResourceLocation",
     "perf.sync_executor_sleep.SyncExecutorMixin",
     "perf.compress_biome_container.MixinBiomeContainer",
-    "perf.nuke_empty_chunk_sections.MixinChunk"
+    "perf.nuke_empty_chunk_sections.MixinChunk",
+    "perf.cache_blockstate_cache_arrays.AbstractBlockStateCacheMixin"
   ],
   "client": [
     "feature.measure_time.MinecraftMixin",

@@ -14,7 +14,7 @@ import java.util.concurrent.locks.LockSupport;
 
 @Mixin(targets = "net/minecraftforge/fml/ModWorkManager$SyncExecutor")
 public class SyncExecutorMixin {
-    @Shadow private ConcurrentLinkedDeque<Runnable> tasks;
+    @Shadow(remap = false) private ConcurrentLinkedDeque<Runnable> tasks;
     private static final long PARK_TIME = TimeUnit.MILLISECONDS.toNanos(50);
     /**
      * Currently FML spins in driveOne while waiting for the modloading workers. We can improve this

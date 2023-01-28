@@ -41,6 +41,8 @@ public class BlockStateCacheHandler {
         else
             handleStateCache(state);
     }
+
+    @SuppressWarnings("deprecation")
     public static void rebuildParallel(boolean force) {
         /* Run some special sauce for Refined Storage since it has very slow collision shapes */
         Stopwatch realtimeStopwatch = Stopwatch.createStarted();

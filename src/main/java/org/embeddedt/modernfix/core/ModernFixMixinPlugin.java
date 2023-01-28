@@ -10,11 +10,8 @@ import org.embeddedt.modernfix.classloading.ModernFixResourceFinder;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
 import org.objectweb.asm.tree.ClassNode;
-import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
-import org.spongepowered.asm.mixin.injection.invoke.arg.ArgsClassGenerator;
-import sun.misc.Unsafe;
 
 import java.io.File;
 import java.io.IOException;
@@ -31,18 +28,6 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     private final Logger logger = LogManager.getLogger("ModernFix");
     public static ModernFixEarlyConfig config = null;
-
-    private static Unsafe unsafe;
-
-    static{
-        try{
-            final Field unsafeField = Unsafe.class.getDeclaredField("theUnsafe");
-            unsafeField.setAccessible(true);
-            unsafe = (Unsafe) unsafeField.get(null);
-        }catch(Exception ex){
-            ex.printStackTrace();
-        }
-    }
 
     public ModernFixMixinPlugin() {
         try {

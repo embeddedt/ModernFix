@@ -40,7 +40,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.deduplicate_location", true);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
-        this.addMixinRule("launch.class_search_cache", false);
+        this.addMixinRule("launch.class_search_cache", true);
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");

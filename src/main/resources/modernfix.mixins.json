@@ -12,15 +12,14 @@
     "perf.resourcepacks.VanillaPackMixin",
     "perf.skip_first_datapack_reload.LevelSaveMixin",
     "perf.skip_first_datapack_reload.SaveFormatAccessor",
-    "perf.reduce_blockstate_cache_rebuilds.AbstractBlockStateMixin",
     "perf.reduce_blockstate_cache_rebuilds.GameDataMixin",
     "perf.reduce_blockstate_cache_rebuilds.BlockCallbacksMixin",
     "perf.boost_worker_count.UtilMixin",
     "perf.thread_priorities.UtilMixin",
     "perf.preload_block_classes.GameDataMixin",
-    "perf.parallel_blockstate_cache_rebuild.BlocksMixin",
-    "perf.parallel_blockstate_cache_rebuild.BlockCallbacksMixin",
-    "perf.parallel_blockstate_cache_rebuild.ShapeCacheMixin",
+    "perf.reduce_blockstate_cache_rebuilds.BlocksMixin",
+    "perf.reduce_blockstate_cache_rebuilds.BlockCallbacksMixin",
+    "perf.reduce_blockstate_cache_rebuilds.ShapeCacheMixin",
     "perf.deduplicate_location.MixinResourceLocation",
     "perf.sync_executor_sleep.SyncExecutorMixin",
     "perf.compress_biome_container.MixinBiomeContainer",
@@ -47,7 +46,9 @@
     "safety.BlockColorsMixin",
     "perf.flatten_model_predicates.AndConditionMixin",
     "perf.flatten_model_predicates.OrConditionMixin",
-    "perf.flatten_model_predicates.PropertyValueConditionMixin"
+    "perf.flatten_model_predicates.PropertyValueConditionMixin",
+    "perf.blast_search_trees.MinecraftMixin",
+    "perf.blast_search_trees.IngredientFilterInvoker"
   ],
   "injectors": {
     "defaultRequire": 1

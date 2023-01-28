@@ -34,12 +34,13 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.preload_block_classes", false);
         this.addMixinRule("perf.sync_executor_sleep", true);
         this.addMixinRule("perf.scan_cache", true);
-        this.addMixinRule("perf.parallel_blockstate_cache_rebuild", true);
         this.addMixinRule("perf.compress_biome_container", true);
         this.addMixinRule("perf.nuke_empty_chunk_sections", true);
         this.addMixinRule("perf.flatten_model_predicates", true);
         this.addMixinRule("perf.deduplicate_location", true);
         this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
+        /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */
+        this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);

@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.parallel_blockstate_cache_rebuild;
+package org.embeddedt.modernfix.mixin.perf.reduce_blockstate_cache_rebuilds;
 
 import net.minecraft.block.Blocks;
 import org.embeddedt.modernfix.blockstate.BlockStateCacheHandler;

@@ -159,6 +159,7 @@ jar {
     manifest {
         attributes([
                 "Specification-Title"     : "modernfix",
+                "Operative-Class"         : "org.embeddedt.modernfix.agent.Agent",
                 //"Specification-Vendor": "modernfix authors",
                 "Specification-Version"   : "1", // We are version 1 of ourselves
                 "Implementation-Title"    : project.name,

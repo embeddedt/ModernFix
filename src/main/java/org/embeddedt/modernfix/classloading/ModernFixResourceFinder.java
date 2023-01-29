@@ -19,6 +19,7 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class ModernFixResourceFinder {
@@ -99,7 +100,10 @@ public class ModernFixResourceFinder {
             throw new UnsupportedOperationException("Unknown ModLocator type: " + locator.getClass().getName());
     }
 
+    private static final Pattern SLASH_REPLACER = Pattern.compile("/+");
+
     public static Enumeration<URL> findAllURLsForResource(String input) {
+        input = SLASH_REPLACER.matcher(input).replaceAll("/");
         List<URL> urlList = urlsForClass.get(input);
         if(urlList != null)
             return Collections.enumeration(urlList);

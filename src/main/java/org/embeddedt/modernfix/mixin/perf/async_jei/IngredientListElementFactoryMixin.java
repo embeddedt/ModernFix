@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(IngredientListElementFactory.class)
 public class IngredientListElementFactoryMixin {
-    @Inject(method = "addToBaseList", at = @At(value = "INVOKE", target = "Lmezz/jei/ingredients/IngredientOrderTracker;getOrderIndex(Ljava/lang/Object;Lmezz/jei/api/ingredients/IIngredientHelper;)I"), remap = false)
+    @Inject(method = "addToBaseList", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/NonNullList;add(Ljava/lang/Object;)Z"), remap = false)
     private static void checkForInterrupt(NonNullList<IIngredientListElement<?>> baseList, IIngredientManager ingredientManager, IIngredientType ingredientType, CallbackInfo ci) {
         IAsyncJeiStarter.checkForLoadInterruption();
     }

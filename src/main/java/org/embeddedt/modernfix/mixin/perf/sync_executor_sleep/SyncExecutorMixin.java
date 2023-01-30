@@ -13,25 +13,26 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 @Mixin(targets = "net/minecraftforge/fml/ModWorkManager$SyncExecutor")
-public class SyncExecutorMixin {
-    @Shadow(remap = false) private ConcurrentLinkedDeque<Runnable> tasks;
+public abstract class SyncExecutorMixin {
+    @Shadow(remap = false) public abstract boolean driveOne();
+
     private static final long PARK_TIME = TimeUnit.MILLISECONDS.toNanos(50);
+
     /**
      * Currently FML spins in driveOne while waiting for the modloading workers. We can improve this
      * by sleeping for 50ms at a time.
      *
-     * Also, render FML splash screen <i>unless</i> there was a new task, rather than only when there was a new task
+     * Also, render FML splash screen regardless of task availability.
      * @author embeddedt
      * @reason improve CPU efficiency
      */
-    @Overwrite(remap = false)
-    public boolean driveOne() {
-        final Runnable task = tasks.pollFirst();
-        if (task != null) {
-            task.run();
-        } else {
+    public void drive(Runnable ticker) {
+        int executions = 0;
+        do {
+            executions++;
+            ticker.run();
+        } while(driveOne());
+        if(executions < 2)
             LockSupport.parkNanos(PARK_TIME);
-        }
-        return task == null;
     }
 }

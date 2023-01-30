@@ -40,7 +40,6 @@ public abstract class ModFileResourcePackMixin {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void cacheResources(ModFile modFile, CallbackInfo ci) {
-        ModernFix.LOGGER.warn("Generating resource cache for " + modFile.getFileName());
         this.resourcePackFS = modFile.getLocator().findPath(modFile, "").getFileSystem();
         this.useNamespaceCaches = false;
         this.namespacesByType = new EnumMap<>(ResourcePackType.class);
@@ -82,7 +81,6 @@ public abstract class ModFileResourcePackMixin {
         String str = path.toString();
         for(int i = 0; i < str.length(); i++) {
             if(!ResourceLocation.validPathChar(str.charAt(i))) {
-                ModernFix.LOGGER.warn("Asset " + str + " does not have a valid resource path and will not be listed");
                 return false;
             }
         }

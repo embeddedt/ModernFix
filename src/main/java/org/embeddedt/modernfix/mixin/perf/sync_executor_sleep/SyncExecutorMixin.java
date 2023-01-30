@@ -19,12 +19,19 @@ public class SyncExecutorMixin {
     /**
      * Currently FML spins in driveOne while waiting for the modloading workers. We can improve this
      * by sleeping for 50ms at a time.
+     *
+     * Also, render FML splash screen <i>unless</i> there was a new task, rather than only when there was a new task
      * @author embeddedt
      * @reason improve CPU efficiency
      */
-    @Inject(method = "driveOne", at = @At("HEAD"), remap = false)
-    private void sleepWhileNoTasks(CallbackInfoReturnable<Boolean> cir) {
-        if(tasks.isEmpty())
+    @Overwrite(remap = false)
+    public boolean driveOne() {
+        final Runnable task = tasks.pollFirst();
+        if (task != null) {
+            task.run();
+        } else {
             LockSupport.parkNanos(PARK_TIME);
+        }
+        return task == null;
     }
 }

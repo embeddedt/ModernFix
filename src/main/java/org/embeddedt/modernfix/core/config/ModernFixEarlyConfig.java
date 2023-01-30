@@ -40,6 +40,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.deduplicate_location", true);
         this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
         this.addMixinRule("perf.faster_baking", true);
+        this.addMixinRule("perf.cache_model_materials", true);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */
         this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null);
         this.addMixinRule("safety", true);

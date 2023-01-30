@@ -48,7 +48,8 @@
     "perf.flatten_model_predicates.OrConditionMixin",
     "perf.flatten_model_predicates.PropertyValueConditionMixin",
     "perf.blast_search_trees.MinecraftMixin",
-    "perf.blast_search_trees.IngredientFilterInvoker"
+    "perf.blast_search_trees.IngredientFilterInvoker",
+    "perf.faster_baking.ModelBakeryMixin"
   ],
   "injectors": {
     "defaultRequire": 1

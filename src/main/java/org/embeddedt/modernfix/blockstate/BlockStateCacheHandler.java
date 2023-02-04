@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.blockstate;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableSet;
-import net.minecraft.block.AbstractBlock;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.util.Util;
@@ -12,9 +11,10 @@ import net.minecraft.world.EmptyBlockReader;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLLoader;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.duck.IBlockState;
+import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.util.BakeReason;
 
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -29,6 +29,8 @@ public class BlockStateCacheHandler {
             .add("extrastorage")
             .build();
 
+    private static RebuildThread currentRebuildThread = null;
+
     private static boolean needToBake() {
         BakeReason reason = BakeReason.getCurrentBakeReason();
         return !(reason == BakeReason.FREEZE /* startup */
@@ -37,9 +39,50 @@ public class BlockStateCacheHandler {
                 || (reason == BakeReason.LOCAL_SNAPSHOT_INJECT && FMLLoader.getDist() == Dist.CLIENT /* will be handled when tags are reloaded */));
     }
 
-    @SuppressWarnings("deprecation")
     public static void rebuildParallel(boolean force) {
         if(force || needToBake()) {
+            if(currentRebuildThread != null) {
+                currentRebuildThread.stopRebuild();
+                try {
+                    currentRebuildThread.join();
+                } catch(InterruptedException e) {
+                    throw new RuntimeException("Don't interrupt Minecraft threads", e);
+                }
+            }
+            currentRebuildThread = new RebuildThread();
+            if(ModernFixConfig.REBUILD_BLOCKSTATES_ASYNC.get())
+                currentRebuildThread.start();
+            else {
+                currentRebuildThread.run();
+                currentRebuildThread = null;
+            }
+        } else {
+            ModernFix.LOGGER.warn("Deferred blockstate cache rebuild");
+        }
+    }
+
+    private static class RebuildThread extends Thread {
+        private boolean stopRebuild = false;
+
+        public RebuildThread() {
+            this.setName("ModernFix blockstate cache rebuild thread");
+            this.setPriority(Thread.MIN_PRIORITY + 1);
+        }
+
+        public void stopRebuild() {
+            this.stopRebuild = true;
+        }
+
+        private void rebuildCache() {
+            Iterator<BlockState> stateIterator = Block.BLOCK_STATE_REGISTRY.iterator();
+            while(!stopRebuild && stateIterator.hasNext()) {
+                stateIterator.next().initCache();
+            }
+        }
+
+        @Override
+        @SuppressWarnings("deprecation")
+        public void run() {
             Stopwatch realtimeStopwatch = Stopwatch.createStarted();
             /* Run some special sauce for Refined Storage since it has very slow collision shapes */
             List<BlockState> specialStates = StreamSupport.stream(Block.BLOCK_STATE_REGISTRY.spliterator(), false)
@@ -52,11 +95,10 @@ public class BlockStateCacheHandler {
                             state.getBlock().getOcclusionShape(state, EmptyBlockReader.INSTANCE, BlockPos.ZERO);
                         });
             }, Util.backgroundExecutor()).join();
-            Block.BLOCK_STATE_REGISTRY.forEach(AbstractBlock.AbstractBlockState::initCache);
+            rebuildCache();
             realtimeStopwatch.stop();
-            ModernFix.LOGGER.info("Blockstate cache rebuilt in " + realtimeStopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
-        } else {
-            ModernFix.LOGGER.warn("Deferred blockstate cache rebuild");
+            if(!stopRebuild)
+                ModernFix.LOGGER.info("Blockstate cache rebuilt in " + realtimeStopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
         }
     }
 }

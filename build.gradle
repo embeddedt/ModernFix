@@ -18,7 +18,7 @@ plugins {
 apply plugin: 'org.spongepowered.mixin'
 
 group = 'org.embeddedt'
-version = '1.5.2'
+version = '1.6.0-beta1'
 
 java {
     archivesBaseName = 'modernfix-mc' + minecraft_version
@@ -137,7 +137,6 @@ dependencies {
 
     if(include_optimization_mods.toBoolean()) {
         runtimeOnly fg.deobf("curse.maven:roadrunner-529754:3683120")
-        runtimeOnly fg.deobf("curse.maven:starlight-529754:3683120")
         runtimeOnly fg.deobf("curse.maven:rubidium-574856:3949659")
         runtimeOnly fg.deobf("curse.maven:noexperimental-407174:3188120")
         runtimeOnly fg.deobf("curse.maven:spark-361579:3767277")

@@ -8,6 +8,7 @@ import net.minecraft.block.BlockState;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.BlockModelShapes;
 import net.minecraft.client.renderer.model.*;
+import net.minecraft.client.renderer.model.multipart.Selector;
 import net.minecraft.client.renderer.texture.SpriteMap;
 import net.minecraft.profiler.IProfiler;
 import net.minecraft.resources.IResource;
@@ -38,9 +39,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -83,7 +86,8 @@ public abstract class ModelBakeryMixin {
         profilerIn.popPush("loadjsons");
         AsyncStopwatch.measureAndLogSerialRunningTime("Parallel JSON loading", () -> {
             useModelCache = false;
-            deserializedModelCache = Minecraft.getInstance().getResourceManager().listResources("models", p -> {
+            this.deserializedModelCache = new ConcurrentHashMap<>();
+            Collection<ResourceLocation> modelLocations = Minecraft.getInstance().getResourceManager().listResources("models", p -> {
                         if(!p.endsWith(".json"))
                             return false;
                         for(int i = 0; i < p.length(); i++) {
@@ -91,54 +95,51 @@ public abstract class ModelBakeryMixin {
                                 return false;
                         }
                         return true;
-                    })
-                    .parallelStream()
-                    .map(location -> new ResourceLocation(location.getNamespace(), location.getPath().substring(7, location.getPath().length() - 5)))
-                    .map(location -> Pair.of(location, this.loadModelSafely(location)))
-                    .filter(pair -> pair.getSecond() != null)
-                    .collect(Collectors.toConcurrentMap(Pair::getFirst, Pair::getSecond));
+                    });
+            ArrayList<CompletableFuture<Void>> futures = new ArrayList<>();
+            for(ResourceLocation location : modelLocations) {
+                futures.add(CompletableFuture.runAsync(() -> {
+                    ResourceLocation modelPath = new ResourceLocation(location.getNamespace(), location.getPath().substring(7, location.getPath().length() - 5));
+                    BlockModel model = this.loadModelSafely(modelPath);
+                    if(model != null)
+                        this.deserializedModelCache.put(modelPath, model);
+                }, Util.backgroundExecutor()));
+            }
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
             useModelCache = true;
         });
         AsyncStopwatch.measureAndLogSerialRunningTime("Parallel blockstate loading", () -> {
             ThreadLocal<BlockModelDefinition.ContainerHolder> containerHolder = ThreadLocal.withInitial(BlockModelDefinition.ContainerHolder::new);
-            this.deserializedBlockstateCache = Registry.BLOCK.keySet().parallelStream()
-                    .flatMap(block -> {
-                        ResourceLocation blockStateJSON = new ResourceLocation(block.getNamespace(), "blockstates/" + block.getPath() + ".json");
-                        List<IResource> blockStates;
-                        try {
-                            blockStates = this.resourceManager.getResources(blockStateJSON);
-                        } catch(IOException e) {
-                            ModernFix.LOGGER.warn("Exception loading blockstate definition: {}: {}", block, e);
-                            blockStates = Collections.emptyList();
-                        }
-                        return blockStates.stream().map(resource -> Pair.of(block, resource));
-                    })
-                    .map((pair) -> {
-                        ResourceLocation block = pair.getFirst();
-                        IResource resource = pair.getSecond();
+            this.deserializedBlockstateCache = new ConcurrentHashMap<>();
+            ArrayList<CompletableFuture<Void>> futures = new ArrayList<>();
+            for(Block block : Registry.BLOCK) {
+                ResourceLocation blockLocation = Registry.BLOCK.getKey(block);
+                futures.add(CompletableFuture.runAsync(() -> {
+                    ResourceLocation blockStateJSON = new ResourceLocation(blockLocation.getNamespace(), "blockstates/" + blockLocation.getPath() + ".json");
+                    List<IResource> blockStates;
+                    try {
+                        blockStates = this.resourceManager.getResources(blockStateJSON);
+                    } catch(IOException e) {
+                        ModernFix.LOGGER.warn("Exception loading blockstate definition: {}: {}", blockLocation, e);
+                        return;
+                    }
+                    List<Pair<String, BlockModelDefinition>> definitions = new ArrayList<>();
+                    StateContainer<Block, BlockState> stateContainer = block.getStateDefinition();
+                    BlockModelDefinition.ContainerHolder context = containerHolder.get();
+                    context.setDefinition(stateContainer);
+                    for(IResource resource : blockStates) {
                         try (InputStream inputstream = resource.getInputStream()) {
-                            BlockModelDefinition.ContainerHolder context = containerHolder.get();
-                            context.setDefinition(Registry.BLOCK.get(block).getStateDefinition());
-                            return Pair.of(block, Pair.of(resource.getSourceName(), BlockModelDefinition.fromStream(context, new InputStreamReader(inputstream, StandardCharsets.UTF_8))));
+                            BlockModelDefinition definition = BlockModelDefinition.fromStream(context, new InputStreamReader(inputstream, StandardCharsets.UTF_8));
+                            definitions.add(Pair.of(resource.getSourceName(), definition));
                         } catch (Exception exception1) {
                             ModernFix.LOGGER.warn(String.format("Exception loading blockstate definition: '%s' in resourcepack: '%s': %s", resource.getLocation(), resource.getSourceName(), exception1.getMessage()));
-                            return Pair.of(block, Pair.of((String)null, (BlockModelDefinition)null));
+                            return;
                         }
-                    })
-                    .filter(pair -> pair.getSecond().getSecond() != null)
-                    .collect(Collectors.groupingBy(Pair::getFirst, Collectors.mapping(Pair::getSecond, Collectors.toList())));
-        });
-        AsyncStopwatch.measureAndLogSerialRunningTime("Predicate generation", () -> {
-            /* Pregenerate predicates */
-            this.deserializedBlockstateCache.entrySet().parallelStream()
-                    .flatMap(entry -> entry.getValue().stream()
-                            .map(Pair::getSecond)
-                            .map(def -> Pair.of(Registry.BLOCK.get(entry.getKey()).getStateDefinition(), def)))
-                    .filter(pair -> pair.getSecond().isMultiPart())
-                    .flatMap(pair -> pair.getSecond().getMultiPart().getSelectors().stream().map(selector -> Pair.of(pair.getFirst(), selector)))
-                    .forEach(pair -> {
-                        pair.getSecond().getPredicate(pair.getFirst());
-                    });
+                    }
+                    this.deserializedBlockstateCache.put(blockLocation, definitions);
+                }, Util.backgroundExecutor()));
+            }
+            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         });
     }
 

@@ -8,18 +8,19 @@ import net.minecraft.client.renderer.texture.SpriteMap;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.profiler.IProfiler;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraftforge.fml.loading.progress.StartupMessageManager;
+import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Logger;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.annotation.Nullable;
 import java.util.*;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Mixin(ModelBakery.class)
@@ -37,10 +38,19 @@ public abstract class ModelBakeryMixin {
     @Shadow @Nullable private SpriteMap atlasSet;
 
     @Shadow @Final private Map<ResourceLocation, IUnbakedModel> unbakedCache;
+    @Shadow @Mutable
+    @Final private Map<Triple<ResourceLocation, TransformationMatrix, Boolean>, IBakedModel> bakedCache;
     private Map<Boolean, List<ResourceLocation>> modelsToBakeParallel;
 
     private boolean canBakeParallel(IUnbakedModel unbakedModel) {
-        return false;
+        if(!(unbakedModel instanceof BlockModel))
+            return false;
+        else {
+            BlockModel model = (BlockModel)unbakedModel;
+            if(model.customData.hasCustomGeometry())
+                return false;
+            return true;
+        }
     }
 
     @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;pop()V"))
@@ -56,18 +66,17 @@ public abstract class ModelBakeryMixin {
         pProfiler.popPush("baking");
         StartupMessageManager.mcLoaderConsumer().ifPresent(c -> c.accept("Baking models"));
         this.atlasSet = new SpriteMap(this.atlasPreparations.values().stream().map(Pair::getFirst).collect(Collectors.toList()));
+        this.bakedCache = new ConcurrentHashMap<>();
         this.modelsToBakeParallel = this.topLevelModels.keySet().stream()
                 .collect(Collectors.partitioningBy(location -> {
-                    return true;
-                    /*
                     IUnbakedModel unbakedModel = this.unbakedCache.get(location);
                     if(unbakedModel == null)
                         return false;
                     else
                         return this.canBakeParallel(unbakedModel);
-                     */
                 }));
         List<ResourceLocation> parallelModels = this.modelsToBakeParallel.get(true);
+        List<CompletableFuture<Void>> futures = new ArrayList<>();
         parallelModels.forEach((p_229350_1_) -> {
             IBakedModel ibakedmodel = null;
 

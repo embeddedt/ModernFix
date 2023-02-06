@@ -37,6 +37,8 @@
     "perf.parallelize_model_loading.multipart.MultipartMixin",
     "perf.parallelize_model_loading.multipart.VariantListMixin",
     "perf.parallelize_model_loading.SelectorMixin",
+    "perf.parallelize_model_loading.TransformationMatrixMixin",
+    "perf.parallelize_model_loading.BooleanPropertyMixin",
     "perf.trim_model_caches.ModelManagerMixin",
     "perf.async_jei.IngredientListElementFactoryMixin",
     "perf.async_jei.ClientLifecycleHandlerMixin",

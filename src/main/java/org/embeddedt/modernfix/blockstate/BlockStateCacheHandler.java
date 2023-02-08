@@ -21,7 +21,6 @@ import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
-import java.util.stream.StreamSupport;
 
 public class BlockStateCacheHandler {
     private static final Set<String> PRECACHED_COLLISION_SHAPES = ImmutableSet.<String>builder()
@@ -45,7 +44,9 @@ public class BlockStateCacheHandler {
             ModernFix.LOGGER.warn("Interrupting previous blockstate cache rebuild");
             currentRebuildThread.stopRebuild();
             try {
-                currentRebuildThread.join();
+                currentRebuildThread.join(10000);
+                if(currentRebuildThread.isAlive())
+                    throw new IllegalStateException("Blockstate cache rebuild thread has hung");
             } catch(InterruptedException e) {
                 throw new RuntimeException("Don't interrupt Minecraft threads", e);
             }

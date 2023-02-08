@@ -3,15 +3,19 @@ package org.embeddedt.modernfix.mixin.perf.faster_baking;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.model.*;
+import net.minecraft.client.renderer.model.multipart.Multipart;
+import net.minecraft.client.renderer.model.multipart.Selector;
 import net.minecraft.client.renderer.texture.AtlasTexture;
 import net.minecraft.client.renderer.texture.SpriteMap;
 import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.profiler.IProfiler;
 import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.Util;
 import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraftforge.fml.loading.progress.StartupMessageManager;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.ModernFix;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -40,17 +44,14 @@ public abstract class ModelBakeryMixin {
     @Shadow @Final private Map<ResourceLocation, IUnbakedModel> unbakedCache;
     @Shadow @Mutable
     @Final private Map<Triple<ResourceLocation, TransformationMatrix, Boolean>, IBakedModel> bakedCache;
-    private Map<Boolean, List<ResourceLocation>> modelsToBakeParallel;
+    private Map<Boolean, List<Map.Entry<ResourceLocation, IUnbakedModel>>> modelsToBakeParallel;
 
     private boolean canBakeParallel(IUnbakedModel unbakedModel) {
-        if(!(unbakedModel instanceof BlockModel))
-            return false;
-        else {
+        if(unbakedModel instanceof BlockModel) {
             BlockModel model = (BlockModel)unbakedModel;
-            if(model.customData.hasCustomGeometry())
-                return false;
-            return true;
-        }
+            return !model.customData.hasCustomGeometry();
+        } else
+            return false;
     }
 
     @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;pop()V"))
@@ -67,33 +68,59 @@ public abstract class ModelBakeryMixin {
         StartupMessageManager.mcLoaderConsumer().ifPresent(c -> c.accept("Baking models"));
         this.atlasSet = new SpriteMap(this.atlasPreparations.values().stream().map(Pair::getFirst).collect(Collectors.toList()));
         this.bakedCache = new ConcurrentHashMap<>();
-        this.modelsToBakeParallel = this.topLevelModels.keySet().stream()
-                .collect(Collectors.partitioningBy(location -> {
-                    //IUnbakedModel unbakedModel = this.unbakedCache.get(location);
-                    return false;
-                    /*
+        this.modelsToBakeParallel = this.unbakedCache.entrySet().stream()
+                .collect(Collectors.partitioningBy(entry -> {
+                    IUnbakedModel unbakedModel = entry.getValue();
                     if(unbakedModel == null)
                         return false;
                     else
                         return this.canBakeParallel(unbakedModel);
-                    */
                 }));
-        List<ResourceLocation> parallelModels = this.modelsToBakeParallel.get(false);
-        List<CompletableFuture<Void>> futures = new ArrayList<>();
-        parallelModels.forEach((p_229350_1_) -> {
+        List<Map.Entry<ResourceLocation, IUnbakedModel>> serialModels = this.modelsToBakeParallel.get(false);
+        List<Map.Entry<ResourceLocation, IUnbakedModel>> parallelModels = this.modelsToBakeParallel.get(true);
+        ModernFix.LOGGER.debug("Collected "
+                + serialModels.size()
+                + " serial models, "
+                + parallelModels.size()
+                + " parallel models");
+        List<CompletableFuture<Pair<ResourceLocation, IBakedModel>>> futures = new ArrayList<>();
+        /* First submit the parallel models */
+        for(Map.Entry<ResourceLocation, IUnbakedModel> entry : parallelModels) {
+            ResourceLocation loc = entry.getKey();
+            futures.add(CompletableFuture.supplyAsync(() -> {
+                IBakedModel ibakedmodel = null;
+
+                try {
+                    ibakedmodel = this.bake(loc, ModelRotation.X0_Y0);
+                } catch (Exception exception) {
+                    exception.printStackTrace();
+                    LOGGER.warn("Unable to bake model: '{}': {}", loc, exception);
+                }
+                return ibakedmodel != null ? Pair.of(loc, ibakedmodel) : null;
+            }, Util.backgroundExecutor()));
+        }
+        futures.forEach(future -> {
+            Pair<ResourceLocation, IBakedModel> pair = future.join();
+            if(pair != null && this.topLevelModels.containsKey(pair.getFirst()))
+                this.bakedTopLevelModels.put(pair.getFirst(), pair.getSecond());
+        });
+        /* Then process serial models */
+        serialModels.forEach((p_229350_1_) -> {
             IBakedModel ibakedmodel = null;
+            ResourceLocation loc = p_229350_1_.getKey();
 
             try {
-                ibakedmodel = this.bake(p_229350_1_, ModelRotation.X0_Y0);
+                ibakedmodel = this.bake(loc, ModelRotation.X0_Y0);
             } catch (Exception exception) {
                 exception.printStackTrace();
-                LOGGER.warn("Unable to bake model: '{}': {}", p_229350_1_, exception);
+                LOGGER.warn("Unable to bake model: '{}': {}", loc, exception);
             }
 
             if (ibakedmodel != null) {
-                this.bakedTopLevelModels.put(p_229350_1_, ibakedmodel);
+                this.bakedTopLevelModels.put(loc, ibakedmodel);
             }
         });
+        this.modelsToBakeParallel = null;
         this.atlasSet = null;
     }
 
@@ -113,25 +140,6 @@ public abstract class ModelBakeryMixin {
             atlastexture.updateFilter(atlastexture$sheetdata);
         }
         this.atlasSet = new SpriteMap(this.atlasPreparations.values().stream().map(Pair::getFirst).collect(Collectors.toList()));
-        /*
-        StartupMessageManager.mcLoaderConsumer().ifPresent(c -> c.accept("Baking incompatible models"));
-        List<ResourceLocation> serialModels = this.modelsToBakeParallel.get(false);
-        serialModels.forEach((p_229350_1_) -> {
-            IBakedModel ibakedmodel = null;
-
-            try {
-                ibakedmodel = this.bake(p_229350_1_, ModelRotation.X0_Y0);
-            } catch (Exception exception) {
-                exception.printStackTrace();
-                LOGGER.warn("Unable to bake model: '{}': {}", p_229350_1_, exception);
-            }
-
-            if (ibakedmodel != null) {
-                this.bakedTopLevelModels.put(p_229350_1_, ibakedmodel);
-            }
-        });
-         */
-        this.modelsToBakeParallel = null;
         pProfiler.pop();
         return this.atlasSet;
     }

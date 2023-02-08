@@ -14,6 +14,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.util.BakeReason;
 
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
@@ -40,16 +41,22 @@ public class BlockStateCacheHandler {
     }
 
     public static void rebuildParallel(boolean force) {
-        if(force || needToBake()) {
-            if(currentRebuildThread != null) {
-                currentRebuildThread.stopRebuild();
-                try {
-                    currentRebuildThread.join();
-                } catch(InterruptedException e) {
-                    throw new RuntimeException("Don't interrupt Minecraft threads", e);
-                }
+        if(currentRebuildThread != null) {
+            ModernFix.LOGGER.warn("Interrupting previous blockstate cache rebuild");
+            currentRebuildThread.stopRebuild();
+            try {
+                currentRebuildThread.join();
+            } catch(InterruptedException e) {
+                throw new RuntimeException("Don't interrupt Minecraft threads", e);
             }
-            currentRebuildThread = new RebuildThread();
+            ModernFix.LOGGER.debug("Rebuild thread exited");
+        }
+        if(force || needToBake()) {
+            ArrayList<BlockState> stateList = new ArrayList<>(Block.BLOCK_STATE_REGISTRY.size());
+            for (BlockState blockState : Block.BLOCK_STATE_REGISTRY) {
+                stateList.add(blockState);
+            }
+            currentRebuildThread = new RebuildThread(stateList);
             if(ModernFixConfig.REBUILD_BLOCKSTATES_ASYNC.get())
                 currentRebuildThread.start();
             else {
@@ -63,10 +70,12 @@ public class BlockStateCacheHandler {
 
     private static class RebuildThread extends Thread {
         private boolean stopRebuild = false;
+        private final List<BlockState> blockStateList;
 
-        public RebuildThread() {
+        public RebuildThread(List<BlockState> statesToInit) {
             this.setName("ModernFix blockstate cache rebuild thread");
             this.setPriority(Thread.MIN_PRIORITY + 1);
+            this.blockStateList = statesToInit;
         }
 
         public void stopRebuild() {
@@ -74,7 +83,7 @@ public class BlockStateCacheHandler {
         }
 
         private void rebuildCache() {
-            Iterator<BlockState> stateIterator = Block.BLOCK_STATE_REGISTRY.iterator();
+            Iterator<BlockState> stateIterator = blockStateList.iterator();
             while(!stopRebuild && stateIterator.hasNext()) {
                 stateIterator.next().initCache();
             }
@@ -85,7 +94,7 @@ public class BlockStateCacheHandler {
         public void run() {
             Stopwatch realtimeStopwatch = Stopwatch.createStarted();
             /* Run some special sauce for Refined Storage since it has very slow collision shapes */
-            List<BlockState> specialStates = StreamSupport.stream(Block.BLOCK_STATE_REGISTRY.spliterator(), false)
+            List<BlockState> specialStates = blockStateList.stream()
                     .filter(state -> PRECACHED_COLLISION_SHAPES.contains(state.getBlock().getRegistryName().getNamespace())).collect(Collectors.toList());
             CompletableFuture.runAsync(() -> {
                 specialStates.parallelStream()

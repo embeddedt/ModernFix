@@ -69,13 +69,16 @@ public abstract class ModelBakeryMixin {
         this.bakedCache = new ConcurrentHashMap<>();
         this.modelsToBakeParallel = this.topLevelModels.keySet().stream()
                 .collect(Collectors.partitioningBy(location -> {
-                    IUnbakedModel unbakedModel = this.unbakedCache.get(location);
+                    //IUnbakedModel unbakedModel = this.unbakedCache.get(location);
+                    return false;
+                    /*
                     if(unbakedModel == null)
                         return false;
                     else
                         return this.canBakeParallel(unbakedModel);
+                    */
                 }));
-        List<ResourceLocation> parallelModels = this.modelsToBakeParallel.get(true);
+        List<ResourceLocation> parallelModels = this.modelsToBakeParallel.get(false);
         List<CompletableFuture<Void>> futures = new ArrayList<>();
         parallelModels.forEach((p_229350_1_) -> {
             IBakedModel ibakedmodel = null;

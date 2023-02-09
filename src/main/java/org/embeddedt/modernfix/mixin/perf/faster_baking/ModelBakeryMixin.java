@@ -27,6 +27,8 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import static org.embeddedt.modernfix.ModernFix.LOGGER;
+
 @Mixin(ModelBakery.class)
 public abstract class ModelBakeryMixin {
     @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topLevelModels;
@@ -34,8 +36,6 @@ public abstract class ModelBakeryMixin {
     @Shadow @Final private Map<ResourceLocation, IBakedModel> bakedTopLevelModels;
 
     @Shadow @Deprecated @Nullable public abstract IBakedModel bake(ResourceLocation pLocation, IModelTransform pTransform);
-
-    @Shadow @Final private static Logger LOGGER;
 
     @Shadow private Map<ResourceLocation, Pair<AtlasTexture, AtlasTexture.SheetData>> atlasPreparations;
 
@@ -78,7 +78,7 @@ public abstract class ModelBakeryMixin {
                 }));
         List<Map.Entry<ResourceLocation, IUnbakedModel>> serialModels = this.modelsToBakeParallel.get(false);
         List<Map.Entry<ResourceLocation, IUnbakedModel>> parallelModels = this.modelsToBakeParallel.get(true);
-        ModernFix.LOGGER.debug("Collected "
+        LOGGER.debug("Collected "
                 + serialModels.size()
                 + " serial models, "
                 + parallelModels.size()

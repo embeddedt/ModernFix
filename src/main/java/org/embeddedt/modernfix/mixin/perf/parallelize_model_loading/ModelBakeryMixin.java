@@ -150,36 +150,6 @@ public abstract class ModelBakeryMixin {
         useModelCache = false;
     }
 
-    @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;collect(Ljava/util/stream/Collector;)Ljava/lang/Object;", ordinal = 0), remap = false)
-    private Object collectTexturesParallel(Stream instance, Collector arCollector) {
-        ModernFix.LOGGER.warn("Collecting textures in parallel...");
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        ConcurrentHashMap<ResourceLocation, IUnbakedModel> threadedunbakedCache = new ConcurrentHashMap<>(this.unbakedCache);
-        Function<ResourceLocation, IUnbakedModel> safeUnbakedGetter = (location) -> {
-            IUnbakedModel candidate = threadedunbakedCache.get(location);
-            if(candidate == null) {
-                synchronized (this.unbakedCache) {
-                    candidate = this.getModel(location);
-                    threadedunbakedCache.put(location, candidate);
-                }
-            }
-            return candidate;
-        };
-        Set<Pair<String, String>> set = Collections.synchronizedSet(Sets.newLinkedHashSet());
-        String modelMissingString = MISSING_MODEL_LOCATION.toString();
-        Set<RenderMaterial> materials = this.topLevelModels.values().parallelStream().flatMap((unbaked) -> {
-            return unbaked.getMaterials(safeUnbakedGetter, set).stream();
-        }).collect(Collectors.toSet());
-        set.stream().filter((stringPair) -> {
-            return !stringPair.getSecond().equals(modelMissingString);
-        }).forEach((textureReferenceErrors) -> {
-            ModernFix.LOGGER.warn("Unable to resolve texture reference: {} in {}", textureReferenceErrors.getFirst(), textureReferenceErrors.getSecond());
-        });
-        ModernFix.LOGGER.warn("Collecting textures took " + stopwatch.elapsed(TimeUnit.MILLISECONDS)/1000f + " seconds");
-        stopwatch.stop();
-        return materials;
-    }
-
     private List<?> replacementList = null;
 
     @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/resources/IResourceManager;getResources(Lnet/minecraft/util/ResourceLocation;)Ljava/util/List;", ordinal = 0))

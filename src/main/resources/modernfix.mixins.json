@@ -54,7 +54,9 @@
     "perf.blast_search_trees.IngredientFilterInvoker",
     "perf.faster_baking.ModelBakeryMixin",
     "perf.cache_model_materials.VanillaModelMixin",
-    "perf.cache_model_materials.MultipartMixin"
+    "perf.cache_model_materials.MultipartMixin",
+    "bugfix.packet_leak.ClientPlayNetHandlerMixin",
+    "bugfix.packet_leak.SCustomPayloadPlayPacketMixin"
   ],
   "injectors": {
     "defaultRequire": 1

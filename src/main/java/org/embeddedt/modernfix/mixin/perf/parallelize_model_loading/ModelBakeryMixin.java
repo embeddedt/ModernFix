@@ -59,55 +59,12 @@ public abstract class ModelBakeryMixin {
 
     @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topLevelModels;
     @Shadow @Final protected IResourceManager resourceManager;
-    private Map<ResourceLocation, BlockModel> deserializedModelCache = null;
+
     private Map<ResourceLocation, List<Pair<String, BlockModelDefinition>>> deserializedBlockstateCache = null;
-    private boolean useModelCache = false;
-
-    @Inject(method = "loadBlockModel", at = @At("HEAD"), cancellable = true)
-    private void useCachedModel(ResourceLocation location, CallbackInfoReturnable<BlockModel> cir) {
-        if(useModelCache && deserializedModelCache != null) {
-            BlockModel model = deserializedModelCache.get(location);
-            if(model != null)
-                cir.setReturnValue(model);
-        }
-    }
-
-    private BlockModel loadModelSafely(ResourceLocation location) {
-        try {
-            return this.loadBlockModel(location);
-        } catch(Throwable e) {
-            ModernFix.LOGGER.warn("Model " + location + " will not be preloaded");
-            return null;
-        }
-    }
 
     @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;popPush(Ljava/lang/String;)V", ordinal = 0))
     private void preloadJsonModels(IProfiler profilerIn, int maxMipmapLevel, CallbackInfo ci) {
-        profilerIn.popPush("loadjsons");
-        AsyncStopwatch.measureAndLogSerialRunningTime("Parallel JSON loading", () -> {
-            useModelCache = false;
-            this.deserializedModelCache = new ConcurrentHashMap<>();
-            Collection<ResourceLocation> modelLocations = Minecraft.getInstance().getResourceManager().listResources("models", p -> {
-                        if(!p.endsWith(".json"))
-                            return false;
-                        for(int i = 0; i < p.length(); i++) {
-                            if(!ResourceLocation.validPathChar(p.charAt(i)))
-                                return false;
-                        }
-                        return true;
-                    });
-            ArrayList<CompletableFuture<Void>> futures = new ArrayList<>();
-            for(ResourceLocation location : modelLocations) {
-                futures.add(CompletableFuture.runAsync(() -> {
-                    ResourceLocation modelPath = new ResourceLocation(location.getNamespace(), location.getPath().substring(7, location.getPath().length() - 5));
-                    BlockModel model = this.loadModelSafely(modelPath);
-                    if(model != null)
-                        this.deserializedModelCache.put(modelPath, model);
-                }, Util.backgroundExecutor()));
-            }
-            CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-            useModelCache = true;
-        });
+        profilerIn.popPush("loadblockstates");
         AsyncStopwatch.measureAndLogSerialRunningTime("Parallel blockstate loading", () -> {
             ThreadLocal<BlockModelDefinition.ContainerHolder> containerHolder = ThreadLocal.withInitial(BlockModelDefinition.ContainerHolder::new);
             this.deserializedBlockstateCache = new ConcurrentHashMap<>();
@@ -145,9 +102,7 @@ public abstract class ModelBakeryMixin {
 
     @Inject(method = "processLoading", at = @At("RETURN"), remap = false)
     private void clearModelCache(IProfiler profilerIn, int maxMipmapLevel, CallbackInfo ci) {
-        deserializedModelCache.clear();
         deserializedBlockstateCache.clear();
-        useModelCache = false;
     }
 
     private List<?> replacementList = null;

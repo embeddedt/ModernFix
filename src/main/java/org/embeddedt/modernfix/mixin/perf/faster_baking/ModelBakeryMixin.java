@@ -18,6 +18,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.models.LazyBakedModel;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -34,7 +35,7 @@ import java.util.stream.Collectors;
 import static org.embeddedt.modernfix.ModernFix.LOGGER;
 
 @Mixin(ModelBakery.class)
-public abstract class ModelBakeryMixin {
+public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topLevelModels;
 
     @Shadow @Final private Map<ResourceLocation, IBakedModel> bakedTopLevelModels;
@@ -82,7 +83,6 @@ public abstract class ModelBakeryMixin {
                 }
             }));
         });
-        this.atlasSet = null;
     }
 
     /**
@@ -92,7 +92,6 @@ public abstract class ModelBakeryMixin {
     @Overwrite
     public SpriteMap uploadTextures(TextureManager pResourceManager, IProfiler pProfiler) {
         pProfiler.push("atlas_upload");
-
         for(Pair<AtlasTexture, AtlasTexture.SheetData> pair : this.atlasPreparations.values()) {
             AtlasTexture atlastexture = pair.getFirst();
             AtlasTexture.SheetData atlastexture$sheetdata = pair.getSecond();
@@ -100,8 +99,12 @@ public abstract class ModelBakeryMixin {
             pResourceManager.bind(atlastexture.location());
             atlastexture.updateFilter(atlastexture$sheetdata);
         }
-        this.atlasSet = new SpriteMap(this.atlasPreparations.values().stream().map(Pair::getFirst).collect(Collectors.toList()));
         pProfiler.pop();
+        return this.atlasSet;
+    }
+
+    @Override
+    public SpriteMap getUnfinishedAtlasSet() {
         return this.atlasSet;
     }
 }

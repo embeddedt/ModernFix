@@ -51,6 +51,7 @@ public class BlockStateCacheHandler {
                 throw new RuntimeException("Don't interrupt Minecraft threads", e);
             }
             ModernFix.LOGGER.debug("Rebuild thread exited");
+            currentRebuildThread = null;
         }
         if(force || needToBake()) {
             ArrayList<BlockState> stateList = new ArrayList<>(Block.BLOCK_STATE_REGISTRY.size());

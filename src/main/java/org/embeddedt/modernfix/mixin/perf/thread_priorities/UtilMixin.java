@@ -17,7 +17,6 @@ public class UtilMixin {
         return pool -> {
             ForkJoinWorkerThread thread = factory.newThread(pool);
             int pri = ModernFixConfig.BACKGROUND_WORKER_PRIORITY.get();
-            ModernFix.LOGGER.info("Changing priority of " + thread.getName() + " to " + pri);
             thread.setPriority(pri);
             return thread;
         };

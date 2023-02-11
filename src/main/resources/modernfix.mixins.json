@@ -54,6 +54,7 @@
     "perf.blast_search_trees.IngredientFilterInvoker",
     "perf.faster_baking.ModelBakeryMixin",
     "perf.faster_baking.BlockModelShapesMixin",
+    "perf.faster_baking.ModelManagerMixin",
     "perf.cache_model_materials.VanillaModelMixin",
     "perf.cache_model_materials.MultipartMixin",
     "bugfix.packet_leak.ClientPlayNetHandlerMixin",

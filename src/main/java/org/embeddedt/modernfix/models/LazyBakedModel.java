@@ -27,6 +27,12 @@ public class LazyBakedModel implements IBakedModel {
     private IBakedModel delegate = null;
     private Supplier<IBakedModel> delegateSupplier;
 
+    /**
+     * This flag is changed to true when we should bake instead of returning reasonable defaults for certain
+     * method calls.
+     */
+    public static boolean allowBakeForFlags = false;
+
     public LazyBakedModel(Supplier<IBakedModel> delegateSupplier) {
         this.delegateSupplier = delegateSupplier;
     }
@@ -61,6 +67,10 @@ public class LazyBakedModel implements IBakedModel {
 
     @Override
     public boolean isCustomRenderer() {
+        if(this.delegate != null)
+            return this.delegate.isCustomRenderer();
+        if(!LazyBakedModel.allowBakeForFlags)
+            return false;
         return computeDelegate().isCustomRenderer();
     }
 

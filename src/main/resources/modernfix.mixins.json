@@ -25,6 +25,8 @@
     "perf.compress_biome_container.MixinBiomeContainer",
     "perf.nuke_empty_chunk_sections.MixinChunk",
     "perf.cache_blockstate_cache_arrays.AbstractBlockStateCacheMixin",
+    "perf.datapack_reload_exceptions.LootTableManagerMixin",
+    "perf.datapack_reload_exceptions.RecipeManagerMixin",
     "feature.measure_time.BootstrapMixin"
   ],
   "client": [

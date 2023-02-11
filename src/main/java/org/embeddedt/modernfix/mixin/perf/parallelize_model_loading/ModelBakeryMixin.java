@@ -18,6 +18,7 @@ import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraft.util.registry.Registry;
+import net.minecraftforge.fml.loading.progress.StartupMessageManager;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.AsyncStopwatch;
 import org.spongepowered.asm.mixin.Final;
@@ -64,6 +65,7 @@ public abstract class ModelBakeryMixin {
 
     @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;popPush(Ljava/lang/String;)V", ordinal = 0))
     private void preloadJsonModels(IProfiler profilerIn, int maxMipmapLevel, CallbackInfo ci) {
+        StartupMessageManager.mcLoaderConsumer().ifPresent(c -> c.accept("Loading models"));
         profilerIn.popPush("loadblockstates");
         AsyncStopwatch.measureAndLogSerialRunningTime("Parallel blockstate loading", () -> {
             ThreadLocal<BlockModelDefinition.ContainerHolder> containerHolder = ThreadLocal.withInitial(BlockModelDefinition.ContainerHolder::new);

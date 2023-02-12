@@ -14,6 +14,12 @@ import net.minecraft.profiler.IProfiler;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
 import net.minecraft.util.math.vector.TransformationMatrix;
+import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.EventBus;
+import net.minecraftforge.eventbus.api.EventListenerHelper;
+import net.minecraftforge.eventbus.api.IEventListener;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.progress.StartupMessageManager;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Logger;
@@ -22,6 +28,7 @@ import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.models.LazyBakedModel;
+import org.embeddedt.modernfix.util.ModUtil;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -84,9 +91,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.atlasSet = new SpriteMap(this.atlasPreparations.values().stream().map(Pair::getFirst).collect(Collectors.toList()));
         IBakedModel missingModel = this.bake(MISSING_MODEL_LOCATION, ModelRotation.X0_Y0);
         this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, missingModel);
+        Collection<String> modsListening = ModUtil.findAllModsListeningToEvent(ModelBakeEvent.class);
+        LOGGER.debug("Found ModelBakeEvent listeners: [" + String.join(", ", modsListening) + "]");
         Set<String> incompatibleLazyBakedModels = ImmutableSet.<String>builder()
                 .addAll(ModernFixConfig.MODELS_TO_BAKE.get())
-                .add("betterfoliage")
+                .addAll(modsListening)
                 .build();
         /* First, bake any incompatible models ahead of time (for mods that have custom models) */
         this.unbakedCache.keySet().forEach(location -> {

@@ -144,14 +144,14 @@ public class ModernFixCachingClassTransformer extends ClassTransformer {
     @Override
     public byte[] transform(byte[] inputClass, String className, String reason) {
         /* We only want to cache actual transformations */
-        if(ITransformerActivity.CLASSLOADING_REASON.equals(reason)) {
+        if(ITransformerActivity.CLASSLOADING_REASON.equals(reason) || "mixin".equals(reason)) {
             final byte[] classToHash = inputClass;
             ArrayList<byte[]> hashList = computeHash(className, classToHash, reason);
             if(hashList == null)
                 return super.transform(inputClass, className, reason);
             /* Check if the cache contains a transformed class matching these hashes */
             /* TODO maybe sanitize the class name? */
-            File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/'));
+            File cacheLocation = new File(CLASS_CACHE_FOLDER, className.replace('.', '/') + "." + reason);
             boolean hashesMatch = true;
             try(ObjectInputStream stream = new ObjectInputStream(new FileInputStream(cacheLocation))) {
                 ArrayList<byte[]> savedHash = (ArrayList<byte[]>)stream.readObject();

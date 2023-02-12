@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.faster_baking;
 
+import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.model.*;
@@ -18,6 +19,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.models.LazyBakedModel;
 import org.spongepowered.asm.mixin.*;
@@ -52,6 +54,21 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final private Map<Triple<ResourceLocation, TransformationMatrix, Boolean>, IBakedModel> bakedCache;
 
+    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> unbakedCache;
+
+    private IBakedModel bakeIfPossible(ResourceLocation p_229350_1_) {
+        IBakedModel ibakedmodel = null;
+
+        try {
+            ibakedmodel = this.bake(p_229350_1_, ModelRotation.X0_Y0);
+        } catch (Exception exception) {
+            exception.printStackTrace();
+            LOGGER.warn("Unable to bake model: '{}': {}", p_229350_1_, exception);
+        }
+
+        return ibakedmodel;
+    }
+
     @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;pop()V"))
     private void bakeModels(IProfiler pProfiler, int p_i226056_4_, CallbackInfo ci) {
         pProfiler.popPush("atlas");
@@ -67,21 +84,32 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.atlasSet = new SpriteMap(this.atlasPreparations.values().stream().map(Pair::getFirst).collect(Collectors.toList()));
         IBakedModel missingModel = this.bake(MISSING_MODEL_LOCATION, ModelRotation.X0_Y0);
         this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, missingModel);
+        Set<String> incompatibleLazyBakedModels = ImmutableSet.<String>builder()
+                .addAll(ModernFixConfig.MODELS_TO_BAKE.get())
+                .add("betterfoliage")
+                .build();
+        /* First, bake any incompatible models ahead of time (for mods that have custom models) */
+        this.unbakedCache.keySet().forEach(location -> {
+           if(incompatibleLazyBakedModels.contains(location.getNamespace())) {
+               this.bakeIfPossible(location);
+           }
+        });
+        /* Then store them as top-level models if needed, and set up the lazy models */
         this.topLevelModels.keySet().forEach((p_229350_1_) -> {
-            this.bakedTopLevelModels.put(p_229350_1_, new LazyBakedModel(() -> {
-                synchronized (this.bakedCache) {
-                    IBakedModel ibakedmodel = null;
+            if(incompatibleLazyBakedModels.contains(p_229350_1_.getNamespace())) {
+                IBakedModel model = this.bakeIfPossible(p_229350_1_);
+                if(model != null)
+                    this.bakedTopLevelModels.put(p_229350_1_, model);
+            } else {
+                this.bakedTopLevelModels.put(p_229350_1_, new LazyBakedModel(() -> {
+                    synchronized (this.bakedCache) {
+                        IBakedModel ibakedmodel = this.bakeIfPossible(p_229350_1_);
 
-                    try {
-                        ibakedmodel = this.bake(p_229350_1_, ModelRotation.X0_Y0);
-                    } catch (Exception exception) {
-                        exception.printStackTrace();
-                        LOGGER.warn("Unable to bake model: '{}': {}", p_229350_1_, exception);
+                        return ibakedmodel != null ? ibakedmodel : missingModel;
                     }
+                }));
+            }
 
-                    return ibakedmodel != null ? ibakedmodel : missingModel;
-                }
-            }));
         });
     }
 

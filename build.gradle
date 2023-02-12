@@ -148,6 +148,8 @@ dependencies {
         runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}")// core
         runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:generators")// Mekanism: Generators
         runtimeOnly fg.deobf("mekanism:Mekanism:${mekanism_version}:tools")// Mekanism: Tools
+
+        runtimeOnly fg.deobf("curse.maven:betterfoliage-470013:3396105")
     }
 
     compileOnly fg.deobf("curse.maven:refinedstorage-243076:3807951")

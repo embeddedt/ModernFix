@@ -1,22 +1,15 @@
 package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
 
-import com.google.common.base.Stopwatch;
-import com.google.common.collect.Sets;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockModelShapes;
 import net.minecraft.client.renderer.model.*;
-import net.minecraft.client.renderer.model.multipart.Selector;
-import net.minecraft.client.renderer.texture.SpriteMap;
 import net.minecraft.profiler.IProfiler;
 import net.minecraft.resources.IResource;
 import net.minecraft.resources.IResourceManager;
 import net.minecraft.state.StateContainer;
 import net.minecraft.util.ResourceLocation;
 import net.minecraft.util.Util;
-import net.minecraft.util.math.vector.TransformationMatrix;
 import net.minecraft.util.registry.Registry;
 import net.minecraftforge.fml.loading.progress.StartupMessageManager;
 import org.embeddedt.modernfix.ModernFix;
@@ -26,13 +19,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
-import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
-
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -40,25 +28,11 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentLinkedDeque;
-import java.util.concurrent.TimeUnit;
-import java.util.function.Consumer;
 import java.util.function.Function;
-import java.util.function.Predicate;
-import java.util.stream.Collector;
-import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 @Mixin(ModelBakery.class)
 public abstract class ModelBakeryMixin {
-    @Shadow protected abstract BlockModel loadBlockModel(ResourceLocation location) throws IOException;
-
-    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> unbakedCache;
-    @Shadow @Final public static ModelResourceLocation MISSING_MODEL_LOCATION;
-
-    @Shadow public abstract IUnbakedModel getModel(ResourceLocation modelLocation);
-
-    @Shadow @Final private Map<ResourceLocation, IUnbakedModel> topLevelModels;
     @Shadow @Final protected IResourceManager resourceManager;
 
     private Map<ResourceLocation, List<Pair<String, BlockModelDefinition>>> deserializedBlockstateCache = null;

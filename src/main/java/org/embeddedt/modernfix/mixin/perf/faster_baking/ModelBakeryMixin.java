@@ -76,6 +76,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return ibakedmodel;
     }
 
+    private boolean requiresBake(IUnbakedModel model) {
+        if(model instanceof BlockModel && ((BlockModel)model).customData.hasCustomGeometry())
+            return true;
+        else
+            return false;
+    }
+
     @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;pop()V"))
     private void bakeModels(IProfiler pProfiler, int p_i226056_4_, CallbackInfo ci) {
         pProfiler.popPush("atlas");
@@ -104,21 +111,20 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
            }
         });
         /* Then store them as top-level models if needed, and set up the lazy models */
-        this.topLevelModels.keySet().forEach((p_229350_1_) -> {
-            if(incompatibleLazyBakedModels.contains(p_229350_1_.getNamespace())) {
-                IBakedModel model = this.bakeIfPossible(p_229350_1_);
-                if(model != null)
-                    this.bakedTopLevelModels.put(p_229350_1_, model);
+        this.topLevelModels.forEach((location, value) -> {
+            if (incompatibleLazyBakedModels.contains(location.getNamespace()) || requiresBake(value)) {
+                IBakedModel model = this.bakeIfPossible(location);
+                if (model != null)
+                    this.bakedTopLevelModels.put(location, model);
             } else {
-                this.bakedTopLevelModels.put(p_229350_1_, new LazyBakedModel(() -> {
+                this.bakedTopLevelModels.put(location, new LazyBakedModel(() -> {
                     synchronized (this.bakedCache) {
-                        IBakedModel ibakedmodel = this.bakeIfPossible(p_229350_1_);
+                        IBakedModel ibakedmodel = this.bakeIfPossible(location);
 
                         return ibakedmodel != null ? ibakedmodel : missingModel;
                     }
                 }));
             }
-
         });
     }
 

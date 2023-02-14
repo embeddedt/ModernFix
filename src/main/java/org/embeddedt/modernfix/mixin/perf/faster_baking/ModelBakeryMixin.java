@@ -105,7 +105,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 .addAll(modsListening)
                 .build();
         /* First, bake any incompatible models ahead of time (for mods that have custom models) */
-        this.unbakedCache.keySet().forEach(location -> {
+        new ArrayList<>(this.unbakedCache.keySet()).forEach(location -> {
            if(incompatibleLazyBakedModels.contains(location.getNamespace())) {
                this.bakeIfPossible(location);
            }

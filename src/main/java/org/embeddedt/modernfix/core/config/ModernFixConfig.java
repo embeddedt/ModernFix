@@ -39,7 +39,6 @@ public class ModernFixConfig {
                         "jepb:jei_plugin"
                 ), locationValidator);
         INTEGRATED_SERVER_PRIORITY = COMMON_BUILDER.comment("Thread priority to use for the integrated server. By default this is one less than the client thread, to help prevent the server from lowering FPS.").defineInRange("integratedServerPriority", 4, 1, 10);
-        BACKGROUND_WORKER_PRIORITY = COMMON_BUILDER.comment("Priority to use for the background workers that complete various tasks. By default this is one less than the client thread.").defineInRange("backgroundWorkerPriority", 4, 1, 10);
         REBUILD_BLOCKSTATES_ASYNC = COMMON_BUILDER
                 .comment("Rebuild blockstate cache asynchronously. Should work with most mods, but can be disabled.")
                 .define("rebuild_blockstate_cache_async", true);

@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(targets = { "net/minecraftforge/registries/GameData$BlockCallbacks" })
 public class BlockCallbacksMixin {
-    @Redirect(method = "onBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;initCache()V"), remap = false)
+    @Redirect(method = "onBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;initCache()V"))
     private void skipCache(BlockState instance) {
 
     }

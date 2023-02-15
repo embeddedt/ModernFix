@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(RecipeManagerInternal.class)
 public class RecipeManagerInternalMixin {
-    @Inject(method = "addRecipes", at = @At(value = "INVOKE", target = "Lmezz/jei/recipes/RecipeManagerInternal;addRecipeTyped(Ljava/lang/Object;Lnet/minecraft/resources/ResourceLocation;)V"), remap = false)
+    @Inject(method = "addRecipes", at = @At(value = "INVOKE", target = "Lmezz/jei/recipes/RecipeManagerInternal;addRecipeTyped(Ljava/lang/Object;Lnet/minecraft/resources/ResourceLocation;)V"))
     private void checkForInterrupt(ImmutableListMultimap<ResourceLocation, Object> recipes, CallbackInfo ci) {
         IAsyncJeiStarter.checkForLoadInterruption();
     }

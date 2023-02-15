@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.mixin.perf.reduce_blockstate_cache_rebuilds;
 
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.IForgeRegistryInternal;
 import net.minecraftforge.registries.RegistryManager;
 import org.embeddedt.modernfix.blockstate.BlockStateCacheHandler;
@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(targets = { "net/minecraftforge/registries/GameData$BlockCallbacks" })
 public class BlockCallbacksMixin {
-    @Redirect(method = "onBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/block/BlockState;initCache()V"))
+    @Redirect(method = "onBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;initCache()V"), remap = false)
     private void skipCache(BlockState instance) {
 
     }

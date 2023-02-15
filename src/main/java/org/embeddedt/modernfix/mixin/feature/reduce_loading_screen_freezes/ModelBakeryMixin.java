@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.mixin.feature.reduce_loading_screen_freezes;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.model.ModelBakery;
-import net.minecraft.util.Util;
+import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.Util;
 import net.minecraftforge.fml.loading.progress.StartupMessageManager;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

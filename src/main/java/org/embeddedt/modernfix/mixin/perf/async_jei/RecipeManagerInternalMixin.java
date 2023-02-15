@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.mixin.perf.async_jei;
 
 import com.google.common.collect.ImmutableListMultimap;
 import mezz.jei.recipes.RecipeManagerInternal;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import org.embeddedt.modernfix.jei.async.IAsyncJeiStarter;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

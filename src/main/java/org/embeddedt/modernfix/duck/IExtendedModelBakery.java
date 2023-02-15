@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.duck;
 
 
-import net.minecraft.client.renderer.texture.SpriteMap;
+import net.minecraft.client.renderer.texture.AtlasSet;
 
 public interface IExtendedModelBakery {
-    SpriteMap getUnfinishedAtlasSet();
+    AtlasSet getUnfinishedAtlasSet();
 }

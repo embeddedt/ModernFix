@@ -1,17 +1,17 @@
 package org.embeddedt.modernfix.mixin.perf.faster_baking;
 
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.BlockModelShapes;
-import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.client.renderer.model.ModelBakery;
-import net.minecraft.client.renderer.model.ModelManager;
-import net.minecraft.client.renderer.texture.SpriteMap;
+import net.minecraft.client.renderer.block.BlockModelShaper;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
@@ -31,20 +31,20 @@ import java.util.Map;
 
 @Mixin(ModelManager.class)
 public class ModelManagerMixin {
-    @Shadow @Nullable private SpriteMap atlases;
+    @Shadow @Nullable private AtlasSet atlases;
 
-    @Shadow private Map<ResourceLocation, IBakedModel> bakedRegistry;
+    @Shadow private Map<ResourceLocation, BakedModel> bakedRegistry;
 
     @Shadow private Object2IntMap<BlockState> modelGroups;
 
     @Shadow @Final private TextureManager textureManager;
 
-    @Shadow private IBakedModel missingModel;
+    @Shadow private BakedModel missingModel;
 
-    @Shadow @Final private BlockModelShapes blockModelShaper;
+    @Shadow @Final private BlockModelShaper blockModelShaper;
 
-    @Inject(method = "prepare(Lnet/minecraft/resources/IResourceManager;Lnet/minecraft/profiler/IProfiler;)Lnet/minecraft/client/renderer/model/ModelBakery;", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;endTick()V"), locals = LocalCapture.CAPTURE_FAILHARD)
-    private void fireModelBakeEvent(IResourceManager pResourceManager, IProfiler pProfiler, CallbackInfoReturnable<ModelBakery> cir, ModelLoader pObject) {
+    @Inject(method = "prepare(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)Lnet/minecraft/client/resources/model/ModelBakery;", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;endTick()V"), locals = LocalCapture.CAPTURE_FAILHARD)
+    private void fireModelBakeEvent(ResourceManager pResourceManager, ProfilerFiller pProfiler, CallbackInfoReturnable<ModelBakery> cir, ModelLoader pObject) {
         pProfiler.push("modelevent");
         if (this.atlases != null) {
             Minecraft.getInstance().executeBlocking(() -> {
@@ -66,7 +66,7 @@ public class ModelManagerMixin {
      * @reason most of the code is moved to prepare()
      */
     @Overwrite
-    protected void apply(ModelBakery pObject, IResourceManager pResourceManager, IProfiler pProfiler) {
+    protected void apply(ModelBakery pObject, ResourceManager pResourceManager, ProfilerFiller pProfiler) {
         pProfiler.startTick();
         pProfiler.push("upload");
         this.atlases = pObject.uploadTextures(this.textureManager, pProfiler);

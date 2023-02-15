@@ -1,18 +1,18 @@
 package org.embeddedt.modernfix.models;
 
-import com.mojang.blaze3d.matrix.MatrixStack;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.model.BakedQuad;
-import net.minecraft.client.renderer.model.IBakedModel;
-import net.minecraft.client.renderer.model.ItemCameraTransforms;
-import net.minecraft.client.renderer.model.ItemOverrideList;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.item.ItemStack;
-import net.minecraft.util.Direction;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.IBlockDisplayReader;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.core.Direction;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraftforge.client.model.data.EmptyModelData;
 import net.minecraftforge.client.model.data.IModelData;
 import org.embeddedt.modernfix.ModernFix;
@@ -23,9 +23,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.function.Supplier;
 
-public class LazyBakedModel implements IBakedModel {
-    private IBakedModel delegate = null;
-    private Supplier<IBakedModel> delegateSupplier;
+public class LazyBakedModel implements BakedModel {
+    private BakedModel delegate = null;
+    private Supplier<BakedModel> delegateSupplier;
 
     /**
      * This flag is changed to true when we should bake instead of returning reasonable defaults for certain
@@ -33,11 +33,11 @@ public class LazyBakedModel implements IBakedModel {
      */
     public static boolean allowBakeForFlags = false;
 
-    public LazyBakedModel(Supplier<IBakedModel> delegateSupplier) {
+    public LazyBakedModel(Supplier<BakedModel> delegateSupplier) {
         this.delegateSupplier = delegateSupplier;
     }
 
-    public IBakedModel computeDelegate() {
+    public BakedModel computeDelegate() {
         if(this.delegate == null) {
             this.delegate = this.delegateSupplier.get();
             this.delegateSupplier = null;
@@ -80,17 +80,17 @@ public class LazyBakedModel implements IBakedModel {
     }
 
     @Override
-    public ItemCameraTransforms getTransforms() {
+    public ItemTransforms getTransforms() {
         return computeDelegate().getTransforms();
     }
 
     @Override
-    public ItemOverrideList getOverrides() {
+    public ItemOverrides getOverrides() {
         return computeDelegate().getOverrides();
     }
 
     @Override
-    public IBakedModel getBakedModel() {
+    public BakedModel getBakedModel() {
         return computeDelegate().getBakedModel();
     }
 
@@ -111,13 +111,13 @@ public class LazyBakedModel implements IBakedModel {
     }
 
     @Override
-    public IBakedModel handlePerspective(ItemCameraTransforms.TransformType cameraTransformType, MatrixStack mat) {
+    public BakedModel handlePerspective(ItemTransforms.TransformType cameraTransformType, PoseStack mat) {
         return computeDelegate().handlePerspective(cameraTransformType, mat);
     }
 
     @Nonnull
     @Override
-    public IModelData getModelData(@Nonnull IBlockDisplayReader world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull IModelData tileData) {
+    public IModelData getModelData(@Nonnull BlockAndTintGetter world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull IModelData tileData) {
         return computeDelegate().getModelData(world, pos, state, tileData);
     }
 
@@ -132,7 +132,7 @@ public class LazyBakedModel implements IBakedModel {
     }
 
     @Override
-    public List<Pair<IBakedModel, RenderType>> getLayerModels(ItemStack itemStack, boolean fabulous) {
+    public List<Pair<BakedModel, RenderType>> getLayerModels(ItemStack itemStack, boolean fabulous) {
         return computeDelegate().getLayerModels(itemStack, fabulous);
     }
 }

@@ -1,7 +1,7 @@
-package me.jellysquid.mods.hydrogen.common.state.all;
+package org.embeddedt.modernfix.predicate.all;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.state.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.predicate.single.SingleMatchOne;
 
 import java.util.List;

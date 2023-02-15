@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.boost_worker_count;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import org.embeddedt.modernfix.ModernFix;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.Constant;

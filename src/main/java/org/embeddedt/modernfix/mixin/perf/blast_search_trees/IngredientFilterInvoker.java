@@ -9,6 +9,6 @@ import java.util.List;
 
 @Mixin(IngredientFilter.class)
 public interface IngredientFilterInvoker {
-    @Invoker
+    @Invoker(remap = false)
     List<IIngredientListElementInfo<?>> invokeGetIngredientListUncached(String filterText);
 }

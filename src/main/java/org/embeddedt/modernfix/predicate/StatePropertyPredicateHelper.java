@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.predicate;
 
-import me.jellysquid.mods.hydrogen.common.state.all.AllMatchOneBoolean;
-import net.minecraft.block.BlockState;
+import net.minecraft.world.level.block.state.BlockState;
+import org.embeddedt.modernfix.predicate.all.AllMatchOneBoolean;
 import org.embeddedt.modernfix.predicate.all.AllMatchOneObject;
 import org.embeddedt.modernfix.predicate.any.AllMatchAnyObject;
 import org.embeddedt.modernfix.predicate.single.SingleMatchAny;

@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.deduplicate_location;
 
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import org.embeddedt.modernfix.dedup.IdentifierCaches;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.util;
 
 import com.google.common.base.Stopwatch;
-import net.minecraft.block.AbstractBlock;
-import net.minecraft.block.Block;
+import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModWorkManager;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
@@ -22,7 +22,7 @@ public class BlockClassPreloader {
         Stopwatch stopwatch = Stopwatch.createStarted();
         ModernFix.LOGGER.warn("Preparing to preload classes...");
         HashMap<Type, Boolean> isABlockClass = new HashMap<>();
-        isABlockClass.put(Type.getType(AbstractBlock.class), true);
+        isABlockClass.put(Type.getType(BlockBehaviour.class), true);
         isABlockClass.put(Type.getType(Block.class), true);
         Field selfField, parentField;
         List<CompletableFuture> futures = new ArrayList<>();
@@ -37,7 +37,7 @@ public class BlockClassPreloader {
                     .flatMap(data -> data.getClasses().stream())
                     .collect(Collectors.toList());
             HashSet<Type> blockClasses = new HashSet<>();
-            blockClasses.add(Type.getType(AbstractBlock.class));
+            blockClasses.add(Type.getType(BlockBehaviour.class));
             HashSet<Type> nonBlockClasses = new HashSet<>();
             int previousSize = -1;
             nonBlockClasses.add(Type.getType(Object.class));

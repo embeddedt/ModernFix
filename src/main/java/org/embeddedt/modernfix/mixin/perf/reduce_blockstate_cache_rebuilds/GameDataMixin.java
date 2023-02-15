@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.mixin.perf.reduce_blockstate_cache_rebuilds;
 
 import com.google.common.collect.Multimap;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.ForgeRegistry;
 import net.minecraftforge.registries.GameData;
 import org.embeddedt.modernfix.util.BakeReason;

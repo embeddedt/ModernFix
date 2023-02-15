@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
 
-import net.minecraft.state.Property;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.dedup.IdentifierCaches;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,7 +17,7 @@ public class PropertyMixin {
 
     @Shadow @Final private Class clazz;
 
-    @Redirect(method = "<init>", at = @At(value = "FIELD", target = "Lnet/minecraft/state/Property;name:Ljava/lang/String;"))
+    @Redirect(method = "<init>", at = @At(value = "FIELD", target = "Lnet/minecraft/world/level/block/state/properties/Property;name:Ljava/lang/String;"))
     private void internName(Property instance, String name) {
         this.name = IdentifierCaches.PROPERTY.deduplicate(name);
     }

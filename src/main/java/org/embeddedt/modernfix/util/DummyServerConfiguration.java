@@ -2,28 +2,28 @@ package org.embeddedt.modernfix.util;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.serialization.Lifecycle;
-import net.minecraft.nbt.CompoundNBT;
-import net.minecraft.util.datafix.codec.DatapackCodec;
-import net.minecraft.util.registry.DynamicRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.world.level.DataPackConfig;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.GameRules;
-import net.minecraft.world.GameType;
-import net.minecraft.world.WorldSettings;
-import net.minecraft.world.gen.settings.DimensionGeneratorSettings;
-import net.minecraft.world.storage.IServerConfiguration;
-import net.minecraft.world.storage.IServerWorldInfo;
+import net.minecraft.world.level.GameRules;
+import net.minecraft.world.level.GameType;
+import net.minecraft.world.level.LevelSettings;
+import net.minecraft.world.level.levelgen.WorldGenSettings;
+import net.minecraft.world.level.storage.WorldData;
+import net.minecraft.world.level.storage.ServerLevelData;
 
 import javax.annotation.Nullable;
 import java.util.Set;
 
-public class DummyServerConfiguration implements IServerConfiguration {
+public class DummyServerConfiguration implements WorldData {
     @Override
-    public DatapackCodec getDataPackConfig() {
-        return DatapackCodec.DEFAULT;
+    public DataPackConfig getDataPackConfig() {
+        return DataPackConfig.DEFAULT;
     }
 
     @Override
-    public void setDataPackConfig(DatapackCodec codec) {
+    public void setDataPackConfig(DataPackConfig codec) {
 
     }
 
@@ -44,27 +44,27 @@ public class DummyServerConfiguration implements IServerConfiguration {
 
     @Nullable
     @Override
-    public CompoundNBT getCustomBossEvents() {
+    public CompoundTag getCustomBossEvents() {
         return null;
     }
 
     @Override
-    public void setCustomBossEvents(@Nullable CompoundNBT nbt) {
+    public void setCustomBossEvents(@Nullable CompoundTag nbt) {
 
     }
 
     @Override
-    public IServerWorldInfo overworldData() {
+    public ServerLevelData overworldData() {
         return null;
     }
 
     @Override
-    public WorldSettings getLevelSettings() {
+    public LevelSettings getLevelSettings() {
         return null;
     }
 
     @Override
-    public CompoundNBT createTag(DynamicRegistries registries, @Nullable CompoundNBT hostPlayerNBT) {
+    public CompoundTag createTag(RegistryAccess registries, @Nullable CompoundTag hostPlayerNBT) {
         return null;
     }
 
@@ -124,22 +124,22 @@ public class DummyServerConfiguration implements IServerConfiguration {
     }
 
     @Override
-    public CompoundNBT getLoadedPlayerTag() {
+    public CompoundTag getLoadedPlayerTag() {
         return null;
     }
 
     @Override
-    public CompoundNBT endDragonFightData() {
+    public CompoundTag endDragonFightData() {
         return null;
     }
 
     @Override
-    public void setEndDragonFightData(CompoundNBT nbt) {
+    public void setEndDragonFightData(CompoundTag nbt) {
 
     }
 
     @Override
-    public DimensionGeneratorSettings worldGenSettings() {
+    public WorldGenSettings worldGenSettings() {
         return null;
     }
 

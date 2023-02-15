@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.registry;
 
 import com.google.common.base.Stopwatch;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.ModWorkManager;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.AsyncStopwatch;

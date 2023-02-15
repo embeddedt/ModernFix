@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.predicate.any;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.state.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.apache.commons.lang3.ArrayUtils;
 import org.embeddedt.modernfix.predicate.single.SingleMatchAny;
 

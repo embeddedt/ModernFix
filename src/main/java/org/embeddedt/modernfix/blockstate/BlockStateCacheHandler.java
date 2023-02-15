@@ -2,12 +2,12 @@ package org.embeddedt.modernfix.blockstate;
 
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableSet;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.Util;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.shapes.ISelectionContext;
-import net.minecraft.world.EmptyBlockReader;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.Util;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLLoader;
 import org.embeddedt.modernfix.ModernFix;
@@ -102,8 +102,8 @@ public class BlockStateCacheHandler {
                 specialStates.parallelStream()
                         .forEach(state -> {
                             /* Force these blocks to compute their shapes ahead of time on worker threads */
-                            state.getBlock().getCollisionShape(state, EmptyBlockReader.INSTANCE, BlockPos.ZERO, ISelectionContext.empty());
-                            state.getBlock().getOcclusionShape(state, EmptyBlockReader.INSTANCE, BlockPos.ZERO);
+                            state.getBlock().getCollisionShape(state, EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty());
+                            state.getBlock().getOcclusionShape(state, EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
                         });
             }, Util.backgroundExecutor()).join();
             rebuildCache();

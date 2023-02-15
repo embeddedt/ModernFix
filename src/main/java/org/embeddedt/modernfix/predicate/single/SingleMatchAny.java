@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.predicate.single;
 
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.block.BlockState;
-import net.minecraft.state.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 import org.apache.commons.lang3.ArrayUtils;
 
 import java.util.Arrays;

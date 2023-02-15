@@ -2,11 +2,11 @@ package org.embeddedt.modernfix.mixin.perf.skip_first_datapack_reload;
 
 import com.mojang.datafixers.util.Function4;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.datafix.codec.DatapackCodec;
-import net.minecraft.util.registry.DynamicRegistries;
-import net.minecraft.world.storage.IServerConfiguration;
-import net.minecraft.world.storage.SaveFormat;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.level.DataPackConfig;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.world.level.storage.WorldData;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.duck.ILevelSave;
@@ -24,17 +24,17 @@ import java.util.function.Function;
 
 @Mixin(Minecraft.class)
 public abstract class MinecraftMixin {
-    @Shadow public abstract Minecraft.PackManager makeServerStem(DynamicRegistries.Impl dynamicRegistries, Function<SaveFormat.LevelSave, DatapackCodec> worldStorageToDatapackFunction, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> quadFunction, boolean vanillaOnly, SaveFormat.LevelSave worldStorage) throws InterruptedException, ExecutionException;
+    @Shadow public abstract Minecraft.ServerStem makeServerStem(RegistryAccess.RegistryHolder dynamicRegistries, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> worldStorageToDatapackFunction, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> quadFunction, boolean vanillaOnly, LevelStorageSource.LevelStorageAccess worldStorage) throws InterruptedException, ExecutionException;
 
-    @Shadow @Final private SaveFormat levelSource;
+    @Shadow @Final private LevelStorageSource levelSource;
 
-    @Redirect(method = "loadLevel(Ljava/lang/String;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/registry/DynamicRegistries;builtin()Lnet/minecraft/util/registry/DynamicRegistries$Impl;"))
-    private DynamicRegistries.Impl useNullRegistry() {
+    @Redirect(method = "loadLevel(Ljava/lang/String;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/RegistryAccess;builtin()Lnet/minecraft/core/RegistryAccess$RegistryHolder;"))
+    private RegistryAccess.RegistryHolder useNullRegistry() {
         return null;
     }
 
-    @Redirect(method = "loadWorld(Ljava/lang/String;Lnet/minecraft/util/registry/DynamicRegistries$Impl;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/Minecraft$WorldSelectionType;Z)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;makeServerStem(Lnet/minecraft/util/registry/DynamicRegistries$Impl;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/world/storage/SaveFormat$LevelSave;)Lnet/minecraft/client/Minecraft$PackManager;", ordinal = 0))
-    private Minecraft.PackManager skipFirstReload(Minecraft client, DynamicRegistries.Impl dynamicRegistries, Function<SaveFormat.LevelSave, DatapackCodec> worldStorageToDatapackFunction, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> quadFunction, boolean vanillaOnly, SaveFormat.LevelSave levelSave, String worldName, DynamicRegistries.Impl originalRegistries, Function<SaveFormat.LevelSave, DatapackCodec> levelSaveToDatapackFunction, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> quadFunction2, boolean vanillaOnly2, Minecraft.WorldSelectionType selectionType, boolean creating) throws InterruptedException, ExecutionException {
+    @Redirect(method = "loadWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;makeServerStem(Lnet/minecraft/core/RegistryAccess$RegistryHolder;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;)Lnet/minecraft/client/Minecraft$ServerStem;", ordinal = 0))
+    private Minecraft.ServerStem skipFirstReload(Minecraft client, RegistryAccess.RegistryHolder dynamicRegistries, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> worldStorageToDatapackFunction, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> quadFunction, boolean vanillaOnly, LevelStorageSource.LevelStorageAccess levelSave, String worldName, RegistryAccess.RegistryHolder originalRegistries, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> levelSaveToDatapackFunction, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> quadFunction2, boolean vanillaOnly2, Minecraft.ExperimentalDialogType selectionType, boolean creating) throws InterruptedException, ExecutionException {
         if(!creating) {
             ModernFix.LOGGER.warn("Skipping first reload, this is still experimental");
             ModernFix.runningFirstInjection = true;

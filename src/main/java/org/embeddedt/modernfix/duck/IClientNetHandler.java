@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.duck;
 
-import net.minecraft.network.PacketBuffer;
+import net.minecraft.network.FriendlyByteBuf;
 
 public interface IClientNetHandler {
-    PacketBuffer getCopiedCustomBuffer();
+    FriendlyByteBuf getCopiedCustomBuffer();
 }

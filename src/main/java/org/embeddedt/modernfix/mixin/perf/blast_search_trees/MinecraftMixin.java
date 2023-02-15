@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.mixin.perf.blast_search_trees;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.util.SearchTreeManager;
+import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraftforge.fml.ModList;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
 import org.embeddedt.modernfix.searchtree.JEIBackedSearchTree;
@@ -14,18 +14,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
-    @Shadow @Final private SearchTreeManager searchRegistry;
+    @Shadow @Final private SearchRegistry searchRegistry;
 
     @Inject(method = "createSearchTrees", at = @At("HEAD"), cancellable = true)
     private void replaceSearchTrees(CallbackInfo ci) {
         ci.cancel();
         if(ModList.get().getModFileById("jei") != null) {
-            this.searchRegistry.register(SearchTreeManager.CREATIVE_NAMES, new JEIBackedSearchTree(false));
-            this.searchRegistry.register(SearchTreeManager.CREATIVE_TAGS, new JEIBackedSearchTree(true));
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
+            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
         } else {
-            this.searchRegistry.register(SearchTreeManager.CREATIVE_NAMES, new DummySearchTree<>());
-            this.searchRegistry.register(SearchTreeManager.CREATIVE_TAGS, new DummySearchTree<>());
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new DummySearchTree<>());
+            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new DummySearchTree<>());
         }
-        this.searchRegistry.register(SearchTreeManager.RECIPE_COLLECTIONS, new DummySearchTree<>());
+        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new DummySearchTree<>());
     }
 }

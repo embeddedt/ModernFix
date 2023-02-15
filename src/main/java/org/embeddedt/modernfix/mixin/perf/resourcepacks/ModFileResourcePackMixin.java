@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.mixin.perf.resourcepacks;
 
 import com.google.common.base.Joiner;
-import net.minecraft.resources.ResourcePackType;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.packs.ModFileResourcePack;
 import org.embeddedt.modernfix.ModernFix;
@@ -28,11 +28,11 @@ import java.util.stream.Stream;
 
 @Mixin(ModFileResourcePack.class)
 public abstract class ModFileResourcePackMixin {
-    @Shadow public abstract Set<String> getNamespaces(ResourcePackType type);
+    @Shadow public abstract Set<String> getNamespaces(PackType type);
 
     @Shadow(remap = false) @Final private ModFile modFile;
-    private EnumMap<ResourcePackType, Set<String>> namespacesByType;
-    private EnumMap<ResourcePackType, HashMap<String, List<Path>>> rootListingByNamespaceAndType;
+    private EnumMap<PackType, Set<String>> namespacesByType;
+    private EnumMap<PackType, HashMap<String, List<Path>>> rootListingByNamespaceAndType;
     private Set<String> containedPaths;
     private boolean useNamespaceCaches;
     private FileSystem resourcePackFS;
@@ -42,14 +42,14 @@ public abstract class ModFileResourcePackMixin {
     private void cacheResources(ModFile modFile, CallbackInfo ci) {
         this.resourcePackFS = modFile.getLocator().findPath(modFile, "").getFileSystem();
         this.useNamespaceCaches = false;
-        this.namespacesByType = new EnumMap<>(ResourcePackType.class);
-        for(ResourcePackType type : ResourcePackType.values()) {
+        this.namespacesByType = new EnumMap<>(PackType.class);
+        for(PackType type : PackType.values()) {
             this.namespacesByType.put(type, this.getNamespaces(type));
         }
         this.useNamespaceCaches = true;
-        this.rootListingByNamespaceAndType = new EnumMap<>(ResourcePackType.class);
+        this.rootListingByNamespaceAndType = new EnumMap<>(PackType.class);
         this.containedPaths = new HashSet<>();
-        for(ResourcePackType type : ResourcePackType.values()) {
+        for(PackType type : PackType.values()) {
             Set<String> namespaces = this.namespacesByType.get(type);
             HashMap<String, List<Path>> rootListingForNamespaces = new HashMap<>();
             for(String namespace : namespaces) {
@@ -88,7 +88,7 @@ public abstract class ModFileResourcePackMixin {
     }
 
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
-    private void useCacheForNamespaces(ResourcePackType type, CallbackInfoReturnable<Set<String>> cir) {
+    private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
         if(useNamespaceCaches) {
             cir.setReturnValue(this.namespacesByType.get(type));
         }
@@ -104,7 +104,7 @@ public abstract class ModFileResourcePackMixin {
      * @reason Use cached listing of mod resources
      */
     @Overwrite
-    public Collection<ResourceLocation> getResources(ResourcePackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter)
+    public Collection<ResourceLocation> getResources(PackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter)
     {
         Path inputPath = this.resourcePackFS.getPath(pathIn);
         return this.rootListingByNamespaceAndType.get(type).getOrDefault(resourceNamespace, Collections.emptyList()).stream().

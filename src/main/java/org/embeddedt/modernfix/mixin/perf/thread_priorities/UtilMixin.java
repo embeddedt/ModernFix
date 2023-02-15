@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.thread_priorities;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.spongepowered.asm.mixin.Mixin;

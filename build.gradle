@@ -71,9 +71,6 @@ dependencies {
 
     if(include_content_mods.toBoolean()) {
         modRuntimeOnly("mekanism:Mekanism:${mekanism_version}")// core
-        modRuntimeOnly("mekanism:Mekanism:${mekanism_version}:generators")// Mekanism: Generators
-        modRuntimeOnly("mekanism:Mekanism:${mekanism_version}:tools")// Mekanism: Tools
-
         modRuntimeOnly("curse.maven:betterfoliage-470013:3396105")
     }
 

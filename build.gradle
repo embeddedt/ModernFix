@@ -28,6 +28,7 @@ loom {
                 "modernfix.mixins.json"
         ]
     }
+    mixin.defaultRefmapName = "modernfix.refmap.json"
 }
 
 repositories {

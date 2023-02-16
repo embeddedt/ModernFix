@@ -4,9 +4,9 @@ import com.google.common.base.Joiner;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import net.minecraft.resources.ResourcePackType;
-import net.minecraft.resources.VanillaPack;
-import net.minecraft.util.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.server.packs.VanillaPackResources;
+import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.FileWalker;
 import org.embeddedt.modernfix.ModernFix;
@@ -26,9 +26,9 @@ import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Stream;
 
-@Mixin(VanillaPack.class)
+@Mixin(VanillaPackResources.class)
 public class VanillaPackMixin {
-    @Shadow @Final private static Map<ResourcePackType, FileSystem> JAR_FILESYSTEM_BY_TYPE;
+    @Shadow @Final private static Map<PackType, FileSystem> JAR_FILESYSTEM_BY_TYPE;
     private static LoadingCache<Pair<Path, Integer>, List<Path>> pathStreamLoadingCache = CacheBuilder.newBuilder()
             .build(FileWalker.INSTANCE);
 
@@ -40,7 +40,7 @@ public class VanillaPackMixin {
             return;
         containedPaths = new HashSet<>();
         Joiner slashJoiner = Joiner.on('/');
-        for(ResourcePackType type : ResourcePackType.values()) {
+        for(PackType type : PackType.values()) {
             FileSystem fs = JAR_FILESYSTEM_BY_TYPE.get(type);
             if(fs == null)
                 throw new IllegalStateException("No filesystem for vanilla " + type.name() + " assets");
@@ -70,7 +70,7 @@ public class VanillaPackMixin {
     }
 
     @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Ljava/lang/Class;getResource(Ljava/lang/String;)Ljava/net/URL;"), cancellable = true)
-    private void useCacheForExistence(ResourcePackType type, ResourceLocation location, CallbackInfoReturnable<Boolean> cir) {
+    private void useCacheForExistence(PackType type, ResourceLocation location, CallbackInfoReturnable<Boolean> cir) {
         cir.setReturnValue(containedPaths.contains(type.getDirectory() + "/" + location.getNamespace() + "/" + location.getPath()));
     }
 }

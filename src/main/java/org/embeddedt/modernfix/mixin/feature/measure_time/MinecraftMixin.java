@@ -2,11 +2,11 @@ package org.embeddedt.modernfix.mixin.feature.measure_time;
 
 import com.mojang.datafixers.util.Function4;
 import net.minecraft.client.Minecraft;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.util.datafix.codec.DatapackCodec;
-import net.minecraft.util.registry.DynamicRegistries;
-import net.minecraft.world.storage.IServerConfiguration;
-import net.minecraft.world.storage.SaveFormat;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.level.DataPackConfig;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.world.level.storage.WorldData;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.spongepowered.asm.mixin.Mixin;
@@ -22,18 +22,18 @@ public class MinecraftMixin {
     private long datapackReloadStartTime;
 
     @Inject(method = "makeServerStem", at = @At(value = "HEAD"))
-    private void recordReloadStart(DynamicRegistries.Impl p_238189_1_, Function<SaveFormat.LevelSave, DatapackCodec> p_238189_2_, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> p_238189_3_, boolean p_238189_4_, SaveFormat.LevelSave p_238189_5_, CallbackInfoReturnable<Minecraft.PackManager> cir) {
+    private void recordReloadStart(RegistryAccess.RegistryHolder p_238189_1_, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> p_238189_2_, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> p_238189_3_, boolean p_238189_4_, LevelStorageSource.LevelStorageAccess p_238189_5_, CallbackInfoReturnable<Minecraft.ServerStem> cir) {
         datapackReloadStartTime = System.nanoTime();
     }
 
     @Inject(method = "makeServerStem", at = @At(value = "RETURN"))
-    private void recordReloadEnd(DynamicRegistries.Impl p_238189_1_, Function<SaveFormat.LevelSave, DatapackCodec> p_238189_2_, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> p_238189_3_, boolean p_238189_4_, SaveFormat.LevelSave p_238189_5_, CallbackInfoReturnable<Minecraft.PackManager> cir) {
+    private void recordReloadEnd(RegistryAccess.RegistryHolder p_238189_1_, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> p_238189_2_, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> p_238189_3_, boolean p_238189_4_, LevelStorageSource.LevelStorageAccess p_238189_5_, CallbackInfoReturnable<Minecraft.ServerStem> cir) {
         float timeSpentReloading = ((float)(System.nanoTime() - datapackReloadStartTime) / 1000000000f);
         ModernFix.LOGGER.warn("Datapack reload took " + timeSpentReloading + " seconds.");
     }
 
-    @Inject(method = "loadWorld(Ljava/lang/String;Lnet/minecraft/util/registry/DynamicRegistries$Impl;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/client/Minecraft$WorldSelectionType;Z)V", at = @At("HEAD"), remap = false)
-    private void recordWorldLoadStart(String worldName, DynamicRegistries.Impl dynamicRegistries, Function<SaveFormat.LevelSave, DatapackCodec> levelSaveToDatapackFunction, Function4<SaveFormat.LevelSave, DynamicRegistries.Impl, IResourceManager, DatapackCodec, IServerConfiguration> quadFunction, boolean vanillaOnly, Minecraft.WorldSelectionType selectionType, boolean creating, CallbackInfo ci) {
+    @Inject(method = "loadWorld", at = @At("HEAD"), remap = false)
+    private void recordWorldLoadStart(String worldName, RegistryAccess.RegistryHolder dynamicRegistries, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> levelSaveToDatapackFunction, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> quadFunction, boolean vanillaOnly, Minecraft.ExperimentalDialogType selectionType, boolean creating, CallbackInfo ci) {
         ModernFixClient.worldLoadStartTime = System.nanoTime();
     }
 }

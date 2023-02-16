@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.mixin.feature.measure_time;
 
 import com.google.common.base.Stopwatch;
-import net.minecraft.util.registry.Bootstrap;
+import net.minecraft.server.Bootstrap;
 import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 public class BootstrapMixin {
     @Shadow @Final private static Logger LOGGER;
     private static Stopwatch startWatch;
-    @Inject(method = "bootStrap", at = @At(value = "FIELD", opcode = Opcodes.PUTSTATIC, target = "Lnet/minecraft/util/registry/Bootstrap;isBootstrapped:Z", ordinal = 0))
+    @Inject(method = "bootStrap", at = @At(value = "FIELD", opcode = Opcodes.PUTSTATIC, target = "Lnet/minecraft/server/Bootstrap;isBootstrapped:Z", ordinal = 0))
     private static void recordStartTime(CallbackInfo ci) {
         startWatch = Stopwatch.createStarted();
     }

@@ -1,16 +1,15 @@
 package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
 
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.renderer.model.*;
-import net.minecraft.profiler.IProfiler;
-import net.minecraft.resources.IResource;
-import net.minecraft.resources.IResourceManager;
-import net.minecraft.state.StateContainer;
-import net.minecraft.util.ResourceLocation;
-import net.minecraft.util.Util;
-import net.minecraft.util.registry.Registry;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.Util;
+import net.minecraft.core.Registry;
 import net.minecraftforge.fml.loading.progress.StartupMessageManager;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.AsyncStopwatch;
@@ -31,25 +30,29 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
+import net.minecraft.client.renderer.block.model.BlockModelDefinition;
+import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.ModelResourceLocation;
+
 @Mixin(ModelBakery.class)
 public abstract class ModelBakeryMixin {
-    @Shadow @Final protected IResourceManager resourceManager;
+    @Shadow @Final protected ResourceManager resourceManager;
 
     private Map<ResourceLocation, List<Pair<String, BlockModelDefinition>>> deserializedBlockstateCache = null;
 
-    @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/profiler/IProfiler;popPush(Ljava/lang/String;)V", ordinal = 0))
-    private void preloadJsonModels(IProfiler profilerIn, int maxMipmapLevel, CallbackInfo ci) {
+    @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", ordinal = 0))
+    private void preloadJsonModels(ProfilerFiller profilerIn, int maxMipmapLevel, CallbackInfo ci) {
         StartupMessageManager.mcLoaderConsumer().ifPresent(c -> c.accept("Loading models"));
         profilerIn.popPush("loadblockstates");
         AsyncStopwatch.measureAndLogSerialRunningTime("Parallel blockstate loading", () -> {
-            ThreadLocal<BlockModelDefinition.ContainerHolder> containerHolder = ThreadLocal.withInitial(BlockModelDefinition.ContainerHolder::new);
+            ThreadLocal<BlockModelDefinition.Context> containerHolder = ThreadLocal.withInitial(BlockModelDefinition.Context::new);
             this.deserializedBlockstateCache = new ConcurrentHashMap<>();
             ArrayList<CompletableFuture<Void>> futures = new ArrayList<>();
             for(Block block : Registry.BLOCK) {
                 ResourceLocation blockLocation = Registry.BLOCK.getKey(block);
                 futures.add(CompletableFuture.runAsync(() -> {
                     ResourceLocation blockStateJSON = new ResourceLocation(blockLocation.getNamespace(), "blockstates/" + blockLocation.getPath() + ".json");
-                    List<IResource> blockStates;
+                    List<Resource> blockStates;
                     try {
                         blockStates = this.resourceManager.getResources(blockStateJSON);
                     } catch(IOException e) {
@@ -57,10 +60,10 @@ public abstract class ModelBakeryMixin {
                         return;
                     }
                     List<Pair<String, BlockModelDefinition>> definitions = new ArrayList<>();
-                    StateContainer<Block, BlockState> stateContainer = block.getStateDefinition();
-                    BlockModelDefinition.ContainerHolder context = containerHolder.get();
+                    StateDefinition<Block, BlockState> stateContainer = block.getStateDefinition();
+                    BlockModelDefinition.Context context = containerHolder.get();
                     context.setDefinition(stateContainer);
-                    for(IResource resource : blockStates) {
+                    for(Resource resource : blockStates) {
                         try (InputStream inputstream = resource.getInputStream()) {
                             BlockModelDefinition definition = BlockModelDefinition.fromStream(context, new InputStreamReader(inputstream, StandardCharsets.UTF_8));
                             definitions.add(Pair.of(resource.getSourceName(), definition));
@@ -77,14 +80,14 @@ public abstract class ModelBakeryMixin {
     }
 
     @Inject(method = "processLoading", at = @At("RETURN"), remap = false)
-    private void clearModelCache(IProfiler profilerIn, int maxMipmapLevel, CallbackInfo ci) {
+    private void clearModelCache(ProfilerFiller profilerIn, int maxMipmapLevel, CallbackInfo ci) {
         deserializedBlockstateCache.clear();
     }
 
     private List<?> replacementList = null;
 
-    @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/resources/IResourceManager;getResources(Lnet/minecraft/util/ResourceLocation;)Ljava/util/List;", ordinal = 0))
-    private List<?> getResourceList(IResourceManager instance, ResourceLocation jsonLocation, ResourceLocation originalBlockLocation) throws IOException {
+    @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/resources/ResourceManager;getResources(Lnet/minecraft/resources/ResourceLocation;)Ljava/util/List;", ordinal = 0))
+    private List<?> getResourceList(ResourceManager instance, ResourceLocation jsonLocation, ResourceLocation originalBlockLocation) throws IOException {
         replacementList = null;
         if(this.deserializedBlockstateCache != null) {
             if(!(originalBlockLocation instanceof ModelResourceLocation)) {

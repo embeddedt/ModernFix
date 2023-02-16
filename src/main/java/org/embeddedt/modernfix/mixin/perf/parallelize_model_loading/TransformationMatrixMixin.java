@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
 
-import net.minecraft.util.math.vector.Matrix4f;
-import net.minecraft.util.math.vector.TransformationMatrix;
+import com.mojang.math.Matrix4f;
+import com.mojang.math.Transformation;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.Objects;
 
-@Mixin(TransformationMatrix.class)
+@Mixin(Transformation.class)
 public class TransformationMatrixMixin {
     @Shadow @Final private Matrix4f matrix;
     private Integer cachedHashCode = null;

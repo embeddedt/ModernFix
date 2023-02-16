@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.mixin.perf.reduce_blockstate_cache_rebuilds;
 
 import com.refinedmods.refinedstorage.block.shape.ShapeCache;
-import net.minecraft.block.BlockState;
-import net.minecraft.util.math.shapes.VoxelShape;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import org.embeddedt.modernfix.ModernFix;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

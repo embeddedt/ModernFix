@@ -1,14 +1,14 @@
 package org.embeddedt.modernfix.mixin.bugfix.concurrency;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.util.concurrent.ThreadTaskExecutor;
+import net.minecraft.util.thread.BlockableEventLoop;
 import org.embeddedt.modernfix.ModernFix;
 import org.spongepowered.asm.mixin.Mixin;
 
 import java.util.function.BooleanSupplier;
 
 @Mixin(Minecraft.class)
-public abstract class MinecraftMixin<R extends Runnable> extends ThreadTaskExecutor<R> {
+public abstract class MinecraftMixin<R extends Runnable> extends BlockableEventLoop<R> {
 
     protected MinecraftMixin(String p_i50403_1_) {
         super(p_i50403_1_);

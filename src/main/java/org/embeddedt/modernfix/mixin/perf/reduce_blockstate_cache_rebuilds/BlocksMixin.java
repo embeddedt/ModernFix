@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.reduce_blockstate_cache_rebuilds;
 
-import net.minecraft.block.Blocks;
+import net.minecraft.world.level.block.Blocks;
 import org.embeddedt.modernfix.blockstate.BlockStateCacheHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

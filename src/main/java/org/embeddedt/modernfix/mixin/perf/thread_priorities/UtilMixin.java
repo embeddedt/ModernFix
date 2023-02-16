@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.thread_priorities;
 
-import net.minecraft.util.Util;
+import net.minecraft.Util;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,7 +16,7 @@ public class UtilMixin {
     private static ForkJoinPool.ForkJoinWorkerThreadFactory adjustPriorityOfThreadFactory(ForkJoinPool.ForkJoinWorkerThreadFactory factory) {
         return pool -> {
             ForkJoinWorkerThread thread = factory.newThread(pool);
-            int pri = ModernFixConfig.BACKGROUND_WORKER_PRIORITY.get();
+            int pri = 4; // used to be configurable, but this causes classloading issues
             thread.setPriority(pri);
             return thread;
         };

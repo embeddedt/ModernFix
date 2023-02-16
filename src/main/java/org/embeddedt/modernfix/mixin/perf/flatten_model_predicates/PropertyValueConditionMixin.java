@@ -1,11 +1,11 @@
 package org.embeddedt.modernfix.mixin.perf.flatten_model_predicates;
 
 import com.google.common.base.Splitter;
-import net.minecraft.block.Block;
-import net.minecraft.block.BlockState;
-import net.minecraft.client.renderer.model.multipart.PropertyValueCondition;
-import net.minecraft.state.Property;
-import net.minecraft.state.StateContainer;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.client.renderer.block.model.multipart.KeyValueCondition;
+import net.minecraft.world.level.block.state.properties.Property;
+import net.minecraft.world.level.block.state.StateDefinition;
 import org.embeddedt.modernfix.predicate.single.SingleMatchAny;
 import org.embeddedt.modernfix.predicate.single.SingleMatchOne;
 import org.spongepowered.asm.mixin.Final;
@@ -17,7 +17,7 @@ import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
-@Mixin(PropertyValueCondition.class)
+@Mixin(KeyValueCondition.class)
 public class PropertyValueConditionMixin {
     @Shadow @Final private String key;
 
@@ -30,7 +30,7 @@ public class PropertyValueConditionMixin {
      * @reason De-duplication
      */
     @Overwrite
-    public Predicate<BlockState> getPredicate(StateContainer<Block, BlockState> stateManager) {
+    public Predicate<BlockState> getPredicate(StateDefinition<Block, BlockState> stateManager) {
         Property<?> property = stateManager.getProperty(this.key);
 
         if (property == null) {
@@ -63,7 +63,7 @@ public class PropertyValueConditionMixin {
         return negate ? predicate.negate() : predicate;
     }
 
-    private Object getPropertyValue(StateContainer<Block, BlockState> stateFactory, Property<?> property, String valueString) {
+    private Object getPropertyValue(StateDefinition<Block, BlockState> stateFactory, Property<?> property, String valueString) {
         Object value = property.getValue(valueString)
                 .orElse(null);
 

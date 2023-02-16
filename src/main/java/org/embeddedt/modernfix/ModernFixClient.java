@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screen.ConnectingScreen;
-import net.minecraft.client.gui.screen.MainMenuScreen;
+import net.minecraft.client.gui.screens.ConnectScreen;
+import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -24,9 +24,9 @@ public class ModernFixClient {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onMultiplayerConnect(GuiOpenEvent event) {
-        if(event.getGui() instanceof ConnectingScreen && !event.isCanceled()) {
+        if(event.getGui() instanceof ConnectScreen && !event.isCanceled()) {
             worldLoadStartTime = System.nanoTime();
-        } else if (event.getGui() instanceof MainMenuScreen && gameStartTimeSeconds < 0) {
+        } else if (event.getGui() instanceof TitleScreen && gameStartTimeSeconds < 0) {
             gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
         }

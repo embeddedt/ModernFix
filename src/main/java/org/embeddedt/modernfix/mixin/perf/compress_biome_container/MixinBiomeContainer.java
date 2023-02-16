@@ -2,19 +2,19 @@ package org.embeddedt.modernfix.mixin.perf.compress_biome_container;
 
 import it.unimi.dsi.fastutil.objects.Reference2ShortMap;
 import it.unimi.dsi.fastutil.objects.Reference2ShortOpenHashMap;
-import net.minecraft.util.BitArray;
-import net.minecraft.util.IObjectIntIterable;
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.math.MathHelper;
-import net.minecraft.world.biome.Biome;
-import net.minecraft.world.biome.BiomeContainer;
-import net.minecraft.world.biome.provider.BiomeProvider;
+import net.minecraft.util.BitStorage;
+import net.minecraft.core.IdMap;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.util.Mth;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.ChunkBiomeContainer;
+import net.minecraft.world.level.biome.BiomeSource;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(BiomeContainer.class)
+@Mixin(ChunkBiomeContainer.class)
 public class MixinBiomeContainer {
     @Mutable
     @Shadow
@@ -23,32 +23,32 @@ public class MixinBiomeContainer {
 
     @Shadow
     @Final
-    private IObjectIntIterable<Biome> biomeRegistry;
+    private IdMap<Biome> biomeRegistry;
 
     @Shadow
     @Final
     private static int WIDTH_BITS;
 
     private Biome[] palette;
-    private BitArray intArray;
+    private BitStorage intArray;
 
-    @Inject(method = "<init>(Lnet/minecraft/util/IObjectIntIterable;[I)V", at = @At("RETURN"))
-    private void reinit1(IObjectIntIterable p_i241970_1_, int[] p_i241970_2_, CallbackInfo ci) {
+    @Inject(method = "<init>(Lnet/minecraft/core/IdMap;[I)V", at = @At("RETURN"))
+    private void reinit1(IdMap p_i241970_1_, int[] p_i241970_2_, CallbackInfo ci) {
         this.createCompact();
     }
 
-    @Inject(method = "<init>(Lnet/minecraft/util/IObjectIntIterable;[Lnet/minecraft/world/biome/Biome;)V", at = @At("RETURN"))
-    private void reinit2(IObjectIntIterable p_i241971_1_, Biome[] p_i241971_2_, CallbackInfo ci) {
+    @Inject(method = "<init>(Lnet/minecraft/core/IdMap;[Lnet/minecraft/world/level/biome/Biome;)V", at = @At("RETURN"))
+    private void reinit2(IdMap p_i241971_1_, Biome[] p_i241971_2_, CallbackInfo ci) {
         this.createCompact();
     }
 
-    @Inject(method = "<init>(Lnet/minecraft/util/IObjectIntIterable;Lnet/minecraft/util/math/ChunkPos;Lnet/minecraft/world/biome/provider/BiomeProvider;)V", at = @At("RETURN"))
-    private void reinit3(IObjectIntIterable p_i241968_1_, ChunkPos p_i241968_2_, BiomeProvider p_i241968_3_, CallbackInfo ci) {
+    @Inject(method = "<init>(Lnet/minecraft/core/IdMap;Lnet/minecraft/world/level/ChunkPos;Lnet/minecraft/world/level/biome/BiomeSource;)V", at = @At("RETURN"))
+    private void reinit3(IdMap p_i241968_1_, ChunkPos p_i241968_2_, BiomeSource p_i241968_3_, CallbackInfo ci) {
         this.createCompact();
     }
 
-    @Inject(method = "<init>(Lnet/minecraft/util/IObjectIntIterable;Lnet/minecraft/util/math/ChunkPos;Lnet/minecraft/world/biome/provider/BiomeProvider;[I)V", at = @At("RETURN"))
-    private void reinit4(IObjectIntIterable p_i241969_1_, ChunkPos p_i241969_2_, BiomeProvider p_i241969_3_, int[] p_i241969_4_, CallbackInfo ci) {
+    @Inject(method = "<init>(Lnet/minecraft/core/IdMap;Lnet/minecraft/world/level/ChunkPos;Lnet/minecraft/world/level/biome/BiomeSource;[I)V", at = @At("RETURN"))
+    private void reinit4(IdMap p_i241969_1_, ChunkPos p_i241969_2_, BiomeSource p_i241969_3_, int[] p_i241969_4_, CallbackInfo ci) {
         this.createCompact();
     }
 
@@ -64,8 +64,8 @@ public class MixinBiomeContainer {
             paletteIndexed[entry.getShortValue()] = entry.getKey();
         }
 
-        int packedIntSize = Math.max(2, MathHelper.ceillog2(paletteTable.size()));
-        BitArray integerArray = new BitArray(packedIntSize, BiomeContainer.BIOMES_SIZE);
+        int packedIntSize = Math.max(2, Mth.ceillog2(paletteTable.size()));
+        BitStorage integerArray = new BitStorage(packedIntSize, ChunkBiomeContainer.BIOMES_SIZE);
 
         Biome prevBiome = null;
         short prevId = -1;
@@ -139,9 +139,9 @@ public class MixinBiomeContainer {
      */
     @Overwrite
     public Biome getNoiseBiome(int biomeX, int biomeY, int biomeZ) {
-        int x = biomeX & BiomeContainer.HORIZONTAL_MASK;
-        int y = MathHelper.clamp(biomeY, 0, BiomeContainer.VERTICAL_MASK);
-        int z = biomeZ & BiomeContainer.HORIZONTAL_MASK;
+        int x = biomeX & ChunkBiomeContainer.HORIZONTAL_MASK;
+        int y = Mth.clamp(biomeY, 0, ChunkBiomeContainer.VERTICAL_MASK);
+        int z = biomeZ & ChunkBiomeContainer.HORIZONTAL_MASK;
 
         return this.palette[this.intArray.get(y << WIDTH_BITS + WIDTH_BITS | z << WIDTH_BITS | x)];
     }

@@ -1,12 +1,12 @@
 package org.embeddedt.modernfix.mixin.perf.nuke_empty_chunk_sections;
 
-import net.minecraft.util.math.ChunkPos;
-import net.minecraft.util.palette.UpgradeData;
-import net.minecraft.world.ITickList;
-import net.minecraft.world.World;
-import net.minecraft.world.biome.BiomeContainer;
-import net.minecraft.world.chunk.Chunk;
-import net.minecraft.world.chunk.ChunkSection;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.UpgradeData;
+import net.minecraft.world.level.TickList;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.ChunkBiomeContainer;
+import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.LevelChunkSection;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,21 +16,18 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.function.Consumer;
 
-@Mixin(Chunk.class)
+@Mixin(LevelChunk.class)
 public class MixinChunk {
-    @Shadow @Final private ChunkSection[] sections;
+    @Shadow @Final private LevelChunkSection[] sections;
 
-    @Inject(method = "<init>(Lnet/minecraft/world/World;" +
-            "Lnet/minecraft/util/math/ChunkPos;Lnet/minecraft/world/biome/BiomeContainer;" +
-            "Lnet/minecraft/util/palette/UpgradeData;Lnet/minecraft/world/ITickList;" +
-            "Lnet/minecraft/world/ITickList;J[Lnet/minecraft/world/chunk/ChunkSection;Ljava/util/function/Consumer;)V",
+    @Inject(method = "<init>(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/ChunkPos;Lnet/minecraft/world/level/chunk/ChunkBiomeContainer;Lnet/minecraft/world/level/chunk/UpgradeData;Lnet/minecraft/world/level/TickList;Lnet/minecraft/world/level/TickList;J[Lnet/minecraft/world/level/chunk/LevelChunkSection;Ljava/util/function/Consumer;)V",
             at = @At("RETURN"))
-    private void reinit(World world, ChunkPos pos, BiomeContainer container, UpgradeData data,
-                        ITickList list1, ITickList list2, long inhabited,
-                        ChunkSection[] oldSections, Consumer consumer, CallbackInfo ci) {
+    private void reinit(Level world, ChunkPos pos, ChunkBiomeContainer container, UpgradeData data,
+                        TickList list1, TickList list2, long inhabited,
+                        LevelChunkSection[] oldSections, Consumer consumer, CallbackInfo ci) {
         /* taken from Hydrogen */
         for(int i = 0; i < this.sections.length; i++) {
-            if(ChunkSection.isEmpty(this.sections[i])) {
+            if(LevelChunkSection.isEmpty(this.sections[i])) {
                 this.sections[i] = null;
             }
         }

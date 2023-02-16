@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.predicate.single;
 
-import net.minecraft.block.BlockState;
-import net.minecraft.state.Property;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.Property;
 
 import java.util.List;
 import java.util.function.Predicate;

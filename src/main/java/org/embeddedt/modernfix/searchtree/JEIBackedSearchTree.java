@@ -4,7 +4,7 @@ import mezz.jei.Internal;
 import mezz.jei.ingredients.IIngredientListElementInfo;
 import mezz.jei.ingredients.IngredientFilter;
 import mezz.jei.runtime.JeiRuntime;
-import net.minecraft.item.ItemStack;
+import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.mixin.perf.blast_search_trees.IngredientFilterInvoker;
 
 import java.util.ArrayList;

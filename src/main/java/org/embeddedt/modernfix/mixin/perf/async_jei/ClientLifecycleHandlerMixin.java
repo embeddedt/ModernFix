@@ -16,6 +16,7 @@ import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.jei.async.JEILoadingInterruptedException;
 import org.embeddedt.modernfix.jei.async.JEIReloadThread;
+import org.embeddedt.modernfix.util.JEIUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -58,6 +59,7 @@ public class ClientLifecycleHandlerMixin {
     @Inject(method = "<init>", at = @At("TAIL"))
     private void setupCancellationHandler(NetworkHandler networkHandler, Textures textures, CallbackInfo ci) {
         EventBusHelper.addListener(this, ClientPlayerNetworkEvent.LoggedOutEvent.class, event -> cancelPreviousStart());
+        JEIUtil.registerLoadingRenderer(() -> reloadThread != null);
     }
 
     private void cancelPreviousStart() {

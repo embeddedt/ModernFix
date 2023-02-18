@@ -67,22 +67,9 @@ dependencies {
     modRuntimeOnly "curse.maven:lazydfu-460819:${lazydfu_version}"
 
     modCompileOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
-    modCompileOnly("curse.maven:ferritecore-429235:4074330")
+    modRuntimeOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
-    if(include_optimization_mods.toBoolean()) {
-        modRuntimeOnly("curse.maven:roadrunner-529754:3683120")
-        modRuntimeOnly("curse.maven:rubidium-574856:3949659")
-        modRuntimeOnly("curse.maven:noexperimental-407174:3188120")
-        modRuntimeOnly("curse.maven:spark-361579:3767277")
-        modRuntimeOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
-    }
-
-    if(include_content_mods.toBoolean()) {
-        modRuntimeOnly("mekanism:Mekanism:${mekanism_version}")// core
-        modRuntimeOnly("curse.maven:betterfoliage-470013:3396105")
-    }
-
-    modCompileOnly("curse.maven:refinedstorage-243076:3807951")
+    modCompileOnly("curse.maven:refinedstorage-243076:${refined_storage_version}")
 }
 
 tasks.withType(JavaCompile) {

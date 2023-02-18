@@ -8,6 +8,7 @@ import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemp
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,7 +19,8 @@ import java.util.Map;
 
 @Mixin(StructureManager.class)
 public class StructureManagerMixin {
-    @Shadow @Final private Map<ResourceLocation, StructureTemplate> structureRepository;
+    @Shadow @Final @Mutable
+    private Map<ResourceLocation, StructureTemplate> structureRepository;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void makeStructuresSafe(ResourceManager arg, LevelStorageSource.LevelStorageAccess arg2, DataFixer dataFixer, CallbackInfo ci) {

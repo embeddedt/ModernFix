@@ -1,14 +1,15 @@
 package org.embeddedt.modernfix.searchtree;
 
-import mezz.jei.Internal;
-import mezz.jei.ingredients.IIngredientListElementInfo;
-import mezz.jei.ingredients.IngredientFilter;
-import mezz.jei.runtime.JeiRuntime;
+import mezz.jei.api.ingredients.ITypedIngredient;
+import mezz.jei.common.Internal;
+import mezz.jei.common.ingredients.IngredientFilter;
+import mezz.jei.common.runtime.JeiRuntime;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.mixin.perf.blast_search_trees.IngredientFilterInvoker;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Uses JEI to handle search tree lookups.
@@ -23,9 +24,9 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     }
     @Override
     public List<ItemStack> search(String pSearchText) {
-        JeiRuntime runtime = Internal.getRuntime();
-        if(runtime != null) {
-            return this.searchJEI(Internal.getIngredientFilter(), pSearchText);
+        Optional<JeiRuntime> runtime = Internal.getRuntime();
+        if(runtime.isPresent()) {
+            return this.searchJEI((IngredientFilter)runtime.get().getIngredientFilter(), pSearchText);
         } else {
             /* Use the default, dummy implementation */
             return super.search(pSearchText);
@@ -35,10 +36,10 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     private List<ItemStack> searchJEI(IngredientFilter filter, String pSearchText) {
         if(!pSearchText.equals(lastSearchText)) {
             listCache.clear();
-            List<IIngredientListElementInfo<?>> ingredients = ((IngredientFilterInvoker)filter).invokeGetIngredientListUncached(filteringByTag ? ("$" + pSearchText) : pSearchText);
-            for(IIngredientListElementInfo<?> ingredient : ingredients) {
-                if(ingredient.getElement().getIngredient() instanceof ItemStack) {
-                    listCache.add((ItemStack)ingredient.getElement().getIngredient());
+            List<ITypedIngredient<?>> ingredients = ((IngredientFilterInvoker)filter).invokeGetIngredientListUncached(filteringByTag ? ("$" + pSearchText) : pSearchText);
+            for(ITypedIngredient<?> ingredient : ingredients) {
+                if(ingredient.getIngredient() instanceof ItemStack) {
+                    listCache.add((ItemStack)ingredient.getIngredient());
                 }
             }
             lastSearchText = pSearchText;

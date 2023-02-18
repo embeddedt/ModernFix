@@ -89,11 +89,6 @@ public class LazyBakedModel implements BakedModel {
         return computeDelegate().getOverrides();
     }
 
-    @Override
-    public BakedModel getBakedModel() {
-        return computeDelegate().getBakedModel();
-    }
-
     @Nonnull
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @Nonnull Random rand, @Nonnull IModelData extraData) {
@@ -101,8 +96,8 @@ public class LazyBakedModel implements BakedModel {
     }
 
     @Override
-    public boolean isAmbientOcclusion(BlockState state) {
-        return computeDelegate().isAmbientOcclusion(state);
+    public boolean useAmbientOcclusion(BlockState state) {
+        return computeDelegate().useAmbientOcclusion(state);
     }
 
     @Override
@@ -122,8 +117,8 @@ public class LazyBakedModel implements BakedModel {
     }
 
     @Override
-    public TextureAtlasSprite getParticleTexture(@Nonnull IModelData data) {
-        return computeDelegate().getParticleTexture(data);
+    public TextureAtlasSprite getParticleIcon(@Nonnull IModelData data) {
+        return computeDelegate().getParticleIcon(data);
     }
 
     @Override

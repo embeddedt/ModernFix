@@ -12,7 +12,7 @@ public class BooleanPropertyMixin {
      * There is no point comparing the immutable sets in any two instances of this class, as they will always be
      * the same.
      */
-    @Redirect(method = "equals", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/ImmutableSet;equals(Ljava/lang/Object;)Z", remap = false))
+    @Redirect(method = "equals", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/ImmutableSet;equals(Ljava/lang/Object;)Z", remap = false), remap = false)
     private boolean skipEqualityCheck(ImmutableSet instance, Object object) {
         return true;
     }

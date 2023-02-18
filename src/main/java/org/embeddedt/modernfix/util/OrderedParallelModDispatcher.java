@@ -1,16 +1,12 @@
 package org.embeddedt.modernfix.util;
 
 import com.google.common.base.Preconditions;
-import com.google.common.base.Stopwatch;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoadingContext;
-import net.minecraftforge.fml.ModWorkManager;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.forgespi.language.IModInfo;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
 import org.apache.logging.log4j.MarkerManager;
 import org.embeddedt.modernfix.ModernFix;
@@ -19,8 +15,6 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
@@ -36,7 +30,7 @@ public class OrderedParallelModDispatcher {
         Set<String> finishedMods = Collections.synchronizedSet(new HashSet<>(modIDsToFilter));
         HashMap<String, CompletableFuture<?>> submittedFutures = new HashMap<>();
         Semaphore jobWaitingSemaphore = new Semaphore(0);
-        ArrayList<ModInfo> remainingModList = new ArrayList<>(ModList.get().getMods());
+        ArrayList<IModInfo> remainingModList = new ArrayList<>(ModList.get().getMods());
         while(remainingModList.size() > 0) {
             remainingModList.removeIf(modInfo -> {
                 if(finishedMods.contains(modInfo.getModId()))
@@ -56,8 +50,7 @@ public class OrderedParallelModDispatcher {
                 ModContainer container = modContainerOpt.get();
                 ModernFix.LOGGER.debug(DISPATCHER, "Submitting job for " + modInfo.getModId());
                 submittedFutures.put(modInfo.getModId(), CompletableFuture.runAsync(() -> {
-                    Supplier<?> contextExtension = ObfuscationReflectionHelper.getPrivateValue(ModContainer.class, container, "contextExtension");
-                    ModLoadingContext.get().setActiveContainer(container, contextExtension.get());
+                    ModLoadingContext.get().setActiveContainer(container);
                     try {
                         task.accept(modInfo.getModId());
                     } catch(RuntimeException e) {

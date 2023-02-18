@@ -4,7 +4,7 @@ plugins {
     id 'com.matthewprenger.cursegradle' version '1.4.0'
 }
 
-sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
 
 group = 'org.embeddedt'
 version = '1.6.0-beta3'
@@ -66,10 +66,10 @@ dependencies {
     forge "net.minecraftforge:forge:${project.forge_version}"
     modRuntimeOnly "curse.maven:lazydfu-460819:${lazydfu_version}"
 
-    modCompileOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
-    modRuntimeOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
-
     modCompileOnly("curse.maven:refinedstorage-243076:${refined_storage_version}")
+
+    // compile against the JEI API but do not include it at runtime
+    modCompileOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
 }
 
 tasks.withType(JavaCompile) {
@@ -79,10 +79,7 @@ tasks.withType(JavaCompile) {
     // If Javadoc is generated, this must be specified in that task too.
     options.encoding = "UTF-8"
 
-    // The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
-    // JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
-    // We'll use that if it's available, but otherwise we'll use the older option.
-    def targetVersion = 8
+    def targetVersion = 17
     if (JavaVersion.current().isJava9Compatible()) {
         options.release = targetVersion
     }

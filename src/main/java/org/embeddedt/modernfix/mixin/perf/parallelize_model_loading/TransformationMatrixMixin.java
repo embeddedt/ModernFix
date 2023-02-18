@@ -17,7 +17,7 @@ public class TransformationMatrixMixin {
      * @author embeddedt
      * @reason use cached hashcode if exists
      */
-    @Overwrite
+    @Overwrite(remap = false)
     public int hashCode() {
         int hash;
         if(cachedHashCode != null) {

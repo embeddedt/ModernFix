@@ -2,8 +2,8 @@ package org.embeddedt.modernfix.mixin.feature.measure_time;
 
 import com.google.common.base.Stopwatch;
 import net.minecraft.server.Bootstrap;
-import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.Opcodes;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;

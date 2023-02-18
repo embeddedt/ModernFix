@@ -12,8 +12,7 @@ import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.client.model.ForgeModelBakery;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.models.LazyBakedModel;
 import org.spongepowered.asm.mixin.Final;
@@ -22,7 +21,6 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
@@ -44,7 +42,7 @@ public class ModelManagerMixin {
     @Shadow @Final private BlockModelShaper blockModelShaper;
 
     @Inject(method = "prepare(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)Lnet/minecraft/client/resources/model/ModelBakery;", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;endTick()V"), locals = LocalCapture.CAPTURE_FAILHARD)
-    private void fireModelBakeEvent(ResourceManager pResourceManager, ProfilerFiller pProfiler, CallbackInfoReturnable<ModelBakery> cir, ModelLoader pObject) {
+    private void fireModelBakeEvent(ResourceManager pResourceManager, ProfilerFiller pProfiler, CallbackInfoReturnable<ModelBakery> cir, ForgeModelBakery pObject) {
         pProfiler.push("modelevent");
         if (this.atlases != null) {
             Minecraft.getInstance().executeBlocking(() -> {

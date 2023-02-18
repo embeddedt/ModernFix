@@ -25,7 +25,7 @@ public class PropertyMixin {
      * @author embeddedt
      * @reason compare hashcodes if generated, use reference equality for speed
      */
-    @Overwrite
+    @Overwrite(remap = false)
     public boolean equals(Object p_equals_1_) {
         if (this == p_equals_1_) {
             return true;

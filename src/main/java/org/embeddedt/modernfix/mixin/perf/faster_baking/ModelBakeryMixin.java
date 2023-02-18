@@ -52,8 +52,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Nullable private AtlasSet atlasSet;
 
-    @Shadow @Nullable public abstract BakedModel getBakedModel(ResourceLocation pLocation, ModelState pTransform, Function<Material, TextureAtlasSprite> textureGetter);
-
     @Shadow @Final public static ModelResourceLocation MISSING_MODEL_LOCATION;
 
     @Shadow @Final private Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> bakedCache;
@@ -136,7 +134,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             TextureAtlas atlastexture = pair.getFirst();
             TextureAtlas.Preparations atlastexture$sheetdata = pair.getSecond();
             pResourceManager.register(atlastexture.location(), atlastexture);
-            pResourceManager.bind(atlastexture.location());
+            pResourceManager.bindForSetup(atlastexture.location());
             atlastexture.updateFilter(atlastexture$sheetdata);
         }
         pProfiler.pop();

@@ -39,6 +39,10 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
 }
 
 dependencies {
@@ -50,7 +54,10 @@ dependencies {
     // mojang's official mappings, or feel free
     // to add your own mappings here (how about
     // mojmap layered with parchment, for example?)
-    mappings loom.officialMojangMappings()
+    mappings loom.layered() {
+        officialMojangMappings()
+        parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
+    }
 
     // uncomment this if you want to use yarn mappings
     // mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"

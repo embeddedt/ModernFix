@@ -1,3 +1,5 @@
 {
-  "modernfix.jei_load": "Loading JEI..."
+  "modernfix.jei_load": "Loading JEI...",
+  "asynclocator.map.locating": "Map (Locating...)",
+  "asynclocator.map.none": "Map (No nearby feature found)"
 }

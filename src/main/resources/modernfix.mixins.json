@@ -27,6 +27,17 @@
     "perf.cache_blockstate_cache_arrays.AbstractBlockStateCacheMixin",
     "perf.datapack_reload_exceptions.LootTableManagerMixin",
     "perf.datapack_reload_exceptions.RecipeManagerMixin",
+    "perf.async_locator.CommandSourceStackAccess",
+    "perf.async_locator.DolphinSwimToTreasureGoalMixin",
+    "perf.async_locator.EnderEyeItemMixin",
+    "perf.async_locator.ExplorationMapFunctionMixin",
+    "perf.async_locator.EyeOfEnderAccess",
+    "perf.async_locator.EyeOfEnderMixin",
+    "perf.async_locator.LocateCommandAccess",
+    "perf.async_locator.LocateCommandMixin",
+    "perf.async_locator.MapItemAccess",
+    "perf.async_locator.MerchantOfferAccess",
+    "perf.async_locator.TreasureMapForEmeraldsMixin",
     "feature.measure_time.BootstrapMixin"
   ],
   "client": [

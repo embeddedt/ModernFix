@@ -41,7 +41,8 @@ public class BlockStateCacheHandler {
 
     public static void rebuildParallel(boolean force) {
         if(currentRebuildThread != null) {
-            ModernFix.LOGGER.warn("Interrupting previous blockstate cache rebuild");
+            if(currentRebuildThread.isAlive())
+                ModernFix.LOGGER.warn("Interrupting previous blockstate cache rebuild");
             currentRebuildThread.stopRebuild();
             try {
                 currentRebuildThread.join(10000);

@@ -39,6 +39,14 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         this.logger.info("Loaded configuration file for ModernFix: {} options available, {} override(s) found",
                 config.getOptionCount(), config.getOptionOverrideCount());
 
+        try {
+            Class.forName("sun.misc.Unsafe").getDeclaredMethod("defineAnonymousClass", Class.class, byte[].class, Object[].class);
+        } catch(ReflectiveOperationException | NullPointerException e) {
+            this.logger.info("Applying Nashorn fix");
+            Properties properties = System.getProperties();
+            properties.setProperty("nashorn.args", properties.getProperty("nashorn.args", "") + " --anonymous-classes=false");
+        }
+
         /* We abuse the constructor of a mixin plugin as a safe location to start modifying the classloader */
         /* Swap the transformer for ours */
         ClassLoader loader = Thread.currentThread().getContextClassLoader();

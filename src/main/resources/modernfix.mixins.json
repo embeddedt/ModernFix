@@ -43,7 +43,9 @@
     "feature.measure_time.SimpleReloadableResourceManagerMixin",
     "feature.measure_time.ProfiledReloadInstanceMixin",
     "perf.kubejs.TagIngredientJSMixin",
-    "perf.kubejs.TagWrapperMixin"
+    "perf.kubejs.TagWrapperMixin",
+    "perf.kubejs.RecipeEventJSMixin",
+    "perf.kubejs.RecipeJSMixin"
   ],
   "client": [
     "feature.measure_time.MinecraftMixin",

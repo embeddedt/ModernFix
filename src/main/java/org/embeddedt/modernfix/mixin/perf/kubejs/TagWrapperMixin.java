@@ -24,30 +24,6 @@ import java.util.stream.Collectors;
 
 @Mixin(TagEventJS.TagWrapper.class)
 public class TagWrapperMixin<T> {
-    private static final CharOpenHashSet REGEX_SPECIAL_CHARS = new CharOpenHashSet(new char[] {
-            '.', '+', '*','?','^','$','(',')','[',']','{','}','|','\\', '/'
-    });
-
-    /**
-     * @author embeddedt
-     * @reason only iterate over the whole registry if a regex is given, otherwise use the given registry name as-is
-     */
-    @Redirect(method = "add", at = @At(value = "INVOKE", target = "Ldev/latvian/kubejs/util/UtilsJS;parseRegex(Ljava/lang/Object;)Ljava/util/regex/Pattern;"), remap = false)
-    private Pattern skipRegex(Object o) {
-        String inputStr = (String)o;
-        boolean regexCharFound = false;
-        for(int i = 0; i < inputStr.length(); i++) {
-            if(REGEX_SPECIAL_CHARS.contains(inputStr.charAt(i))) {
-                regexCharFound = true;
-                break;
-            }
-        }
-        if(regexCharFound)
-            return UtilsJS.parseRegex(inputStr);
-        else
-            return null;
-    }
-
     private String currentPatternStr = null;
     @Inject(method = "add", at = @At(value = "INVOKE", target = "Lme/shedaniel/architectury/registry/Registry;getIds()Ljava/util/Set;", ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD, remap = false)
     private void saveCurrentPattern(Object ids, CallbackInfoReturnable<TagEventJS.TagWrapper<T>> cir, Iterator<Object> iterator, Object o, String patternStr) {

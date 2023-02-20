@@ -45,7 +45,9 @@
     "perf.kubejs.TagIngredientJSMixin",
     "perf.kubejs.TagWrapperMixin",
     "perf.kubejs.RecipeEventJSMixin",
-    "perf.kubejs.RecipeJSMixin"
+    "perf.kubejs.RecipeJSMixin",
+    "perf.kubejs.IDFilterMixin",
+    "perf.kubejs.CustomIngredientMixin"
   ],
   "client": [
     "feature.measure_time.MinecraftMixin",

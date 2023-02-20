@@ -39,7 +39,9 @@
     "perf.async_locator.MapItemAccess",
     "perf.async_locator.MerchantOfferAccess",
     "perf.async_locator.TreasureMapForEmeraldsMixin",
-    "feature.measure_time.BootstrapMixin"
+    "feature.measure_time.BootstrapMixin",
+    "feature.measure_time.SimpleReloadableResourceManagerMixin",
+    "feature.measure_time.ProfiledReloadInstanceMixin"
   ],
   "client": [
     "feature.measure_time.MinecraftMixin",

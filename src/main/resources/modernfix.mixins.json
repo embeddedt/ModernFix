@@ -55,6 +55,7 @@
     "perf.skip_first_datapack_reload.MinecraftMixin",
     "bugfix.concurrency.RenderTypeMixin",
     "bugfix.concurrency.MinecraftMixin",
+    "bugfix.concurrency.StaticTagHelperMixin",
     "perf.parallelize_model_loading.ModelBakeryMixin",
     "perf.parallelize_model_loading.OBJLoaderMixin",
     "perf.parallelize_model_loading.multipart.MultipartMixin",

@@ -32,7 +32,7 @@ public class MixinBiomeContainer {
     private Biome[] palette;
     private BitStorage intArray;
 
-    @Inject(method = "<init>(Lnet/minecraft/core/IdMap;[I)V", at = @At("RETURN"))
+    @Inject(method = "<init>(Lnet/minecraft/core/IdMap;[I)V", at = @At("RETURN"), require = 0)
     private void reinit1(IdMap p_i241970_1_, int[] p_i241970_2_, CallbackInfo ci) {
         this.createCompact();
     }

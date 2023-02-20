@@ -41,7 +41,9 @@
     "perf.async_locator.TreasureMapForEmeraldsMixin",
     "feature.measure_time.BootstrapMixin",
     "feature.measure_time.SimpleReloadableResourceManagerMixin",
-    "feature.measure_time.ProfiledReloadInstanceMixin"
+    "feature.measure_time.ProfiledReloadInstanceMixin",
+    "perf.kubejs.TagIngredientJSMixin",
+    "perf.kubejs.TagWrapperMixin"
   ],
   "client": [
     "feature.measure_time.MinecraftMixin",

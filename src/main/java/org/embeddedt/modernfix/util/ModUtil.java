@@ -14,6 +14,8 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.embeddedt.modernfix.ModernFix;
 
 import java.util.*;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.function.Supplier;
 
 public class ModUtil {
@@ -49,4 +51,21 @@ public class ModUtil {
         });
         return modsListening;
     }
+
+    private static final ClassLoader targetClassLoader = Thread.currentThread().getContextClassLoader();
+
+    private static class ModernFixForkJoinWorkerThread extends ForkJoinWorkerThread {
+        ModernFixForkJoinWorkerThread(ForkJoinPool pool) {
+            super(pool);
+            /* Ensure that the context class loader is set correctly */
+            this.setContextClassLoader(targetClassLoader);
+        }
+    }
+
+    public static ForkJoinPool commonPool = new ForkJoinPool(
+            ForkJoinPool.getCommonPoolParallelism(),
+            ModernFixForkJoinWorkerThread::new,
+            null,
+            false
+    );
 }

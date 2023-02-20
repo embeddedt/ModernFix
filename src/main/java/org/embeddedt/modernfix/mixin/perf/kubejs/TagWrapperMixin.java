@@ -1,16 +1,11 @@
 package org.embeddedt.modernfix.mixin.perf.kubejs;
 
 import dev.latvian.kubejs.server.TagEventJS;
-import dev.latvian.kubejs.util.ConsoleJS;
-import dev.latvian.kubejs.util.ListJS;
 import dev.latvian.kubejs.util.UtilsJS;
-import it.unimi.dsi.fastutil.chars.CharOpenHashSet;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import me.shedaniel.architectury.registry.Registry;
 import net.minecraft.resources.ResourceLocation;
 import org.embeddedt.modernfix.util.KubeUtil;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;

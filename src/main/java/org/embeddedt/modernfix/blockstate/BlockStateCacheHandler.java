@@ -1,13 +1,8 @@
 package org.embeddedt.modernfix.blockstate;
 
 import com.google.common.base.Stopwatch;
-import com.google.common.collect.ImmutableSet;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.Util;
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLLoader;
 import org.embeddedt.modernfix.ModernFix;
@@ -17,18 +12,9 @@ import org.embeddedt.modernfix.util.BakeReason;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 public class BlockStateCacheHandler {
-    private static final Set<String> PRECACHED_COLLISION_SHAPES = ImmutableSet.<String>builder()
-            .add("refinedstorage")
-            .add("cabletiers")
-            .add("extrastorage")
-            .build();
-
     private static RebuildThread currentRebuildThread = null;
 
     private static boolean needToBake() {
@@ -93,20 +79,8 @@ public class BlockStateCacheHandler {
         }
 
         @Override
-        @SuppressWarnings("deprecation")
         public void run() {
             Stopwatch realtimeStopwatch = Stopwatch.createStarted();
-            /* Run some special sauce for Refined Storage since it has very slow collision shapes */
-            List<BlockState> specialStates = blockStateList.stream()
-                    .filter(state -> PRECACHED_COLLISION_SHAPES.contains(state.getBlock().getRegistryName().getNamespace())).collect(Collectors.toList());
-            CompletableFuture.runAsync(() -> {
-                specialStates.parallelStream()
-                        .forEach(state -> {
-                            /* Force these blocks to compute their shapes ahead of time on worker threads */
-                            state.getBlock().getCollisionShape(state, EmptyBlockGetter.INSTANCE, BlockPos.ZERO, CollisionContext.empty());
-                            state.getBlock().getOcclusionShape(state, EmptyBlockGetter.INSTANCE, BlockPos.ZERO);
-                        });
-            }, Util.backgroundExecutor()).join();
             rebuildCache();
             realtimeStopwatch.stop();
             if(!stopRebuild)

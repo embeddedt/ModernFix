@@ -38,7 +38,6 @@ public class TagWrapperMixin<T> {
         boolean regexCharFound = false;
         for(int i = 0; i < inputStr.length(); i++) {
             if(REGEX_SPECIAL_CHARS.contains(inputStr.charAt(i))) {
-                System.out.println(inputStr);
                 regexCharFound = true;
                 break;
             }

@@ -74,7 +74,12 @@ public class BlockStateCacheHandler {
         private void rebuildCache() {
             Iterator<BlockState> stateIterator = blockStateList.iterator();
             while(!stopRebuild && stateIterator.hasNext()) {
-                stateIterator.next().initCache();
+                BlockState state = stateIterator.next();
+                try {
+                    state.initCache();
+                } catch(Exception e) {
+                    ModernFix.LOGGER.warn("Exception encountered while initializing cache", e);
+                }
             }
         }
 

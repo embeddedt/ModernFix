@@ -81,6 +81,7 @@
     "perf.faster_baking.ModelManagerMixin",
     "perf.cache_model_materials.VanillaModelMixin",
     "perf.cache_model_materials.MultipartMixin",
+    "perf.faster_texture_stitching.StitcherMixin",
     "bugfix.packet_leak.ClientPlayNetHandlerMixin",
     "bugfix.packet_leak.SCustomPayloadPlayPacketMixin"
   ],

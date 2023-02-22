@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.progress.ChunkProgressListener;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.load.LoadEvents;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,7 +32,7 @@ public abstract class MinecraftServerMixin {
     private void skipInitialChunkLoad(ChunkProgressListener arg, CallbackInfo ci) {
         if(((Object)this) instanceof IntegratedServer) {
             ci.cancel();
-            ModernFixClient.integratedWorldLoadListener = arg;
+            LoadEvents.integratedWorldLoadListener = arg;
             this.nextTickTime = Util.getMillis();
             this.overworld().getChunkSource().getLightEngine().setTaskPerBatch(5);
             this.updateMobSpawningFlags();

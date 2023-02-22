@@ -28,8 +28,10 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     private final Logger logger = LogManager.getLogger("ModernFix");
     public static ModernFixEarlyConfig config = null;
+    public static ModernFixMixinPlugin instance;
 
     public ModernFixMixinPlugin() {
+        instance = this;
         try {
             config = ModernFixEarlyConfig.load(new File("./config/modernfix-mixins.properties"));
         } catch (Exception e) {

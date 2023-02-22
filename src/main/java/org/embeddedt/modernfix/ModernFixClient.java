@@ -23,6 +23,8 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.server.FMLServerAboutToStartEvent;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.screen.DeferredLevelLoadingScreen;
 
 import java.lang.management.ManagementFactory;
@@ -70,7 +72,7 @@ public class ModernFixClient {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onPlayerLogin(PlayerEvent.PlayerLoggedInEvent event) {
-        if(!hasFirstPlayerJoined && integratedWorldLoadListener != null) {
+        if(!hasFirstPlayerJoined && ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
             hasFirstPlayerJoined = true;
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if(server instanceof IntegratedServer) {
@@ -81,7 +83,7 @@ public class ModernFixClient {
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onWorldShow(GuiOpenEvent event) {
-        if(ServerLifecycleHooks.getCurrentServer() instanceof IntegratedServer && integratedWorldLoadListener != null) {
+        if(ServerLifecycleHooks.getCurrentServer() instanceof IntegratedServer && ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
             if(event.getGui() == null && Minecraft.getInstance().level != null) {
                 /* this means the world is being displayed, check if 441 initialized */
                 ServerChunkCache provider = ServerLifecycleHooks.getCurrentServer().overworld().getChunkSource();

@@ -3,6 +3,8 @@ package org.embeddedt.modernfix.mixin.perf.faster_baking;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.MultiVariant;
+import net.minecraft.client.renderer.block.model.multipart.MultiPart;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -107,21 +109,31 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                this.bakeIfPossible(location);
            }
         });
+        List<ResourceLocation> multiparts = new ArrayList<>();
         /* Then store them as top-level models if needed, and set up the lazy models */
         this.topLevelModels.forEach((location, value) -> {
-            if (incompatibleLazyBakedModels.contains(location.getNamespace()) || requiresBake(value)) {
+            if (requiresBake(value) || incompatibleLazyBakedModels.contains(location.getNamespace())) {
                 BakedModel model = this.bakeIfPossible(location);
                 if (model != null)
                     this.bakedTopLevelModels.put(location, model);
             } else {
-                this.bakedTopLevelModels.put(location, new LazyBakedModel(() -> {
-                    synchronized (this.bakedCache) {
-                        BakedModel ibakedmodel = this.bakeIfPossible(location);
+                if(value instanceof MultiPart || value instanceof MultiVariant) {
+                    multiparts.add(location);
+                } else {
+                    this.bakedTopLevelModels.put(location, new LazyBakedModel(() -> {
+                        synchronized (this.bakedCache) {
+                            BakedModel ibakedmodel = this.bakeIfPossible(location);
 
-                        return ibakedmodel != null ? ibakedmodel : missingModel;
-                    }
-                }));
+                            return ibakedmodel != null ? ibakedmodel : missingModel;
+                        }
+                    }));
+                }
             }
+        });
+        multiparts.forEach(location -> {
+            BakedModel model = this.bakeIfPossible(location);
+            if (model != null)
+                this.bakedTopLevelModels.put(location, model);
         });
     }
 

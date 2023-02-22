@@ -66,7 +66,10 @@ public class ClientLifecycleHandlerMixin {
         JEIReloadThread currentReloadThread = reloadThread;
         if(currentReloadThread != null) {
             currentReloadThread.requestStop();
-            Minecraft.getInstance().managedBlock(currentReloadThread::isAlive);
+            if(currentReloadThread.isAlive()) {
+                ModernFix.LOGGER.warn("Blocking until JEI thread terminates");
+                Minecraft.getInstance().managedBlock(() -> !currentReloadThread.isAlive());
+            }
             reloadThread = null;
         }
     }
@@ -74,7 +77,6 @@ public class ClientLifecycleHandlerMixin {
     private static int numReloads = 1;
 
     private void startJEIAsync(Runnable whenFinishedCb) {
-        ModernFix.LOGGER.info("JEI restart triggered. Waiting for previous thread to die.");
         cancelPreviousStart();
         ModernFix.LOGGER.info("Starting new JEI thread.");
         JEIReloadThread newThread = new JEIReloadThread(() -> {

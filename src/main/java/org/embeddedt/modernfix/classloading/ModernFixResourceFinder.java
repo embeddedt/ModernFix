@@ -43,6 +43,8 @@ public class ModernFixResourceFinder {
             IModLocator locator = file.getLocator();
             Iterable<Path> rootPath = getRootPathForLocator(locator, file);
             for(Path root : rootPath) {
+                if(!Files.exists(root))
+                    continue;
                 try(Stream<Path> stream = Files.walk(root)) {
                     stream
                             .map(root::relativize)

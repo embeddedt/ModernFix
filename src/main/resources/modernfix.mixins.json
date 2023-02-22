@@ -83,7 +83,8 @@
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
     "bugfix.packet_leak.ClientPlayNetHandlerMixin",
-    "bugfix.packet_leak.SCustomPayloadPlayPacketMixin"
+    "bugfix.packet_leak.SCustomPayloadPlayPacketMixin",
+    "perf.faster_singleplayer_load.MinecraftServerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

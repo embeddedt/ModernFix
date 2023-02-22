@@ -21,6 +21,10 @@ import org.embeddedt.modernfix.structure.AsyncLocator;
 import org.embeddedt.modernfix.util.KubeUtil;
 
 import java.lang.management.ManagementFactory;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BooleanSupplier;
 
 // The value here should match an entry in the META-INF/mods.toml file
 @Mod(ModernFix.MODID)
@@ -35,6 +39,26 @@ public class ModernFix {
 
     // Used to skip computing the blockstate caches twice
     public static boolean runningFirstInjection = false;
+
+    public static CountDownLatch worldLoadSemaphore = null;
+
+    /**
+     * Simple mechanism used to delay some background processes until the client is actually in-game, to reduce
+     * launch time.
+     */
+    public static void waitForWorldLoad(BooleanSupplier exitEarly) {
+        CountDownLatch latch = worldLoadSemaphore;
+        if(latch != null) {
+            try {
+                while(!latch.await(100, TimeUnit.MILLISECONDS)) {
+                    if(exitEarly.getAsBoolean())
+                        return;
+                }
+            } catch(InterruptedException e) {
+                Thread.currentThread().interrupt();
+            }
+        }
+    }
 
 
     public ModernFix() {

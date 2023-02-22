@@ -85,6 +85,9 @@ public class BlockStateCacheHandler {
 
         @Override
         public void run() {
+            ModernFix.waitForWorldLoad(() -> stopRebuild);
+            if(stopRebuild)
+                return;
             Stopwatch realtimeStopwatch = Stopwatch.createStarted();
             rebuildCache();
             realtimeStopwatch.stop();

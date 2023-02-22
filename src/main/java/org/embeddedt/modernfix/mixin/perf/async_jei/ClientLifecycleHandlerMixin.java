@@ -80,6 +80,9 @@ public class ClientLifecycleHandlerMixin {
         cancelPreviousStart();
         ModernFix.LOGGER.info("Starting new JEI thread.");
         JEIReloadThread newThread = new JEIReloadThread(() -> {
+            ModernFix.waitForWorldLoad(() -> ((JEIReloadThread)Thread.currentThread()).isStopRequested());
+            if(((JEIReloadThread)Thread.currentThread()).isStopRequested())
+                return;
             try {
                 starter.start(
                         plugins,

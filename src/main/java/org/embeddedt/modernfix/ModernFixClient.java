@@ -55,7 +55,7 @@ public class ModernFixClient {
 
     @SubscribeEvent
     public void onRenderTickEnd(TickEvent.RenderTickEvent event) {
-        if(event.phase == TickEvent.Phase.END && worldLoadStartTime != -1 && Minecraft.getInstance().player != null && numRenderTicks++ >= 10) {
+        if(event.phase == TickEvent.Phase.END && !(Minecraft.getInstance().screen instanceof DeferredLevelLoadingScreen) && worldLoadStartTime != -1 && Minecraft.getInstance().player != null && numRenderTicks++ >= 10) {
             float timeSpentLoading = ((float)(System.nanoTime() - worldLoadStartTime) / 1000000000f);
             ModernFix.LOGGER.warn("Time from main menu to in-game was " + timeSpentLoading + " seconds");
             ModernFix.LOGGER.warn("Total time to load game and open world was " + (timeSpentLoading + gameStartTimeSeconds) + " seconds");

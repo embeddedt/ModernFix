@@ -10,6 +10,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.embeddedt.modernfix.screen.DeferredLevelLoadingScreen;
 
 import java.util.function.Supplier;
 
@@ -23,7 +24,8 @@ public class JEIUtil {
 
     @SubscribeEvent
     public static void renderLoad(GuiScreenEvent.DrawScreenEvent.Post event) {
-        if(isLoading.get()) {
+        /* Don't show the JEI indicator on the level loading screen, that looks weird */
+        if(isLoading.get() && !(event.getGui() instanceof DeferredLevelLoadingScreen)) {
             Gui.drawString(new PoseStack(), Minecraft.getInstance().font, new TranslatableComponent("modernfix.jei_load"), 0, 0, 0xffffff);
         }
     }

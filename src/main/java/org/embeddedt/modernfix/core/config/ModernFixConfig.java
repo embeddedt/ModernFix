@@ -24,7 +24,7 @@ public class ModernFixConfig {
     public static ForgeConfigSpec.ConfigValue<List<? extends String>> BLACKLIST_ASYNC_JEI_PLUGINS;
 
     public static ForgeConfigSpec.IntValue INTEGRATED_SERVER_PRIORITY;
-    public static ForgeConfigSpec.IntValue BACKGROUND_WORKER_PRIORITY;
+    public static ForgeConfigSpec.BooleanValue ENABLE_DEBUG_RELOADER;
 
     public static ForgeConfigSpec.BooleanValue REBUILD_BLOCKSTATES_ASYNC;
 
@@ -40,6 +40,9 @@ public class ModernFixConfig {
                         "jepb:jei_plugin"
                 ), locationValidator);
         INTEGRATED_SERVER_PRIORITY = COMMON_BUILDER.comment("Thread priority to use for the integrated server. By default this is one less than the client thread, to help prevent the server from lowering FPS.").defineInRange("integratedServerPriority", 4, 1, 10);
+        ENABLE_DEBUG_RELOADER = COMMON_BUILDER
+                .comment("Whether Minecraft's built-in profiling logic should be enabled for resource reloading. Can help with diagnosing world load times.")
+                .define("enable_debug_reloader", false);
         REBUILD_BLOCKSTATES_ASYNC = COMMON_BUILDER
                 .comment("Rebuild blockstate cache asynchronously. Should work with most mods, but can be disabled.")
                 .define("rebuild_blockstate_cache_async", true);

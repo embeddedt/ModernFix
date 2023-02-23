@@ -7,7 +7,7 @@ plugins {
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
 
 group = 'org.embeddedt'
-version = '1.6.0-beta3'
+version = '1.7.0'
 
 java {
     archivesBaseName = 'modernfix-mc' + minecraft_version
@@ -42,6 +42,24 @@ repositories {
     maven {
         name = 'ParchmentMC'
         url = 'https://maven.parchmentmc.org'
+    }
+    maven {
+        // Shedaniel's maven (Architectury API)
+        url = "https://maven.architectury.dev"
+        content {
+            includeGroup "me.shedaniel"
+        }
+    }
+
+    maven {
+        // saps.dev Maven (KubeJS and Rhino)
+        url = "https://maven.saps.dev/minecraft"
+        content {
+            includeGroup "dev.latvian.mods"
+        }
+    }
+    maven { // CTM
+        url "https://maven.tterrag.com/"
     }
 }
 
@@ -141,6 +159,7 @@ curseforge {
             releaseType = "release"
             addGameVersion "Forge"
             addGameVersion minecraft_version
+            mainArtifact remapJar
         }
     }
 }

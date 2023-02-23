@@ -4,7 +4,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
-import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.*;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
@@ -16,8 +16,10 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     private final Logger logger = LogManager.getLogger("ModernFix");
     public static ModernFixEarlyConfig config = null;
+    public static ModernFixMixinPlugin instance;
 
     public ModernFixMixinPlugin() {
+        instance = this;
         try {
             config = ModernFixEarlyConfig.load(new File("./config/modernfix-mixins.properties"));
         } catch (Exception e) {

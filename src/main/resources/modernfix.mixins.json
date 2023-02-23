@@ -19,9 +19,12 @@
     "perf.cache_blockstate_cache_arrays.AbstractBlockStateCacheMixin",
     "perf.datapack_reload_exceptions.LootTableManagerMixin",
     "perf.datapack_reload_exceptions.RecipeManagerMixin",
-    "feature.measure_time.BootstrapMixin"
+    "feature.measure_time.BootstrapMixin",
+    "feature.measure_time.SimpleReloadableResourceManagerMixin",
+    "feature.measure_time.ProfiledReloadInstanceMixin"
   ],
   "client": [
+    "core.MinecraftMixin",
     "feature.measure_time.MinecraftMixin",
     "feature.reduce_loading_screen_freezes.ModelBakeryMixin",
     "bugfix.concurrency.MinecraftMixin",
@@ -44,7 +47,9 @@
     "perf.faster_baking.BlockModelShapesMixin",
     "perf.faster_baking.ModelManagerMixin",
     "perf.cache_model_materials.VanillaModelMixin",
-    "perf.cache_model_materials.MultipartMixin"
+    "perf.cache_model_materials.MultipartMixin",
+    "perf.faster_texture_stitching.StitcherMixin",
+    "perf.faster_singleplayer_load.MinecraftServerMixin"
   ],
   "injectors": {
     "defaultRequire": 1

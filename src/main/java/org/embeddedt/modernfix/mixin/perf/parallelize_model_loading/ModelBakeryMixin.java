@@ -54,7 +54,10 @@ public abstract class ModelBakeryMixin {
                     ResourceLocation blockStateJSON = new ResourceLocation(blockLocation.getNamespace(), "blockstates/" + blockLocation.getPath() + ".json");
                     List<Resource> blockStates;
                     try {
-                        blockStates = this.resourceManager.getResources(blockStateJSON);
+                        /* Some mods' custom resource pack implementations don't seem to like concurrency here */
+                        synchronized(this.resourceManager) {
+                            blockStates = this.resourceManager.getResources(blockStateJSON);
+                        }
                     } catch(IOException e) {
                         ModernFix.LOGGER.warn("Exception loading blockstate definition: {}: {}", blockLocation, e);
                         return;

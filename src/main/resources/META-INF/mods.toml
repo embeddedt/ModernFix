@@ -56,10 +56,3 @@ mandatory = true
 versionRange = "[1.18.2,1.19)"
 ordering = "NONE"
 side = "BOTH"
-[[dependencies.modernfix]]
-modId = "jei"
-mandatory = false
-# This version range declares a minimum of the current minecraft version up to but not including the next major version
-versionRange = "[10,)"
-ordering = "BEFORE"
-side = "CLIENT"

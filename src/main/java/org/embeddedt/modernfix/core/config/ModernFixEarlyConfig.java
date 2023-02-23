@@ -17,6 +17,7 @@ public class ModernFixEarlyConfig {
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
         this.addMixinRule("core", true); // TODO: Don't actually allow the user to disable this
+        this.addMixinRule("perf.modern_resourcepacks", true);
         this.addMixinRule("feature.measure_time", true);
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);

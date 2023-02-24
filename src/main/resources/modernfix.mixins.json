@@ -47,7 +47,8 @@
     "perf.kubejs.RecipeEventJSMixin",
     "perf.kubejs.RecipeJSMixin",
     "perf.kubejs.IDFilterMixin",
-    "perf.kubejs.CustomIngredientMixin"
+    "perf.kubejs.CustomIngredientMixin",
+    "perf.fast_registry_validation.ForgeRegistryMixin"
   ],
   "client": [
     "core.MinecraftMixin",

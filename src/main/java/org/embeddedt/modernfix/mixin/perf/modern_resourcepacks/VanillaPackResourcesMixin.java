@@ -11,6 +11,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.FileWalker;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,7 +19,9 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.*;
 import java.util.*;
 import java.util.concurrent.ExecutionException;
@@ -69,5 +72,21 @@ public class VanillaPackResourcesMixin {
     @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Ljava/lang/Class;getResource(Ljava/lang/String;)Ljava/net/URL;"), cancellable = true)
     private void useCacheForExistence(PackType type, ResourceLocation location, CallbackInfoReturnable<Boolean> cir) {
         cir.setReturnValue(containedPaths.contains(type.getDirectory() + "/" + location.getNamespace() + "/" + location.getPath()));
+    }
+
+    /**
+     * @author embeddedt
+     * @reason avoid going through the module class loader when we know exactly what path this resource should come
+     * from
+     */
+    @Overwrite
+    protected InputStream getResourceAsStream(PackType type, ResourceLocation location) {
+        Path rootPath = ROOT_DIR_BY_TYPE.get(type);
+        Path targetPath = rootPath.resolve(location.getNamespace() + "/" + location.getPath());
+        try {
+            return Files.newInputStream(targetPath);
+        } catch(IOException e) {
+            return null;
+        }
     }
 }

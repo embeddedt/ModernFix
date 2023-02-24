@@ -114,7 +114,7 @@ java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
     // If you remove this line, sources will not be generated.
-    withSourcesJar()
+    // withSourcesJar()
 }
 
 // Example for how to get properties into the manifest for reading at runtime.
@@ -140,9 +140,6 @@ publishing {
             // add all the jars that should be included when publishing to maven
             artifact(remapJar) {
                 builtBy remapJar
-            }
-            artifact(sourcesJar) {
-                builtBy remapSourcesJar
             }
         }
     }

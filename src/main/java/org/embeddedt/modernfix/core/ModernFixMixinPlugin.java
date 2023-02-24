@@ -4,6 +4,7 @@ import com.google.common.io.Resources;
 import cpw.mods.modlauncher.*;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.loading.LoadingModList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.classloading.ModernFixResourceFinder;

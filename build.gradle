@@ -2,12 +2,13 @@ plugins {
     id "dev.architectury.loom" version "1.0.312"
     id "maven-publish"
     id 'com.matthewprenger.cursegradle' version '1.4.0'
+    id 'com.palantir.git-version' version '1.0.0'
 }
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
 
 group = 'org.embeddedt'
-version = '1.7.0'
+version = gitVersion()
 
 java {
     archivesBaseName = 'modernfix-mc' + minecraft_version

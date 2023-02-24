@@ -42,6 +42,7 @@
     "feature.measure_time.BootstrapMixin",
     "feature.measure_time.SimpleReloadableResourceManagerMixin",
     "feature.measure_time.ProfiledReloadInstanceMixin",
+    "feature.branding.BrandingControlMixin",
     "perf.kubejs.TagIngredientJSMixin",
     "perf.kubejs.TagWrapperMixin",
     "perf.kubejs.RecipeEventJSMixin",

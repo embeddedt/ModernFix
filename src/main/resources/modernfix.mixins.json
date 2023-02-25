@@ -23,7 +23,8 @@
     "perf.datapack_reload_exceptions.RecipeManagerMixin",
     "feature.measure_time.BootstrapMixin",
     "feature.measure_time.SimpleReloadableResourceManagerMixin",
-    "feature.measure_time.ProfiledReloadInstanceMixin"
+    "feature.measure_time.ProfiledReloadInstanceMixin",
+    "feature.measure_time.ReloadableServerResourcesMixin"
   ],
   "client": [
     "core.MinecraftMixin",

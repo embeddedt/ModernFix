@@ -9,6 +9,7 @@ import net.minecraft.server.level.ChunkMap;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.function.Predicate;
 
@@ -25,8 +26,8 @@ public class ChunkManagerMixin {
         return c -> c instanceof ProtoChunk || c instanceof ImposterProtoChunk || c instanceof LevelChunk;
     }
 
-    @ModifyArg(method = "saveAllChunks(Z)V", at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;filter(Ljava/util/function/Predicate;)Ljava/util/stream/Stream;", ordinal = 3), require = 0)
-    private Predicate<ChunkHolder> alwaysAccessible(Predicate<ChunkHolder> chunkHolder) {
-        return c -> true;
+    @Redirect(method = "saveChunkIfNeeded", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ChunkHolder;wasAccessibleSinceLastSave()Z"), require = 0)
+    private boolean alwaysAccessible(ChunkHolder chunkHolder) {
+        return true;
     }
 }

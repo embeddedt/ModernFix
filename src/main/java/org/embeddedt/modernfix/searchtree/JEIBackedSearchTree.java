@@ -3,11 +3,15 @@ package org.embeddedt.modernfix.searchtree;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.common.Internal;
 import mezz.jei.common.ingredients.IngredientFilter;
+import mezz.jei.common.ingredients.IngredientFilterApi;
 import mezz.jei.common.runtime.JeiRuntime;
 import net.minecraft.world.item.ItemStack;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.mixin.perf.blast_search_trees.IngredientFilterInvoker;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -19,6 +23,8 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     private String lastSearchText = "";
     private final List<ItemStack> listCache = new ArrayList<>();
 
+    private static Field filterField = null;
+
     public JEIBackedSearchTree(boolean filteringByTag) {
         this.filteringByTag = filteringByTag;
     }
@@ -26,7 +32,19 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     public List<ItemStack> search(String pSearchText) {
         Optional<JeiRuntime> runtime = Internal.getRuntime();
         if(runtime.isPresent()) {
-            return this.searchJEI((IngredientFilter)runtime.get().getIngredientFilter(), pSearchText);
+            IngredientFilterApi iFilterApi = (IngredientFilterApi)runtime.get().getIngredientFilter();
+            IngredientFilter filter;
+            try {
+                if(filterField == null) {
+                    filterField = IngredientFilterApi.class.getDeclaredField("ingredientFilter");
+                    filterField.setAccessible(true);
+                }
+                filter = (IngredientFilter)filterField.get(iFilterApi);
+            } catch(ReflectiveOperationException e) {
+                ModernFix.LOGGER.error(e);
+                return Collections.emptyList();
+            }
+            return this.searchJEI(filter, pSearchText);
         } else {
             /* Use the default, dummy implementation */
             return super.search(pSearchText);

@@ -49,7 +49,9 @@
     "perf.kubejs.RecipeJSMixin",
     "perf.kubejs.IDFilterMixin",
     "perf.kubejs.CustomIngredientMixin",
-    "perf.fast_registry_validation.ForgeRegistryMixin"
+    "perf.fast_registry_validation.ForgeRegistryMixin",
+    "perf.cache_strongholds.ChunkGeneratorMixin",
+    "perf.cache_strongholds.ServerLevelMixin"
   ],
   "client": [
     "core.MinecraftMixin",

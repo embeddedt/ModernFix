@@ -4,15 +4,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.ModContainer;
+import net.minecraftforge.fml.ModList;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.load.LoadEvents;
 import org.embeddedt.modernfix.screen.DeferredLevelLoadingScreen;
 
 import java.lang.management.ManagementFactory;
+import java.util.Optional;
 
 public class ModernFixClient {
     public static long worldLoadStartTime;
@@ -20,9 +24,16 @@ public class ModernFixClient {
 
     public static float gameStartTimeSeconds = -1;
 
+    private String brandingString = null;
+
     public ModernFixClient() {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
             MinecraftForge.EVENT_BUS.register(new LoadEvents());
+        }
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
+            Optional<? extends ModContainer> mfContainer = ModList.get().getModContainerById("modernfix");
+            if(mfContainer.isPresent())
+                brandingString = "ModernFix " + mfContainer.get().getModInfo().getVersion().toString();
         }
     }
 
@@ -50,6 +61,14 @@ public class ModernFixClient {
             resetWorldLoadStateMachine();
             if(ModernFix.worldLoadSemaphore != null)
                 ModernFix.worldLoadSemaphore.countDown();
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public void onRenderOverlay(RenderGameOverlayEvent.Text event) {
+        if(brandingString != null && Minecraft.getInstance().options.renderDebug) {
+            event.getLeft().add("");
+            event.getLeft().add(brandingString);
         }
     }
 }

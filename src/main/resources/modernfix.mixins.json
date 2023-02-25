@@ -26,7 +26,9 @@
     "feature.measure_time.ProfiledReloadInstanceMixin",
     "feature.measure_time.ReloadableServerResourcesMixin",
     "feature.branding.BrandingControlMixin",
-    "perf.fast_registry_validation.ForgeRegistryMixin"
+    "perf.fast_registry_validation.ForgeRegistryMixin",
+    "perf.cache_strongholds.ChunkGeneratorMixin",
+    "perf.cache_strongholds.ServerLevelMixin"
   ],
   "client": [
     "core.MinecraftMixin",

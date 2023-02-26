@@ -52,6 +52,7 @@ public class CachingStructureManager {
                 ModernFix.LOGGER.warn("Structure {} is being run through DFU (hash {}), this will cause launch time delays", location, hash);
                 currentTag = NbtUtils.update(datafixer, DataFixTypes.STRUCTURE, currentTag, currentDataVersion,
                         SharedConstants.getCurrentVersion().getWorldVersion());
+                currentTag.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
                 saveCachedUpgraded(location, hash, currentTag);
             }
         }

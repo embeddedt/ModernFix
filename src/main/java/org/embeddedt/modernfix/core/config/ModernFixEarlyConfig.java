@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.core.config;
 
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -43,7 +44,8 @@ public class ModernFixEarlyConfig {
         /* off by default in 1.18 because it doesn't work as well */
         this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */
-        this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null);
+        Optional<ModInfo> jeiMod = FMLLoader.getLoadingModList().getMods().stream().filter(mod -> mod.getModId().equals("jei")).findFirst();
+        this.addMixinRule("perf.blast_search_trees", jeiMod.isPresent() && jeiMod.get().getVersion().getMajorVersion() >= 10);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);

@@ -1,67 +1,67 @@
 package org.embeddedt.modernfix.mixin.perf.cache_strongholds;
 
+import net.minecraft.Util;
+import net.minecraft.core.Holder;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkGenerator;
-import net.minecraftforge.fml.server.ServerLifecycleHooks;
+import net.minecraft.world.level.levelgen.structure.StructureSet;
+import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.duck.IChunkGenerator;
 import org.embeddedt.modernfix.duck.IServerLevel;
 import org.embeddedt.modernfix.world.StrongholdLocationCache;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.CompletableFuture;
 
 @Mixin(ChunkGenerator.class)
-public class ChunkGeneratorMixin {
-    @Shadow @Final private List<ChunkPos> strongholdPositions;
+public class ChunkGeneratorMixin implements IChunkGenerator {
+    private WeakReference<ServerLevel> mfix$serverLevel;
 
-    @Inject(method = "generateStrongholds", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList()Ljava/util/ArrayList;", ordinal = 0), cancellable = true)
-    private void useCachedDataIfAvailable(CallbackInfo ci) {
-        ServerLevel level = searchLevel();
-        if(level == null) {
-            ModernFix.LOGGER.error("Can't find server level for " + this);
+    @Override
+    public void mfix$setAssociatedServerLevel(ServerLevel level) {
+        mfix$serverLevel = new WeakReference<>(level);
+    }
+
+    @Inject(method = "generateRingPositions", at = @At("HEAD"), cancellable = true)
+    private void useCachedDataIfAvailable(Holder<StructureSet> setHolder, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
+        if(placement.count() == 0)
             return;
-        }
+        ServerLevel level = searchLevel();
+        if(level == null)
+            return;
         StrongholdLocationCache cache = ((IServerLevel)level).mfix$getStrongholdCache();
         List<ChunkPos> positions = cache.getChunkPosList();
         if(positions.isEmpty())
             return;
         ModernFix.LOGGER.debug("Loaded stronghold cache for dimension {} with {} positions", level.dimension().location(), positions.size());
-        this.strongholdPositions.addAll(positions);
-        ci.cancel();
+        cir.setReturnValue(CompletableFuture.completedFuture(positions));
     }
 
     private ServerLevel searchLevel() {
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
-        if(server != null) {
-            ServerLevel ourLevel = null;
-            for (ServerLevel level : server.getAllLevels()) {
-                if (level.getChunkSource().getGenerator() == ((ChunkGenerator) (Object) this)) {
-                    ourLevel = level;
-                    break;
-                }
-            }
-            return ourLevel;
-        } else
-            return null;
+        return mfix$serverLevel.get();
     }
 
-    @Inject(method = "generateStrongholds", at = @At("TAIL"))
-    private void saveCachedData(CallbackInfo ci) {
-        if(this.strongholdPositions.size() > 0) {
+    @Inject(method = "generateRingPositions", at = @At("RETURN"), cancellable = true)
+    private void saveCachedData(Holder<StructureSet> setHolder, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
+        cir.setReturnValue(cir.getReturnValue().thenApplyAsync(list -> {
+            if(list.size() == 0)
+                return list;
             ServerLevel level = searchLevel();
             if(level != null) {
                 StrongholdLocationCache cache = ((IServerLevel)level).mfix$getStrongholdCache();
-                cache.setChunkPosList(this.strongholdPositions);
+                cache.setChunkPosList(list);
                 ModernFix.LOGGER.debug("Saved stronghold cache for dimension {}", level.dimension().location());
             }
-        }
+            return list;
+        }, Util.backgroundExecutor()));
     }
 }

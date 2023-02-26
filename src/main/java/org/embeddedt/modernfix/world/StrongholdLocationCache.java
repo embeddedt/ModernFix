@@ -1,19 +1,19 @@
 package org.embeddedt.modernfix.world;
 
+import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.nbt.Tag;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.saveddata.SavedData;
-import net.minecraftforge.common.util.Constants;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class StrongholdLocationCache extends SavedData {
     private List<ChunkPos> chunkPosList;
-    public StrongholdLocationCache(ServerLevel level) {
-        super(getFileId(level.dimensionType()));
+    public StrongholdLocationCache() {
+        super();
         chunkPosList = new ArrayList<>();
     }
 
@@ -26,14 +26,15 @@ public class StrongholdLocationCache extends SavedData {
         this.setDirty();
     }
 
-    @Override
-    public void load(CompoundTag arg) {
-        if(arg.contains("Positions", Constants.NBT.TAG_LONG_ARRAY)) {
+    public static StrongholdLocationCache load(CompoundTag arg) {
+        StrongholdLocationCache cache = new StrongholdLocationCache();
+        if(arg.contains("Positions", Tag.TAG_LONG_ARRAY)) {
             long[] positions = arg.getLongArray("Positions");
             for(long position : positions) {
-                chunkPosList.add(new ChunkPos(position));
+                cache.chunkPosList.add(new ChunkPos(position));
             }
         }
+        return cache;
     }
 
     @Override
@@ -47,7 +48,7 @@ public class StrongholdLocationCache extends SavedData {
         return compoundTag;
     }
 
-    public static String getFileId(DimensionType dimensionType) {
-        return "mfix_strongholds" + dimensionType.getFileSuffix();
+    public static String getFileId(Holder<DimensionType> dimensionType) {
+        return "mfix_strongholds";
     }
 }

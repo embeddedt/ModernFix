@@ -27,6 +27,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.parallelize_model_loading", true);
         this.addMixinRule("perf.parallelize_model_loading.multipart", false);
         this.addMixinRule("perf.cache_strongholds", true);
+        this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
         this.addMixinRule("perf.thread_priorities", true);

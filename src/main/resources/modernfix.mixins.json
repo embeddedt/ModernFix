@@ -28,6 +28,7 @@
     "feature.branding.BrandingControlMixin",
     "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
+    "perf.cache_upgraded_structures.StructureManagerMixin",
     "perf.cache_strongholds.ServerLevelMixin"
   ],
   "client": [

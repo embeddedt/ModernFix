@@ -20,12 +20,12 @@ public class MinecraftMixin {
     private void replaceSearchTrees(CallbackInfo ci) {
         ci.cancel();
         if(ModList.get().getModFileById("jei") != null) {
-            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
-            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> new JEIBackedSearchTree(false));
+            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> new JEIBackedSearchTree(true));
         } else {
-            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new DummySearchTree<>());
-            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new DummySearchTree<>());
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> new DummySearchTree<>());
+            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> new DummySearchTree<>());
         }
-        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new DummySearchTree<>());
+        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new DummySearchTree<>());
     }
 }

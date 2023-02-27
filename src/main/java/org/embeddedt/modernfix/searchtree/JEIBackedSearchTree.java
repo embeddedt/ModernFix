@@ -2,9 +2,9 @@ package org.embeddedt.modernfix.searchtree;
 
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.common.Internal;
-import mezz.jei.common.ingredients.IngredientFilter;
-import mezz.jei.common.ingredients.IngredientFilterApi;
-import mezz.jei.common.runtime.JeiRuntime;
+import mezz.jei.gui.ingredients.IngredientFilter;
+import mezz.jei.gui.ingredients.IngredientFilterApi;
+import mezz.jei.library.runtime.JeiRuntime;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.mixin.perf.blast_search_trees.IngredientFilterInvoker;
@@ -30,7 +30,7 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     }
     @Override
     public List<ItemStack> search(String pSearchText) {
-        Optional<JeiRuntime> runtime = Internal.getRuntime();
+        Optional<JeiRuntime> runtime = JEIRuntimeCapturer.runtime();
         if(runtime.isPresent()) {
             IngredientFilterApi iFilterApi = (IngredientFilterApi)runtime.get().getIngredientFilter();
             IngredientFilter filter;

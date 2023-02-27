@@ -3,8 +3,8 @@ package org.embeddedt.modernfix;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraftforge.client.event.ScreenOpenEvent;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -43,10 +43,10 @@ public class ModernFixClient {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onMultiplayerConnect(ScreenOpenEvent event) {
-        if(event.getScreen() instanceof ConnectScreen && !event.isCanceled()) {
+    public void onMultiplayerConnect(ScreenEvent.Opening event) {
+        if(event.getNewScreen() instanceof ConnectScreen && !event.isCanceled()) {
             worldLoadStartTime = System.nanoTime();
-        } else if (event.getScreen() instanceof TitleScreen && gameStartTimeSeconds < 0) {
+        } else if (event.getNewScreen() instanceof TitleScreen && gameStartTimeSeconds < 0) {
             gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
         }
@@ -65,7 +65,7 @@ public class ModernFixClient {
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onRenderOverlay(RenderGameOverlayEvent.Text event) {
+    public void onRenderOverlay(CustomizeGuiOverlayEvent.DebugText event) {
         if(brandingString != null && Minecraft.getInstance().options.renderDebug) {
             event.getLeft().add("");
             event.getLeft().add(brandingString);

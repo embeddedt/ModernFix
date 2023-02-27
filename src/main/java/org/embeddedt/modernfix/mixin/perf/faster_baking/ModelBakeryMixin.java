@@ -3,16 +3,18 @@ package org.embeddedt.modernfix.mixin.perf.faster_baking;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.MultiVariant;
 import net.minecraft.client.renderer.block.model.multipart.MultiPart;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.resources.ResourceLocation;
 import com.mojang.math.Transformation;
-import net.minecraftforge.client.event.ModelBakeEvent;
+import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.fml.loading.progress.StartupMessageManager;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
@@ -80,9 +82,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             return false;
     }
 
-    @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;pop()V"))
-    private void bakeModels(ProfilerFiller pProfiler, int p_i226056_4_, CallbackInfo ci) {
-        pProfiler.popPush("atlas");
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void bakeModels(ResourceManager arg, BlockColors arg2, ProfilerFiller pProfiler, int i, CallbackInfo ci) {
+        pProfiler.push("atlas");
         Minecraft.getInstance().executeBlocking(() -> {
             for(Pair<TextureAtlas, TextureAtlas.Preparations> pair : this.atlasPreparations.values()) {
                 TextureAtlas atlastexture = pair.getFirst();
@@ -95,7 +97,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.atlasSet = new AtlasSet(this.atlasPreparations.values().stream().map(Pair::getFirst).collect(Collectors.toList()));
         BakedModel missingModel = this.bake(MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0);
         this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, missingModel);
-        Collection<String> modsListening = ModUtil.findAllModsListeningToEvent(ModelBakeEvent.class);
+        Collection<String> modsListening = ModUtil.findAllModsListeningToEvent(ModelEvent.BakingCompleted.class);
         LOGGER.debug("Found ModelBakeEvent listeners: [" + String.join(", ", modsListening) + "]");
         Set<String> incompatibleLazyBakedModels = ImmutableSet.<String>builder()
                 .addAll(ModernFixConfig.MODELS_TO_BAKE.get())
@@ -133,6 +135,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             if (model != null)
                 this.bakedTopLevelModels.put(location, model);
         });
+        pProfiler.pop();
     }
 
     /**

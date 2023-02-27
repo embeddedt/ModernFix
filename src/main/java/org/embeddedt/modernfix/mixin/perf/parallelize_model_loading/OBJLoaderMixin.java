@@ -1,9 +1,9 @@
 package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.model.obj.MaterialLibrary;
-import net.minecraftforge.client.model.obj.OBJLoader;
-import net.minecraftforge.client.model.obj.OBJModel;
+import net.minecraftforge.client.model.obj.ObjLoader;
+import net.minecraftforge.client.model.obj.ObjMaterialLibrary;
+import net.minecraftforge.client.model.obj.ObjModel;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,23 +15,23 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-@Mixin(OBJLoader.class)
+@Mixin(ObjLoader.class)
 public class OBJLoaderMixin {
     @Final
     @Mutable
-    @Shadow(remap = false) private Map<ResourceLocation, MaterialLibrary> materialCache;
+    @Shadow(remap = false) private Map<ResourceLocation, ObjMaterialLibrary> materialCache;
 
     @Final
     @Mutable
-    @Shadow(remap = false) private Map<OBJModel.ModelSettings, OBJModel> modelCache;
+    @Shadow(remap = false) private Map<ObjModel.ModelSettings, ObjModel> modelCache;
 
-    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/OBJLoader;materialCache:Ljava/util/Map;", remap = false))
-    private void useConcMap1(OBJLoader instance, Map<ResourceLocation, MaterialLibrary> value) {
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/ObjLoader;materialCache:Ljava/util/Map;", remap = false))
+    private void useConcMap1(ObjLoader instance, Map<ResourceLocation, ObjMaterialLibrary> value) {
         this.materialCache = new ConcurrentHashMap<>();
     }
 
-    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/OBJLoader;modelCache:Ljava/util/Map;", remap = false))
-    private void useConcMap2(OBJLoader instance, Map<ResourceLocation, MaterialLibrary> value) {
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/ObjLoader;modelCache:Ljava/util/Map;", remap = false))
+    private void useConcMap2(ObjLoader instance, Map<ResourceLocation, ObjMaterialLibrary> value) {
         this.modelCache = new ConcurrentHashMap<>();
     }
 }

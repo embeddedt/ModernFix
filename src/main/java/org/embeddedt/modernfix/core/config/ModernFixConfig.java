@@ -66,4 +66,8 @@ public class ModernFixConfig {
         jeiPluginBlacklist = BLACKLIST_ASYNC_JEI_PLUGINS.get().stream().map(ResourceLocation::new).collect(Collectors.toSet());
     }
 
+    public static boolean isLoaded() {
+        return COMMON_CONFIG.isLoaded();
+    }
+
 }

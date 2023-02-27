@@ -17,6 +17,6 @@ public class SimpleReloadableResourceManagerMixin {
      */
     @ModifyArg(method = "createReload", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/resources/SimpleReloadInstance;create(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/List;Ljava/util/concurrent/Executor;Ljava/util/concurrent/Executor;Ljava/util/concurrent/CompletableFuture;Z)Lnet/minecraft/server/packs/resources/ReloadInstance;"), index = 5)
     private boolean enableDebugReloader(boolean bl) {
-        return bl || ModernFixConfig.ENABLE_DEBUG_RELOADER.get();
+        return bl || (ModernFixConfig.isLoaded() && ModernFixConfig.ENABLE_DEBUG_RELOADER.get());
     }
 }

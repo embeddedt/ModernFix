@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
 
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -40,8 +41,8 @@ public abstract class ModelBakeryMixin {
 
     private Map<ResourceLocation, List<Pair<String, BlockModelDefinition>>> deserializedBlockstateCache = null;
 
-    @Inject(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", ordinal = 0))
-    private void preloadJsonModels(ProfilerFiller profilerIn, int maxMipmapLevel, CallbackInfo ci) {
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", ordinal = 0))
+    private void preloadJsonModels(ProfilerFiller profilerIn, String str) {
         StartupMessageManager.mcLoaderConsumer().ifPresent(c -> c.accept("Loading models"));
         profilerIn.popPush("loadblockstates");
         AsyncStopwatch.measureAndLogSerialRunningTime("Parallel blockstate loading", () -> {
@@ -53,25 +54,20 @@ public abstract class ModelBakeryMixin {
                 futures.add(CompletableFuture.runAsync(() -> {
                     ResourceLocation blockStateJSON = new ResourceLocation(blockLocation.getNamespace(), "blockstates/" + blockLocation.getPath() + ".json");
                     List<Resource> blockStates;
-                    try {
-                        /* Some mods' custom resource pack implementations don't seem to like concurrency here */
-                        synchronized(this.resourceManager) {
-                            blockStates = this.resourceManager.getResources(blockStateJSON);
-                        }
-                    } catch(IOException e) {
-                        ModernFix.LOGGER.warn("Exception loading blockstate definition: {}: {}", blockLocation, e);
-                        return;
+                    /* Some mods' custom resource pack implementations don't seem to like concurrency here */
+                    synchronized(this.resourceManager) {
+                        blockStates = this.resourceManager.getResourceStack(blockStateJSON);
                     }
                     List<Pair<String, BlockModelDefinition>> definitions = new ArrayList<>();
                     StateDefinition<Block, BlockState> stateContainer = block.getStateDefinition();
                     BlockModelDefinition.Context context = containerHolder.get();
                     context.setDefinition(stateContainer);
                     for(Resource resource : blockStates) {
-                        try (InputStream inputstream = resource.getInputStream()) {
+                        try (InputStream inputstream = resource.open()) {
                             BlockModelDefinition definition = BlockModelDefinition.fromStream(context, new InputStreamReader(inputstream, StandardCharsets.UTF_8));
-                            definitions.add(Pair.of(resource.getSourceName(), definition));
+                            definitions.add(Pair.of(resource.sourcePackId(), definition));
                         } catch (Exception exception1) {
-                            ModernFix.LOGGER.warn(String.format("Exception loading blockstate definition: '%s' in resourcepack: '%s': %s", resource.getLocation(), resource.getSourceName(), exception1.getMessage()));
+                            ModernFix.LOGGER.warn(String.format("Exception loading blockstate definition: '%s' in resourcepack: '%s': %s", blockStateJSON, resource.sourcePackId(), exception1.getMessage()));
                             return;
                         }
                     }
@@ -80,16 +76,17 @@ public abstract class ModelBakeryMixin {
             }
             CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         });
+        profilerIn.popPush(str);
     }
 
-    @Inject(method = "processLoading", at = @At("RETURN"), remap = false)
-    private void clearModelCache(ProfilerFiller profilerIn, int maxMipmapLevel, CallbackInfo ci) {
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void clearModelCache(ResourceManager arg, BlockColors arg2, ProfilerFiller arg3, int i, CallbackInfo ci) {
         deserializedBlockstateCache.clear();
     }
 
     private List<?> replacementList = null;
 
-    @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/resources/ResourceManager;getResources(Lnet/minecraft/resources/ResourceLocation;)Ljava/util/List;", ordinal = 0))
+    @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/packs/resources/ResourceManager;getResourceStack(Lnet/minecraft/resources/ResourceLocation;)Ljava/util/List;", ordinal = 0))
     private List<?> getResourceList(ResourceManager instance, ResourceLocation jsonLocation, ResourceLocation originalBlockLocation) throws IOException {
         replacementList = null;
         if(this.deserializedBlockstateCache != null) {
@@ -104,7 +101,7 @@ public abstract class ModelBakeryMixin {
                 return theList;
             }
         }
-        return instance.getResources(jsonLocation);
+        return instance.getResourceStack(jsonLocation);
     }
 
     @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;map(Ljava/util/function/Function;)Ljava/util/stream/Stream;", ordinal = 0))

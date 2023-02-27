@@ -6,7 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.client.gui.screens.ProgressScreen;
 import net.minecraft.client.server.IntegratedServer;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -15,7 +15,7 @@ import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.util.Unit;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.ForcedChunksSavedData;
-import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.world.ForgeChunkManager;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.server.ServerAboutToStartEvent;
@@ -56,20 +56,20 @@ public class LoadEvents {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onWorldShow(ScreenOpenEvent event) {
+    public void onWorldShow(ScreenEvent.Opening event) {
         if(ServerLifecycleHooks.getCurrentServer() instanceof IntegratedServer) {
-            if(event.getScreen() == null && Minecraft.getInstance().level != null && integratedWorldLoadListener != null) {
+            if(event.getNewScreen() == null && Minecraft.getInstance().level != null && integratedWorldLoadListener != null) {
                 /* this means the world is about to be displayed, check if 441 initialized */
                 ServerChunkCache provider = ServerLifecycleHooks.getCurrentServer().overworld().getChunkSource();
                 BooleanSupplier worldLoadDone = () -> provider.getTickingGenerated() >= 441;
                 if(!worldLoadDone.getAsBoolean()) {
                     DeferredLevelLoadingScreen newScreen = new DeferredLevelLoadingScreen(Minecraft.getInstance().progressListener.get(), worldLoadDone);
-                    event.setScreen(newScreen);
+                    event.setNewScreen(newScreen);
                 }
-            } else if(event.getScreen() instanceof LevelLoadingScreen && Minecraft.getInstance().level == null && ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
+            } else if(event.getNewScreen() instanceof LevelLoadingScreen && Minecraft.getInstance().level == null && ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
                 ProgressScreen loadscreen = new ProgressScreen(false);
-                loadscreen.progressStartNoAbort(new TranslatableComponent("connect.joining"));
-                event.setScreen(loadscreen);
+                loadscreen.progressStartNoAbort(Component.translatable("connect.joining"));
+                event.setNewScreen(loadscreen);
             }
         }
     }

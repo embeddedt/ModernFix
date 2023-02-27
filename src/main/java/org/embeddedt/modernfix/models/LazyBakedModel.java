@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.models;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.datafixers.util.Pair;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -13,9 +14,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.core.Direction;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.BlockAndTintGetter;
-import net.minecraftforge.client.model.data.EmptyModelData;
-import net.minecraftforge.client.model.data.IModelData;
+import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.model.data.ModelData;
 import org.embeddedt.modernfix.ModernFix;
+import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -46,7 +48,7 @@ public class LazyBakedModel implements BakedModel {
     }
 
     @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState pState, @Nullable Direction pSide, Random pRand) {
+    public List<BakedQuad> getQuads(@Nullable BlockState pState, @Nullable Direction pSide, RandomSource pRand) {
         return computeDelegate().getQuads(pState, pSide, pRand);
     }
 
@@ -91,8 +93,8 @@ public class LazyBakedModel implements BakedModel {
 
     @Nonnull
     @Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @Nonnull Random rand, @Nonnull IModelData extraData) {
-        return computeDelegate().getQuads(state, side, rand, extraData);
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @Nonnull RandomSource rand, @Nonnull ModelData extraData, @org.jetbrains.annotations.Nullable RenderType renderType) {
+        return computeDelegate().getQuads(state, side, rand, extraData, renderType);
     }
 
     @Override
@@ -101,33 +103,38 @@ public class LazyBakedModel implements BakedModel {
     }
 
     @Override
-    public boolean doesHandlePerspectives() {
-        return computeDelegate().doesHandlePerspectives();
+    public boolean useAmbientOcclusion(BlockState state, RenderType renderType) {
+        return computeDelegate().useAmbientOcclusion(state, renderType);
     }
 
     @Override
-    public BakedModel handlePerspective(ItemTransforms.TransformType cameraTransformType, PoseStack mat) {
-        return computeDelegate().handlePerspective(cameraTransformType, mat);
+    public BakedModel applyTransform(ItemTransforms.TransformType transformType, PoseStack poseStack, boolean applyLeftHandTransform) {
+        return computeDelegate().applyTransform(transformType, poseStack, applyLeftHandTransform);
     }
 
     @Nonnull
     @Override
-    public IModelData getModelData(@Nonnull BlockAndTintGetter world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull IModelData tileData) {
+    public ModelData getModelData(@Nonnull BlockAndTintGetter world, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nonnull ModelData tileData) {
         return computeDelegate().getModelData(world, pos, state, tileData);
     }
 
     @Override
-    public TextureAtlasSprite getParticleIcon(@Nonnull IModelData data) {
+    public TextureAtlasSprite getParticleIcon(@Nonnull ModelData data) {
         return computeDelegate().getParticleIcon(data);
     }
 
     @Override
-    public boolean isLayered() {
-        return computeDelegate().isLayered();
+    public ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
+        return computeDelegate().getRenderTypes(state, rand, data);
     }
 
     @Override
-    public List<Pair<BakedModel, RenderType>> getLayerModels(ItemStack itemStack, boolean fabulous) {
-        return computeDelegate().getLayerModels(itemStack, fabulous);
+    public List<BakedModel> getRenderPasses(ItemStack itemStack, boolean fabulous) {
+        return computeDelegate().getRenderPasses(itemStack, fabulous);
+    }
+
+    @Override
+    public List<RenderType> getRenderTypes(ItemStack itemStack, boolean fabulous) {
+        return computeDelegate().getRenderTypes(itemStack, fabulous);
     }
 }

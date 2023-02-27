@@ -20,6 +20,7 @@ import java.util.function.Function;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
+    /* not supported in 1.19
     private long datapackReloadStartTime;
 
     @Inject(method = "makeWorldStem(Lnet/minecraft/server/packs/repository/PackRepository;ZLnet/minecraft/server/WorldStem$DataPackConfigSupplier;Lnet/minecraft/server/WorldStem$WorldDataSupplier;)Lnet/minecraft/server/WorldStem;", at = @At(value = "HEAD"))
@@ -37,4 +38,5 @@ public class MinecraftMixin {
     private void recordWorldLoadStart(CallbackInfo ci) {
         ModernFixClient.worldLoadStartTime = System.nanoTime();
     }
+    */
 }

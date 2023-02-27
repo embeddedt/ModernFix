@@ -50,7 +50,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.async_locator", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
         this.addMixinRule("perf.kubejs", true);
-        this.addMixinRule("perf.faster_singleplayer_load", true);
+        this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */
         this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null);
         this.addMixinRule("safety", true);

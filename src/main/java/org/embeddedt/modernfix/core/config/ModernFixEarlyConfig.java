@@ -26,6 +26,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
         this.addMixinRule("perf.boost_worker_count", true);
         this.addMixinRule("perf.skip_first_datapack_reload", true);
+        this.addMixinRule("perf.reuse_datapacks", true);
         this.addMixinRule("perf.parallelize_model_loading", true);
         this.addMixinRule("perf.parallelize_model_loading.multipart", false);
         this.addMixinRule("perf.cache_strongholds", true);

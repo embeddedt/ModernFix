@@ -90,6 +90,8 @@
     "perf.faster_texture_stitching.StitcherMixin",
     "bugfix.packet_leak.ClientPlayNetHandlerMixin",
     "bugfix.packet_leak.SCustomPayloadPlayPacketMixin",
+    "perf.reuse_datapacks.MinecraftMixin",
+    "perf.reuse_datapacks.MinecraftServerMixin",
     "perf.faster_singleplayer_load.MinecraftServerMixin"
   ],
   "injectors": {

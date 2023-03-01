@@ -23,7 +23,6 @@ public class IntegratedServerMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void adjustServerPriority(Thread pServerThread, Minecraft pMinecraft, RegistryAccess.RegistryHolder pRegistryHolder, LevelStorageSource.LevelStorageAccess pStorageSource, PackRepository pPackRepository, ServerResources pResources, WorldData pWorldData, MinecraftSessionService pSessionService, GameProfileRepository pProfileRepository, GameProfileCache pProfileCache, ChunkProgressListenerFactory pProgressListenerfactory, CallbackInfo ci) {
         int pri = ModernFixConfig.INTEGRATED_SERVER_PRIORITY.get();
-        ModernFix.LOGGER.info("Changing server thread priority to " + pri);
         pServerThread.setPriority(pri);
     }
 }

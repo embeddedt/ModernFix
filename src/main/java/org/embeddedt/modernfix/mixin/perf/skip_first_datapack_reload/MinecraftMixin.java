@@ -36,7 +36,7 @@ public abstract class MinecraftMixin {
     @Redirect(method = "loadWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/Minecraft;makeServerStem(Lnet/minecraft/core/RegistryAccess$RegistryHolder;Ljava/util/function/Function;Lcom/mojang/datafixers/util/Function4;ZLnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;)Lnet/minecraft/client/Minecraft$ServerStem;", ordinal = 0))
     private Minecraft.ServerStem skipFirstReload(Minecraft client, RegistryAccess.RegistryHolder dynamicRegistries, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> worldStorageToDatapackFunction, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> quadFunction, boolean vanillaOnly, LevelStorageSource.LevelStorageAccess levelSave, String worldName, RegistryAccess.RegistryHolder originalRegistries, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> levelSaveToDatapackFunction, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> quadFunction2, boolean vanillaOnly2, Minecraft.ExperimentalDialogType selectionType, boolean creating) throws InterruptedException, ExecutionException {
         if(!creating) {
-            ModernFix.LOGGER.warn("Skipping first reload, this is still experimental");
+            ModernFix.LOGGER.debug("Skipping first datapack reload");
             ModernFix.runningFirstInjection = true;
             ((ILevelSave)levelSave).runWorldPersistenceHooks(levelSource);
             ModernFix.runningFirstInjection = false;

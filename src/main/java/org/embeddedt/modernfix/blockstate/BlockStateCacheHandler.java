@@ -53,7 +53,7 @@ public class BlockStateCacheHandler {
                 currentRebuildThread = null;
             }
         } else {
-            ModernFix.LOGGER.warn("Deferred blockstate cache rebuild");
+            ModernFix.LOGGER.debug("Deferred blockstate cache rebuild");
         }
     }
 

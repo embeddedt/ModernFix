@@ -92,6 +92,8 @@
     "bugfix.packet_leak.SCustomPayloadPlayPacketMixin",
     "perf.reuse_datapacks.MinecraftMixin",
     "perf.reuse_datapacks.MinecraftServerMixin",
+    "perf.use_integrated_resources.LootTableHelperMixin",
+    "perf.use_integrated_resources.PiglinBarteringRecipeBuilderMixin",
     "perf.faster_singleplayer_load.MinecraftServerMixin"
   ],
   "injectors": {

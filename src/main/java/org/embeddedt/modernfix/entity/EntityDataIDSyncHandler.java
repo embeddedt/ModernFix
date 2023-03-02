@@ -30,6 +30,10 @@ public class EntityDataIDSyncHandler {
     @SuppressWarnings("unchecked")
     public static void onDatapackSyncEvent(OnDatapackSyncEvent event) {
         if(event.getPlayer() != null) {
+            if(!ServerLifecycleHooks.getCurrentServer().isDedicatedServer() && event.getPlayerList().getPlayerCount() == 0) {
+                ModernFix.LOGGER.debug("Not syncing IDs on integrated server");
+                return;
+            }
             /* Compute the current set of serializer IDs in use and send them */
             try {
                 if(fieldsToSyncMap == null) {

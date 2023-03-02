@@ -16,6 +16,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
+import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
+import org.embeddedt.modernfix.packet.PacketHandler;
 import org.embeddedt.modernfix.structure.AsyncLocator;
 import org.embeddedt.modernfix.util.KubeUtil;
 
@@ -70,6 +72,8 @@ public class ModernFix {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         if(ModList.get().isLoaded("kubejs"))
             MinecraftForge.EVENT_BUS.register(KubeUtil.class);
+        MinecraftForge.EVENT_BUS.register(EntityDataIDSyncHandler.class);
+        PacketHandler.register();
     }
 
     private static boolean dfuModPresent() {

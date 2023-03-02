@@ -94,6 +94,7 @@ dependencies {
     modImplementation("curse.maven:jeresources-240630:3545538")
     modImplementation("curse.maven:jepb-437558:3172880")
     modImplementation("curse.maven:babel-436964:3196072")
+    modCompileOnly("curse.maven:twforest-227639:3575220")
 }
 
 tasks.withType(JavaCompile) {

@@ -37,6 +37,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.packet_leak", false);
         this.addMixinRule("bugfix.structure_manager_crash", true);
         this.addMixinRule("bugfix.mc218112", true);
+        this.addMixinRule("bugfix.tf_cme_on_load", true);
         this.addMixinRule("perf.async_jei", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.preload_block_classes", false);

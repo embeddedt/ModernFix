@@ -8,6 +8,7 @@
   "mixins": [
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
     "bugfix.structure_manager_crash.StructureManagerMixin",
+    "bugfix.tf_cme_on_load.TwilightForestModMixin",
     "perf.remove_biome_temperature_cache.BiomeMixin",
     "perf.resourcepacks.ModFileResourcePackMixin",
     "perf.resourcepacks.VanillaPackMixin",

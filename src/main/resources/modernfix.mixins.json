@@ -52,6 +52,7 @@
     "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
     "perf.cache_upgraded_structures.StructureManagerMixin",
+    "bugfix.mc218112.SynchedEntityDataMixin",
     "perf.cache_strongholds.ServerLevelMixin"
   ],
   "client": [
@@ -94,6 +95,7 @@
     "perf.reuse_datapacks.MinecraftServerMixin",
     "perf.use_integrated_resources.LootTableHelperMixin",
     "perf.use_integrated_resources.PiglinBarteringRecipeBuilderMixin",
+    "bugfix.mc218112.SynchedEntityDataMixin_Client",
     "perf.faster_singleplayer_load.MinecraftServerMixin"
   ],
   "injectors": {

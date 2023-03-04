@@ -9,6 +9,7 @@ import net.minecraft.server.packs.VanillaPackResources;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.FileWalker;
+import org.embeddedt.modernfix.util.FileUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -71,7 +72,7 @@ public class VanillaPackResourcesMixin {
 
     @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Ljava/lang/Class;getResource(Ljava/lang/String;)Ljava/net/URL;"), cancellable = true)
     private void useCacheForExistence(PackType type, ResourceLocation location, CallbackInfoReturnable<Boolean> cir) {
-        cir.setReturnValue(containedPaths.contains(type.getDirectory() + "/" + location.getNamespace() + "/" + location.getPath()));
+        cir.setReturnValue(containedPaths.contains(type.getDirectory() + "/" + location.getNamespace() + "/" + FileUtil.normalize(location.getPath())));
     }
 
     /**

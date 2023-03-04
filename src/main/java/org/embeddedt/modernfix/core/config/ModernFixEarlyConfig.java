@@ -23,6 +23,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.measure_time", true);
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("perf.fast_registry_validation", true);
+        this.addMixinRule("perf.use_integrated_resources", true);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
         this.addMixinRule("perf.parallelize_model_loading", true);
@@ -31,6 +32,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
+        this.addMixinRule("perf.async_jei", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.sync_executor_sleep", true);
         this.addMixinRule("perf.scan_cache", true);

@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.network.NetworkConstants;
 import org.apache.commons.lang3.tuple.Pair;
@@ -74,6 +75,8 @@ public class ModernFix {
     }
 
     private static boolean dfuModPresent() {
+        if(FMLConfig.isOptimizedDFUDisabled())
+            return true;
         for(String modId : new String[] { "lazydfu", "datafixerslayer" }) {
             if(ModList.get().isLoaded(modId))
                 return true;

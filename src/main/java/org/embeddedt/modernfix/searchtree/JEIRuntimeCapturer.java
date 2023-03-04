@@ -5,6 +5,7 @@ import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.runtime.IJeiRuntime;
 import mezz.jei.library.runtime.JeiRuntime;
 import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.ModernFix;
 
 import java.lang.ref.WeakReference;
 import java.util.Optional;
@@ -19,7 +20,7 @@ public class JEIRuntimeCapturer implements IModPlugin {
 
     @Override
     public ResourceLocation getPluginUid() {
-        return null;
+        return new ResourceLocation(ModernFix.MODID, "capturer");
     }
 
     @Override

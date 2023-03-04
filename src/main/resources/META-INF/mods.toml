@@ -60,6 +60,6 @@ side = "BOTH"
 modId = "jei"
 mandatory = false
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
-versionRange = "[9.9999,)"
+versionRange = "[11,)"
 ordering = "BEFORE"
 side = "CLIENT"

@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.core.config;
 
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -22,6 +23,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.measure_time", true);
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("perf.fast_registry_validation", true);
+        this.addMixinRule("perf.use_integrated_resources", true);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
         this.addMixinRule("perf.parallelize_model_loading", true);
@@ -30,6 +32,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
+        this.addMixinRule("perf.async_jei", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.sync_executor_sleep", true);
         this.addMixinRule("perf.scan_cache", true);
@@ -43,7 +46,8 @@ public class ModernFixEarlyConfig {
         /* off by default in 1.18 because it doesn't work as well */
         this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */
-        this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null);
+        Optional<ModInfo> jeiMod = FMLLoader.getLoadingModList().getMods().stream().filter(mod -> mod.getModId().equals("jei")).findFirst();
+        this.addMixinRule("perf.blast_search_trees", jeiMod.isPresent() && jeiMod.get().getVersion().getMajorVersion() >= 10);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);
@@ -52,6 +56,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
         disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate");
+        disableIfModPresent("mixin.bugfix.mc218112", "performant");
     }
 
     private void disableIfModPresent(String configName, String... ids) {

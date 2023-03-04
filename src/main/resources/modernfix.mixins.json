@@ -32,6 +32,7 @@
   ],
   "client": [
     "core.MinecraftMixin",
+    "core.SynchedEntityDataMixin",
     "feature.measure_time.MinecraftMixin",
     "feature.reduce_loading_screen_freezes.ModelBakeryMixin",
     "bugfix.concurrency.MinecraftMixin",
@@ -56,6 +57,7 @@
     "perf.cache_model_materials.VanillaModelMixin",
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
+    "perf.use_integrated_resources.LootTableHelperMixin",
     "perf.faster_singleplayer_load.MinecraftServerMixin"
   ],
   "injectors": {

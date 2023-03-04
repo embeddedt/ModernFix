@@ -88,6 +88,9 @@ dependencies {
 
     // compile against the JEI API but do not include it at runtime
     modCompileOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+    modRuntimeOnly("curse.maven:jei-238222:4405346")
+
+    modCompileOnly("curse.maven:jeresources-240630:3951643")
 }
 
 tasks.withType(JavaCompile) {
@@ -153,7 +156,7 @@ curseforge {
             id = "790626"
             changelog = '[Changelog is not currently available]'
             changelogType = "markdown"
-            releaseType = "release"
+            releaseType = "beta"
             addGameVersion "Forge"
             addGameVersion minecraft_version
             mainArtifact remapJar

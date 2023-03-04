@@ -1,5 +1,6 @@
 {
   "modernfix.jei_load": "Loading JEI, this may take a while",
+  "modernfix.no_lazydfu": "ModernFix detected that DFU rules were compiled on startup. This slows down game launching. Installing LazyDFU to resolve this is highly recommended.",
   "asynclocator.map.locating": "Map (Locating...)",
   "asynclocator.map.none": "Map (No nearby feature found)"
 }

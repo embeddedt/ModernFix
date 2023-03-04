@@ -65,6 +65,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
         disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate");
+        disableIfModPresent("mixin.bugfix.mc218112", "performant");
     }
 
     private void disableIfModPresent(String configName, String... ids) {

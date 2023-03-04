@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix;
 
 import com.mojang.datafixers.util.Pair;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
@@ -105,7 +106,19 @@ public class ModernFixClient {
      *
      * This is to ensure we can perform ID fixup on already constructed managers.
      */
-    public static Set<SynchedEntityData> allEntityDatas = Collections.newSetFromMap(new WeakHashMap<>());
+    public static final Set<SynchedEntityData> allEntityDatas = Collections.newSetFromMap(new WeakHashMap<>());
+
+    private static final Field entriesArrayField;
+    static {
+        Field field;
+        try {
+            field = SynchedEntityData.class.getDeclaredField("entriesArray");
+            field.setAccessible(true);
+        } catch(ReflectiveOperationException e) {
+            field = null;
+        }
+        entriesArrayField = field;
+    }
 
     /**
      * Extremely hacky method to detect and correct mismatched entity data parameter IDs on the client and server.
@@ -140,12 +153,28 @@ public class ModernFixClient {
                 if(fixNeeded) {
                     dataEntries = new ArrayList<>(allEntityDatas);
                     for(SynchedEntityData manager : dataEntries) {
-                        Map<Integer, SynchedEntityData.DataItem<?>> fixedMap = new HashMap<>();
+                        Int2ObjectOpenHashMap<SynchedEntityData.DataItem<?>> fixedMap = new Int2ObjectOpenHashMap<>();
                         List<SynchedEntityData.DataItem<?>> items = new ArrayList<>(manager.itemsById.values());
                         for(SynchedEntityData.DataItem<?> item : items) {
                             fixedMap.put(item.getAccessor().id, item);
                         }
-                        manager.itemsById = fixedMap;
+                        manager.lock.writeLock().lock();
+                        try {
+                            manager.itemsById.replaceAll((id, parameter) -> fixedMap.get((int)id));
+                            if(entriesArrayField != null) {
+                                try {
+                                    SynchedEntityData.DataItem<?>[] dataArray = new SynchedEntityData.DataItem[items.size()];
+                                    for(int i = 0; i < dataArray.length; i++) {
+                                        dataArray[i] = fixedMap.get(i);
+                                    }
+                                    entriesArrayField.set(manager, dataArray);
+                                } catch(ReflectiveOperationException e) {
+                                    ModernFix.LOGGER.error(e);
+                                }
+                            }
+                        } finally {
+                            manager.lock.writeLock().unlock();
+                        }
                     }
                 }
                 allEntityDatas.clear();

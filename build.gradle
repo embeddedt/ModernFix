@@ -91,7 +91,7 @@ dependencies {
     modCompileOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
     modRuntimeOnly("curse.maven:jei-238222:4352925")
 
-    modImplementation("curse.maven:jeresources-240630:3831559")
+    modCompileOnly("curse.maven:jeresources-240630:3831559")
 }
 
 tasks.withType(JavaCompile) {

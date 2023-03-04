@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 import java.util.List;
 import java.util.Optional;
 
-@Mixin(value = BrandingControl.class, remap = false)
+@Mixin(value = BrandingControl.class, remap = false, priority = 1100)
 public class BrandingControlMixin {
     @Inject(method = "computeBranding", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/ModList;get()Lnet/minecraftforge/fml/ModList;"), locals = LocalCapture.CAPTURE_FAILHARD, require = 0)
     private static void addModernFixBranding(CallbackInfo ci, ImmutableList.Builder<String> builder) {

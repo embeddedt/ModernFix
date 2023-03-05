@@ -98,7 +98,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         Collection<String> modsListening = ModUtil.findAllModsListeningToEvent(ModelBakeEvent.class);
         LOGGER.debug("Found ModelBakeEvent listeners: [" + String.join(", ", modsListening) + "]");
         Set<String> incompatibleLazyBakedModels = ImmutableSet.<String>builder()
-                .addAll(ModernFixConfig.MODELS_TO_BAKE.get())
                 .addAll(modsListening)
                 .build();
         /* First, bake any incompatible models ahead of time (for mods that have custom models) */

@@ -40,6 +40,8 @@ public class ModelManagerMixin {
 
     @Shadow @Final private BlockModelShaper blockModelShaper;
 
+    @Shadow private ModelBakery modelBakery;
+
     @Inject(method = "prepare(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/util/profiling/ProfilerFiller;)Lnet/minecraft/client/resources/model/ModelBakery;", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;endTick()V"), locals = LocalCapture.CAPTURE_FAILHARD)
     private void fireModelBakeEvent(ResourceManager pResourceManager, ProfilerFiller pProfiler, CallbackInfoReturnable<ModelBakery> cir, ModelBakery pObject) {
         pProfiler.push("modelevent");
@@ -52,6 +54,7 @@ public class ModelManagerMixin {
         this.bakedRegistry = pObject.getBakedTopLevelModels();
         this.modelGroups = pObject.getModelGroups();
         this.missingModel = this.bakedRegistry.get(ModelBakery.MISSING_MODEL_LOCATION);
+        this.modelBakery = pObject;
         net.minecraftforge.client.ForgeHooksClient.onModelBake((ModelManager)(Object)this, this.bakedRegistry, pObject);
         pProfiler.popPush("cache");
         this.blockModelShaper.rebuildCache();

@@ -27,8 +27,6 @@ public class ModernFixConfig {
 
     public static ForgeConfigSpec.BooleanValue REBUILD_BLOCKSTATES_ASYNC;
 
-    public static ForgeConfigSpec.ConfigValue<List<? extends String>> MODELS_TO_BAKE;
-
     public static Set<ResourceLocation> jeiPluginBlacklist;
 
     static {
@@ -45,9 +43,6 @@ public class ModernFixConfig {
         REBUILD_BLOCKSTATES_ASYNC = COMMON_BUILDER
                 .comment("Rebuild blockstate cache asynchronously. Should work with most mods, but can be disabled.")
                 .define("rebuild_blockstate_cache_async", true);
-        MODELS_TO_BAKE = COMMON_BUILDER
-                .comment("List of additional mod IDs for which models should be baked at resource reload time")
-                .defineList("models_to_bake_early", Collections.emptyList(), o -> o instanceof String);
     }
 
     static {

@@ -20,6 +20,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.branding", true);
         this.addMixinRule("feature.measure_time", true);
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
+        this.addMixinRule("feature.direct_stack_trace", false);
         this.addMixinRule("perf.fast_registry_validation", true);
         this.addMixinRule("perf.use_integrated_resources", true);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);

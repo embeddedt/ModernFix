@@ -26,6 +26,7 @@
     "feature.measure_time.ProfiledReloadInstanceMixin",
     "feature.measure_time.ReloadableServerResourcesMixin",
     "feature.branding.BrandingControlMixin",
+    "feature.direct_stack_trace.CrashReportMixin",
     "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
     "perf.cache_upgraded_structures.StructureManagerMixin",

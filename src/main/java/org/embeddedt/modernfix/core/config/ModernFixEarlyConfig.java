@@ -22,6 +22,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.branding", true);
         this.addMixinRule("feature.measure_time", true);
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
+        this.addMixinRule("feature.direct_stack_trace", false);
         this.addMixinRule("perf.fast_registry_validation", true);
         this.addMixinRule("perf.use_integrated_resources", true);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
@@ -42,7 +43,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.faster_baking", true);
         this.addMixinRule("perf.cache_model_materials", true);
         this.addMixinRule("perf.datapack_reload_exceptions", true);
-        this.addMixinRule("perf.faster_texture_stitching", true);
+        this.addMixinRule("perf.faster_texture_stitching", false);
         /* off by default in 1.18 because it doesn't work as well */
         this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */
@@ -55,8 +56,9 @@ public class ModernFixEarlyConfig {
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
         disableIfModPresent("mixin.perf.async_jei", "modernui");
-        disableIfModPresent("mixin.perf.compress_biome_container", "chocolate");
+        disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
+        disableIfModPresent("mixin.perf.faster_baking", "touhou_little_maid");
     }
 
     private void disableIfModPresent(String configName, String... ids) {

@@ -62,6 +62,7 @@ repositories {
     maven { // CTM
         url "https://maven.tterrag.com/"
     }
+    maven { url "https://maven.shedaniel.me" }
 }
 
 dependencies {
@@ -92,6 +93,7 @@ dependencies {
     modRuntimeOnly("curse.maven:jei-238222:4352925")
 
     modCompileOnly("curse.maven:jeresources-240630:3831559")
+    modCompileOnly "me.shedaniel:RoughlyEnoughItems-forge:${rei_version}"
 }
 
 tasks.withType(JavaCompile) {

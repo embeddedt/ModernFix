@@ -7,6 +7,7 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModFileInfo;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
 import org.embeddedt.modernfix.searchtree.JEIBackedSearchTree;
+import org.embeddedt.modernfix.searchtree.REIBackedSearchTree;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -27,6 +28,9 @@ public class MinecraftMixin {
         if(jeiContainer.isPresent() && jeiContainer.get().getModInfo().getVersion().getMajorVersion() >= 10) {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
+        } else if(ModList.get().isLoaded("roughlyenoughitems")) {
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new REIBackedSearchTree(false));
+            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new REIBackedSearchTree(true));
         } else {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new DummySearchTree<>());
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new DummySearchTree<>());

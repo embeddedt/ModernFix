@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.texture.Stitcher;
 import net.minecraft.client.renderer.texture.StitcherException;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.Mth;
+import org.embeddedt.modernfix.ModernFix;
 import org.lwjgl.stb.STBRPContext;
 import org.lwjgl.stb.STBRPNode;
 import org.lwjgl.stb.STBRPRect;
@@ -180,6 +181,10 @@ public class StbStitcher {
 
                     // Ensure that everything is properly packed!
                     if (!rect.was_packed()) {
+                        ModernFix.LOGGER.error("Stitcher ran out of space with target atlas size " + longestWidth + "x" + longestHeight + ":");
+                        for(Stitcher.Holder h : holders) {
+                            ModernFix.LOGGER.error(" - " + h.spriteInfo.name() + ", " + h.spriteInfo.width() + "x" + h.spriteInfo.height());
+                        }
                         throw new StitcherException(holder.spriteInfo,
                                 Stream.of(holders).map(arg -> arg.spriteInfo).collect(ImmutableList.toImmutableList()));
                     }

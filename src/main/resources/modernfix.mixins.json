@@ -65,6 +65,7 @@
     "bugfix.concurrency.RenderTypeMixin",
     "bugfix.concurrency.MinecraftMixin",
     "bugfix.concurrency.StaticTagHelperMixin",
+    "perf.parallelize_model_loading.BlockModelShaperMixin",
     "perf.parallelize_model_loading.ModelBakeryMixin",
     "perf.parallelize_model_loading.OBJLoaderMixin",
     "perf.parallelize_model_loading.multipart.MultipartMixin",

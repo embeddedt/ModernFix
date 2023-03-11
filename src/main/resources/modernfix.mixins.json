@@ -38,6 +38,7 @@
     "feature.measure_time.MinecraftMixin",
     "feature.reduce_loading_screen_freezes.ModelBakeryMixin",
     "bugfix.concurrency.MinecraftMixin",
+    "perf.parallelize_model_loading.BlockModelShaperMixin",
     "perf.parallelize_model_loading.ModelBakeryMixin",
     "perf.parallelize_model_loading.OBJLoaderMixin",
     "perf.parallelize_model_loading.multipart.MultipartMixin",

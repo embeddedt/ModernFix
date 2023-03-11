@@ -135,7 +135,8 @@ public class StbStitcher {
 
             // Initialize the rectangles that we'll be using in the calculation
             // While that's happening, sum up the area needed to fit all of the images
-            int sqSize = 0;
+            int totalArea = 0;
+            int longestWidth = 0, longestHeight = 0;
             for (int j = 0; j < holderSize; ++j) {
                 Stitcher.Holder holder = holders[j];
 
@@ -147,17 +148,29 @@ public class StbStitcher {
 
                 setWrapper(rect, j, width, height, 0, 0, false);
 
-                sqSize += (width * height);
+                totalArea += (width * height);
+                longestWidth = Math.max(longestWidth, width);
+                longestHeight = Math.max(longestHeight, height);
             }
 
-            int size = Mth.smallestEncompassingPowerOfTwo((int) Math.sqrt(sqSize));
-            int width = size * 2; // needed to fix weirdness in 1.16
-            int height = size;
+            longestWidth = Mth.smallestEncompassingPowerOfTwo(longestWidth);
+            longestHeight = Mth.smallestEncompassingPowerOfTwo(longestHeight);
+
+            /*
+             * The atlas needs to be at least this wide and tall to accomodate oddly shaped sprites. If this is
+             * not enough, keep doubling the smaller of the two values until its big enough.
+             */
+            while((longestWidth*longestHeight) < totalArea) {
+                if(longestWidth <= longestHeight)
+                    longestWidth *= 2;
+                else
+                    longestHeight *= 2;
+            }
 
             // Internal node structure needed for STB
-            try (STBRPNode.Buffer nodes = STBRPNode.malloc(width + 10)) {
+            try (STBRPNode.Buffer nodes = STBRPNode.malloc(longestWidth + 10)) {
                 // Initialize the rect packer
-                STBRectPack.stbrp_init_target(ctx, width, height, nodes);
+                STBRectPack.stbrp_init_target(ctx, longestWidth, longestHeight, nodes);
 
                 // Perform rectangle packing
                 STBRectPack.stbrp_pack_rects(ctx, rectBuf);
@@ -172,11 +185,11 @@ public class StbStitcher {
                     }
 
                     // Initialize the sprite now with the position and size that we've calculated so far
-                    infoList.add(new LoadableSpriteInfo(holder.spriteInfo, width, height, getX(rect), getY(rect)));
+                    infoList.add(new LoadableSpriteInfo(holder.spriteInfo, longestWidth, longestHeight, getX(rect), getY(rect)));
                     //holder.spriteInfo.initSprite(size, size, rect.x(), rect.y(), false);
                 }
 
-                return Pair.of(Pair.of(width, height), infoList);
+                return Pair.of(Pair.of(longestWidth, longestHeight), infoList);
             }
         }
     }

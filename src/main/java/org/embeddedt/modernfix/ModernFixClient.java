@@ -9,6 +9,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.client.event.GuiOpenEvent;
+import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TickEvent;
@@ -53,7 +54,7 @@ public class ModernFixClient {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onMultiplayerConnect(GuiOpenEvent event) {
+    public void onMultiplayerConnect(GuiScreenEvent.InitGuiEvent.Pre event) {
         if(event.getGui() instanceof ConnectScreen && !event.isCanceled()) {
             worldLoadStartTime = System.nanoTime();
         } else if (event.getGui() instanceof TitleScreen && gameStartTimeSeconds < 0) {

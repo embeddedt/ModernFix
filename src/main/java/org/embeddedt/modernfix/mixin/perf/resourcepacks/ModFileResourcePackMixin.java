@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.mixin.perf.resourcepacks;
 import com.google.common.base.Joiner;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.ResourcePackFileNotFoundException;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.packs.ModFileResourcePack;
 import org.embeddedt.modernfix.util.FileUtil;
@@ -14,11 +15,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.io.IOException;
-import java.nio.file.FileSystem;
-import java.nio.file.Files;
-import java.nio.file.Path;
+import java.io.InputStream;
+import java.nio.file.*;
 import java.util.*;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -95,6 +96,15 @@ public abstract class ModFileResourcePackMixin {
     @Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
         cir.setReturnValue(this.containedPaths.contains(FileUtil.normalize(path)));
+    }
+
+    @Inject(method = "getResource(Ljava/lang/String;)Ljava/io/InputStream;", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;exists(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z"), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD)
+    private void fasterGetResource(String resourcePath, CallbackInfoReturnable<InputStream> cir, Path path) throws IOException {
+        try {
+            cir.setReturnValue(Files.newInputStream(path, StandardOpenOption.READ));
+        } catch(NoSuchFileException e) {
+            throw new ResourcePackFileNotFoundException(this.modFile.getFilePath().toFile(), resourcePath);
+        }
     }
 
     /**

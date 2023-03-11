@@ -86,14 +86,14 @@ dependencies {
     modRuntimeOnly "curse.maven:lazydfu-460819:${lazydfu_version}"
 
     modCompileOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
-    modRuntimeOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
+    //modRuntimeOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     modCompileOnly("curse.maven:refinedstorage-243076:${refined_storage_version}")
 
-    modImplementation("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    modImplementation("curse.maven:jeresources-240630:3545538")
-    modImplementation("curse.maven:jepb-437558:3172880")
-    modImplementation("curse.maven:babel-436964:3196072")
+    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    modCompileOnly("curse.maven:jeresources-240630:3545538")
+    modCompileOnly("curse.maven:jepb-437558:3172880")
+    modCompileOnly("curse.maven:babel-436964:3196072")
     modCompileOnly("curse.maven:twforest-227639:3575220")
 }
 

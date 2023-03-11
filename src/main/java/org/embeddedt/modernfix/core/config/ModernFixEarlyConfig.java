@@ -53,7 +53,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.cache_model_materials", true);
         this.addMixinRule("perf.datapack_reload_exceptions", true);
         this.addMixinRule("perf.async_locator", true);
-        this.addMixinRule("perf.faster_texture_stitching", false);
+        this.addMixinRule("perf.faster_texture_stitching", true);
         this.addMixinRule("perf.kubejs", true);
         this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */

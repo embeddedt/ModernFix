@@ -5,7 +5,7 @@ import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraftforge.client.event.ScreenOpenEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
@@ -53,7 +53,7 @@ public class ModernFixClient {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onMultiplayerConnect(ScreenOpenEvent event) {
+    public void onMultiplayerConnect(ScreenEvent.InitScreenEvent.Pre event) {
         if(event.getScreen() instanceof ConnectScreen && !event.isCanceled()) {
             worldLoadStartTime = System.nanoTime();
         } else if (event.getScreen() instanceof TitleScreen && gameStartTimeSeconds < 0) {

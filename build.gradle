@@ -158,7 +158,7 @@ curseforge {
             id = "790626"
             changelog = '[Changelog is not currently available]'
             changelogType = "markdown"
-            releaseType = "release"
+            releaseType = "beta"
             addGameVersion "Forge"
             addGameVersion minecraft_version
             mainArtifact remapJar

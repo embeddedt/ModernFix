@@ -7,6 +7,7 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModFileInfo;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
 import org.embeddedt.modernfix.searchtree.JEIBackedSearchTree;
+import org.embeddedt.modernfix.searchtree.REIBackedSearchTree;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -24,7 +25,10 @@ public class MinecraftMixin {
     private void replaceSearchTrees(CallbackInfo ci) {
         ci.cancel();
         Optional<? extends ModContainer> jeiContainer = ModList.get().getModContainerById("jei");
-        if(jeiContainer.isPresent() && jeiContainer.get().getModInfo().getVersion().getMajorVersion() >= 10) {
+        if(ModList.get().isLoaded("roughlyenoughitems")) {
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> new REIBackedSearchTree(false));
+            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> new REIBackedSearchTree(true));
+        } else if(jeiContainer.isPresent() && jeiContainer.get().getModInfo().getVersion().getMajorVersion() >= 10) {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> new JEIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> new JEIBackedSearchTree(true));
         } else {

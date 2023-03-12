@@ -6,6 +6,7 @@ import net.minecraft.client.renderer.texture.Stitcher;
 import net.minecraft.client.renderer.texture.StitcherException;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.util.Mth;
+import org.embeddedt.modernfix.ModernFix;
 import org.lwjgl.stb.STBRPContext;
 import org.lwjgl.stb.STBRPNode;
 import org.lwjgl.stb.STBRPRect;
@@ -135,7 +136,8 @@ public class StbStitcher {
 
             // Initialize the rectangles that we'll be using in the calculation
             // While that's happening, sum up the area needed to fit all of the images
-            int sqSize = 0;
+            int totalArea = 0;
+            int longestWidth = 0, longestHeight = 0;
             for (int j = 0; j < holderSize; ++j) {
                 Stitcher.Holder holder = holders[j];
 
@@ -147,36 +149,71 @@ public class StbStitcher {
 
                 setWrapper(rect, j, width, height, 0, 0, false);
 
-                sqSize += (width * height);
+                totalArea += (width * height);
+                longestWidth = Math.max(longestWidth, width);
+                longestHeight = Math.max(longestHeight, height);
             }
 
-            int size = Mth.smallestEncompassingPowerOfTwo((int) Math.sqrt(sqSize));
-            int width = size * 2; // needed to fix weirdness in 1.16
-            int height = size;
+            longestWidth = Mth.smallestEncompassingPowerOfTwo(longestWidth);
+            longestHeight = Mth.smallestEncompassingPowerOfTwo(longestHeight);
 
-            // Internal node structure needed for STB
-            try (STBRPNode.Buffer nodes = STBRPNode.malloc(width + 10)) {
-                // Initialize the rect packer
-                STBRectPack.stbrp_init_target(ctx, width, height, nodes);
+            /*
+             * The atlas needs to be at least this wide and tall to accommodate oddly shaped sprites. If this is
+             * not enough, keep doubling the smaller of the two values until it's big enough.
+             */
+            while((longestWidth*longestHeight) < totalArea) {
+                if(longestWidth <= longestHeight)
+                    longestWidth *= 2;
+                else
+                    longestHeight *= 2;
+            }
 
-                // Perform rectangle packing
-                STBRectPack.stbrp_pack_rects(ctx, rectBuf);
+            /*
+             * Sometimes our guess is off and we actually need a bigger atlas. We will try up to 4 times to double
+             * the atlas size, if that fails then give up.
+             */
+            int numTries = 0;
+            while(true) {
+                numTries++;
+                // Internal node structure needed for STB
+                try (STBRPNode.Buffer nodes = STBRPNode.malloc(longestWidth + 10)) {
+                    // Initialize the rect packer
+                    STBRectPack.stbrp_init_target(ctx, longestWidth, longestHeight, nodes);
 
-                for (STBRPRect rect : rectBuf) {
-                    Stitcher.Holder holder = holders[rect.id()];
+                    // Perform rectangle packing
+                    STBRectPack.stbrp_pack_rects(ctx, rectBuf);
 
-                    // Ensure that everything is properly packed!
-                    if (!rect.was_packed()) {
-                        throw new StitcherException(holder.spriteInfo,
-                                Stream.of(holders).map(arg -> arg.spriteInfo).collect(ImmutableList.toImmutableList()));
+                    for (STBRPRect rect : rectBuf) {
+                        Stitcher.Holder holder = holders[rect.id()];
+
+                        // Ensure that everything is properly packed!
+                        if (!rect.was_packed()) {
+                            throw new StitcherException(holder.spriteInfo,
+                                    Stream.of(holders).map(arg -> arg.spriteInfo).collect(ImmutableList.toImmutableList()));
+                        }
+
+                        // Initialize the sprite now with the position and size that we've calculated so far
+                        infoList.add(new LoadableSpriteInfo(holder.spriteInfo, longestWidth, longestHeight, getX(rect), getY(rect)));
+                        //holder.spriteInfo.initSprite(size, size, rect.x(), rect.y(), false);
                     }
 
-                    // Initialize the sprite now with the position and size that we've calculated so far
-                    infoList.add(new LoadableSpriteInfo(holder.spriteInfo, width, height, getX(rect), getY(rect)));
-                    //holder.spriteInfo.initSprite(size, size, rect.x(), rect.y(), false);
+                    return Pair.of(Pair.of(longestWidth, longestHeight), infoList);
+                } catch (StitcherException e) {
+                    if(numTries >= 4) {
+                        // If we get here, we weren't able to stitch. Throw an error.
+                        ModernFix.LOGGER.error("Stitcher ran out of space with target atlas size " + longestWidth + "x" + longestHeight + ":");
+                        for(Stitcher.Holder h : holders) {
+                            ModernFix.LOGGER.error(" - " + h.spriteInfo.name() + ", " + h.spriteInfo.width() + "x" + h.spriteInfo.height());
+                        }
+                        throw e;
+                    } else {
+                        // double the atlas size and try again
+                        if(longestWidth <= longestHeight)
+                            longestWidth *= 2;
+                        else
+                            longestHeight *= 2;
+                    }
                 }
-
-                return Pair.of(Pair.of(width, height), infoList);
             }
         }
     }

@@ -5,8 +5,10 @@ import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
 import me.shedaniel.rei.impl.client.search.AsyncSearchManager;
 import net.minecraft.world.item.ItemStack;
+import org.embeddedt.modernfix.ModernFix;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
@@ -35,7 +37,13 @@ public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
         if(!pSearchText.equals(lastSearchText)) {
             listCache.clear();
             this.searchManager.updateFilter(pSearchText);
-            List<EntryStack<?>> stacks = this.searchManager.getNow();
+            List<EntryStack<?>> stacks;
+            try {
+                stacks = this.searchManager.getNow();
+            } catch(RuntimeException e) {
+                ModernFix.LOGGER.error("Couldn't search for '" + pSearchText + "'", e);
+                stacks = Collections.emptyList();
+            }
             for(EntryStack<?> stack : stacks) {
                 if(stack.getType() == VanillaEntryTypes.ITEM) {
                     listCache.add(stack.cheatsAs().getValue());

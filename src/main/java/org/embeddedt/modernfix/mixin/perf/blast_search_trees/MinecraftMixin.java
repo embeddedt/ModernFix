@@ -25,12 +25,12 @@ public class MinecraftMixin {
     private void replaceSearchTrees(CallbackInfo ci) {
         ci.cancel();
         Optional<? extends ModContainer> jeiContainer = ModList.get().getModContainerById("jei");
-        if(jeiContainer.isPresent() && jeiContainer.get().getModInfo().getVersion().getMajorVersion() >= 10) {
-            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
-            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
-        } else if(ModList.get().isLoaded("roughlyenoughitems")) {
+        if(ModList.get().isLoaded("roughlyenoughitems")) {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new REIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new REIBackedSearchTree(true));
+        } else if(jeiContainer.isPresent() && jeiContainer.get().getModInfo().getVersion().getMajorVersion() >= 10) {
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
+            this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
         } else {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new DummySearchTree<>());
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new DummySearchTree<>());

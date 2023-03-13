@@ -10,7 +10,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraftforge.fml.loading.FMLPaths;
-import org.apache.commons.codec.binary.Hex;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.FileUtil;
 
@@ -32,6 +31,14 @@ public class CachingStructureManager {
         return template;
     }
 
+    private static String encodeHex(byte[] byteArray) {
+        StringBuilder sb = new StringBuilder();
+        for(byte b : byteArray) {
+            sb.append(String.format("%02x", b));
+        }
+        return sb.toString();
+    }
+
     private static CompoundTag readStructureTag(ResourceLocation location, DataFixer datafixer, InputStream stream) throws IOException {
         byte[] structureBytes = toBytes(stream);
         CompoundTag currentTag = NbtIo.readCompressed(new ByteArrayInputStream(structureBytes));
@@ -43,13 +50,13 @@ public class CachingStructureManager {
             /* Needs upgrade, try looking up from cache */
             MessageDigest hasher = digestThreadLocal.get();
             hasher.reset();
-            String hash = new String(Hex.encodeHex(hasher.digest(structureBytes)));
+            String hash = encodeHex(hasher.digest(structureBytes));
             CompoundTag cachedUpgraded = getCachedUpgraded(location, hash);
             if(cachedUpgraded != null && cachedUpgraded.getInt("DataVersion") == SharedConstants.getCurrentVersion().getWorldVersion()) {
-                ModernFix.LOGGER.warn("Using cached upgraded version of {}", location);
+                ModernFix.LOGGER.debug("Using cached upgraded version of {}", location);
                 currentTag = cachedUpgraded;
             } else {
-                ModernFix.LOGGER.warn("Structure {} is being run through DFU (hash {}), this will cause launch time delays", location, hash);
+                ModernFix.LOGGER.debug("Structure {} is being run through DFU (hash {}), this will cause launch time delays", location, hash);
                 currentTag = NbtUtils.update(datafixer, DataFixTypes.STRUCTURE, currentTag, currentDataVersion,
                         SharedConstants.getCurrentVersion().getWorldVersion());
                 currentTag.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());

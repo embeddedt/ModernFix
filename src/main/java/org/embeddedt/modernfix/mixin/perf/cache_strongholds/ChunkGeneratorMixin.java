@@ -47,7 +47,10 @@ public class ChunkGeneratorMixin implements IChunkGenerator {
     }
 
     private ServerLevel searchLevel() {
-        return mfix$serverLevel.get();
+        if(mfix$serverLevel != null)
+            return mfix$serverLevel.get();
+        else
+            return null;
     }
 
     @Inject(method = "generateRingPositions", at = @At("RETURN"), cancellable = true)

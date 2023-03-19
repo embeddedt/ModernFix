@@ -97,6 +97,7 @@
     "perf.reuse_datapacks.MinecraftServerMixin",
     "perf.use_integrated_resources.LootTableHelperMixin",
     "perf.use_integrated_resources.PiglinBarteringRecipeBuilderMixin",
+    "perf.jeresources_startup.VillagerEntryMixin",
     "bugfix.mc218112.SynchedEntityDataMixin_Client",
     "perf.faster_singleplayer_load.MinecraftServerMixin"
   ],

@@ -68,6 +68,9 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.perf.faster_baking", "touhou_little_maid");
+        
+        //TODO: just a temporary solution
+        disableIfModPresent("perf.resourcepacks", "lightspeed");
     }
 
     private void disableIfModPresent(String configName, String... ids) {

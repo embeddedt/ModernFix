@@ -26,7 +26,6 @@ public class BlockStateCacheHandler {
     }
 
     public static void rebuildParallel(boolean force) {
-        ModernFix.LOGGER.warn("Clearing blockstate cache");
         synchronized (BlockBehaviour.BlockStateBase.Cache.class) {
             for (BlockState blockState : Block.BLOCK_STATE_REGISTRY) {
                 ((IBlockState)blockState).clearCache();

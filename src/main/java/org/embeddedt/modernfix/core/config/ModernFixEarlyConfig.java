@@ -26,6 +26,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.fast_registry_validation", true);
         this.addMixinRule("perf.skip_first_datapack_reload", true);
         this.addMixinRule("perf.use_integrated_resources", true);
+        this.addMixinRule("perf.jeresources_startup", true);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
         this.addMixinRule("perf.parallelize_model_loading", true);

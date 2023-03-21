@@ -37,7 +37,7 @@ public abstract class BlockStateBaseMixin implements IBlockState {
     private BlockBehaviour.BlockStateBase.Cache initCacheIfNeeded(BlockBehaviour.BlockStateBase base) {
         if(cacheInvalid) {
             // Ensure that only one block's cache is built at a time
-            synchronized (BlockBehaviour.BlockStateBase.Cache.class) {
+            synchronized (BlockBehaviour.BlockStateBase.class) {
                 if(cacheInvalid) {
                     // Ensure that if we end up in here recursively, we just use the original cache
                     if(!buildingCache) {

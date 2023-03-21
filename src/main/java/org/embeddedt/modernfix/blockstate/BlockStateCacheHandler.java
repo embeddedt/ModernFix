@@ -26,7 +26,7 @@ public class BlockStateCacheHandler {
     }
 
     public static void rebuildParallel(boolean force) {
-        synchronized (BlockBehaviour.BlockStateBase.Cache.class) {
+        synchronized (BlockBehaviour.BlockStateBase.class) {
             for (BlockState blockState : Block.BLOCK_STATE_REGISTRY) {
                 ((IBlockState)blockState).clearCache();
             }

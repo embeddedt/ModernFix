@@ -111,11 +111,11 @@ public abstract class ModFileResourcePackMixin {
      * @author embeddedt
      * @reason Use cached listing of mod resources
      */
-    @Overwrite
-    public Collection<ResourceLocation> getResources(PackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter)
+    @Inject(method = "getResources", at = @At("HEAD"), cancellable = true)
+    private void fastGetResources(PackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter, CallbackInfoReturnable<Collection<ResourceLocation>> cir)
     {
         Path inputPath = this.resourcePackFS.getPath(pathIn);
-        return this.rootListingByNamespaceAndType.get(type).getOrDefault(resourceNamespace, Collections.emptyList()).stream().
+        cir.setReturnValue(this.rootListingByNamespaceAndType.get(type).getOrDefault(resourceNamespace, Collections.emptyList()).stream().
                 filter(path -> path.getNameCount() <= maxDepth). // Make sure the depth is within bounds
                 filter(path -> path.startsWith(inputPath)). // Make sure the target path is inside this one
                 filter(path -> filter.test(path.getFileName().toString())). // Test the file name against the predicate
@@ -123,6 +123,6 @@ public abstract class ModFileResourcePackMixin {
                 // It is VERY IMPORTANT that we do not rely on Path.toString as this is inconsistent between operating systems
                 // Join the path names ourselves to force forward slashes
                 map(path -> new ResourceLocation(resourceNamespace, slashJoiner.join(path))).
-                collect(Collectors.toList());
+                collect(Collectors.toList()));
     }
 }

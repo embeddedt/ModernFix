@@ -37,16 +37,21 @@ public class MinecraftMixin implements ICachingResourceClient {
     @Redirect(method = "makeServerStem", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/ServerResources;loadResources(Ljava/util/List;Lnet/minecraft/commands/Commands$CommandSelection;ILjava/util/concurrent/Executor;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
     private CompletableFuture<ServerResources> useCachedResources(List<PackResources> list, Commands.CommandSelection arg, int i, Executor executor, Executor executor2) {
         if(cachedResources != null) {
-            if(cachedDataPackConfig.equals(loadingDataPackConfig)) {
-                ModernFix.LOGGER.warn("Reusing loaded server resources from previous world");
-                return CompletableFuture.completedFuture(cachedResources);
+            if(cachedResources.getResourceManager().getNamespaces().size() > 0) {
+                if (cachedDataPackConfig.equals(loadingDataPackConfig)) {
+                    ModernFix.LOGGER.warn("Reusing loaded server resources from previous world");
+                    return CompletableFuture.completedFuture(cachedResources);
+                } else {
+                    ModernFix.LOGGER.warn("Discarding cached server resources, datapack configs have changed");
+                    ModernFix.LOGGER.warn("Old: {}", "[" + String.join(", ", cachedDataPackConfig) + "]");
+                    ModernFix.LOGGER.warn("New: {}", "[" + String.join(", ", loadingDataPackConfig) + "]");
+                    cachedResources.close();
+                    cachedResources = null;
+                    cachedDataPackConfig = null;
+                }
             } else {
-                ModernFix.LOGGER.warn("Discarding cached server resources, datapack configs have changed");
-                ModernFix.LOGGER.warn("Old: {}", "[" + String.join(", ", cachedDataPackConfig) + "]");
-                ModernFix.LOGGER.warn("New: {}", "[" + String.join(", ", loadingDataPackConfig) + "]");
-                cachedResources.close();
+                ModernFix.LOGGER.error("Cached server resources were closed somehow, that shouldn't happen");
                 cachedResources = null;
-                cachedDataPackConfig = null;
             }
         }
         return ServerResources.loadResources(list, arg, i, executor, executor2);

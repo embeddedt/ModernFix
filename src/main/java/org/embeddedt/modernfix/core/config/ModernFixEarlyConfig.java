@@ -193,11 +193,13 @@ public class ModernFixEarlyConfig {
             writer.write("# This is the configuration file for ModernFix.\n");
             writer.write("#\n");
             writer.write("# The following options can be enabled or disabled if there is a compatibility issue.\n");
+            writer.write("# Their values are values that ModernFix finally use, based on your mod setup and options you set.\n");
             writer.write("# Add a line mixin.example_name=true/false without the # sign to enable/disable a rule.\n");
+            writer.write("# This file will be refreshed at each game launch to update the current values.\n");
             List<String> lines = this.options.keySet().stream()
                     .filter(key -> !key.equals("mixin.core"))
                     .sorted()
-                    .map(key -> "#   " + key + "\n")
+                    .map(key -> "#   " + key + " = " + this.options.get(key).isEnabled() + "\n")
                     .collect(Collectors.toList());
             for(String line : lines) {
                 writer.write(line);

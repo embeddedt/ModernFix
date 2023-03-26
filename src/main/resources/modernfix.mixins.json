@@ -53,7 +53,8 @@
     "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
     "perf.cache_upgraded_structures.StructureManagerMixin",
-    "perf.cache_strongholds.ServerLevelMixin"
+    "perf.cache_strongholds.ServerLevelMixin",
+    "devenv.MinecraftServerMixin",
   ],
   "client": [
     "core.MinecraftMixin",
@@ -100,7 +101,9 @@
     "perf.use_integrated_resources.PiglinBarteringRecipeBuilderMixin",
     "perf.jeresources_startup.VillagerEntryMixin",
     "bugfix.mc218112.SynchedEntityDataMixin_Client",
-    "perf.faster_singleplayer_load.MinecraftServerMixin"
+    "perf.faster_singleplayer_load.MinecraftServerMixin",
+    "devenv.MinecraftMixin",
+    "devenv.NarratorMixin"
   ],
   "injectors": {
     "defaultRequire": 1

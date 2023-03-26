@@ -73,6 +73,7 @@
     "perf.parallelize_model_loading.TransformationMatrixMixin",
     "perf.parallelize_model_loading.BooleanPropertyMixin",
     "perf.parallelize_model_loading.PropertyMixin",
+    "perf.async_jei.InputConstantsMixin",
     "perf.async_jei.IngredientListElementFactoryMixin",
     "perf.async_jei.ClientLifecycleHandlerMixin",
     "perf.async_jei.JeiStarterMixin",

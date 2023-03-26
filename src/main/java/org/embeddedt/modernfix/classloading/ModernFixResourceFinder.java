@@ -37,7 +37,7 @@ public class ModernFixResourceFinder {
     }
     public static synchronized void init() throws ReflectiveOperationException {
         urlsForClass = new HashMap<>();
-        LOGGER.info("Start building list of class locations...");
+        //LOGGER.info("Start building list of class locations...");
         for(ModFileInfo fileInfo : LoadingModList.get().getModFiles()) {
             ModFile file = fileInfo.getFile();
             IModLocator locator = file.getLocator();
@@ -77,7 +77,7 @@ public class ModernFixResourceFinder {
             if(list instanceof ArrayList)
                 ((ArrayList<URL>)list).trimToSize();
         }
-        LOGGER.info("Finish building");
+        //LOGGER.info("Finish building");
     }
 
     private static Iterable<Path> getRootPathForLocator(IModLocator locator, ModFile file) throws ReflectiveOperationException {

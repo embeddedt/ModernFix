@@ -14,6 +14,10 @@ public class ModernFixEarlyConfig {
 
     private final Map<String, Option> options = new HashMap<>();
 
+    private static boolean modPresent(String modId) {
+        return FMLLoader.getLoadingModList().getModFileById(modId) != null;
+    }
+
     private ModernFixEarlyConfig() {
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
@@ -23,8 +27,9 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("feature.direct_stack_trace", false);
         this.addMixinRule("perf.fast_registry_validation", true);
-        this.addMixinRule("perf.use_integrated_resources", true);
-        this.addMixinRule("perf.jeresources_startup", true);
+        this.addMixinRule("perf.use_integrated_resources.jepb", modPresent("jepb"));
+        this.addMixinRule("perf.use_integrated_resources.jeresources", modPresent("jeresources"));
+        this.addMixinRule("perf.jeresources_startup", modPresent("jeresources"));
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.resourcepacks", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
@@ -40,8 +45,8 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.packet_leak", false);
         this.addMixinRule("bugfix.structure_manager_crash", true);
         this.addMixinRule("bugfix.mc218112", true);
-        this.addMixinRule("bugfix.tf_cme_on_load", true);
-        this.addMixinRule("perf.async_jei", true);
+        this.addMixinRule("bugfix.tf_cme_on_load", modPresent("twilightforest"));
+        this.addMixinRule("perf.async_jei", modPresent("jei"));
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.preload_block_classes", false);
         this.addMixinRule("perf.sync_executor_sleep", true);
@@ -56,10 +61,10 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.datapack_reload_exceptions", true);
         this.addMixinRule("perf.async_locator", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
-        this.addMixinRule("perf.kubejs", true);
+        this.addMixinRule("perf.kubejs", modPresent("kubejs"));
         this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */
-        this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null);
+        this.addMixinRule("perf.blast_search_trees", modPresent("jei"));
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);

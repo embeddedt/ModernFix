@@ -1,6 +1,6 @@
-package org.embeddedt.modernfix.mixin.perf.use_integrated_resources;
+package org.embeddedt.modernfix.mixin.perf.use_integrated_resources.jeresources;
 
-import com.thenatekirby.jepb.plugin.PiglinBarteringRecipeBuilder;
+import jeresources.util.LootTableHelper;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
@@ -8,8 +8,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-@Mixin(PiglinBarteringRecipeBuilder.class)
-public class PiglinBarteringRecipeBuilderMixin {
+@Mixin(LootTableHelper.class)
+public class LootTableHelperMixin {
     @Redirect(method = "getManager(Lnet/minecraft/world/level/Level;)Lnet/minecraft/world/level/storage/loot/LootTables;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/Level;getServer()Lnet/minecraft/server/MinecraftServer;"))
     private static MinecraftServer useIntegrated(Level level) {
         MinecraftServer server = level.getServer();

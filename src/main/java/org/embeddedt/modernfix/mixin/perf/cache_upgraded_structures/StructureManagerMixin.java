@@ -12,6 +12,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Optional;
@@ -31,6 +32,8 @@ public class StructureManagerMixin {
         ResourceLocation arg = new ResourceLocation(id.getNamespace(), "structures/" + id.getPath() + ".nbt");
         try {
             return Optional.of(CachingStructureManager.readStructure(id, this.fixerUpper, this.resourceManager.open(arg)));
+        } catch(FileNotFoundException e) {
+            return Optional.empty();
         } catch(IOException e) {
             ModernFix.LOGGER.error("Can't read structure", e);
             return Optional.empty();

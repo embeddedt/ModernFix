@@ -7,6 +7,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.resource.PathResourcePack;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.util.FileUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -118,7 +119,7 @@ public abstract class PathResourcePackMixin {
     @Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
         this.generateResourceCache();
-        cir.setReturnValue(this.containedPaths.contains(path));
+        cir.setReturnValue(this.containedPaths.contains(FileUtil.normalize(path)));
     }
 
     /**

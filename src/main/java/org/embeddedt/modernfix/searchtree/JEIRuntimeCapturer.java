@@ -12,10 +12,10 @@ import java.util.Optional;
 
 @JeiPlugin
 public class JEIRuntimeCapturer implements IModPlugin {
-    private static WeakReference<JeiRuntime> runtimeHandle = new WeakReference<>(null);
+    private static JeiRuntime runtimeHandle = null;
 
     public static Optional<JeiRuntime> runtime() {
-        return Optional.ofNullable(runtimeHandle.get());
+        return Optional.ofNullable(runtimeHandle);
     }
 
     @Override
@@ -25,11 +25,11 @@ public class JEIRuntimeCapturer implements IModPlugin {
 
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-        runtimeHandle = new WeakReference<>((JeiRuntime)jeiRuntime);
+        runtimeHandle = (JeiRuntime)jeiRuntime;
     }
 
     @Override
     public void onRuntimeUnavailable() {
-        runtimeHandle = new WeakReference<>(null);
+        runtimeHandle = null;
     }
 }

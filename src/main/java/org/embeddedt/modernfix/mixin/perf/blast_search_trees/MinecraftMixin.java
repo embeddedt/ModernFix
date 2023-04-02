@@ -30,7 +30,7 @@ public class MinecraftMixin {
             ModernFix.LOGGER.info("Replaced creative search logic with REI");
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> new REIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> new REIBackedSearchTree(true));
-        } else if(jeiContainer.isPresent() && jeiContainer.get().getModInfo().getVersion().getMajorVersion() >= 10) {
+        } else if(jeiContainer.isPresent()) {
             ModernFix.LOGGER.info("Replaced creative search logic with JEI");
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> new JEIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> new JEIBackedSearchTree(true));

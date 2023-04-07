@@ -19,7 +19,7 @@ import java.util.Set;
 public abstract class TagIngredientJSMixin implements ICachedIngredientJS {
     @Shadow public abstract Tag<Item> getActualTag();
 
-    @Shadow public abstract Set<ItemStackJS> getStacks();
+    @Shadow(remap = false) public abstract Set<ItemStackJS> getStacks();
 
     /**
      * @author embeddedt

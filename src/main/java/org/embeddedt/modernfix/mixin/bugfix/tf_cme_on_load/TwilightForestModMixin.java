@@ -15,7 +15,7 @@ public class TwilightForestModMixin {
 
     }
 
-    @Inject(method = "lambda$init$1", at = @At(value = "INVOKE", target = "Ltwilightforest/block/TFBlocks;tfCompostables()V", ordinal = 0))
+    @Inject(method = "lambda$init$1", at = @At(value = "INVOKE", target = "Ltwilightforest/block/TFBlocks;tfCompostables()V", ordinal = 0), remap = false)
     private static void doBiomeTypes(CallbackInfo ci) {
         BiomeKeys.addBiomeTypes();
     }

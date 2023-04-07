@@ -14,7 +14,7 @@ import java.util.Set;
 public abstract class CustomIngredientMixin implements ICachedIngredientJS {
     @Shadow @Final private Ingredient ingredient;
 
-    @Shadow public abstract Set<ItemStackJS> getStacks();
+    @Shadow(remap = false) public abstract Set<ItemStackJS> getStacks();
 
     @Override
     public Set<ItemStackJS> getCachedStacks() {

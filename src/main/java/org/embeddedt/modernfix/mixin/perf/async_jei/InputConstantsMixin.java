@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(InputConstants.class)
 public class InputConstantsMixin {
-    @Redirect(method = "isKeyDown", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwGetKey(JI)I"))
+    @Redirect(method = "isKeyDown", at = @At(value = "INVOKE", target = "Lorg/lwjgl/glfw/GLFW;glfwGetKey(JI)I", remap = false))
     private static int offThreadKeyFetch(long win, int k) {
         if(RenderSystem.isOnRenderThreadOrInit())
             return GLFW.glfwGetKey(win, k);

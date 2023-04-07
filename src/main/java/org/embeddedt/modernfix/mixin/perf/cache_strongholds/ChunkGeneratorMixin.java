@@ -22,7 +22,7 @@ import java.util.concurrent.ExecutionException;
 public class ChunkGeneratorMixin {
     @Shadow @Final private List<ChunkPos> strongholdPositions;
 
-    @Inject(method = "generateStrongholds", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList()Ljava/util/ArrayList;", ordinal = 0), cancellable = true)
+    @Inject(method = "generateStrongholds", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/Lists;newArrayList()Ljava/util/ArrayList;", ordinal = 0, remap = false), cancellable = true)
     private void useCachedDataIfAvailable(CallbackInfo ci) {
         ServerLevel level = searchLevel();
         if(level == null) {

@@ -1,9 +1,6 @@
 package org.embeddedt.modernfix.classloading;
 
-import com.google.common.collect.Interner;
-import com.google.common.collect.Interners;
-import com.google.common.collect.Iterators;
-import com.google.common.collect.Lists;
+import com.google.common.collect.*;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.LoadingModList;
@@ -27,7 +24,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class ModernFixResourceFinder {
-    private static HashMap<String, List<Pair<String, String>>> urlsForClass = null;
+    private static Map<String, List<Pair<String, String>>> urlsForClass = null;
     private static final Class<? extends IModLocator> MINECRAFT_LOCATOR;
     private static Field explodedDirModsField = null;
     private static final Logger LOGGER = LogManager.getLogger("ModernFixResourceFinder");
@@ -81,6 +78,7 @@ public class ModernFixResourceFinder {
             if(list instanceof ArrayList)
                 ((ArrayList<Pair<String, String>>)list).trimToSize();
         }
+        urlsForClass = ImmutableMap.copyOf(urlsForClass);
         //LOGGER.info("Finish building");
     }
 

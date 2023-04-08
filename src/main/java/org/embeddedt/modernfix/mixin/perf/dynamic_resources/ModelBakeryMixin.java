@@ -7,7 +7,9 @@ import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.JsonElement;
+import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
+import com.google.gson.JsonSyntaxException;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Transformation;
 import net.minecraft.Util;
@@ -172,8 +174,8 @@ public abstract class ModelBakeryMixin {
                     // strip models/ and .json from the name
                     ResourceLocation model = new ResourceLocation(fileLocation.getNamespace(), fileLocation.getPath().substring(7, fileLocation.getPath().length()-5));
                     return Pair.of(model, parser.parse(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)));
-                } catch(IOException e) {
-                    ModernFix.LOGGER.error("Error reading model " + fileLocation, e);
+                } catch(IOException | JsonParseException e) {
+                    ModernFix.LOGGER.error("Error reading model {}: {}", fileLocation, e);
                     return Pair.of(fileLocation, null);
                 }
             }, Util.backgroundExecutor()));
@@ -198,7 +200,7 @@ public abstract class ModelBakeryMixin {
                     basicModels.put(pair.getFirst(), model);
                 }
             } catch(Exception e) {
-                ModernFix.LOGGER.warn("Unable to load " + pair.getFirst(), e);
+                ModernFix.LOGGER.warn("Unable to load {}: {}", pair.getFirst(), e);
             }
         }
         modelBytes.clear();

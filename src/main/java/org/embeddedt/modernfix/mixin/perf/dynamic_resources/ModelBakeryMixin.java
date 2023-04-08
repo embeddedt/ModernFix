@@ -199,8 +199,8 @@ public abstract class ModelBakeryMixin {
                     model.name = pair.getFirst().toString();
                     basicModels.put(pair.getFirst(), model);
                 }
-            } catch(Exception e) {
-                ModernFix.LOGGER.warn("Unable to load {}: {}", pair.getFirst(), e);
+            } catch(Throwable e) {
+                ModernFix.LOGGER.warn("Unable to parse {}: {}", pair.getFirst(), e);
             }
         }
         modelBytes.clear();

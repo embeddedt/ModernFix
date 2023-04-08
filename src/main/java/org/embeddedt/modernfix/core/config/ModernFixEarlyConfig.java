@@ -36,8 +36,10 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.boost_worker_count", true);
         this.addMixinRule("perf.skip_first_datapack_reload", true);
         this.addMixinRule("perf.reuse_datapacks", true);
-        this.addMixinRule("perf.parallelize_model_loading", true);
-        this.addMixinRule("perf.parallelize_model_loading.multipart", false);
+        this.addMixinRule("perf.model_optimizations", true);
+        this.addMixinRule("perf.dynamic_resources", false);
+        /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
+        this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);
         this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("bugfix.concurrency", true);
@@ -57,7 +59,6 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.flatten_model_predicates", true);
         this.addMixinRule("perf.deduplicate_location", false);
         this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
-        this.addMixinRule("perf.faster_baking", true);
         this.addMixinRule("perf.cache_model_materials", true);
         this.addMixinRule("perf.datapack_reload_exceptions", true);
         this.addMixinRule("perf.async_locator", true);

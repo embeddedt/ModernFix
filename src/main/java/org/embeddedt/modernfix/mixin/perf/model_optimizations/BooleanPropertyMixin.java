@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
+package org.embeddedt.modernfix.mixin.perf.model_optimizations;
 
 import com.google.common.collect.ImmutableSet;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;

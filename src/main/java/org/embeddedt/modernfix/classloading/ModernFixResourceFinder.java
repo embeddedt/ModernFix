@@ -1,5 +1,8 @@
 package org.embeddedt.modernfix.classloading;
 
+import com.google.common.collect.Interner;
+import com.google.common.collect.Interners;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Lists;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.loading.FMLLoader;
@@ -14,6 +17,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.nio.file.FileSystem;
 import java.nio.file.Files;
@@ -23,7 +27,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class ModernFixResourceFinder {
-    private static HashMap<String, List<URL>> urlsForClass = null;
+    private static HashMap<String, List<Pair<String, String>>> urlsForClass = null;
     private static final Class<? extends IModLocator> MINECRAFT_LOCATOR;
     private static Field explodedDirModsField = null;
     private static final Logger LOGGER = LogManager.getLogger("ModernFixResourceFinder");
@@ -35,6 +39,8 @@ public class ModernFixResourceFinder {
             throw new RuntimeException(e);
         }
     }
+    private static final Interner<String> PATH_INTERNER = Interners.newStrongInterner();
+
     public static synchronized void init() throws ReflectiveOperationException {
         urlsForClass = new HashMap<>();
         //LOGGER.info("Start building list of class locations...");
@@ -50,22 +56,20 @@ public class ModernFixResourceFinder {
                             .map(root::relativize)
                             .forEach(path -> {
                                 String strPath = path.toString();
-                                URL url = (URL)LamdbaExceptionUtils.uncheck(() -> {
-                                    return new URL("modjar://" + fileInfo.getMods().get(0).getModId() + "/" + strPath);
-                                });
-                                List<URL> urlList = urlsForClass.get(strPath);
+                                Pair<String, String> pathPair = Pair.of(fileInfo.getMods().get(0).getModId(), PATH_INTERNER.intern(strPath));
+                                List<Pair<String, String>> urlList = urlsForClass.get(strPath);
                                 if(urlList != null) {
                                     if(urlList.size() > 1)
-                                        urlList.add(url);
+                                        urlList.add(pathPair);
                                     else {
                                         /* Convert singleton to real list */
-                                        ArrayList<URL> newList = new ArrayList<>(urlList);
-                                        newList.add(url);
+                                        ArrayList<Pair<String, String>> newList = new ArrayList<>(urlList);
+                                        newList.add(pathPair);
                                         urlsForClass.put(strPath, newList);
                                     }
                                 } else {
                                     /* Use a singleton list initially to keep memory usage down */
-                                    urlsForClass.put(strPath, Collections.singletonList(url));
+                                    urlsForClass.put(strPath, Collections.singletonList(pathPair));
                                 }
                             });
                 } catch(IOException e) {
@@ -73,9 +77,9 @@ public class ModernFixResourceFinder {
                 }
             }
         }
-        for(List<URL> list : urlsForClass.values()) {
+        for(List<Pair<String, String>> list : urlsForClass.values()) {
             if(list instanceof ArrayList)
-                ((ArrayList<URL>)list).trimToSize();
+                ((ArrayList<Pair<String, String>>)list).trimToSize();
         }
         //LOGGER.info("Finish building");
     }
@@ -106,10 +110,16 @@ public class ModernFixResourceFinder {
 
     public static Enumeration<URL> findAllURLsForResource(String input) {
         input = SLASH_REPLACER.matcher(input).replaceAll("/");
-        List<URL> urlList = urlsForClass.get(input);
-        if(urlList != null)
-            return Collections.enumeration(urlList);
-        else {
+        List<Pair<String, String>> urlList = urlsForClass.get(input);
+        if(urlList != null) {
+            return Iterators.asEnumeration(urlList.stream().map(pair -> {
+                try {
+                    return new URL("modjar://" + pair.getLeft() + "/" + pair.getRight());
+                } catch(MalformedURLException e) {
+                    throw new RuntimeException(e);
+                }
+            }).iterator());
+        } else {
             return Collections.emptyEnumeration();
         }
     }

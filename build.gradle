@@ -95,6 +95,7 @@ dependencies {
     modCompileOnly("curse.maven:jepb-437558:3172880")
     modCompileOnly("curse.maven:babel-436964:3196072")
     modCompileOnly("curse.maven:twforest-227639:3575220")
+    modRuntimeOnly("curse.maven:ferritecore-429235:4074330")
 }
 
 tasks.withType(JavaCompile) {

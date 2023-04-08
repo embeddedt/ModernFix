@@ -39,10 +39,10 @@ public class ModernFixResourceFinder {
             throw new RuntimeException(e);
         }
     }
-    private static final Interner<String> PATH_INTERNER = Interners.newStrongInterner();
 
     public static synchronized void init() throws ReflectiveOperationException {
         urlsForClass = new HashMap<>();
+        Interner<String> pathInterner = Interners.newStrongInterner();
         //LOGGER.info("Start building list of class locations...");
         for(ModFileInfo fileInfo : LoadingModList.get().getModFiles()) {
             ModFile file = fileInfo.getFile();
@@ -56,7 +56,7 @@ public class ModernFixResourceFinder {
                             .map(root::relativize)
                             .forEach(path -> {
                                 String strPath = path.toString();
-                                Pair<String, String> pathPair = Pair.of(fileInfo.getMods().get(0).getModId(), PATH_INTERNER.intern(strPath));
+                                Pair<String, String> pathPair = Pair.of(fileInfo.getMods().get(0).getModId(), pathInterner.intern(strPath));
                                 List<Pair<String, String>> urlList = urlsForClass.get(strPath);
                                 if(urlList != null) {
                                     if(urlList.size() > 1)

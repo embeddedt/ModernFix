@@ -10,9 +10,12 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.classloading.ModernFixResourceFinder;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
+import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.tree.*;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import org.spongepowered.asm.mixin.injection.struct.InjectionInfo;
+import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
 
 import java.io.File;
 import java.io.IOException;
@@ -71,6 +74,18 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             }
         } catch(RuntimeException | ReflectiveOperationException e) {
             logger.error("Failed to make classloading changes", e);
+        }
+
+        /* https://github.com/FabricMC/Mixin/pull/99 */
+        try {
+            Field groupMembersField = InjectorGroupInfo.class.getDeclaredField("members");
+            groupMembersField.setAccessible(true);
+            Field noGroupField = InjectorGroupInfo.Map.class.getDeclaredField("NO_GROUP");
+            noGroupField.setAccessible(true);
+            InjectorGroupInfo noGroup = (InjectorGroupInfo)noGroupField.get(null);
+            groupMembersField.set(noGroup, new DummyList<>());
+        } catch(RuntimeException | ReflectiveOperationException e) {
+            logger.error("Failed to patch mixin memory leak", e);
         }
     }
 

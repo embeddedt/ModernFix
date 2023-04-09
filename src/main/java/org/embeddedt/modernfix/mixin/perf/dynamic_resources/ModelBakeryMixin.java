@@ -128,8 +128,6 @@ public abstract class ModelBakeryMixin {
 
     private UnbakedModel missingModel;
 
-    private static boolean firstReload = true;
-
     /**
      * @author embeddedt
      * @reason don't load any models initially, just set up initial data structures
@@ -137,10 +135,6 @@ public abstract class ModelBakeryMixin {
     @Overwrite
     protected void processLoading(ProfilerFiller arg, int maxMipLevels) {
         ModelLoaderRegistry.onModelLoadingStart();
-        if(firstReload) {
-            ModelLocationCache.rebuildLocationCache();
-            firstReload = false;
-        }
         try {
             this.missingModel = this.loadBlockModel(MISSING_MODEL_LOCATION);
         } catch (IOException var10) {

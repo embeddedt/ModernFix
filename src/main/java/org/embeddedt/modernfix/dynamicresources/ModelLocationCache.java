@@ -1,5 +1,8 @@
 package org.embeddedt.modernfix.dynamicresources;
 
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
 import com.google.common.collect.ImmutableMap;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
@@ -14,28 +17,23 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
 
 public class ModelLocationCache {
-    private static Map<BlockState, ModelResourceLocation> locationCache = Collections.emptyMap();
-    public static void rebuildLocationCache() {
-        ArrayList<CompletableFuture<Pair<BlockState, ModelResourceLocation>>> futures = new ArrayList<>();
-        for(Block block : Registry.BLOCK) {
-            block.getStateDefinition().getPossibleStates().forEach((state) -> {
-                futures.add(CompletableFuture.supplyAsync(() -> {
-                    return Pair.of(state, BlockModelShaper.stateToModelLocation(state));
-                }, Util.backgroundExecutor()));
+    private static final LoadingCache<BlockState, ModelResourceLocation> locationCache = CacheBuilder.newBuilder()
+            .maximumSize(10000)
+            .build(new CacheLoader<BlockState, ModelResourceLocation>() {
+                @Override
+                public ModelResourceLocation load(BlockState key) throws Exception {
+                    return BlockModelShaper.stateToModelLocation(key);
+                }
             });
-        }
-
-        ImmutableMap.Builder<BlockState, ModelResourceLocation> builder = ImmutableMap.builder();
-        for(CompletableFuture<Pair<BlockState, ModelResourceLocation>> future : futures) {
-            Pair<BlockState, ModelResourceLocation> pair = future.join();
-            builder.put(pair.getFirst(), pair.getSecond());
-        }
-        locationCache = builder.build();
-    }
 
     public static ModelResourceLocation get(BlockState state) {
-        return locationCache.get(state);
+        try {
+            return locationCache.get(state);
+        } catch(ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        }
     }
 }

@@ -236,67 +236,77 @@ public abstract class ModelBakeryMixin {
      * @reason synchronize
      */
     @Overwrite
-    public synchronized UnbakedModel getModel(ResourceLocation modelLocation) {
+    public UnbakedModel getModel(ResourceLocation modelLocation) {
         if(modelLocation.equals(MISSING_MODEL_LOCATION))
             return missingModel;
-        if (this.unbakedCache.containsKey(modelLocation)) {
-            return this.unbakedCache.get(modelLocation);
-        } else if (this.loadingStack.contains(modelLocation)) {
-            throw new IllegalStateException("Circular reference while loading " + modelLocation);
+        UnbakedModel existing = this.unbakedCache.get(modelLocation);
+        if (existing != null) {
+            return existing;
         } else {
-            this.loadingStack.add(modelLocation);
-            UnbakedModel iunbakedmodel = missingModel;
+            synchronized(this) {
+                if (this.loadingStack.contains(modelLocation)) {
+                    throw new IllegalStateException("Circular reference while loading " + modelLocation);
+                } else {
+                    this.loadingStack.add(modelLocation);
+                    UnbakedModel iunbakedmodel = missingModel;
 
-            while(!this.loadingStack.isEmpty()) {
-                ResourceLocation resourcelocation = this.loadingStack.iterator().next();
+                    while(!this.loadingStack.isEmpty()) {
+                        ResourceLocation resourcelocation = this.loadingStack.iterator().next();
 
-                try {
-                    if (!this.unbakedCache.containsKey(resourcelocation)) {
-                        if(debugDynamicModelLoading)
-                            LOGGER.info("Loading {}", resourcelocation);
-                        this.loadModel(resourcelocation);
+                        try {
+                            if (!this.unbakedCache.containsKey(resourcelocation)) {
+                                if(debugDynamicModelLoading)
+                                    LOGGER.info("Loading {}", resourcelocation);
+                                this.loadModel(resourcelocation);
+                                // TODO: in theory the cache can get evicted right here and we lose the model
+                                // very unlikely to occur though
+                            }
+                        } catch (ModelBakery.BlockStateDefinitionException var9) {
+                            LOGGER.warn(var9.getMessage());
+                            this.unbakedCache.put(resourcelocation, iunbakedmodel);
+                        } catch (Exception var10) {
+                            LOGGER.warn("Unable to load model: '{}' referenced from: {}: {}", resourcelocation, modelLocation, var10);
+                            this.unbakedCache.put(resourcelocation, iunbakedmodel);
+                        } finally {
+                            this.loadingStack.remove(resourcelocation);
+                        }
                     }
-                } catch (ModelBakery.BlockStateDefinitionException var9) {
-                    LOGGER.warn(var9.getMessage());
-                    this.unbakedCache.put(resourcelocation, iunbakedmodel);
-                } catch (Exception var10) {
-                    LOGGER.warn("Unable to load model: '{}' referenced from: {}: {}", resourcelocation, modelLocation, var10);
-                    this.unbakedCache.put(resourcelocation, iunbakedmodel);
-                } finally {
-                    this.loadingStack.remove(resourcelocation);
+
+                    return this.unbakedCache.getOrDefault(modelLocation, iunbakedmodel);
                 }
             }
-
-            return this.unbakedCache.getOrDefault(modelLocation, iunbakedmodel);
         }
     }
 
     @Overwrite
-    public synchronized BakedModel getBakedModel(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter) {
+    public BakedModel getBakedModel(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter) {
         Triple<ResourceLocation, Transformation, Boolean> triple = Triple.of(arg, arg2.getRotation(), arg2.isUvLocked());
-        if (this.bakedCache.containsKey(triple)) {
-            return this.bakedCache.get(triple);
+        BakedModel existing = this.bakedCache.get(triple);
+        if (existing != null) {
+            return existing;
         } else if (this.atlasSet == null) {
             throw new IllegalStateException("bake called too early");
         } else {
-            if(debugDynamicModelLoading)
-                LOGGER.info("Baking {}", arg);
-            UnbakedModel iunbakedmodel = this.getModel(arg);
-            iunbakedmodel.getMaterials(this::getModel, new HashSet<>());
-            BakedModel ibakedmodel = null;
-            if (iunbakedmodel instanceof BlockModel) {
-                BlockModel blockmodel = (BlockModel)iunbakedmodel;
-                if (blockmodel.getRootModel() == GENERATION_MARKER) {
-                    ibakedmodel = ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBakery)(Object)this, blockmodel, this.atlasSet::getSprite, arg2, arg, false);
+            synchronized (this) {
+                if(debugDynamicModelLoading)
+                    LOGGER.info("Baking {}", arg);
+                UnbakedModel iunbakedmodel = this.getModel(arg);
+                iunbakedmodel.getMaterials(this::getModel, new HashSet<>());
+                BakedModel ibakedmodel = null;
+                if (iunbakedmodel instanceof BlockModel) {
+                    BlockModel blockmodel = (BlockModel)iunbakedmodel;
+                    if (blockmodel.getRootModel() == GENERATION_MARKER) {
+                        ibakedmodel = ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBakery)(Object)this, blockmodel, this.atlasSet::getSprite, arg2, arg, false);
+                    }
                 }
+                if(ibakedmodel == null) {
+                    ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
+                }
+                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
+                ModLoader.get().postEvent(event);
+                this.bakedCache.put(triple, event.getModel());
+                return event.getModel();
             }
-            if(ibakedmodel == null) {
-                ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
-            }
-            DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
-            ModLoader.get().postEvent(event);
-            this.bakedCache.put(triple, event.getModel());
-            return event.getModel();
         }
     }
 }

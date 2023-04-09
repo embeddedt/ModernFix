@@ -17,6 +17,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.network.NetworkEvent;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.load.LoadEvents;
@@ -38,6 +39,8 @@ public class ModernFixClient {
     private String brandingString = null;
 
     public ModernFixClient() {
+        // clear reserve as it's not needed
+        ObfuscationReflectionHelper.setPrivateValue(Minecraft.class, null, new byte[0], "field_71444_a");
         if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
             MinecraftForge.EVENT_BUS.register(new LoadEvents());
         }

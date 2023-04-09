@@ -1,7 +1,9 @@
 package org.embeddedt.modernfix.core;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.io.Resources;
 import cpw.mods.modlauncher.*;
+import cpw.mods.modlauncher.api.INameMappingService;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.LoadingModList;
@@ -11,6 +13,7 @@ import org.embeddedt.modernfix.classloading.ModernFixResourceFinder;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
 import org.embeddedt.modernfix.util.DummyList;
+import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -26,6 +29,8 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     private static final String MIXIN_PACKAGE_ROOT = "org.embeddedt.modernfix.mixin.";
@@ -212,6 +217,40 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
-
+        if(mixinClassName.equals("org.embeddedt.modernfix.mixin.perf.compress_blockstate.BlockStateBaseMixin")) {
+            // Delete unused fields off BlockStateBase
+            Set<String> fieldsToDelete = Stream.of(
+                    "field_235702_f_", // isAir
+                    "field_235703_g_", // material
+                    "field_235705_i_", // destroySpeed
+                    "field_235706_j_", // requiresCorrectToolForDrops
+                    "field_235707_k_", // canOcclude
+                    "field_235708_l_", // isRedstoneConductor
+                    "field_235709_m_", // isSuffocating
+                    "field_235710_n_", // isViewBlocking
+                    "field_235711_o_", // hasPostProcess
+                    "field_235712_p_"  // emissiveRendering
+            ).map(name -> ObfuscationReflectionHelper.remapName(INameMappingService.Domain.FIELD, name)).collect(Collectors.toSet());
+            targetClass.fields.removeIf(field -> {
+                if(fieldsToDelete.contains(field.name)) {
+                    logger.info("Removing " + field.name);
+                    return true;
+                }
+                return false;
+            });
+            for(MethodNode m : targetClass.methods) {
+                if(m.name.equals("<init>")) {
+                    ListIterator<AbstractInsnNode> iter = m.instructions.iterator();
+                    while(iter.hasNext()) {
+                        AbstractInsnNode node = iter.next();
+                        if(node.getOpcode() == Opcodes.PUTFIELD) {
+                            if(fieldsToDelete.contains(((FieldInsnNode)node).name)) {
+                                iter.remove();
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 }

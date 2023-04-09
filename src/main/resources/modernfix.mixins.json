@@ -62,6 +62,8 @@
     "perf.cache_strongholds.ServerLevelMixin",
     "perf.state_definition_construct.StateDefinitionMixin",
     "perf.biome_zoomer.FuzzyOffsetBiomeZoomerMixin",
+    "perf.compress_blockstate.BlockStateBaseMixin",
+    "perf.compress_blockstate.BlockBehaviourMixin",
     "devenv.MinecraftServerMixin"
   ],
   "client": [

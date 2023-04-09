@@ -1,8 +1,12 @@
 package org.embeddedt.modernfix.dynamicresources;
 
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.eventbus.api.Event;
+import net.minecraftforge.fml.event.lifecycle.IModBusEvent;
 
 /**
  * Fired when a model is baked dynamically. Intended to be used as a replacement for ModelBakeEvent
@@ -11,12 +15,16 @@ import net.minecraftforge.eventbus.api.Event;
  * Note that this event can fire many times for the same resource location, as models are unloaded
  * if unused/under memory pressure.
  */
-public class DynamicModelBakeEvent extends Event {
+public class DynamicModelBakeEvent extends Event implements IModBusEvent {
     private final ResourceLocation location;
     private BakedModel model;
-    public DynamicModelBakeEvent(ResourceLocation location, BakedModel model) {
+    private final UnbakedModel unbakedModel;
+    private final ModelLoader modelLoader;
+    public DynamicModelBakeEvent(ResourceLocation location, UnbakedModel unbakedModel, BakedModel model, ModelLoader loader) {
         this.location = location;
         this.model = model;
+        this.unbakedModel = unbakedModel;
+        this.modelLoader = loader;
     }
 
     public ResourceLocation getLocation() {
@@ -25,6 +33,14 @@ public class DynamicModelBakeEvent extends Event {
 
     public BakedModel getModel() {
         return this.model;
+    }
+
+    public UnbakedModel getUnbakedModel() {
+        return this.unbakedModel;
+    }
+
+    public ModelLoader getModelLoader() {
+        return this.modelLoader;
     }
 
     public void setModel(BakedModel model) {

@@ -29,8 +29,10 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.fml.ModLoader;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
@@ -291,8 +293,8 @@ public abstract class ModelBakeryMixin {
             if(ibakedmodel == null) {
                 ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
             }
-            DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, ibakedmodel);
-            MinecraftForge.EVENT_BUS.post(event);
+            DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
+            ModLoader.get().postEvent(event);
             this.bakedCache.put(triple, event.getModel());
             return event.getModel();
         }

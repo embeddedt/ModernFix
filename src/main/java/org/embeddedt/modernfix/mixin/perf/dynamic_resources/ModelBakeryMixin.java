@@ -35,6 +35,7 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
+import org.embeddedt.modernfix.dynamicresources.ResourcePackHandler;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -159,7 +160,9 @@ public abstract class ModelBakeryMixin {
      */
     private void gatherModelMaterials(Set<Material> materialSet) {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        Collection<ResourceLocation> allModels = this.resourceManager.listResources("models", path -> path.endsWith(".json"));
+        List<ResourceLocation> allModels = new ArrayList<>(this.resourceManager.listResources("models", path -> path.endsWith(".json")));
+        // for KubeJS, etc.
+        allModels.addAll(ResourcePackHandler.getExtraResources(this.resourceManager, "models", path -> path.endsWith(".json")));
         List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> modelBytes = new ArrayList<>();
         for(ResourceLocation fileLocation : allModels) {
             modelBytes.add(CompletableFuture.supplyAsync(() -> {

@@ -61,6 +61,7 @@
     "perf.cache_upgraded_structures.StructureManagerMixin",
     "perf.cache_strongholds.ServerLevelMixin",
     "perf.state_definition_construct.StateDefinitionMixin",
+    "perf.biome_zoomer.FuzzyOffsetBiomeZoomerMixin",
     "devenv.MinecraftServerMixin"
   ],
   "client": [

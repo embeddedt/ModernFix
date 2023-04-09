@@ -14,6 +14,10 @@ public class ModernFixEarlyConfig {
 
     private final Map<String, Option> options = new HashMap<>();
 
+    private static boolean modPresent(String modId) {
+        return FMLLoader.getLoadingModList().getModFileById(modId) != null;
+    }
+
     private ModernFixEarlyConfig() {
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
@@ -24,24 +28,26 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("feature.direct_stack_trace", false);
         this.addMixinRule("perf.fast_registry_validation", true);
-        this.addMixinRule("perf.use_integrated_resources", true);
-        this.addMixinRule("perf.jeresources_startup", true);
+        this.addMixinRule("perf.use_integrated_resources.jepb", modPresent("jepb"));
+        this.addMixinRule("perf.use_integrated_resources.jeresources", modPresent("jeresources"));
+        this.addMixinRule("perf.jeresources_startup", modPresent("jeresources"));
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
-        this.addMixinRule("perf.parallelize_model_loading", true);
-        this.addMixinRule("perf.parallelize_model_loading.multipart", false);
+        this.addMixinRule("perf.model_optimizations", true);
+        this.addMixinRule("perf.dynamic_resources", false);
+        /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
+        this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);
         this.addMixinRule("perf.cache_upgraded_structures", true);
+        this.addMixinRule("perf.compress_blockstate", false);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
-        this.addMixinRule("perf.async_jei", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.sync_executor_sleep", true);
         this.addMixinRule("perf.scan_cache", true);
         this.addMixinRule("perf.flatten_model_predicates", true);
         this.addMixinRule("perf.deduplicate_location", false);
         this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
-        this.addMixinRule("perf.faster_baking", true);
         this.addMixinRule("perf.cache_model_materials", true);
         this.addMixinRule("perf.datapack_reload_exceptions", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
@@ -53,6 +59,8 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);
+        boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator() instanceof ExplodedDirectoryLocator;
+        this.addMixinRule("devenv", isDevEnv);
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
@@ -60,6 +68,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.perf.faster_baking", "touhou_little_maid");
+        disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
     }
 
     private void disableIfModPresent(String configName, String... ids) {

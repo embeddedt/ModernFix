@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.use_integrated_resources;
+package org.embeddedt.modernfix.mixin.perf.use_integrated_resources.jeresources;
 
 import jeresources.util.LootTableHelper;
 import net.minecraft.server.MinecraftServer;

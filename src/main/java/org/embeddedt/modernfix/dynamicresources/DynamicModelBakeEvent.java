@@ -1,0 +1,33 @@
+package org.embeddedt.modernfix.dynamicresources;
+
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.eventbus.api.Event;
+
+/**
+ * Fired when a model is baked dynamically. Intended to be used as a replacement for ModelBakeEvent
+ * if mods want to replace a model.
+ * <p></p>
+ * Note that this event can fire many times for the same resource location, as models are unloaded
+ * if unused/under memory pressure.
+ */
+public class DynamicModelBakeEvent extends Event {
+    private final ResourceLocation location;
+    private BakedModel model;
+    public DynamicModelBakeEvent(ResourceLocation location, BakedModel model) {
+        this.location = location;
+        this.model = model;
+    }
+
+    public ResourceLocation getLocation() {
+        return this.location;
+    }
+
+    public BakedModel getModel() {
+        return this.model;
+    }
+
+    public void setModel(BakedModel model) {
+        this.model = model;
+    }
+}

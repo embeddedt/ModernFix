@@ -4,9 +4,9 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
@@ -25,7 +25,7 @@ import java.util.*;
 @Mixin(TextureMetadataHandler.class)
 public abstract class TextureMetadataHandlerMixin {
 
-    @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ForgeModelBakery loader) throws IOException;
+    @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelBakery loader) throws IOException;
 
     @SubscribeEvent
     public void onDynamicModelBake(DynamicModelBakeEvent event) {
@@ -55,7 +55,7 @@ public abstract class TextureMetadataHandlerMixin {
                     IMetadataSectionCTM meta = null;
                     // Cache all dependent texture metadata
                     try {
-                        meta = ResourceUtil.getMetadata(ResourceUtil.spriteToAbsolute(tex.texture()));
+                        meta = ResourceUtil.getMetadata(ResourceUtil.spriteToAbsolute(tex.texture())).orElse(null); // TODO, lazy
                     } catch (IOException e) {} // Fallthrough
                     if (meta != null) {
                         // At least one texture has CTM metadata, so we should wrap this model

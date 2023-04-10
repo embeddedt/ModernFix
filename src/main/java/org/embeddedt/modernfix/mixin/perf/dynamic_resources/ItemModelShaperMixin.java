@@ -4,9 +4,10 @@ import net.minecraft.client.renderer.ItemModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.Holder;
 import net.minecraft.world.item.Item;
-import net.minecraftforge.client.ItemModelMesherForge;
-import net.minecraftforge.registries.IRegistryDelegate;
+import net.minecraftforge.client.model.ForgeItemModelShaper;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -14,9 +15,9 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.util.Map;
 
-@Mixin(ItemModelMesherForge.class)
+@Mixin(ForgeItemModelShaper.class)
 public abstract class ItemModelShaperMixin extends ItemModelShaper {
-    @Shadow @Final private Map<IRegistryDelegate<Item>, ModelResourceLocation> locations;
+    @Shadow @Final private Map<Holder.Reference<Item>, ModelResourceLocation> locations;
 
     public ItemModelShaperMixin(ModelManager arg) {
         super(arg);
@@ -29,7 +30,7 @@ public abstract class ItemModelShaperMixin extends ItemModelShaper {
     @Overwrite
     @Override
     public BakedModel getItemModel(Item item) {
-        ModelResourceLocation map = locations.get(item.delegate);
+        ModelResourceLocation map = locations.get(ForgeRegistries.ITEMS.getDelegateOrThrow(item));
         return map == null ? null : getModelManager().getModel(map);
     }
 
@@ -40,7 +41,7 @@ public abstract class ItemModelShaperMixin extends ItemModelShaper {
     @Overwrite
     @Override
     public void register(Item item, ModelResourceLocation location) {
-        locations.put(item.delegate, location);
+        locations.put(ForgeRegistries.ITEMS.getDelegateOrThrow(item), location);
     }
 
     /**

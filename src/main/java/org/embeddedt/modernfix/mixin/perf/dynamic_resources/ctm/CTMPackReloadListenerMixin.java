@@ -8,13 +8,13 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.resources.model.MultiPartBakedModel;
 import net.minecraft.client.resources.model.WeightedBakedModel;
+import net.minecraft.core.Holder;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.IRegistryDelegate;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,7 +31,7 @@ import java.util.function.Predicate;
 
 @Mixin(CTMPackReloadListener.class)
 public abstract class CTMPackReloadListenerMixin {
-    @Shadow @Final private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> blockRenderChecks;
+    @Shadow @Final private static Map<Holder.Reference<Block>, Predicate<RenderType>> blockRenderChecks;
 
     @Shadow protected abstract Predicate<RenderType> getLayerCheck(BlockState state, BakedModel model);
 
@@ -64,11 +64,12 @@ public abstract class CTMPackReloadListenerMixin {
         if(state == null)
             return;
         Block block = state.getBlock();
-        if(blockRenderChecks.containsKey(block.delegate))
+        Holder.Reference<Block> delegate = ForgeRegistries.BLOCKS.getDelegateOrThrow(block);
+        if(blockRenderChecks.containsKey(delegate))
             return;
         Predicate<RenderType> newPredicate = this.getLayerCheck(state, event.getModel());
         if(newPredicate != null) {
-            blockRenderChecks.put(block.delegate, this.getExistingRenderCheck(block));
+            blockRenderChecks.put(delegate, this.getExistingRenderCheck(block));
             ItemBlockRenderTypes.setRenderLayer(block, newPredicate);
         }
     }

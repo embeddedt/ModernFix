@@ -29,8 +29,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.model.ForgeModelBakery;
-import net.minecraftforge.client.model.ModelLoaderRegistry;
+import net.minecraftforge.client.model.ExtendedBlockModelDeserializer;
+import net.minecraftforge.client.model.geometry.GeometryLoaderManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoader;
 import org.apache.commons.lang3.tuple.Triple;
@@ -49,6 +49,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -92,8 +93,9 @@ public abstract class ModelBakeryMixin {
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
 
-    @Inject(method = "<init>(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/client/color/block/BlockColors;Z)V", at = @At("RETURN"))
-    private void replaceTopLevelBakedModels(ResourceManager manager, BlockColors colors, boolean vanillaBakery, CallbackInfo ci) {
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/model/geometry/GeometryLoaderManager;init()V", remap = false))
+    private void replaceTopLevelBakedModels() {
+        GeometryLoaderManager.init();
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(3, TimeUnit.MINUTES)
                 .maximumSize(1000)
@@ -132,30 +134,24 @@ public abstract class ModelBakeryMixin {
 
     private UnbakedModel missingModel;
 
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBakery;loadBlockModel(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/block/model/BlockModel;", ordinal = 0))
+    private BlockModel captureMissingModel(ModelBakery bakery, ResourceLocation location) throws IOException {
+        this.missingModel = this.loadBlockModel(location);
+        return (BlockModel)this.missingModel;
+    }
+
     /**
      * @author embeddedt
-     * @reason don't load any models initially, just set up initial data structures
+     * @reason only used by constructor to load models at startup, which we don't do here
      */
-    @Overwrite(remap = false)
-    protected void processLoading(ProfilerFiller arg, int maxMipLevels) {
-        ModelLoaderRegistry.onModelLoadingStart();
-        try {
-            this.missingModel = this.loadBlockModel(MISSING_MODEL_LOCATION);
-        } catch (IOException var10) {
-            ModernFix.LOGGER.error("Error loading missing model, should never happen :(", var10);
-            throw new RuntimeException(var10);
-        }
-        // Gather model materials
-        Set<Material> initialMaterials = new HashSet<>(UNREFERENCED_TEXTURES);
-        gatherModelMaterials(initialMaterials);
-        ForgeHooksClient.gatherFluidTextures(initialMaterials);
-        Map<ResourceLocation, List<Material>> map = initialMaterials.stream().collect(Collectors.groupingBy(Material::atlasLocation));
-        this.atlasPreparations = Maps.newHashMap();
-        for(Map.Entry<ResourceLocation, List<Material>> entry : map.entrySet()) {
-            TextureAtlas atlas = new TextureAtlas(entry.getKey());
-            TextureAtlas.Preparations atlastexture$sheetdata = atlas.prepareToStitch(this.resourceManager, entry.getValue().stream().map(Material::texture), arg, maxMipLevels);
-            this.atlasPreparations.put(entry.getKey(), Pair.of(atlas, atlastexture$sheetdata));
-        }
+    @Overwrite
+    private void loadTopLevel(ModelResourceLocation location) {
+    }
+
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/ForgeHooksClient;gatherFluidTextures(Ljava/util/Set;)V", remap = false))
+    private void gatherModelTextures(Set<Material> materialSet) {
+        ForgeHooksClient.gatherFluidTextures(materialSet);
+        gatherModelMaterials(materialSet);
     }
 
     /**
@@ -163,21 +159,23 @@ public abstract class ModelBakeryMixin {
      */
     private void gatherModelMaterials(Set<Material> materialSet) {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        List<ResourceLocation> allModels = new ArrayList<>(this.resourceManager.listResources("models", path -> path.endsWith(".json")));
+        List<ResourceLocation> allModels = new ArrayList<>(this.resourceManager.listResources("models", path -> path.getPath().endsWith(".json")).keySet());
         // for KubeJS, etc.
         allModels.addAll(ResourcePackHandler.getExtraResources(this.resourceManager, "models", path -> path.endsWith(".json")));
         List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> modelBytes = new ArrayList<>();
         for(ResourceLocation fileLocation : allModels) {
             modelBytes.add(CompletableFuture.supplyAsync(() -> {
-                try(Resource resource = this.resourceManager.getResource(fileLocation)) {
-                    JsonParser parser = new JsonParser();
-                    // strip models/ and .json from the name
-                    ResourceLocation model = new ResourceLocation(fileLocation.getNamespace(), fileLocation.getPath().substring(7, fileLocation.getPath().length()-5));
-                    return Pair.of(model, parser.parse(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)));
-                } catch(IOException | JsonParseException e) {
-                    ModernFix.LOGGER.error("Error reading model {}: {}", fileLocation, e);
-                    return Pair.of(fileLocation, null);
+                Optional<Resource> resourceOpt = this.resourceManager.getResource(fileLocation);
+                if(resourceOpt.isPresent()) {
+                    try(InputStream resourceStream = resourceOpt.get().open()) {
+                        // strip models/ and .json from the name
+                        ResourceLocation model = new ResourceLocation(fileLocation.getNamespace(), fileLocation.getPath().substring(7, fileLocation.getPath().length()-5));
+                        return Pair.of(model, JsonParser.parseReader(new InputStreamReader(resourceStream, StandardCharsets.UTF_8)));
+                    } catch(IOException | JsonParseException e) {
+                        ModernFix.LOGGER.error("Error reading model {}: {}", fileLocation, e);
+                    }
                 }
+                return Pair.of(fileLocation, null);
             }, Util.backgroundExecutor()));
         }
         allModels.clear();
@@ -195,7 +193,7 @@ public abstract class ModelBakeryMixin {
             Pair<ResourceLocation, JsonElement> pair = future.join();
             try {
                 if(pair.getSecond() != null) {
-                    BlockModel model = ModelLoaderRegistry.ExpandedBlockModelDeserializer.INSTANCE.fromJson(pair.getSecond(), BlockModel.class);
+                    BlockModel model = ExtendedBlockModelDeserializer.INSTANCE.fromJson(pair.getSecond(), BlockModel.class);
                     model.name = pair.getFirst().toString();
                     basicModels.put(pair.getFirst(), model);
                 }
@@ -301,7 +299,7 @@ public abstract class ModelBakeryMixin {
                 if(ibakedmodel == null) {
                     ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
                 }
-                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ForgeModelBakery)(Object)this);
+                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelBakery)(Object)this);
                 ModLoader.get().postEvent(event);
                 this.bakedCache.put(triple, event.getModel());
                 return event.getModel();

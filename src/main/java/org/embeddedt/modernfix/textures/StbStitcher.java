@@ -92,18 +92,18 @@ public class StbStitcher {
         }
     }
 
-    private static STBRPRect setWrapper(STBRPRect rect, int id, int width, int height, int x, int y, boolean was_packed) {
+    public static STBRPRect setWrapper(STBRPRect rect, int id, int width, int height, int x, int y, boolean was_packed) {
         try {
             if(MH_rect_shortSet != null)
-                return (STBRPRect)MH_rect_shortSet.invokeExact(rect, id, (short)width, (short)height, (short)0, (short)0, false);
+                return (STBRPRect)MH_rect_shortSet.invokeExact(rect, id, (short)width, (short)height, (short)x, (short)y, was_packed);
             else
-                return (STBRPRect)MH_rect_intSet.invokeExact(rect, id, width, height, 0, 0, false);
+                return (STBRPRect)MH_rect_intSet.invokeExact(rect, id, width, height, x, y, was_packed);
         } catch(Throwable e) {
             throw new AssertionError(e);
         }
     }
 
-    private static int getX(STBRPRect rect) {
+    public static int getX(STBRPRect rect) {
         try {
             if(MH_rect_shortX != null)
                 return (short)MH_rect_shortX.invokeExact(rect);
@@ -114,7 +114,7 @@ public class StbStitcher {
         }
     }
 
-    private static int getY(STBRPRect rect) {
+    public static int getY(STBRPRect rect) {
         try {
             if(MH_rect_shortX != null)
                 return (short)MH_rect_shortY.invokeExact(rect);

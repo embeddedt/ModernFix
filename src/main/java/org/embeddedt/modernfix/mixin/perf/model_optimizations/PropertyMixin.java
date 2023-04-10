@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
+package org.embeddedt.modernfix.mixin.perf.model_optimizations;
 
 import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.dedup.IdentifierCaches;

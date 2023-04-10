@@ -1,5 +1,5 @@
 plugins {
-    id "dev.architectury.loom" version "1.0.312"
+    id "dev.architectury.loom" version "1.1-SNAPSHOT"
     id "maven-publish"
     id 'com.matthewprenger.cursegradle' version '1.4.0'
     id 'com.palantir.git-version' version '1.0.0'
@@ -89,10 +89,12 @@ dependencies {
 
     // compile against the JEI API but do not include it at runtime
     modCompileOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
-    modRuntimeOnly("curse.maven:jei-238222:4405346")
 
     modCompileOnly("curse.maven:jeresources-240630:3951643")
     modCompileOnly "me.shedaniel:RoughlyEnoughItems-forge:${rei_version}"
+    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    modRuntimeOnly("curse.maven:ferritecore-429235:4117906")
+    modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
 }
 
 tasks.withType(JavaCompile) {
@@ -135,10 +137,7 @@ jar {
 publishing {
     publications {
         mavenJava(MavenPublication) {
-            // add all the jars that should be included when publishing to maven
-            artifact(remapJar) {
-                builtBy remapJar
-            }
+            from components.java
         }
     }
 

@@ -1,6 +1,5 @@
-package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
+package org.embeddedt.modernfix.mixin.perf.model_optimizations;
 
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.block.model.multipart.Selector;

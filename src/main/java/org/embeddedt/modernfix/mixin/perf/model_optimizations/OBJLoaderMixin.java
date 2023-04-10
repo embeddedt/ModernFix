@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.parallelize_model_loading;
+package org.embeddedt.modernfix.mixin.perf.model_optimizations;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.obj.ObjLoader;

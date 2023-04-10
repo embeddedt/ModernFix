@@ -303,7 +303,7 @@ public abstract class ModelBakeryMixin {
                     ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
                 }
                 DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
-                ModLoader.get().postEvent(event);
+                MinecraftForge.EVENT_BUS.post(event);
                 this.bakedCache.put(triple, event.getModel());
                 return event.getModel();
             }

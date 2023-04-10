@@ -15,7 +15,7 @@ import net.minecraftforge.fml.event.lifecycle.IModBusEvent;
  * Note that this event can fire many times for the same resource location, as models are unloaded
  * if unused/under memory pressure.
  */
-public class DynamicModelBakeEvent extends Event implements IModBusEvent {
+public class DynamicModelBakeEvent extends Event {
     private final ResourceLocation location;
     private BakedModel model;
     private final UnbakedModel unbakedModel;

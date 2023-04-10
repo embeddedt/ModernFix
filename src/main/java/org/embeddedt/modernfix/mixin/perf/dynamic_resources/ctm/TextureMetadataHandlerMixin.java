@@ -7,11 +7,15 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import team.chisel.ctm.CTM;
 import team.chisel.ctm.client.model.AbstractCTMBakedModel;
 import team.chisel.ctm.client.texture.IMetadataSectionCTM;
@@ -27,7 +31,11 @@ public abstract class TextureMetadataHandlerMixin {
 
     @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelLoader loader) throws IOException;
 
-    @SubscribeEvent
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void subscribeDynamic(CallbackInfo ci) {
+        MinecraftForge.EVENT_BUS.addListener(this::onDynamicModelBake);
+    }
+
     public void onDynamicModelBake(DynamicModelBakeEvent event) {
         UnbakedModel rootModel = event.getUnbakedModel();
         BakedModel baked = event.getModel();

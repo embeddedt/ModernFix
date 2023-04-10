@@ -42,7 +42,7 @@ public abstract class CTMPackReloadListenerMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(EventPriority.LOW, this::onModelBake);
+        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOW, this::onModelBake);
     }
 
     @Overwrite(remap = false)

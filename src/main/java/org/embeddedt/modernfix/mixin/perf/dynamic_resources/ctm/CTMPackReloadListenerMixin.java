@@ -11,6 +11,7 @@ import net.minecraft.client.resources.model.WeightedBakedModel;
 import net.minecraft.core.Holder;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -35,7 +36,7 @@ public abstract class CTMPackReloadListenerMixin {
 
     @Shadow protected abstract Predicate<RenderType> getLayerCheck(BlockState state, BakedModel model);
 
-    @Shadow protected abstract Predicate<RenderType> getExistingRenderCheck(Block block);
+    @Shadow protected abstract ChunkRenderTypeSet getExistingRenderCheck(Block block);
 
     private Map<ModelResourceLocation, BlockState> locationToState = new Object2ObjectOpenHashMap<>();
 
@@ -69,7 +70,7 @@ public abstract class CTMPackReloadListenerMixin {
             return;
         Predicate<RenderType> newPredicate = this.getLayerCheck(state, event.getModel());
         if(newPredicate != null) {
-            blockRenderChecks.put(delegate, this.getExistingRenderCheck(block));
+            blockRenderChecks.put(delegate, this.getExistingRenderCheck(block)::contains);
             ItemBlockRenderTypes.setRenderLayer(block, newPredicate);
         }
     }

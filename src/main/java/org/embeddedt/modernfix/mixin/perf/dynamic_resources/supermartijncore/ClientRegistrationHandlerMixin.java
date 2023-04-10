@@ -5,6 +5,7 @@ import com.supermartijn642.core.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
@@ -44,7 +45,7 @@ public class ClientRegistrationHandlerMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void registerDynBake(String modid, CallbackInfo ci) {
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onDynamicModelBake);
+        MinecraftForge.EVENT_BUS.addListener(this::onDynamicModelBake);
     }
 
     @SubscribeEvent

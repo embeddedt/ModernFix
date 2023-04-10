@@ -43,7 +43,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public boolean containsKey(Object o) {
-        return permanentOverrides.containsKey(o) || bakedCache.containsKey(vanillaKey(o));
+        return true; //permanentOverrides.containsKey(o) || bakedCache.containsKey(vanillaKey(o));
     }
 
     @Override

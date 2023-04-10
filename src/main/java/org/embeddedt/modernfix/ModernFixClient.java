@@ -10,9 +10,10 @@ import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
-import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.ForgeIngameGui;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -38,6 +39,8 @@ public class ModernFixClient {
 
     public static float gameStartTimeSeconds = -1;
 
+    private static boolean recipesUpdated, tagsUpdated = false;
+
     private String brandingString = null;
 
     public ModernFixClient() {
@@ -57,6 +60,8 @@ public class ModernFixClient {
     public void resetWorldLoadStateMachine() {
         numRenderTicks = 0;
         worldLoadStartTime = -1;
+        recipesUpdated = false;
+        tagsUpdated = false;
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -69,9 +74,25 @@ public class ModernFixClient {
         }
     }
 
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onRecipesUpdated(RecipesUpdatedEvent event) {
+        recipesUpdated = true;
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onTagsUpdated(TagsUpdatedEvent event) {
+        tagsUpdated = true;
+    }
+
     @SubscribeEvent
     public void onRenderTickEnd(TickEvent.RenderTickEvent event) {
-        if(event.phase == TickEvent.Phase.END && !(Minecraft.getInstance().screen instanceof DeferredLevelLoadingScreen) && worldLoadStartTime != -1 && Minecraft.getInstance().player != null && numRenderTicks++ >= 10) {
+        if(event.phase == TickEvent.Phase.END
+                && recipesUpdated
+                && tagsUpdated
+                && !(Minecraft.getInstance().screen instanceof DeferredLevelLoadingScreen)
+                && worldLoadStartTime != -1
+                && Minecraft.getInstance().player != null
+                && numRenderTicks++ >= 10) {
             float timeSpentLoading = ((float)(System.nanoTime() - worldLoadStartTime) / 1000000000f);
             ModernFix.LOGGER.warn("Time from main menu to in-game was " + timeSpentLoading + " seconds");
             ModernFix.LOGGER.warn("Total time to load game and open world was " + (timeSpentLoading + gameStartTimeSeconds) + " seconds");

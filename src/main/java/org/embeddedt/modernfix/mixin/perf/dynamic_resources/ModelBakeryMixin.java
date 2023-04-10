@@ -91,6 +91,8 @@ public abstract class ModelBakeryMixin {
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
+    private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
+
 
     @Inject(method = "<init>(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/client/color/block/BlockColors;Z)V", at = @At("RETURN"))
     private void replaceTopLevelBakedModels(ResourceManager manager, BlockColors colors, boolean vanillaBakery, CallbackInfo ci) {
@@ -229,6 +231,11 @@ public abstract class ModelBakeryMixin {
         return unbakedCache.get(rl);
     }
 
+    @Inject(method = "cacheAndQueueDependencies", at = @At("RETURN"))
+    private void addToSmallLoadingCache(ResourceLocation location, UnbakedModel model, CallbackInfo ci) {
+        smallLoadingCache.put(location, model);
+    }
+
 
     /**
      * @author embeddedt
@@ -257,21 +264,27 @@ public abstract class ModelBakeryMixin {
                                 if(debugDynamicModelLoading)
                                     LOGGER.info("Loading {}", resourcelocation);
                                 this.loadModel(resourcelocation);
-                                // TODO: in theory the cache can get evicted right here and we lose the model
-                                // very unlikely to occur though
                             }
                         } catch (ModelBakery.BlockStateDefinitionException var9) {
                             LOGGER.warn(var9.getMessage());
                             this.unbakedCache.put(resourcelocation, iunbakedmodel);
+                            smallLoadingCache.put(resourcelocation, iunbakedmodel);
                         } catch (Exception var10) {
                             LOGGER.warn("Unable to load model: '{}' referenced from: {}: {}", resourcelocation, modelLocation, var10);
                             this.unbakedCache.put(resourcelocation, iunbakedmodel);
+                            smallLoadingCache.put(resourcelocation, iunbakedmodel);
                         } finally {
                             this.loadingStack.remove(resourcelocation);
                         }
                     }
 
-                    return this.unbakedCache.getOrDefault(modelLocation, iunbakedmodel);
+                    // We have to get the result from the temporary cache used for a model load
+                    // As in pathological cases (e.g. Pedestals on 1.19) unbakedCache can lose
+                    // the model immediately
+                    UnbakedModel result = smallLoadingCache.getOrDefault(modelLocation, iunbakedmodel);
+                    // We are done with loading, so clear this cache to allow GC of any unneeded models
+                    smallLoadingCache.clear();
+                    return result;
                 }
             }
         }

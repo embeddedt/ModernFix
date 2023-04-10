@@ -42,19 +42,23 @@ public class EntityDataIDSyncHandler {
                     List<Field> fieldsToSync = new ArrayList<>();
                     for(Class<? extends Entity> eClass : entityPoolMap.keySet()) {
                         fieldsToSync.clear();
-                        Field[] classFields = eClass.getDeclaredFields();
-                        for(Field field : classFields) {
-                            if(!Modifier.isStatic(field.getModifiers()))
-                                continue;
-                            field.setAccessible(true);
-                            Object o = field.get(null);
-                            if(o != null && EntityDataAccessor.class.isAssignableFrom(o.getClass())) {
-                                fieldsToSync.add(field);
+                        try {
+                            Field[] classFields = eClass.getDeclaredFields();
+                            for(Field field : classFields) {
+                                if(!Modifier.isStatic(field.getModifiers()))
+                                    continue;
+                                field.setAccessible(true);
+                                Object o = field.get(null);
+                                if(o != null && EntityDataAccessor.class.isAssignableFrom(o.getClass())) {
+                                    fieldsToSync.add(field);
+                                }
                             }
-                        }
-                        for(Field field : fieldsToSync) {
-                            int id = ((EntityDataAccessor<?>)field.get(null)).id;
-                            fieldsToSyncMap.computeIfAbsent(eClass, k -> new ArrayList<>()).add(Pair.of(field.getName(), id));
+                            for(Field field : fieldsToSync) {
+                                int id = ((EntityDataAccessor<?>)field.get(null)).id;
+                                fieldsToSyncMap.computeIfAbsent(eClass, k -> new ArrayList<>()).add(Pair.of(field.getName(), id));
+                            }
+                        } catch(Throwable e) {
+                            ModernFix.LOGGER.error("Skipping entity ID sync for {}: {}", eClass.getName(), e);
                         }
                     }
                 }

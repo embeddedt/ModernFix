@@ -97,6 +97,7 @@ dependencies {
     modCompileOnly("curse.maven:twforest-227639:3575220")
     modRuntimeOnly("curse.maven:ferritecore-429235:4074330")
     modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
+    modCompileOnly("curse.maven:supermartijncore-454372:4455378")
 }
 
 tasks.withType(JavaCompile) {

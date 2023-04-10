@@ -80,6 +80,7 @@
     "perf.dynamic_resources.ModelBakeryMixin",
     "perf.dynamic_resources.ctm.TextureMetadataHandlerMixin",
     "perf.dynamic_resources.ctm.CTMPackReloadListenerMixin",
+    "perf.dynamic_resources.supermartijncore.ClientRegistrationHandlerMixin",
     "perf.model_optimizations.OBJLoaderMixin",
     "perf.model_optimizations.SelectorMixin",
     "perf.model_optimizations.TransformationMatrixMixin",

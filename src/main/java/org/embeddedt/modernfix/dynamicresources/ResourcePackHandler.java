@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.dynamicresources;
 
-import dev.latvian.kubejs.script.data.KubeJSResourcePack;
+import dev.latvian.mods.kubejs.script.data.KubeJSResourcePack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.resources.ResourceManager;

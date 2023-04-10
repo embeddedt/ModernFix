@@ -29,17 +29,17 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.model.ModelLoader;
+import net.minecraftforge.client.model.ForgeModelBakery;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoader;
 import org.apache.commons.lang3.tuple.Triple;
-import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.dynamicresources.ResourcePackHandler;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -76,8 +76,6 @@ public abstract class ModelBakeryMixin {
 
     @Shadow protected abstract void loadModel(ResourceLocation blockstateLocation) throws Exception;
 
-    @Shadow @Final private static Logger LOGGER;
-
     @Shadow @Final @Mutable
     private Map<ResourceLocation, BakedModel> bakedTopLevelModels;
 
@@ -89,6 +87,7 @@ public abstract class ModelBakeryMixin {
 
     @Shadow @Final public static BlockModel BLOCK_ENTITY_MARKER;
 
+    @Shadow @Final private static Logger LOGGER;
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
@@ -137,7 +136,7 @@ public abstract class ModelBakeryMixin {
      * @author embeddedt
      * @reason don't load any models initially, just set up initial data structures
      */
-    @Overwrite
+    @Overwrite(remap = false)
     protected void processLoading(ProfilerFiller arg, int maxMipLevels) {
         ModelLoaderRegistry.onModelLoadingStart();
         try {
@@ -278,8 +277,8 @@ public abstract class ModelBakeryMixin {
         }
     }
 
-    @Overwrite
-    public BakedModel getBakedModel(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter) {
+    @Overwrite(remap = false)
+    public BakedModel bake(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter) {
         Triple<ResourceLocation, Transformation, Boolean> triple = Triple.of(arg, arg2.getRotation(), arg2.isUvLocked());
         BakedModel existing = this.bakedCache.get(triple);
         if (existing != null) {
@@ -302,7 +301,7 @@ public abstract class ModelBakeryMixin {
                 if(ibakedmodel == null) {
                     ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
                 }
-                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
+                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ForgeModelBakery)(Object)this);
                 ModLoader.get().postEvent(event);
                 this.bakedCache.put(triple, event.getModel());
                 return event.getModel();

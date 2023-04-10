@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.Overwrite;
 
 @Mixin(BlockBehaviour.class)
 public class BlockBehaviourMixin {
-    @Overwrite
+    @Overwrite(remap = false)
     protected boolean isAir(BlockState state) {
         return state.getBlock().properties.isAir;
     }

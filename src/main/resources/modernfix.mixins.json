@@ -61,7 +61,6 @@
     "perf.cache_model_materials.VanillaModelMixin",
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
-    "perf.use_integrated_resources.LootTableHelperMixin",
     "perf.faster_singleplayer_load.MinecraftServerMixin",
     "devenv.MinecraftMixin",
     "devenv.NarratorMixin"

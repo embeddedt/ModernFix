@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.core.config;
 
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -28,8 +29,6 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("feature.direct_stack_trace", false);
         this.addMixinRule("perf.fast_registry_validation", true);
-        this.addMixinRule("perf.use_integrated_resources.jepb", modPresent("jepb"));
-        this.addMixinRule("perf.use_integrated_resources.jeresources", modPresent("jeresources"));
         this.addMixinRule("perf.jeresources_startup", modPresent("jeresources"));
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);

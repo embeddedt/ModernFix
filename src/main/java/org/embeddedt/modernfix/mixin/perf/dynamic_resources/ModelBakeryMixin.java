@@ -57,6 +57,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -176,6 +177,17 @@ public abstract class ModelBakeryMixin {
     private void gatherModelTextures(Set<Material> materialSet) {
         ForgeHooksClient.gatherFluidTextures(materialSet);
         gatherModelMaterials(materialSet);
+    }
+
+    @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0))
+    private void fetchStaticDefinitions(Map<ResourceLocation, StateDefinition<Block, BlockState>> map, BiConsumer<ResourceLocation, StateDefinition<Block, BlockState>> func) {
+        map.forEach((loc, def) -> blockStateFiles.add(loc));
+    }
+
+    @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;", ordinal = 0))
+    private ImmutableList<BlockState> fetchBlocks(StateDefinition<Block, BlockState> def) {
+        blockStateFiles.add(def.any().getBlock().getRegistryName());
+        return ImmutableList.of();
     }
 
     /**

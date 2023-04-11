@@ -6,10 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
-import com.google.gson.JsonElement;
-import com.google.gson.JsonParseException;
-import com.google.gson.JsonParser;
-import com.google.gson.JsonSyntaxException;
+import com.google.gson.*;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Transformation;
 import net.minecraft.Util;
@@ -25,6 +22,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -33,6 +31,7 @@ import net.minecraftforge.client.model.ExtendedBlockModelDeserializer;
 import net.minecraftforge.client.model.geometry.GeometryLoaderManager;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
@@ -57,6 +56,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Mixin(ModelBakery.class)
 public abstract class ModelBakeryMixin {
@@ -89,6 +89,7 @@ public abstract class ModelBakeryMixin {
     @Shadow @Final public static BlockModel BLOCK_ENTITY_MARKER;
 
     @Shadow @Final private static Logger LOGGER;
+
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
@@ -136,74 +137,151 @@ public abstract class ModelBakeryMixin {
 
     private UnbakedModel missingModel;
 
+    private Set<ResourceLocation> blockStateFiles;
+    private Set<ResourceLocation> modelFiles;
+
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBakery;loadBlockModel(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/block/model/BlockModel;", ordinal = 0))
     private BlockModel captureMissingModel(ModelBakery bakery, ResourceLocation location) throws IOException {
         this.missingModel = this.loadBlockModel(location);
+        this.blockStateFiles = new HashSet<>();
+        this.modelFiles = new HashSet<>();
         return (BlockModel)this.missingModel;
     }
 
     /**
      * @author embeddedt
-     * @reason only used by constructor to load models at startup, which we don't do here
+     * @reason don't actually load the model. instead, keep track of if we need to load a blockstate or a model,
+     * and save the info into the two lists
      */
     @Overwrite
     private void loadTopLevel(ModelResourceLocation location) {
+        if(Objects.equals(location.getVariant(), "inventory")) {
+            modelFiles.add(new ResourceLocation(location.getNamespace(), "item/" + location.getPath()));
+        } else {
+            blockStateFiles.add(new ResourceLocation(location.getNamespace(), location.getPath()));
+        }
     }
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/ForgeHooksClient;gatherFluidTextures(Ljava/util/Set;)V", remap = false))
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/ForgeHooksClient;gatherFluidTextures(Ljava/util/Set;)V", remap = false), remap = false)
     private void gatherModelTextures(Set<Material> materialSet) {
         ForgeHooksClient.gatherFluidTextures(materialSet);
         gatherModelMaterials(materialSet);
     }
 
     /**
-     * Scan the models folder and try to load, parse, and get materials from as many models as possible.
+     * Load all blockstate JSONs and model files, collect textures.
      */
     private void gatherModelMaterials(Set<Material> materialSet) {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        List<ResourceLocation> allModels = new ArrayList<>(this.resourceManager.listResources("models", path -> path.getPath().endsWith(".json")).keySet());
-        // for KubeJS, etc.
-        allModels.addAll(ResourcePackHandler.getExtraResources(this.resourceManager, "models", path -> path.endsWith(".json")));
-        List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> modelBytes = new ArrayList<>();
-        for(ResourceLocation fileLocation : allModels) {
-            modelBytes.add(CompletableFuture.supplyAsync(() -> {
-                Optional<Resource> resourceOpt = this.resourceManager.getResource(fileLocation);
-                if(resourceOpt.isPresent()) {
-                    try(InputStream resourceStream = resourceOpt.get().open()) {
-                        // strip models/ and .json from the name
-                        ResourceLocation model = new ResourceLocation(fileLocation.getNamespace(), fileLocation.getPath().substring(7, fileLocation.getPath().length()-5));
-                        return Pair.of(model, JsonParser.parseReader(new InputStreamReader(resourceStream, StandardCharsets.UTF_8)));
+        List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> blockStateData = new ArrayList<>();
+        for(ResourceLocation blockstate : blockStateFiles) {
+            blockStateData.add(CompletableFuture.supplyAsync(() -> {
+                ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
+                Optional<Resource> resource = this.resourceManager.getResource(fileLocation);
+                if(resource.isPresent()) {
+                    try(InputStream stream = resource.get().open()) {
+                        JsonParser parser = new JsonParser();
+                        return Pair.of(blockstate, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8)));
                     } catch(IOException | JsonParseException e) {
-                        ModernFix.LOGGER.error("Error reading model {}: {}", fileLocation, e);
+                        ModernFix.LOGGER.error("Error reading blockstate {}: {}", blockstate, e);
                     }
                 }
-                return Pair.of(fileLocation, null);
+                return Pair.of(blockstate, null);
             }, Util.backgroundExecutor()));
         }
-        allModels.clear();
-        CompletableFuture.allOf(modelBytes.toArray(new CompletableFuture[0])).join();
-        Set<Pair<String, String>> errorSet = Sets.newLinkedHashSet();
-        Map<ResourceLocation, BlockModel> basicModels = new HashMap<>();
-        try {
-            basicModels.put(MISSING_MODEL_LOCATION, this.loadBlockModel(MISSING_MODEL_LOCATION));
-            basicModels.put(new ResourceLocation("builtin/generated"), GENERATION_MARKER);
-            basicModels.put(new ResourceLocation("builtin/entity"), BLOCK_ENTITY_MARKER);
-        } catch(IOException e) {
-            throw new RuntimeException("Exception when populating built-in models", e);
-        }
-        for(CompletableFuture<Pair<ResourceLocation, JsonElement>> future : modelBytes) {
-            Pair<ResourceLocation, JsonElement> pair = future.join();
-            try {
-                if(pair.getSecond() != null) {
-                    BlockModel model = ExtendedBlockModelDeserializer.INSTANCE.fromJson(pair.getSecond(), BlockModel.class);
-                    model.name = pair.getFirst().toString();
-                    basicModels.put(pair.getFirst(), model);
+        blockStateFiles = null;
+        CompletableFuture.allOf(blockStateData.toArray(new CompletableFuture[0])).join();
+        for(CompletableFuture<Pair<ResourceLocation, JsonElement>> result : blockStateData) {
+            Pair<ResourceLocation, JsonElement> pair = result.join();
+            if(pair.getSecond() != null) {
+                try {
+                    JsonObject obj = pair.getSecond().getAsJsonObject();
+                    if(obj.has("variants")) {
+                        JsonObject eachVariant = obj.getAsJsonObject("variants");
+                        for(Map.Entry<String, JsonElement> entry : eachVariant.entrySet()) {
+                            JsonElement variantData = entry.getValue();
+                            List<JsonObject> variantModels;
+                            if(variantData.isJsonArray()) {
+                                variantModels = new ArrayList<>();
+                                for(JsonElement model : variantData.getAsJsonArray()) {
+                                    variantModels.add(model.getAsJsonObject());
+                                }
+                            } else
+                                variantModels = Collections.singletonList(variantData.getAsJsonObject());
+                            for(JsonObject variant : variantModels) {
+                                modelFiles.add(new ResourceLocation(variant.get("model").getAsString()));
+                            }
+                        }
+
+                    } else {
+                        JsonArray multipartData = obj.get("multipart").getAsJsonArray();
+                        for(JsonElement element : multipartData) {
+                            JsonObject self = element.getAsJsonObject();
+                            JsonElement apply = self.get("apply");
+                            List<JsonObject> applyObjects;
+                            if(apply.isJsonArray()) {
+                                applyObjects = new ArrayList<>();
+                                for(JsonElement e : apply.getAsJsonArray()) {
+                                    applyObjects.add(e.getAsJsonObject());
+                                }
+                            } else
+                                applyObjects = Collections.singletonList(apply.getAsJsonObject());
+                            for(JsonObject applyEntry : applyObjects) {
+                                modelFiles.add(new ResourceLocation(applyEntry.get("model").getAsString()));
+                            }
+                        }
+
+                    }
+                } catch(RuntimeException e) {
+                    ModernFix.LOGGER.error("Error with blockstate {}: {}", pair.getFirst(), e);
                 }
-            } catch(Throwable e) {
-                ModernFix.LOGGER.warn("Unable to parse {}: {}", pair.getFirst(), e);
+
             }
         }
-        modelBytes.clear();
+        blockStateData = null;
+        Map<ResourceLocation, BlockModel> basicModels = new HashMap<>();
+        basicModels.put(MISSING_MODEL_LOCATION, (BlockModel)missingModel);
+        basicModels.put(new ResourceLocation("builtin/generated"), GENERATION_MARKER);
+        basicModels.put(new ResourceLocation("builtin/entity"), BLOCK_ENTITY_MARKER);
+        Set<Pair<String, String>> errorSet = Sets.newLinkedHashSet();
+        while(modelFiles.size() > 0) {
+            List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> modelBytes = new ArrayList<>();
+            for(ResourceLocation model : modelFiles) {
+                if(basicModels.containsKey(model))
+                    continue;
+                ResourceLocation fileLocation = new ResourceLocation(model.getNamespace(), "models/" + model.getPath() + ".json");
+                modelBytes.add(CompletableFuture.supplyAsync(() -> {
+                    Optional<Resource> resource = this.resourceManager.getResource(fileLocation);
+                    if(resource.isPresent()) {
+                        try(InputStream stream = resource.get().open()) {
+                            JsonParser parser = new JsonParser();
+                            return Pair.of(model, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8)));
+                        } catch(IOException | JsonParseException e) {
+                            ModernFix.LOGGER.error("Error reading model {}: {}", fileLocation, e);
+                        }
+                    }
+                    return Pair.of(fileLocation, null);
+                }, Util.backgroundExecutor()));
+            }
+            modelFiles.clear();
+            CompletableFuture.allOf(modelBytes.toArray(new CompletableFuture[0])).join();
+            for(CompletableFuture<Pair<ResourceLocation, JsonElement>> future : modelBytes) {
+                Pair<ResourceLocation, JsonElement> pair = future.join();
+                try {
+                    if(pair.getSecond() != null) {
+                        BlockModel model = ExtendedBlockModelDeserializer.INSTANCE.fromJson(pair.getSecond(), BlockModel.class);
+                        model.name = pair.getFirst().toString();
+                        modelFiles.addAll(model.getDependencies());
+                        basicModels.put(pair.getFirst(), model);
+                        continue;
+                    }
+                } catch(Throwable e) {
+                    ModernFix.LOGGER.warn("Unable to parse {}: {}", pair.getFirst(), e);
+                }
+                basicModels.put(pair.getFirst(), (BlockModel)missingModel);
+            }
+        }
+        modelFiles = null;
         Function<ResourceLocation, UnbakedModel> modelGetter = loc -> basicModels.getOrDefault(loc, (BlockModel)this.missingModel);
         for(BlockModel model : basicModels.values()) {
             materialSet.addAll(model.getMaterials(modelGetter, errorSet));

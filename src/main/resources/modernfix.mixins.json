@@ -8,6 +8,7 @@
   "mixins": [
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
     "perf.modern_resourcepacks.VanillaPackResourcesMixin",
+    "perf.modern_resourcepacks.PathPackResourcesMixin",
     "perf.remove_biome_temperature_cache.BiomeMixin",
     "perf.reduce_blockstate_cache_rebuilds.GameDataMixin",
     "perf.reduce_blockstate_cache_rebuilds.BlockCallbacksMixin",

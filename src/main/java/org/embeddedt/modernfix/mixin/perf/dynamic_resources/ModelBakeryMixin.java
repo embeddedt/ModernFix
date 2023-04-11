@@ -177,7 +177,7 @@ public abstract class ModelBakeryMixin {
         gatherModelMaterials(materialSet);
     }
 
-    @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0))
+    @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0), remap = false)
     private void fetchStaticDefinitions(Map<ResourceLocation, StateDefinition<Block, BlockState>> map, BiConsumer<ResourceLocation, StateDefinition<Block, BlockState>> func) {
         map.forEach((loc, def) -> blockStateFiles.add(loc));
     }

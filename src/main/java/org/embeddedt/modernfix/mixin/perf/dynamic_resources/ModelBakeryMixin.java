@@ -1,9 +1,11 @@
 package org.embeddedt.modernfix.mixin.perf.dynamic_resources;
 
+import com.google.common.base.Splitter;
 import com.google.common.base.Stopwatch;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import com.google.gson.*;
@@ -26,6 +28,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
@@ -78,6 +81,12 @@ public abstract class ModelBakeryMixin {
     @Shadow protected abstract void loadModel(ResourceLocation blockstateLocation) throws Exception;
 
     @Shadow @Final private static Logger LOGGER;
+
+    @Shadow @Final private static Splitter COMMA_SPLITTER;
+    @Shadow @Final private static Splitter EQUAL_SPLITTER;
+    @Shadow @Nullable static <T extends Comparable<T>> T getValueHelper(Property<T> property, String value) {
+        throw new AssertionError();
+    }
 
     @Shadow @Final @Mutable
     private Map<ResourceLocation, BakedModel> bakedTopLevelModels;
@@ -359,6 +368,49 @@ public abstract class ModelBakeryMixin {
                 }
             }
         }
+    }
+
+    private <T extends Comparable<T>, V extends T> BlockState setPropertyGeneric(BlockState state, Property<T> prop, Object o) {
+        return state.setValue(prop, (V)o);
+    }
+    @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))
+    private ImmutableList<BlockState> loadOnlyRelevantBlockState(StateDefinition<Block, BlockState> stateDefinition, ResourceLocation location) {
+        Set<Property<?>> fixedProperties = new HashSet<>();
+        ModelResourceLocation mrl = (ModelResourceLocation)location;
+        BlockState fixedState = stateDefinition.any();
+        for(String s : COMMA_SPLITTER.split(mrl.getVariant())) {
+            Iterator<String> iterator = EQUAL_SPLITTER.split(s).iterator();
+            if (iterator.hasNext()) {
+                String s1 = iterator.next();
+                Property<?> property = stateDefinition.getProperty(s1);
+                if (property != null && iterator.hasNext()) {
+                    String s2 = iterator.next();
+                    Object value = getValueHelper(property, s2);
+                    if (value == null) {
+                        throw new RuntimeException("Unknown value: '" + s2 + "' for blockstate property: '" + s1 + "' " + property.getPossibleValues());
+                    }
+                    fixedState = setPropertyGeneric(fixedState, property, value);
+                    fixedProperties.add(property);
+                } else if (!s1.isEmpty()) {
+                    throw new RuntimeException("Unknown blockstate property: '" + s1 + "'");
+                }
+            }
+        }
+        // generate all possible blockstates from the remaining properties
+        ArrayList<Property<?>> anyProperties = new ArrayList<>(stateDefinition.getProperties());
+        anyProperties.removeAll(fixedProperties);
+        ArrayList<BlockState> finalList = new ArrayList<>();
+        finalList.add(fixedState);
+        for(Property<?> property : anyProperties) {
+            ArrayList<BlockState> newPermutations = new ArrayList<>();
+            for(BlockState state : finalList) {
+                for(Comparable<?> value : property.getPossibleValues()) {
+                    newPermutations.add(setPropertyGeneric(state, property, value));
+                }
+            }
+            finalList = newPermutations;
+        }
+        return ImmutableList.copyOf(finalList);
     }
 
     @Overwrite

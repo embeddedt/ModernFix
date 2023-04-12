@@ -296,10 +296,17 @@ public abstract class ModelBakeryMixin {
             }
         }
         modelFiles = null;
-        Function<ResourceLocation, UnbakedModel> modelGetter = loc -> basicModels.getOrDefault(loc, (BlockModel)this.missingModel);
+        Function<ResourceLocation, UnbakedModel> modelGetter = loc -> {
+            UnbakedModel m = basicModels.get(loc);
+            /* fallback to vanilla loader if missing */
+            return m != null ? m : this.getModel(loc);
+        };
         for(BlockModel model : basicModels.values()) {
             materialSet.addAll(model.getMaterials(modelGetter, errorSet));
         }
+        /* discard whatever garbage was just produced */
+        loadedModels.invalidateAll();
+        loadedModels.put(MISSING_MODEL_LOCATION, missingModel);
         //errorSet.stream().filter(pair -> !pair.getSecond().equals(MISSING_MODEL_LOCATION_STRING)).forEach(pair -> LOGGER.warn("Unable to resolve texture reference: {} in {}", pair.getFirst(), pair.getSecond()));
         stopwatch.stop();
         ModernFix.LOGGER.info("Resolving model textures took " + stopwatch);

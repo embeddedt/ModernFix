@@ -29,8 +29,9 @@ public class IntegratedWatchdog extends Thread {
         while(server.isRunning()) {
             long nextTick = this.server.getNextTickTime();
             long curTime = Util.getMillis();
-            if((curTime - nextTick) > MAX_TICK_DELTA) {
-                LOGGER.error("A single server tick has taken {}, more than {} milliseconds", (nextTick - curTime), MAX_TICK_DELTA);
+            long delta = curTime - nextTick;
+            if(delta > MAX_TICK_DELTA) {
+                LOGGER.error("A single server tick has taken {}, more than {} milliseconds", delta, MAX_TICK_DELTA);
                 ThreadMXBean threadmxbean = ManagementFactory.getThreadMXBean();
                 ThreadInfo[] athreadinfo = threadmxbean.dumpAllThreads(true, true);
                 StringBuilder sb = new StringBuilder();

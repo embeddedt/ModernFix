@@ -251,6 +251,14 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                     }
                 }
             }
+        } else if(mixinClassName.equals("org.embeddedt.modernfix.mixin.bugfix.chunk_deadlock.valhesia.BlockStateBaseMixin")) {
+            // We need to destroy Valhelsia's callback so it can never run getBlockState
+            for(MethodNode m : targetClass.methods) {
+                if(m.name.contains("valhelsia_placeDousedTorch")) {
+                    m.instructions.clear();
+                    m.instructions.add(new InsnNode(Opcodes.RETURN));
+                }
+            }
         }
     }
 }

@@ -16,6 +16,7 @@
     "bugfix.refinedstorage.te_bug.ItemExternalStorageCacheMixin",
     "bugfix.refinedstorage.te_bug.ItemExternalStorageMixin",
     "bugfix.chunk_deadlock.ServerChunkCacheMixin",
+    "bugfix.chunk_deadlock.valhesia.BlockStateBaseMixin",
     "perf.remove_biome_temperature_cache.BiomeMixin",
     "perf.resourcepacks.ModFileResourcePackMixin",
     "perf.resourcepacks.VanillaPackMixin",

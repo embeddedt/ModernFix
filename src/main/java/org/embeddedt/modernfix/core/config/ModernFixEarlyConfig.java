@@ -50,6 +50,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.structure_manager_crash", true);
         this.addMixinRule("bugfix.mc218112", true);
         this.addMixinRule("bugfix.chunk_deadlock", true);
+        this.addMixinRule("bugfix.chunk_deadlock.valhesia", modPresent("valhelsia_structures"));
         this.addMixinRule("bugfix.tf_cme_on_load", modPresent("twilightforest"));
         this.addMixinRule("bugfix.refinedstorage", modPresent("refinedstorage"));
         this.addMixinRule("perf.async_jei", modPresent("jei"));

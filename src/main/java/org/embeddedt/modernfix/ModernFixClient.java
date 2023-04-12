@@ -20,11 +20,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
+import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.network.NetworkEvent;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.load.LoadEvents;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 import org.embeddedt.modernfix.screen.DeferredLevelLoadingScreen;
+import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
@@ -218,5 +222,14 @@ public class ModernFixClient {
         });
 
         context.get().setPacketHandled(true);
+    }
+
+    @SubscribeEvent
+    public void onServerStarted(FMLServerStartingEvent event) {
+        if(ModernFixConfig.INTEGRATED_SERVER_WATCHDOG.get()) {
+            IntegratedWatchdog watchdog = new IntegratedWatchdog(event.getServer());
+            watchdog.start();
+        }
+
     }
 }

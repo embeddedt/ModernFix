@@ -49,8 +49,9 @@ public class FastAccessTransformerList extends AccessTransformerList {
         private final Set<Type> allContainedTypes;
 
         public FastATMap(Map<Target<?>, AccessTransformer> delegate) {
-            this.delegate = delegate;
+            this.delegate = new HashMap<>();
             this.allContainedTypes = new ObjectOpenHashSet<>();
+            this.putAll(delegate);
         }
 
         @Override

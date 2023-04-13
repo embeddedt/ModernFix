@@ -56,7 +56,6 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.async_jei", modPresent("jei"));
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.preload_block_classes", false);
-        this.addMixinRule("perf.sync_executor_sleep", true);
         this.addMixinRule("perf.scan_cache", true);
         this.addMixinRule("perf.compress_biome_container", true);
         this.addMixinRule("perf.nuke_empty_chunk_sections", true);

@@ -9,6 +9,7 @@ import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.LoadingModList;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.classloading.ModernFixResourceFinder;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
@@ -80,6 +81,8 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         } catch(RuntimeException | ReflectiveOperationException e) {
             logger.error("Failed to make classloading changes", e);
         }
+
+        FastAccessTransformerList.attemptReplace();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */
         try {

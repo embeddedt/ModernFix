@@ -4,8 +4,10 @@ import cpw.mods.modlauncher.api.INameMappingService;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
+import org.embeddedt.modernfix.load.ModWorkManagerQueue;
 import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
@@ -37,6 +39,9 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
         this.logger.info("Loaded configuration file for ModernFix: {} options available, {} override(s) found",
                 config.getOptionCount(), config.getOptionOverrideCount());
+
+        FastAccessTransformerList.attemptReplace();
+        ModWorkManagerQueue.replace();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */
         try {
@@ -152,6 +157,14 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                             }
                         }
                     }
+                }
+            }
+        } else if(mixinClassName.equals("org.embeddedt.modernfix.mixin.bugfix.chunk_deadlock.valhesia.BlockStateBaseMixin")) {
+            // We need to destroy Valhelsia's callback so it can never run getBlockState
+            for(MethodNode m : targetClass.methods) {
+                if(m.name.contains("valhelsia_placeDousedTorch")) {
+                    m.instructions.clear();
+                    m.instructions.add(new InsnNode(Opcodes.RETURN));
                 }
             }
         }

@@ -41,8 +41,8 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.compress_blockstate", false);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
+        this.addMixinRule("bugfix.chunk_deadlock", true);
         this.addMixinRule("perf.thread_priorities", true);
-        this.addMixinRule("perf.sync_executor_sleep", true);
         this.addMixinRule("perf.scan_cache", true);
         this.addMixinRule("perf.flatten_model_predicates", true);
         this.addMixinRule("perf.deduplicate_location", false);

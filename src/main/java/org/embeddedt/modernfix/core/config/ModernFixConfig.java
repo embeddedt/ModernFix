@@ -27,6 +27,7 @@ public class ModernFixConfig {
     public static ForgeConfigSpec.BooleanValue ENABLE_DEBUG_RELOADER;
 
     public static ForgeConfigSpec.BooleanValue REBUILD_BLOCKSTATES_ASYNC;
+    public static ForgeConfigSpec.BooleanValue INTEGRATED_SERVER_WATCHDOG;
 
     public static Set<ResourceLocation> jeiPluginBlacklist;
 
@@ -44,6 +45,9 @@ public class ModernFixConfig {
         REBUILD_BLOCKSTATES_ASYNC = COMMON_BUILDER
                 .comment("Rebuild blockstate cache asynchronously. Should work with most mods, but can be disabled.")
                 .define("rebuild_blockstate_cache_async", true);
+        INTEGRATED_SERVER_WATCHDOG = COMMON_BUILDER
+                .comment("Automatically output a thread dump if the integrated server spends too long on one tick")
+                .define("integrated_server_watchdog", true);
     }
 
     static {

@@ -62,7 +62,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-@Mixin(ModelBakery.class)
+/* high priority so that our injectors are added before other mods' */
+@Mixin(value = ModelBakery.class, priority = 600)
 public abstract class ModelBakeryMixin {
 
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
@@ -101,6 +102,8 @@ public abstract class ModelBakeryMixin {
     @Shadow @Final public static BlockModel BLOCK_ENTITY_MARKER;
 
     @Shadow public abstract Set<ResourceLocation> getSpecialModels();
+
+    @Shadow public abstract UnbakedModel getModel(ResourceLocation modelLocation);
 
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
@@ -164,8 +167,9 @@ public abstract class ModelBakeryMixin {
      * @reason don't actually load the model. instead, keep track of if we need to load a blockstate or a model,
      * and save the info into the two lists
      */
-    @Overwrite
-    private void loadTopLevel(ModelResourceLocation location) {
+    @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
+    private void addTopLevelFile(ModelResourceLocation location, CallbackInfo ci) {
+        ci.cancel();
         if(Objects.equals(location.getVariant(), "inventory")) {
             modelFiles.add(new ResourceLocation(location.getNamespace(), "item/" + location.getPath()));
         } else {
@@ -340,13 +344,15 @@ public abstract class ModelBakeryMixin {
      * @author embeddedt
      * @reason synchronize
      */
-    @Overwrite
-    public UnbakedModel getModel(ResourceLocation modelLocation) {
-        if(modelLocation.equals(MISSING_MODEL_LOCATION))
-            return missingModel;
+    @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)
+    public void getOrLoadModelDynamic(ResourceLocation modelLocation, CallbackInfoReturnable<UnbakedModel> cir) {
+        if(modelLocation.equals(MISSING_MODEL_LOCATION)) {
+            cir.setReturnValue(missingModel);
+            return;
+        }
         UnbakedModel existing = this.unbakedCache.get(modelLocation);
         if (existing != null) {
-            return existing;
+            cir.setReturnValue(existing);
         } else {
             synchronized(this) {
                 if (this.loadingStack.contains(modelLocation)) {
@@ -383,7 +389,7 @@ public abstract class ModelBakeryMixin {
                     UnbakedModel result = smallLoadingCache.getOrDefault(modelLocation, iunbakedmodel);
                     // We are done with loading, so clear this cache to allow GC of any unneeded models
                     smallLoadingCache.clear();
-                    return result;
+                    cir.setReturnValue(result);
                 }
             }
         }
@@ -432,12 +438,12 @@ public abstract class ModelBakeryMixin {
         return ImmutableList.copyOf(finalList);
     }
 
-    @Overwrite
-    public BakedModel getBakedModel(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter) {
+    @Inject(method = "getBakedModel", at = @At("HEAD"), cancellable = true)
+    public void getOrLoadBakedModelDynamic(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter, CallbackInfoReturnable<BakedModel> cir) {
         Triple<ResourceLocation, Transformation, Boolean> triple = Triple.of(arg, arg2.getRotation(), arg2.isUvLocked());
         BakedModel existing = this.bakedCache.get(triple);
         if (existing != null) {
-            return existing;
+            cir.setReturnValue(existing);
         } else if (this.atlasSet == null) {
             throw new IllegalStateException("bake called too early");
         } else {
@@ -459,7 +465,7 @@ public abstract class ModelBakeryMixin {
                 DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
                 MinecraftForge.EVENT_BUS.post(event);
                 this.bakedCache.put(triple, event.getModel());
-                return event.getModel();
+                cir.setReturnValue(event.getModel());
             }
         }
     }

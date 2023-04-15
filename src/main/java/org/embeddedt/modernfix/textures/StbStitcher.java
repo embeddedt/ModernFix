@@ -125,10 +125,10 @@ public class StbStitcher {
         }
     }
 
-    public static Pair<Pair<Integer, Integer>, List<LoadableSpriteInfo>> packRects(Stitcher.Holder[] holders) {
+    public static <T extends Stitcher.Entry> Pair<Pair<Integer, Integer>, List<LoadableSpriteInfo<T>>> packRects(Stitcher.Holder<T>[] holders) {
         int holderSize = holders.length;
 
-        List<LoadableSpriteInfo> infoList = new ArrayList<>();
+        List<LoadableSpriteInfo<T>> infoList = new ArrayList<>();
 
         // Allocate memory for the rectangles and the context
         try (STBRPRect.Buffer rectBuf = STBRPRect.malloc(holderSize);
@@ -139,10 +139,10 @@ public class StbStitcher {
             int totalArea = 0;
             int longestWidth = 0, longestHeight = 0;
             for (int j = 0; j < holderSize; ++j) {
-                Stitcher.Holder holder = holders[j];
+                Stitcher.Holder<T> holder = holders[j];
 
-                int width = holder.width;
-                int height = holder.height;
+                int width = holder.width();
+                int height = holder.height();
 
                 // The ID here is just the array index, for easy lookup later
                 STBRPRect rect = rectBuf.get(j);
@@ -184,16 +184,16 @@ public class StbStitcher {
                     STBRectPack.stbrp_pack_rects(ctx, rectBuf);
 
                     for (STBRPRect rect : rectBuf) {
-                        Stitcher.Holder holder = holders[rect.id()];
+                        Stitcher.Holder<T> holder = holders[rect.id()];
 
                         // Ensure that everything is properly packed!
                         if (!rect.was_packed()) {
-                            throw new StitcherException(holder.spriteInfo,
-                                    Stream.of(holders).map(arg -> arg.spriteInfo).collect(ImmutableList.toImmutableList()));
+                            throw new StitcherException(holder.entry(),
+                                    Stream.of(holders).map(Stitcher.Holder::entry).collect(ImmutableList.toImmutableList()));
                         }
 
                         // Initialize the sprite now with the position and size that we've calculated so far
-                        infoList.add(new LoadableSpriteInfo(holder.spriteInfo, longestWidth, longestHeight, getX(rect), getY(rect)));
+                        infoList.add(new LoadableSpriteInfo(holder.entry(), longestWidth, longestHeight, getX(rect), getY(rect)));
                         //holder.spriteInfo.initSprite(size, size, rect.x(), rect.y(), false);
                     }
 
@@ -202,8 +202,8 @@ public class StbStitcher {
                     if(numTries >= 4) {
                         // If we get here, we weren't able to stitch. Throw an error.
                         ModernFix.LOGGER.error("Stitcher ran out of space with target atlas size " + longestWidth + "x" + longestHeight + ":");
-                        for(Stitcher.Holder h : holders) {
-                            ModernFix.LOGGER.error(" - " + h.spriteInfo.name() + ", " + h.spriteInfo.width() + "x" + h.spriteInfo.height());
+                        for(Stitcher.Holder<T> h : holders) {
+                            ModernFix.LOGGER.error(" - " + h.entry().name() + ", " + h.width() + "x" + h.height());
                         }
                         throw e;
                     } else {
@@ -218,14 +218,14 @@ public class StbStitcher {
         }
     }
 
-    public static class LoadableSpriteInfo {
-        public final TextureAtlasSprite.Info info;
+    public static class LoadableSpriteInfo<T extends Stitcher.Entry> {
+        public final T info;
         public final int width;
         public final int height;
         public final int x;
         public final int y;
 
-        LoadableSpriteInfo(TextureAtlasSprite.Info info, int width, int height, int x, int y) {
+        LoadableSpriteInfo(T info, int width, int height, int x, int y) {
             this.info = info;
             this.width = width;
             this.height = height;

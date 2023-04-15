@@ -15,8 +15,8 @@ import java.util.function.Function;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
-    @Inject(method = "m_231380_", at = @At("HEAD"), remap = false)
-    private void setLatch(String string, LevelStorageSource.LevelStorageAccess arg, PackRepository arg2, WorldStem arg3, CallbackInfo ci) {
+    @Inject(method = "doWorldLoad", at = @At("HEAD"), remap = false)
+    private void setLatch(String string, LevelStorageSource.LevelStorageAccess arg, PackRepository arg2, WorldStem arg3, boolean bl, CallbackInfo ci) {
         ModernFix.worldLoadSemaphore = new CountDownLatch(1);
     }
 }

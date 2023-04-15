@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.screen;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.gui.screens.LevelLoadingScreen;
 import net.minecraft.server.level.progress.StoringChunkProgressListener;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.function.BooleanSupplier;
 
@@ -21,7 +22,7 @@ public class DeferredLevelLoadingScreen extends LevelLoadingScreen {
     }
 
     @Override
-    public void renderBackground(PoseStack matrixStack, int vOffset) {
-        renderDirtBackground(vOffset);
+    public void renderBackground(@NotNull PoseStack arg) {
+        renderDirtBackground(arg);
     }
 }

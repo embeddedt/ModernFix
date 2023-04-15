@@ -23,7 +23,7 @@ public class VanillaPackResourcesMixin {
      * @reason avoid going through the module class loader when we know exactly what path this resource should come
      * from
      */
-    @Overwrite
+    //@Overwrite
     protected InputStream getResourceAsStream(PackType type, ResourceLocation location) {
         Path rootPath = ROOT_DIR_BY_TYPE.get(type);
         Path targetPath = rootPath.resolve(location.getNamespace() + "/" + location.getPath());

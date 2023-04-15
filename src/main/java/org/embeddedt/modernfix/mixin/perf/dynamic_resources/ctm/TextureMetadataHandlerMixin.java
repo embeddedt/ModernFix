@@ -2,10 +2,7 @@ package org.embeddedt.modernfix.mixin.perf.dynamic_resources.ctm;
 
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2BooleanMap;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.Material;
-import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -29,7 +26,7 @@ import java.util.*;
 @Mixin(TextureMetadataHandler.class)
 public abstract class TextureMetadataHandlerMixin {
 
-    @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelBakery loader) throws IOException;
+    @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelBaker loader) throws IOException;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void subscribeDynamic(CallbackInfo ci) {
@@ -57,7 +54,8 @@ public abstract class TextureMetadataHandlerMixin {
                     continue;
                 }
 
-                Collection<Material> textures = model.getMaterials(event.getModelLoader()::getModel, errors);
+                // TODO port
+                Collection<Material> textures = Collections.emptyList(); // model.getMaterials(event.getModelLoader()::getModel, errors);
                 Collection<ResourceLocation> newDependencies = model.getDependencies();
                 for (Material tex : textures) {
                     IMetadataSectionCTM meta = null;

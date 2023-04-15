@@ -3,11 +3,13 @@ package org.embeddedt.modernfix.structure;
 import com.mojang.datafixers.DataFixer;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraft.SharedConstants;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.datafix.DataFixTypes;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraftforge.fml.loading.FMLPaths;
 import org.embeddedt.modernfix.ModernFix;
@@ -24,10 +26,10 @@ public class CachingStructureManager {
         STRUCTURE_CACHE_FOLDER.mkdirs();
     }
 
-    public static StructureTemplate readStructure(ResourceLocation location, DataFixer datafixer, InputStream stream) throws IOException {
+    public static StructureTemplate readStructure(ResourceLocation location, DataFixer datafixer, InputStream stream, HolderGetter<Block> blockGetter) throws IOException {
         CompoundTag tag = readStructureTag(location, datafixer, stream);
         StructureTemplate template = new StructureTemplate();
-        template.load(tag);
+        template.load(blockGetter, tag);
         return template;
     }
 
@@ -46,20 +48,20 @@ public class CachingStructureManager {
             currentTag.putInt("DataVersion", 500);
         }
         int currentDataVersion = currentTag.getInt("DataVersion");
-        if(currentDataVersion < SharedConstants.getCurrentVersion().getWorldVersion()) {
+        if(currentDataVersion < SharedConstants.getCurrentVersion().getDataVersion().getVersion()) {
             /* Needs upgrade, try looking up from cache */
             MessageDigest hasher = digestThreadLocal.get();
             hasher.reset();
             String hash = encodeHex(hasher.digest(structureBytes));
             CompoundTag cachedUpgraded = getCachedUpgraded(location, hash);
-            if(cachedUpgraded != null && cachedUpgraded.getInt("DataVersion") == SharedConstants.getCurrentVersion().getWorldVersion()) {
+            if(cachedUpgraded != null && cachedUpgraded.getInt("DataVersion") == SharedConstants.getCurrentVersion().getDataVersion().getVersion()) {
                 ModernFix.LOGGER.debug("Using cached upgraded version of {}", location);
                 currentTag = cachedUpgraded;
             } else {
                 ModernFix.LOGGER.debug("Structure {} is being run through DFU (hash {}), this will cause launch time delays", location, hash);
-                currentTag = NbtUtils.update(datafixer, DataFixTypes.STRUCTURE, currentTag, currentDataVersion,
-                        SharedConstants.getCurrentVersion().getWorldVersion());
-                currentTag.putInt("DataVersion", SharedConstants.getCurrentVersion().getWorldVersion());
+                currentTag = DataFixTypes.STRUCTURE.update(datafixer, currentTag, currentDataVersion,
+                        SharedConstants.getCurrentVersion().getDataVersion().getVersion());
+                currentTag.putInt("DataVersion", SharedConstants.getCurrentVersion().getDataVersion().getVersion());
                 saveCachedUpgraded(location, hash, currentTag);
             }
         }

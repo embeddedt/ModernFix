@@ -15,7 +15,6 @@ import net.minecraft.Util;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
-import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -37,10 +36,12 @@ import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.duck.IDynamicModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.dynamicresources.ResourcePackHandler;
+import org.embeddedt.modernfix.mixin.perf.dynamic_resources.supermartijncore.ModelBakerImplMixin;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -58,13 +59,14 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /* high priority so that our injectors are added before other mods' */
 @Mixin(value = ModelBakery.class, priority = 600)
-public abstract class ModelBakeryMixin {
+public abstract class ModelBakeryMixin implements IDynamicModelBakery {
 
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
 
@@ -75,7 +77,6 @@ public abstract class ModelBakeryMixin {
     @Shadow protected abstract BlockModel loadBlockModel(ResourceLocation location) throws IOException;
 
     @Shadow @Final protected static Set<Material> UNREFERENCED_TEXTURES;
-    @Shadow private Map<ResourceLocation, Pair<TextureAtlas, TextureAtlas.Preparations>> atlasPreparations;
     @Shadow @Final protected ResourceManager resourceManager;
     @Shadow @Nullable private AtlasSet atlasSet;
     @Shadow @Final private Set<ResourceLocation> loadingStack;
@@ -93,7 +94,7 @@ public abstract class ModelBakeryMixin {
     @Shadow @Final @Mutable
     private Map<ResourceLocation, BakedModel> bakedTopLevelModels;
 
-    @Shadow @Final @Mutable private Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> bakedCache;
+    @Shadow @Final @Mutable private Map<ModelBakery.BakedCacheKey, BakedModel> bakedCache;
 
     @Shadow @Final public static BlockModel GENERATION_MARKER;
 
@@ -103,7 +104,7 @@ public abstract class ModelBakeryMixin {
 
     @Shadow public abstract UnbakedModel getModel(ResourceLocation modelLocation);
 
-    private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
+    private Cache<ModelBakery.BakedCacheKey, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
@@ -163,170 +164,30 @@ public abstract class ModelBakeryMixin {
 
     /**
      * @author embeddedt
-     * @reason don't actually load the model. instead, keep track of if we need to load a blockstate or a model,
-     * and save the info into the two lists
+     * @reason don't actually load the model.
      */
     @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
     private void addTopLevelFile(ModelResourceLocation location, CallbackInfo ci) {
         ci.cancel();
-        if(Objects.equals(location.getVariant(), "inventory")) {
-            modelFiles.add(new ResourceLocation(location.getNamespace(), "item/" + location.getPath()));
-        } else {
-            blockStateFiles.add(new ResourceLocation(location.getNamespace(), location.getPath()));
-        }
-    }
-
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/ForgeHooksClient;gatherFluidTextures(Ljava/util/Set;)V", remap = false), remap = false)
-    private void gatherModelTextures(Set<Material> materialSet) {
-        ForgeHooksClient.gatherFluidTextures(materialSet);
-        gatherModelMaterials(materialSet);
     }
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0))
     private void fetchStaticDefinitions(Map<ResourceLocation, StateDefinition<Block, BlockState>> map, BiConsumer<ResourceLocation, StateDefinition<Block, BlockState>> func) {
-        map.forEach((loc, def) -> blockStateFiles.add(loc));
+        /* no-op */
     }
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;", ordinal = 0))
     private ImmutableList<BlockState> fetchBlocks(StateDefinition<Block, BlockState> def) {
-        blockStateFiles.add(ForgeRegistries.BLOCKS.getKey(def.any().getBlock()));
+        /* no-op */
         return ImmutableList.of();
     }
 
-    /**
-     * Load all blockstate JSONs and model files, collect textures.
-     */
-    private void gatherModelMaterials(Set<Material> materialSet) {
-        Stopwatch stopwatch = Stopwatch.createStarted();
-        List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> blockStateData = new ArrayList<>();
-        for(ResourceLocation blockstate : blockStateFiles) {
-            blockStateData.add(CompletableFuture.supplyAsync(() -> {
-                ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
-                Optional<Resource> resource = this.resourceManager.getResource(fileLocation);
-                if(resource.isPresent()) {
-                    try(InputStream stream = resource.get().open()) {
-                        JsonParser parser = new JsonParser();
-                        return Pair.of(blockstate, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8)));
-                    } catch(IOException | JsonParseException e) {
-                        ModernFix.LOGGER.error("Error reading blockstate {}: {}", blockstate, e);
-                    }
-                }
-                return Pair.of(blockstate, null);
-            }, Util.backgroundExecutor()));
-        }
-        blockStateFiles = null;
-        CompletableFuture.allOf(blockStateData.toArray(new CompletableFuture[0])).join();
-        for(CompletableFuture<Pair<ResourceLocation, JsonElement>> result : blockStateData) {
-            Pair<ResourceLocation, JsonElement> pair = result.join();
-            if(pair.getSecond() != null) {
-                try {
-                    JsonObject obj = pair.getSecond().getAsJsonObject();
-                    if(obj.has("variants")) {
-                        JsonObject eachVariant = obj.getAsJsonObject("variants");
-                        for(Map.Entry<String, JsonElement> entry : eachVariant.entrySet()) {
-                            JsonElement variantData = entry.getValue();
-                            List<JsonObject> variantModels;
-                            if(variantData.isJsonArray()) {
-                                variantModels = new ArrayList<>();
-                                for(JsonElement model : variantData.getAsJsonArray()) {
-                                    variantModels.add(model.getAsJsonObject());
-                                }
-                            } else
-                                variantModels = Collections.singletonList(variantData.getAsJsonObject());
-                            for(JsonObject variant : variantModels) {
-                                modelFiles.add(new ResourceLocation(variant.get("model").getAsString()));
-                            }
-                        }
+    private BiFunction<ResourceLocation, Material, TextureAtlasSprite> textureGetter;
 
-                    } else {
-                        JsonArray multipartData = obj.get("multipart").getAsJsonArray();
-                        for(JsonElement element : multipartData) {
-                            JsonObject self = element.getAsJsonObject();
-                            JsonElement apply = self.get("apply");
-                            List<JsonObject> applyObjects;
-                            if(apply.isJsonArray()) {
-                                applyObjects = new ArrayList<>();
-                                for(JsonElement e : apply.getAsJsonArray()) {
-                                    applyObjects.add(e.getAsJsonObject());
-                                }
-                            } else
-                                applyObjects = Collections.singletonList(apply.getAsJsonObject());
-                            for(JsonObject applyEntry : applyObjects) {
-                                modelFiles.add(new ResourceLocation(applyEntry.get("model").getAsString()));
-                            }
-                        }
-
-                    }
-                } catch(RuntimeException e) {
-                    ModernFix.LOGGER.error("Error with blockstate {}: {}", pair.getFirst(), e);
-                }
-
-            }
-        }
-        blockStateData = null;
-        Map<ResourceLocation, BlockModel> basicModels = new HashMap<>();
-        basicModels.put(MISSING_MODEL_LOCATION, (BlockModel)missingModel);
-        basicModels.put(new ResourceLocation("builtin/generated"), GENERATION_MARKER);
-        basicModels.put(new ResourceLocation("builtin/entity"), BLOCK_ENTITY_MARKER);
-        Set<Pair<String, String>> errorSet = Sets.newLinkedHashSet();
-        while(modelFiles.size() > 0) {
-            List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> modelBytes = new ArrayList<>();
-            for(ResourceLocation model : modelFiles) {
-                if(basicModels.containsKey(model))
-                    continue;
-                ResourceLocation fileLocation = new ResourceLocation(model.getNamespace(), "models/" + model.getPath() + ".json");
-                modelBytes.add(CompletableFuture.supplyAsync(() -> {
-                    Optional<Resource> resource = this.resourceManager.getResource(fileLocation);
-                    if(resource.isPresent()) {
-                        try(InputStream stream = resource.get().open()) {
-                            JsonParser parser = new JsonParser();
-                            return Pair.of(model, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8)));
-                        } catch(IOException | JsonParseException e) {
-                            ModernFix.LOGGER.error("Error reading model {}: {}", fileLocation, e);
-                        }
-                    }
-                    return Pair.of(fileLocation, null);
-                }, Util.backgroundExecutor()));
-            }
-            modelFiles.clear();
-            CompletableFuture.allOf(modelBytes.toArray(new CompletableFuture[0])).join();
-            for(CompletableFuture<Pair<ResourceLocation, JsonElement>> future : modelBytes) {
-                Pair<ResourceLocation, JsonElement> pair = future.join();
-                try {
-                    if(pair.getSecond() != null) {
-                        BlockModel model = ExtendedBlockModelDeserializer.INSTANCE.fromJson(pair.getSecond(), BlockModel.class);
-                        model.name = pair.getFirst().toString();
-                        modelFiles.addAll(model.getDependencies());
-                        basicModels.put(pair.getFirst(), model);
-                        continue;
-                    }
-                } catch(Throwable e) {
-                    ModernFix.LOGGER.warn("Unable to parse {}: {}", pair.getFirst(), e);
-                }
-                basicModels.put(pair.getFirst(), (BlockModel)missingModel);
-            }
-        }
-        modelFiles = null;
-        Function<ResourceLocation, UnbakedModel> modelGetter = loc -> {
-            UnbakedModel m = basicModels.get(loc);
-            /* fallback to vanilla loader if missing */
-            return m != null ? m : this.getModel(loc);
-        };
-        for(BlockModel model : basicModels.values()) {
-            materialSet.addAll(model.getMaterials(modelGetter, errorSet));
-        }
-        /* discard whatever garbage was just produced */
-        loadedModels.invalidateAll();
-        loadedModels.put(MISSING_MODEL_LOCATION, missingModel);
-        //errorSet.stream().filter(pair -> !pair.getSecond().equals(MISSING_MODEL_LOCATION_STRING)).forEach(pair -> LOGGER.warn("Unable to resolve texture reference: {} in {}", pair.getFirst(), pair.getSecond()));
-        stopwatch.stop();
-        ModernFix.LOGGER.info("Resolving model textures took " + stopwatch);
-    }
-
-    @Inject(method = "uploadTextures", at = @At(value = "FIELD", target = "Lnet/minecraft/client/resources/model/ModelBakery;topLevelModels:Ljava/util/Map;", ordinal = 0), cancellable = true)
-    private void skipBake(TextureManager resourceManager, ProfilerFiller profiler, CallbackInfoReturnable<AtlasSet> cir) {
-        profiler.pop();
-        cir.setReturnValue(atlasSet);
+    @Inject(method = "bakeModels", at = @At("HEAD"), cancellable = true)
+    private void skipBake(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
+        textureGetter = getter;
+        ci.cancel();
     }
 
     /**
@@ -443,35 +304,10 @@ public abstract class ModelBakeryMixin {
         return ImmutableList.copyOf(finalList);
     }
 
-    @Inject(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At("HEAD"), cancellable = true, remap = false)
-    public void getOrLoadBakedModelDynamic(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter, CallbackInfoReturnable<BakedModel> cir) {
-        Triple<ResourceLocation, Transformation, Boolean> triple = Triple.of(arg, arg2.getRotation(), arg2.isUvLocked());
-        BakedModel existing = this.bakedCache.get(triple);
-        if (existing != null) {
-            cir.setReturnValue(existing);
-        } else if (this.atlasSet == null) {
-            throw new IllegalStateException("bake called too early");
-        } else {
-            synchronized (this) {
-                if(debugDynamicModelLoading)
-                    LOGGER.info("Baking {}", arg);
-                UnbakedModel iunbakedmodel = this.getModel(arg);
-                iunbakedmodel.getMaterials(this::getModel, new HashSet<>());
-                BakedModel ibakedmodel = null;
-                if (iunbakedmodel instanceof BlockModel) {
-                    BlockModel blockmodel = (BlockModel)iunbakedmodel;
-                    if (blockmodel.getRootModel() == GENERATION_MARKER) {
-                        ibakedmodel = ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBakery)(Object)this, blockmodel, this.atlasSet::getSprite, arg2, arg, false);
-                    }
-                }
-                if(ibakedmodel == null) {
-                    ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
-                }
-                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelBakery)(Object)this);
-                MinecraftForge.EVENT_BUS.post(event);
-                this.bakedCache.put(triple, event.getModel());
-                cir.setReturnValue(event.getModel());
-            }
-        }
+    @Override
+    public BakedModel bakeDefault(ResourceLocation modelLocation) {
+        ModelBakery self = (ModelBakery)(Object)this;
+        ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
+        return theBaker.bake(modelLocation, BlockModelRotation.X0_Y0);
     }
 }

@@ -1,8 +1,10 @@
 package org.embeddedt.modernfix.mixin.perf.cache_upgraded_structures;
 
 import com.mojang.datafixers.DataFixer;
+import net.minecraft.core.HolderGetter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplateManager;
 import org.embeddedt.modernfix.ModernFix;
@@ -23,6 +25,8 @@ public class StructureManagerMixin {
 
     @Shadow private ResourceManager resourceManager;
 
+    @Shadow @Final private HolderGetter<Block> blockLookup;
+
     /**
      * @author embeddedt
      * @reason use our own manager to avoid needless DFU updates
@@ -31,7 +35,7 @@ public class StructureManagerMixin {
     private Optional<StructureTemplate> loadFromResource(ResourceLocation id) {
         ResourceLocation arg = new ResourceLocation(id.getNamespace(), "structures/" + id.getPath() + ".nbt");
         try {
-            return Optional.of(CachingStructureManager.readStructure(id, this.fixerUpper, this.resourceManager.open(arg)));
+            return Optional.of(CachingStructureManager.readStructure(id, this.fixerUpper, this.resourceManager.open(arg), this.blockLookup));
         } catch(FileNotFoundException e) {
             return Optional.empty();
         } catch(IOException e) {

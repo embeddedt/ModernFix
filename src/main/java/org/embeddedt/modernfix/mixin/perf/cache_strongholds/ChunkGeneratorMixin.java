@@ -6,6 +6,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.RandomState;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
@@ -23,7 +24,7 @@ import java.lang.ref.WeakReference;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
-@Mixin(ChunkGenerator.class)
+@Mixin(ChunkGeneratorStructureState.class)
 public class ChunkGeneratorMixin implements IChunkGenerator {
     private WeakReference<ServerLevel> mfix$serverLevel;
 
@@ -33,7 +34,7 @@ public class ChunkGeneratorMixin implements IChunkGenerator {
     }
 
     @Inject(method = "generateRingPositions", at = @At("HEAD"), cancellable = true)
-    private void useCachedDataIfAvailable(Holder<StructureSet> structureSet, RandomState random, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
+    private void useCachedDataIfAvailable(Holder<StructureSet> structureSet, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
         if(placement.count() == 0)
             return;
         ServerLevel level = searchLevel();
@@ -55,7 +56,7 @@ public class ChunkGeneratorMixin implements IChunkGenerator {
     }
 
     @Inject(method = "generateRingPositions", at = @At("RETURN"), cancellable = true)
-    private void saveCachedData(Holder<StructureSet> structureSet, RandomState random, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
+    private void saveCachedData(Holder<StructureSet> structureSet, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
         cir.setReturnValue(cir.getReturnValue().thenApplyAsync(list -> {
             if(list.size() == 0)
                 return list;

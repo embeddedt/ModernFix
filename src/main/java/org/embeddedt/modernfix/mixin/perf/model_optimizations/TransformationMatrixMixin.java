@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.mixin.perf.model_optimizations;
 
-import com.mojang.math.Matrix4f;
 import com.mojang.math.Transformation;
+import org.joml.Matrix4f;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;

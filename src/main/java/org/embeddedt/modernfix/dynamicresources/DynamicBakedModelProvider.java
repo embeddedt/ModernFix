@@ -8,6 +8,7 @@ import net.minecraft.client.resources.model.BlockModelRotation;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Triple;
+import org.embeddedt.modernfix.duck.IDynamicModelBakery;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -20,10 +21,10 @@ import java.util.stream.Collectors;
 
 public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedModel> {
     private final ModelBakery bakery;
-    private final Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> bakedCache;
+    private final Map<ModelBakery.BakedCacheKey, BakedModel> bakedCache;
     private final Map<ResourceLocation, BakedModel> permanentOverrides;
 
-    public DynamicBakedModelProvider(ModelBakery bakery, Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> cache) {
+    public DynamicBakedModelProvider(ModelBakery bakery, Map<ModelBakery.BakedCacheKey, BakedModel> cache) {
         this.bakery = bakery;
         this.bakedCache = cache;
         this.permanentOverrides = new Object2ObjectOpenHashMap<>();
@@ -54,7 +55,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     @Override
     public BakedModel get(Object o) {
         BakedModel model = permanentOverrides.get(o);
-        return model != null ? model : bakery.bake((ResourceLocation)o, BlockModelRotation.X0_Y0);
+        return model != null ? model : ((IDynamicModelBakery)bakery).bakeDefault((ResourceLocation)o);
     }
 
     @Nullable
@@ -88,7 +89,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     @NotNull
     @Override
     public Set<ResourceLocation> keySet() {
-        return bakedCache.keySet().stream().map(Triple::getLeft).collect(Collectors.toSet());
+        return bakedCache.keySet().stream().map(ModelBakery.BakedCacheKey::id).collect(Collectors.toSet());
     }
 
     @NotNull
@@ -100,7 +101,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     @NotNull
     @Override
     public Set<Entry<ResourceLocation, BakedModel>> entrySet() {
-        return bakedCache.entrySet().stream().map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey().getLeft(), entry.getValue())).collect(Collectors.toSet());
+        return bakedCache.entrySet().stream().map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey().id(), entry.getValue())).collect(Collectors.toSet());
     }
 
     @Override
@@ -110,10 +111,10 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         boolean uvLock = BlockModelRotation.X0_Y0.isUvLocked();
         Transformation rotation = BlockModelRotation.X0_Y0.getRotation();
         bakedCache.replaceAll((loc, oldModel) -> {
-            if(loc.getMiddle() != rotation || loc.getRight() != uvLock || overridenLocations.contains(loc.getLeft()))
+            if(loc.transformation() != rotation || loc.isUvLocked() != uvLock || overridenLocations.contains(loc.id()))
                 return oldModel;
             else
-                return function.apply(loc.getLeft(), oldModel);
+                return function.apply(loc.id(), oldModel);
         });
     }
 }

@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.mixin.bugfix.chunk_deadlock;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.Holder;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.Registries;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
@@ -38,7 +38,7 @@ public abstract class ServerChunkCacheMixin {
             if(debugDeadServerAccess) {
                 new Exception().printStackTrace();
             }
-            Holder<Biome> plains = this.level.registryAccess().registryOrThrow(Registry.BIOME_REGISTRY).getHolderOrThrow(Biomes.PLAINS);
+            Holder<Biome> plains = this.level.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS);
             cir.setReturnValue(new EmptyLevelChunk(this.level, new ChunkPos(chunkX, chunkZ), plains));
         } else if(Thread.currentThread() != this.mainThread) {
             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = CompletableFuture.supplyAsync(() -> this.getChunkFutureMainThread(chunkX, chunkZ, requiredStatus, false), this.mainThreadProcessor).join();

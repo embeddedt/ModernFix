@@ -121,7 +121,7 @@ public abstract class PathPackResourcesMixin {
         }
     }
 
-    @Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
+    //@Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
         this.generateResourceCache();
         cir.setReturnValue(this.containedPaths.contains(FileUtil.normalize(path)));
@@ -131,7 +131,7 @@ public abstract class PathPackResourcesMixin {
      * @author embeddedt
      * @reason Use cached listing of mod resources
      */
-    @Inject(method = "getResources", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "getResources", at = @At("HEAD"), cancellable = true, remap = false)
     public void getResources(PackType type, String resourceNamespace, String pathIn, Predicate<ResourceLocation> filter, CallbackInfoReturnable<Collection<ResourceLocation>> cir)
     {
         this.generateResourceCache();

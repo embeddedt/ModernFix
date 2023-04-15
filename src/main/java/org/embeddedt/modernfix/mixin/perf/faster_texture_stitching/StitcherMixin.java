@@ -20,15 +20,15 @@ import java.util.List;
 import java.util.Set;
 
 @Mixin(Stitcher.class)
-public class StitcherMixin {
-    @Shadow @Final private Set<Stitcher.Holder> texturesToBeStitched;
+public class StitcherMixin<T extends Stitcher.Entry> {
+    @Shadow @Final private List<Stitcher.Holder<T>> texturesToBeStitched;
 
     @Shadow private int storageX;
 
     @Shadow private int storageY;
 
-    @Shadow @Final private static Comparator<Stitcher.Holder> HOLDER_COMPARATOR;
-    private List<StbStitcher.LoadableSpriteInfo> loadableSpriteInfos;
+    @Shadow @Final private static Comparator<Stitcher.Holder<?>> HOLDER_COMPARATOR;
+    private List<StbStitcher.LoadableSpriteInfo<T>> loadableSpriteInfos;
 
     /**
      * @author embeddedt, SuperCoder79
@@ -41,11 +41,11 @@ public class StitcherMixin {
             return;
         }
         ci.cancel();
-        ObjectArrayList<Stitcher.Holder> holderList = new ObjectArrayList<>(this.texturesToBeStitched);
+        ObjectArrayList<Stitcher.Holder<T>> holderList = new ObjectArrayList<>(this.texturesToBeStitched);
         holderList.sort(HOLDER_COMPARATOR);
-        Stitcher.Holder[] aholder = holderList.toArray(new Stitcher.Holder[0]);
+        Stitcher.Holder<T>[] aholder = holderList.toArray(new Stitcher.Holder[0]);
 
-        Pair<Pair<Integer, Integer>, List<StbStitcher.LoadableSpriteInfo>> packingInfo = StbStitcher.packRects(aholder);
+        Pair<Pair<Integer, Integer>, List<StbStitcher.LoadableSpriteInfo<T>>> packingInfo = StbStitcher.packRects(aholder);
         this.storageX = packingInfo.getFirst().getFirst();
         this.storageY = packingInfo.getFirst().getSecond();
         this.loadableSpriteInfos = packingInfo.getSecond();
@@ -56,12 +56,12 @@ public class StitcherMixin {
      * @reason We setup the image ourselves in the StbStitcher, so we just feed this information back into the vanilla code
      */
     @Inject(method = "gatherSprites", at = @At("HEAD"), cancellable = true)
-    private void gatherSpritesFast(Stitcher.SpriteLoader spriteLoader, CallbackInfo ci) {
+    private void gatherSpritesFast(Stitcher.SpriteLoader<T> spriteLoader, CallbackInfo ci) {
         if(!ModLoader.isLoadingStateValid())
             return;
         ci.cancel();
-        for(StbStitcher.LoadableSpriteInfo info : loadableSpriteInfos) {
-            spriteLoader.load(info.info, info.width, info.height, info.x, info.y);
+        for(StbStitcher.LoadableSpriteInfo<T> info : loadableSpriteInfos) {
+            spriteLoader.load(info.info, info.x, info.y);
         }
     }
 }

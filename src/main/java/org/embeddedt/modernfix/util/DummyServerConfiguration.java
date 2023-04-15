@@ -3,13 +3,11 @@ package org.embeddedt.modernfix.util;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.world.level.DataPackConfig;
+import net.minecraft.world.level.*;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.level.GameRules;
-import net.minecraft.world.level.GameType;
-import net.minecraft.world.level.LevelSettings;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
+import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.level.storage.ServerLevelData;
 
@@ -18,12 +16,12 @@ import java.util.Set;
 
 public class DummyServerConfiguration implements WorldData {
     @Override
-    public DataPackConfig getDataPackConfig() {
-        return DataPackConfig.DEFAULT;
+    public WorldDataConfiguration getDataConfiguration() {
+        return null;
     }
 
     @Override
-    public void setDataPackConfig(DataPackConfig codec) {
+    public void setDataConfiguration(WorldDataConfiguration arg) {
 
     }
 
@@ -139,8 +137,18 @@ public class DummyServerConfiguration implements WorldData {
     }
 
     @Override
-    public WorldGenSettings worldGenSettings() {
+    public WorldOptions worldGenOptions() {
         return null;
+    }
+
+    @Override
+    public boolean isFlatWorld() {
+        return false;
+    }
+
+    @Override
+    public boolean isDebugWorld() {
+        return false;
     }
 
     @Override

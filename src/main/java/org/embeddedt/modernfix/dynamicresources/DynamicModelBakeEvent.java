@@ -1,9 +1,6 @@
 package org.embeddedt.modernfix.dynamicresources;
 
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraft.client.resources.model.ModelManager;
-import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.event.IModBusEvent;
@@ -19,8 +16,8 @@ public class DynamicModelBakeEvent extends Event {
     private final ResourceLocation location;
     private BakedModel model;
     private final UnbakedModel unbakedModel;
-    private final ModelBakery modelLoader;
-    public DynamicModelBakeEvent(ResourceLocation location, UnbakedModel unbakedModel, BakedModel model, ModelBakery loader) {
+    private final ModelBaker modelLoader;
+    public DynamicModelBakeEvent(ResourceLocation location, UnbakedModel unbakedModel, BakedModel model, ModelBaker loader) {
         this.location = location;
         this.model = model;
         this.unbakedModel = unbakedModel;
@@ -39,7 +36,7 @@ public class DynamicModelBakeEvent extends Event {
         return this.unbakedModel;
     }
 
-    public ModelBakery getModelLoader() {
+    public ModelBaker getModelLoader() {
         return this.modelLoader;
     }
 

@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.mixin.perf.cache_strongholds;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerChunkCache;
@@ -10,6 +11,7 @@ import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.CustomSpawner;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.levelgen.RandomState;
@@ -34,8 +36,8 @@ import java.util.function.Supplier;
 
 @Mixin(ServerLevel.class)
 public abstract class ServerLevelMixin extends Level implements IServerLevel {
-    protected ServerLevelMixin(WritableLevelData arg, ResourceKey<Level> arg2, Holder<DimensionType> arg3, Supplier<ProfilerFiller> supplier, boolean bl, boolean bl2, long l, int i) {
-        super(arg, arg2, arg3, supplier, bl, bl2, l, i);
+    protected ServerLevelMixin(WritableLevelData arg, ResourceKey<Level> arg2, RegistryAccess arg3, Holder<DimensionType> arg4, Supplier<ProfilerFiller> supplier, boolean bl, boolean bl2, long l, int i) {
+        super(arg, arg2, arg3, arg4, supplier, bl, bl2, l, i);
     }
 
     @Shadow public abstract DimensionDataStorage getDataStorage();
@@ -46,8 +48,8 @@ public abstract class ServerLevelMixin extends Level implements IServerLevel {
     /**
      * Initialize the stronghold cache but don't force any structure generation yet.
      */
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/ChunkGenerator;ensureStructuresGenerated(Lnet/minecraft/world/level/levelgen/RandomState;)V"))
-    private void hookStrongholdCache(ChunkGenerator generator, RandomState state) {
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/ChunkGeneratorStructureState;ensureStructuresGenerated()V"))
+    private void hookStrongholdCache(ChunkGeneratorStructureState generator) {
         ((IChunkGenerator)generator).mfix$setAssociatedServerLevel((ServerLevel)(Object)this);
     }
 
@@ -59,7 +61,7 @@ public abstract class ServerLevelMixin extends Level implements IServerLevel {
         mfix$strongholdCache = this.getDataStorage().computeIfAbsent(StrongholdLocationCache::load,
                 StrongholdLocationCache::new,
                 StrongholdLocationCache.getFileId(this.dimensionTypeRegistration()));
-        this.chunkSource.getGenerator().ensureStructuresGenerated(this.chunkSource.randomState());
+        this.chunkSource.getGeneratorState().ensureStructuresGenerated();
     }
 
     @Override

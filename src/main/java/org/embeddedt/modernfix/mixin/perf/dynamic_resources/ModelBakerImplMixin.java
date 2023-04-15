@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.mixin.perf.dynamic_resources.supermartijncore;
+package org.embeddedt.modernfix.mixin.perf.dynamic_resources;
 
 import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.block.model.BlockModel;

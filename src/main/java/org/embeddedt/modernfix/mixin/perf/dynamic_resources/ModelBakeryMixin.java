@@ -1,47 +1,27 @@
 package org.embeddedt.modernfix.mixin.perf.dynamic_resources;
 
 import com.google.common.base.Splitter;
-import com.google.common.base.Stopwatch;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
-import com.google.gson.*;
-import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Transformation;
-import net.minecraft.Util;
-import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.renderer.texture.TextureManager;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.model.ExtendedBlockModelDeserializer;
 import net.minecraftforge.client.model.geometry.GeometryLoaderManager;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.IDynamicModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
-import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
-import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
-import org.embeddedt.modernfix.dynamicresources.ResourcePackHandler;
-import org.embeddedt.modernfix.mixin.perf.dynamic_resources.supermartijncore.ModelBakerImplMixin;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -52,17 +32,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import javax.annotation.Nullable;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
-import java.util.function.Function;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 /* high priority so that our injectors are added before other mods' */
 @Mixin(value = ModelBakery.class, priority = 600)
@@ -76,9 +49,6 @@ public abstract class ModelBakeryMixin implements IDynamicModelBakery {
 
     @Shadow protected abstract BlockModel loadBlockModel(ResourceLocation location) throws IOException;
 
-    @Shadow @Final protected static Set<Material> UNREFERENCED_TEXTURES;
-    @Shadow @Final protected ResourceManager resourceManager;
-    @Shadow @Nullable private AtlasSet atlasSet;
     @Shadow @Final private Set<ResourceLocation> loadingStack;
 
     @Shadow protected abstract void loadModel(ResourceLocation blockstateLocation) throws Exception;
@@ -96,23 +66,14 @@ public abstract class ModelBakeryMixin implements IDynamicModelBakery {
 
     @Shadow @Final @Mutable private Map<ModelBakery.BakedCacheKey, BakedModel> bakedCache;
 
-    @Shadow @Final public static BlockModel GENERATION_MARKER;
-
-    @Shadow @Final private static ItemModelGenerator ITEM_MODEL_GENERATOR;
-
-    @Shadow @Final public static BlockModel BLOCK_ENTITY_MARKER;
-
-    @Shadow public abstract UnbakedModel getModel(ResourceLocation modelLocation);
-
     private Cache<ModelBakery.BakedCacheKey, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
 
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/model/geometry/GeometryLoaderManager;init()V", remap = false))
-    private void replaceTopLevelBakedModels() {
-        GeometryLoaderManager.init();
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", ordinal = 0))
+    private void replaceTopLevelBakedModels(ProfilerFiller profiler, String arg) {
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(3, TimeUnit.MINUTES)
                 .maximumSize(1000)
@@ -130,6 +91,7 @@ public abstract class ModelBakeryMixin implements IDynamicModelBakery {
         this.bakedCache = loadedBakedModels.asMap();
         this.unbakedCache = loadedModels.asMap();
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
+        profiler.push(arg);
     }
 
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {

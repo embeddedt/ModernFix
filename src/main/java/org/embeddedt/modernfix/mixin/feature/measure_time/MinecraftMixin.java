@@ -34,7 +34,7 @@ public class MinecraftMixin {
         ModernFix.LOGGER.warn("Datapack reload took " + timeSpentReloading + " seconds.");
     }
     */
-    @Inject(method = "doWorldLoad", at = @At("HEAD"), remap = false)
+    @Inject(method = "m_261031_", at = @At("HEAD"), remap = false)
     private void recordWorldLoadStart(CallbackInfo ci) {
         ModernFixClient.worldLoadStartTime = System.nanoTime();
     }

@@ -18,6 +18,7 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.packet.PacketHandler;
+import org.embeddedt.modernfix.registry.ObjectHolderClearer;
 import org.embeddedt.modernfix.structure.AsyncLocator;
 import org.embeddedt.modernfix.util.KubeUtil;
 
@@ -91,7 +92,7 @@ public class ModernFix {
                 ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, "modernfix.no_lazydfu"));
             });
         }
-
+        ObjectHolderClearer.clearThrowables();
     }
 
     @SubscribeEvent

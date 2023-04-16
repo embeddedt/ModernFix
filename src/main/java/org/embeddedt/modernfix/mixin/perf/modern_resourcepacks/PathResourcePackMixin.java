@@ -74,7 +74,7 @@ public abstract class PathResourcePackMixin {
                                         if(!listing.getFileName().endsWith(".mcmeta")) {
                                             rootListingPaths.add(listing);
                                         }
-                                        this.containedPaths.add(new CachedResourcePath(new String[] { type.getDirectory(), namespace }, listing));
+                                        containedPaths.add(new CachedResourcePath(new String[] { type.getDirectory(), namespace }, listing));
                                     });
                             rootListingPaths.trimToSize();
                             rootListingForNamespaces.put(namespace, rootListingPaths);

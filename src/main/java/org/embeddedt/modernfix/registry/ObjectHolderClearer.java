@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.registry;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ObjectHolderRegistry;
 import org.embeddedt.modernfix.ModernFix;
 

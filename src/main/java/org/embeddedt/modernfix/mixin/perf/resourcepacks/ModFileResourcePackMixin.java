@@ -82,7 +82,7 @@ public abstract class ModFileResourcePackMixin {
     }
 
     private boolean isValidCachedResourcePath(Path path) {
-        if(path.getFileName() == null) {
+        if(path.getFileName() == null || path.getNameCount() == 0) {
             return false;
         }
         String str = path.toString();

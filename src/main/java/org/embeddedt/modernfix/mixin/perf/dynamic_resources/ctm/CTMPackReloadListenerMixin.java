@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.dynamic_resources.ctm;
 
+import com.google.common.collect.ImmutableList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
@@ -9,13 +10,17 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.resources.model.MultiPartBakedModel;
 import net.minecraft.client.resources.model.WeightedBakedModel;
 import net.minecraft.core.Holder;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,8 +43,6 @@ public abstract class CTMPackReloadListenerMixin {
 
     @Shadow protected abstract ChunkRenderTypeSet getExistingRenderCheck(Block block);
 
-    private Map<ModelResourceLocation, BlockState> locationToState = new Object2ObjectOpenHashMap<>();
-
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
         MinecraftForge.EVENT_BUS.addListener(EventPriority.LOW, this::onModelBake);
@@ -49,29 +52,31 @@ public abstract class CTMPackReloadListenerMixin {
     private void refreshLayerHacks() {
         blockRenderChecks.forEach((b, p) -> ItemBlockRenderTypes.setRenderLayer((Block) b.get(), p));
         blockRenderChecks.clear();
-        if(locationToState.isEmpty()) {
-            for(Block block : ForgeRegistries.BLOCKS.getValues()) {
-                for(BlockState state : block.getStateDefinition().getPossibleStates()) {
-                    locationToState.put(BlockModelShaper.stateToModelLocation(state), state);
-                }
-            }
-        }
     }
 
     private void onModelBake(DynamicModelBakeEvent event) {
         if(!(event.getModel() instanceof AbstractCTMBakedModel || event.getModel() instanceof WeightedBakedModel || event.getModel() instanceof MultiPartBakedModel))
             return;
-        BlockState state = locationToState.get(event.getLocation());
-        if(state == null)
+        /* we construct a new ResourceLocation because an MRL is coming in */
+        Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(event.getLocation().getNamespace(), event.getLocation().getPath()));
+        Holder.Reference<Block> delegate = block != null ? ForgeRegistries.BLOCKS.getDelegateOrThrow(block) : null;
+        if(block == null || block == Blocks.AIR || blockRenderChecks.containsKey(delegate))
             return;
-        Block block = state.getBlock();
-        Holder.Reference<Block> delegate = ForgeRegistries.BLOCKS.getDelegateOrThrow(block);
-        if(blockRenderChecks.containsKey(delegate))
+        /* find all states that match this MRL */
+        ImmutableList<BlockState> allStates;
+        try {
+            allStates = ((IExtendedModelBakery)(Object)event.getModelLoader()).getBlockStatesForMRL(block.getStateDefinition(), (ModelResourceLocation)event.getLocation());
+        } catch(RuntimeException e) {
+            ModernFix.LOGGER.error("Couldn't get state for MRL " + event.getLocation(), e);
             return;
-        Predicate<RenderType> newPredicate = this.getLayerCheck(state, event.getModel());
-        if(newPredicate != null) {
-            blockRenderChecks.put(delegate, this.getExistingRenderCheck(block)::contains);
-            ItemBlockRenderTypes.setRenderLayer(block, newPredicate);
+        }
+        for(BlockState state : allStates) {
+            Predicate<RenderType> newPredicate = this.getLayerCheck(state, event.getModel());
+            if(newPredicate != null) {
+                blockRenderChecks.put(delegate, this.getExistingRenderCheck(block)::contains);
+                ItemBlockRenderTypes.setRenderLayer(block, newPredicate);
+                return;
+            }
         }
     }
 }

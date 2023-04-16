@@ -37,6 +37,7 @@ import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
@@ -64,7 +65,7 @@ import java.util.stream.Stream;
 
 /* high priority so that our injectors are added before other mods' */
 @Mixin(value = ModelBakery.class, priority = 600)
-public abstract class ModelBakeryMixin {
+public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
 
@@ -441,6 +442,11 @@ public abstract class ModelBakeryMixin {
             finalList = newPermutations;
         }
         return ImmutableList.copyOf(finalList);
+    }
+
+    @Override
+    public ImmutableList<BlockState> getBlockStatesForMRL(StateDefinition<Block, BlockState> stateDefinition, ModelResourceLocation location) {
+        return loadOnlyRelevantBlockState(stateDefinition, location);
     }
 
     @Inject(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At("HEAD"), cancellable = true, remap = false)

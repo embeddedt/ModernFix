@@ -29,7 +29,8 @@ public class CachedResourcePath {
     }
 
     public CachedResourcePath(String s) {
-        this(NO_PREFIX, SLASH_SPLITTER.splitToList(s));
+        // normalize so we can guarantee there are no empty sections
+        this(NO_PREFIX, SLASH_SPLITTER.splitToList(FileUtil.normalize(s)));
     }
 
     public <T> CachedResourcePath(String[] prefixElements, Collection<T> collection) {

@@ -92,7 +92,7 @@ public abstract class PathResourcePackMixin {
     }
 
     private boolean isValidCachedResourcePath(Path path) {
-        if(path.getFileName() == null)
+        if(path.getFileName() == null || path.getNameCount() == 0)
             return false;
         String str = path.toString();
         for(int i = 0; i < str.length(); i++) {

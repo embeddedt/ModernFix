@@ -32,11 +32,17 @@ import team.chisel.ctm.client.model.AbstractCTMBakedModel;
 import team.chisel.ctm.client.util.CTMPackReloadListener;
 
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 @Mixin(CTMPackReloadListener.class)
 public abstract class CTMPackReloadListenerMixin {
+    /* caches the original render checks */
     @Shadow @Final private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> blockRenderChecks;
+
+    private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> renderCheckOverrides = new ConcurrentHashMap<>();
+
+    private static Predicate<RenderType> DEFAULT_PREDICATE = type -> type == RenderType.solid();
 
     @Shadow protected abstract Predicate<RenderType> getLayerCheck(BlockState state, BakedModel model);
 
@@ -49,8 +55,23 @@ public abstract class CTMPackReloadListenerMixin {
 
     @Overwrite(remap = false)
     private void refreshLayerHacks() {
-        blockRenderChecks.forEach((b, p) -> ItemBlockRenderTypes.setRenderLayer((Block) b.get(), p));
-        blockRenderChecks.clear();
+        renderCheckOverrides.clear();
+        if(blockRenderChecks.isEmpty()) {
+            for(Block block : ForgeRegistries.BLOCKS.getValues()) {
+                Predicate<RenderType> original = this.getExistingRenderCheck(block);
+                if(original == null)
+                    original = DEFAULT_PREDICATE;
+                blockRenderChecks.put(block.delegate, original);
+                ItemBlockRenderTypes.setRenderLayer(block, type -> this.useOverrideIfPresent(block.delegate, type));
+            }
+        }
+    }
+
+    private boolean useOverrideIfPresent(IRegistryDelegate<Block> delegate, RenderType type) {
+        Predicate<RenderType> override = renderCheckOverrides.get(delegate);
+        if(override == null)
+            override = blockRenderChecks.get(delegate);
+        return override.test(type);
     }
 
     private void onModelBake(DynamicModelBakeEvent event) {
@@ -58,7 +79,7 @@ public abstract class CTMPackReloadListenerMixin {
             return;
         /* we construct a new ResourceLocation because an MRL is coming in */
         Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(event.getLocation().getNamespace(), event.getLocation().getPath()));
-        if(block == null || block == Blocks.AIR || blockRenderChecks.containsKey(block.delegate))
+        if(block == null || block == Blocks.AIR || renderCheckOverrides.containsKey(block.delegate))
             return;
         /* find all states that match this MRL */
         ImmutableList<BlockState> allStates;
@@ -71,8 +92,7 @@ public abstract class CTMPackReloadListenerMixin {
         for(BlockState state : allStates) {
             Predicate<RenderType> newPredicate = this.getLayerCheck(state, event.getModel());
             if(newPredicate != null) {
-                blockRenderChecks.put(block.delegate, this.getExistingRenderCheck(block));
-                ItemBlockRenderTypes.setRenderLayer(block, newPredicate);
+                renderCheckOverrides.put(block.delegate, newPredicate);
                 return;
             }
         }

@@ -95,6 +95,8 @@ public abstract class PathResourcePackMixin {
         if(path.getFileName() == null || path.getNameCount() == 0)
             return false;
         String str = path.toString();
+        if(str.length() == 0)
+            return false;
         for(int i = 0; i < str.length(); i++) {
             if(!ResourceLocation.validPathChar(str.charAt(i))) {
                 return false;

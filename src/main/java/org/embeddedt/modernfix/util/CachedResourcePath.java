@@ -9,32 +9,58 @@ import com.google.common.collect.Streams;
 
 import java.lang.ref.WeakReference;
 import java.nio.file.Path;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 
 public class CachedResourcePath {
-    private final ImmutableList<String> pathComponents;
+    private final String[] pathComponents;
     private int hashCode = 0;
 
     private static final Interner<String> PATH_COMPONENT_INTERNER = Interners.newStrongInterner();
     private static final Splitter SLASH_SPLITTER = Splitter.on('/');
     private static final Joiner SLASH_JOINER = Joiner.on('/');
     private WeakReference<String> fullPathCache = new WeakReference<>(null);
-
-    public CachedResourcePath(Iterable<String> components) {
-        ImmutableList.Builder<String> b = ImmutableList.builder();
-        for(String s : components) {
-            if(s == null || s.length() == 0)
-                continue;
-            b.add(PATH_COMPONENT_INTERNER.intern(s));
-        }
-        pathComponents = b.build();
-    }
+    private static final String[] NO_PREFIX = new String[0];
 
     public CachedResourcePath(Path path) {
-        this(() -> Streams.stream(path.iterator()).map(Path::toString).iterator());
+        this(NO_PREFIX, path, path.getNameCount());
     }
 
     public CachedResourcePath(String s) {
-        this(SLASH_SPLITTER.split(s));
+        this(NO_PREFIX, SLASH_SPLITTER.splitToList(s));
+    }
+
+    public <T> CachedResourcePath(String[] prefixElements, Collection<T> collection) {
+        this(prefixElements, collection, collection.size());
+    }
+
+    public <T> CachedResourcePath(String[] prefixElements, Iterable<T> path, int count) {
+        String[] components = new String[prefixElements.length + count];
+        int i = 0;
+        while(i < prefixElements.length) {
+            components[i] = PATH_COMPONENT_INTERNER.intern(prefixElements[i]);
+            i++;
+        }
+        for(Object component : path) {
+            String s = component.toString();
+            if(s.length() == 0)
+                continue;
+            components[i] = PATH_COMPONENT_INTERNER.intern(s);
+        }
+        pathComponents = components;
+    }
+
+    public CachedResourcePath(String[] prefixElements, CachedResourcePath other) {
+        String[] components = new String[prefixElements.length + other.pathComponents.length];
+        int i = 0;
+        while(i < prefixElements.length) {
+            components[i] = PATH_COMPONENT_INTERNER.intern(prefixElements[i]);
+            i++;
+        }
+        System.arraycopy(other.pathComponents, 0, components, i, other.pathComponents.length);
+        pathComponents = components;
     }
 
     @Override
@@ -42,7 +68,7 @@ public class CachedResourcePath {
         int result = hashCode;
         if(result != 0)
             return result;
-        hashCode = pathComponents.hashCode();
+        hashCode = Arrays.hashCode(pathComponents);
         return hashCode;
     }
 
@@ -51,15 +77,15 @@ public class CachedResourcePath {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         CachedResourcePath that = (CachedResourcePath) o;
-        return pathComponents.equals(that.pathComponents);
+        return Arrays.equals(pathComponents, that.pathComponents);
     }
 
     public String getFileName() {
-        return pathComponents.get(pathComponents.size() - 1);
+        return pathComponents[pathComponents.length - 1];
     }
 
     public int getNameCount() {
-        return pathComponents.size();
+        return pathComponents.length;
     }
 
     public String getFullPath() {

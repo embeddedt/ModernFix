@@ -64,11 +64,11 @@ public abstract class ModFileResourcePackMixin {
                                 .map(path -> root.relativize(path.toAbsolutePath()))
                                 .filter(this::isValidCachedResourcePath)
                                 .forEach(path -> {
-                                    if(!path.toString().endsWith(".mcmeta")) {
-                                        rootListingPaths.add(new CachedResourcePath(path));
+                                    CachedResourcePath listing = new CachedResourcePath(path);
+                                    if(!listing.getFileName().endsWith(".mcmeta")) {
+                                        rootListingPaths.add(listing);
                                     }
-                                    String mergedPath = slashJoiner.join(type.getDirectory(), namespace, path);
-                                    this.containedPaths.add(new CachedResourcePath(mergedPath));
+                                    this.containedPaths.add(new CachedResourcePath(new String[] { type.getDirectory(), namespace }, listing));
                                 });
                         rootListingPaths.trimToSize();
                         rootListingForNamespaces.put(namespace, rootListingPaths);

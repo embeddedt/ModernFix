@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.ResourcePackFileNotFoundException;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.packs.ModFileResourcePack;
+import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.util.FileUtil;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,7 +32,7 @@ public abstract class ModFileResourcePackMixin {
 
     @Shadow(remap = false) @Final private ModFile modFile;
     private EnumMap<PackType, Set<String>> namespacesByType;
-    private EnumMap<PackType, HashMap<String, List<Path>>> rootListingByNamespaceAndType;
+    private EnumMap<PackType, HashMap<String, List<Triple<Integer, String, String>>>> rootListingByNamespaceAndType;
     private Set<String> containedPaths;
     private boolean useNamespaceCaches;
     private FileSystem resourcePackFS;
@@ -50,18 +51,19 @@ public abstract class ModFileResourcePackMixin {
         this.containedPaths = new HashSet<>();
         for(PackType type : PackType.values()) {
             Set<String> namespaces = this.namespacesByType.get(type);
-            HashMap<String, List<Path>> rootListingForNamespaces = new HashMap<>();
+            HashMap<String, List<Triple<Integer, String, String>>> rootListingForNamespaces = new HashMap<>();
             for(String namespace : namespaces) {
                 try {
                     Path root = modFile.getLocator().findPath(modFile, type.getDirectory(), namespace).toAbsolutePath();
                     try (Stream<Path> stream = Files.walk(root)) {
-                        ArrayList<Path> rootListingPaths = new ArrayList<>();
+                        ArrayList<Triple<Integer, String, String>> rootListingPaths = new ArrayList<>();
                         stream
                                 .map(path -> root.relativize(path.toAbsolutePath()))
                                 .filter(this::isValidCachedResourcePath)
                                 .forEach(path -> {
-                                    if(!path.toString().endsWith(".mcmeta"))
-                                        rootListingPaths.add(path);
+                                    if(!path.toString().endsWith(".mcmeta")) {
+                                        rootListingPaths.add(Triple.of(path.getNameCount(), path.getFileName().toString(), slashJoiner.join(path)));
+                                    }
                                     String mergedPath = slashJoiner.join(type.getDirectory(), namespace, path);
                                     this.containedPaths.add(mergedPath);
                                 });
@@ -77,6 +79,9 @@ public abstract class ModFileResourcePackMixin {
     }
 
     private boolean isValidCachedResourcePath(Path path) {
+        if(path.getFileName() == null) {
+            return false;
+        }
         String str = path.toString();
         for(int i = 0; i < str.length(); i++) {
             if(!ResourceLocation.validPathChar(str.charAt(i))) {
@@ -114,15 +119,17 @@ public abstract class ModFileResourcePackMixin {
     @Inject(method = "getResources", at = @At("HEAD"), cancellable = true)
     private void fastGetResources(PackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter, CallbackInfoReturnable<Collection<ResourceLocation>> cir)
     {
-        Path inputPath = this.resourcePackFS.getPath(pathIn);
+        if(!pathIn.endsWith("/"))
+            pathIn = pathIn + "/";
+        final String testPath = pathIn;
         cir.setReturnValue(this.rootListingByNamespaceAndType.get(type).getOrDefault(resourceNamespace, Collections.emptyList()).stream().
-                filter(path -> path.getNameCount() <= maxDepth). // Make sure the depth is within bounds
-                filter(path -> path.startsWith(inputPath)). // Make sure the target path is inside this one
-                filter(path -> filter.test(path.getFileName().toString())). // Test the file name against the predicate
+                filter(path -> path.getLeft() <= maxDepth). // Make sure the depth is within bounds
+                filter(path -> path.getRight().startsWith(testPath)). // Make sure the target path is inside this one
+                filter(path -> filter.test(path.getMiddle())). // Test the file name against the predicate
                 // Finally we need to form the RL, so use the first name as the domain, and the rest as the path
                 // It is VERY IMPORTANT that we do not rely on Path.toString as this is inconsistent between operating systems
                 // Join the path names ourselves to force forward slashes
-                map(path -> new ResourceLocation(resourceNamespace, slashJoiner.join(path))).
+                map(path -> new ResourceLocation(resourceNamespace, path.getRight())).
                 collect(Collectors.toList()));
     }
 }

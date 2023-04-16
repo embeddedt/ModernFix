@@ -70,10 +70,11 @@ public abstract class PathResourcePackMixin {
                                     .map(path -> root.relativize(path.toAbsolutePath()))
                                     .filter(this::isValidCachedResourcePath)
                                     .forEach(path -> {
-                                        if(!path.toString().endsWith(".mcmeta"))
-                                            rootListingPaths.add(new CachedResourcePath(path));
-                                        String mergedPath = slashJoiner.join(type.getDirectory(), namespace, path);
-                                        containedPaths.add(new CachedResourcePath(mergedPath));
+                                        CachedResourcePath listing = new CachedResourcePath(path);
+                                        if(!listing.getFileName().endsWith(".mcmeta")) {
+                                            rootListingPaths.add(listing);
+                                        }
+                                        this.containedPaths.add(new CachedResourcePath(new String[] { type.getDirectory(), namespace }, listing));
                                     });
                             rootListingPaths.trimToSize();
                             rootListingForNamespaces.put(namespace, rootListingPaths);

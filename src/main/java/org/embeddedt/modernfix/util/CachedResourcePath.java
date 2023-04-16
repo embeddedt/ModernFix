@@ -49,6 +49,7 @@ public class CachedResourcePath {
             if(s.length() == 0)
                 continue;
             components[i] = PATH_COMPONENT_INTERNER.intern(s);
+            i++;
         }
         pathComponents = components;
     }

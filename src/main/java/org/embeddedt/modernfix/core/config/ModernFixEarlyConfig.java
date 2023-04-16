@@ -87,7 +87,11 @@ public class ModernFixEarlyConfig {
     private void disableIfModPresent(String configName, String... ids) {
         for(String id : ids) {
             if(FMLLoader.getLoadingModList().getModFileById(id) != null) {
-                this.options.get(configName).addModOverride(false, id);
+                Option option = this.options.get(configName);
+                if(option != null)
+                    option.addModOverride(false, id);
+                else
+                    LOGGER.warn("Can't disable missing option {}", configName);
             }
         }
     }

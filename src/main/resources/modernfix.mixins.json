@@ -60,6 +60,7 @@
     "perf.blast_search_trees.MinecraftMixin",
     "perf.blast_search_trees.IngredientFilterInvoker",
     "perf.cache_model_materials.VanillaModelMixin",
+    "perf.cache_model_materials.BlockModelMixin",
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
     "perf.faster_singleplayer_load.MinecraftServerMixin",

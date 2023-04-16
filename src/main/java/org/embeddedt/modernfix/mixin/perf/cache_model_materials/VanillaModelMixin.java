@@ -7,6 +7,7 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.renderer.block.model.MultiVariant;
 import net.minecraft.client.renderer.block.model.multipart.MultiPart;
 import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.duck.ICachedMaterialsModel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,7 +19,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 @Mixin(value = {MultiVariant.class, MultiPart.class, BlockModel.class})
-public class VanillaModelMixin {
+public class VanillaModelMixin implements ICachedMaterialsModel {
     private Collection<Material> materialsCache = null;
 
     @Inject(method = "getMaterials", at = @At("HEAD"), cancellable = true)
@@ -32,5 +33,10 @@ public class VanillaModelMixin {
     private void storeCachedMaterials(Function<ResourceLocation, UnbakedModel> pModelGetter, Set<Pair<String, String>> pMissingTextureErrors, CallbackInfoReturnable<Collection<Material>> cir) {
         if(materialsCache == null)
             materialsCache = Collections.unmodifiableCollection(cir.getReturnValue());
+    }
+
+    @Override
+    public void clearMaterialsCache() {
+        materialsCache = null;
     }
 }

@@ -9,6 +9,7 @@
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
     "perf.modern_resourcepacks.PathResourcePackMixin",
     "perf.modern_resourcepacks.VanillaPackResourcesMixin",
+    "perf.dynamic_structure_manager.StructureManagerMixin",
     "bugfix.chunk_deadlock.ServerChunkCacheMixin",
     "perf.remove_biome_temperature_cache.BiomeMixin",
     "perf.reduce_blockstate_cache_rebuilds.GameDataMixin",

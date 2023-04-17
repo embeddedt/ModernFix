@@ -1,5 +1,7 @@
-package org.embeddedt.modernfix.mixin.bugfix.structure_manager_crash;
+package org.embeddedt.modernfix.mixin.perf.dynamic_structure_manager;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -14,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.Collections;
 import java.util.Map;
 
 @Mixin(StructureManager.class)
@@ -24,6 +25,10 @@ public class StructureManagerMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void makeStructuresSafe(ResourceManager arg, LevelStorageSource.LevelStorageAccess arg2, DataFixer dataFixer, CallbackInfo ci) {
-        this.structureRepository = Collections.synchronizedMap(this.structureRepository);
+        /* Structures needing to be reloaded is not a huge issue since we optimize loading them already */
+        Cache<ResourceLocation, StructureTemplate> structureCache = CacheBuilder.newBuilder()
+                .softValues()
+                .build();
+        this.structureRepository = structureCache.asMap();
     }
 }

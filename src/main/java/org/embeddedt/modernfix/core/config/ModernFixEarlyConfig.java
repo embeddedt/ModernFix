@@ -47,7 +47,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
         this.addMixinRule("bugfix.packet_leak", false);
-        this.addMixinRule("bugfix.structure_manager_crash", true);
+        this.addMixinRule("perf.dynamic_structure_manager", true);
         this.addMixinRule("bugfix.mc218112", true);
         this.addMixinRule("bugfix.chunk_deadlock", true);
         this.addMixinRule("bugfix.chunk_deadlock.valhesia", modPresent("valhelsia_structures"));

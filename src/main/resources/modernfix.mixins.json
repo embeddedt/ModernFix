@@ -7,7 +7,7 @@
   "refmap": "modernfix.refmap.json",
   "mixins": [
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
-    "bugfix.structure_manager_crash.StructureManagerMixin",
+    "perf.dynamic_structure_manager.StructureManagerMixin",
     "bugfix.tf_cme_on_load.TwilightForestModMixin",
     "bugfix.refinedstorage.te_bug.ItemExternalStorageProviderMixin",
     "bugfix.refinedstorage.te_bug.FluidExternalStorageProviderMixin",

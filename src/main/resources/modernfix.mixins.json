@@ -66,6 +66,8 @@
     "perf.biome_zoomer.FuzzyOffsetBiomeZoomerMixin",
     "perf.compress_blockstate.BlockStateBaseMixin",
     "perf.compress_blockstate.BlockBehaviourMixin",
+    "perf.dedup_blockstate_flattening_map.BlockStateDataMixin",
+    "perf.dedup_blockstate_flattening_map.ChunkPalettedStorageFixMixin",
     "devenv.MinecraftServerMixin"
   ],
   "client": [

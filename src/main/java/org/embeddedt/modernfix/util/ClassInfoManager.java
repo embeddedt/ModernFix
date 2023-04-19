@@ -19,6 +19,10 @@ public class ClassInfoManager {
                 return;
             }
         }
-        classInfoCache.entrySet().removeIf(entry -> !entry.getKey().equals("java/lang/Object"));
+        try {
+            classInfoCache.entrySet().removeIf(entry -> !entry.getKey().equals("java/lang/Object"));
+        } catch(RuntimeException e) {
+            e.printStackTrace();
+        }
     }
 }

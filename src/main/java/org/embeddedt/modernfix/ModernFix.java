@@ -17,6 +17,7 @@ import net.minecraftforge.fml.network.FMLNetworkConstants;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.packet.PacketHandler;
@@ -79,6 +80,7 @@ public class ModernFix {
             MinecraftForge.EVENT_BUS.register(KubeUtil.class);
         MinecraftForge.EVENT_BUS.register(EntityDataIDSyncHandler.class);
         PacketHandler.register();
+        ModFileScanDataDeduplicator.deduplicate();
     }
 
     private static boolean dfuModPresent() {

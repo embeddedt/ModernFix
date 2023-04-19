@@ -42,6 +42,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);
         this.addMixinRule("perf.dedup_blockstate_flattening_map", false);
+        this.addMixinRule("perf.clear_mixin_classinfo", false);
         this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("perf.biome_zoomer", true);
         this.addMixinRule("perf.compress_blockstate", false);

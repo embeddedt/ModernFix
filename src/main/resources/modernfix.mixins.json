@@ -98,6 +98,7 @@
     "perf.async_jei.RecipeManagerInternalMixin",
     "perf.thread_priorities.IntegratedServerMixin",
     "safety.BlockColorsMixin",
+    "safety.ItemColorsMixin",
     "perf.flatten_model_predicates.AndConditionMixin",
     "perf.flatten_model_predicates.OrConditionMixin",
     "perf.flatten_model_predicates.PropertyValueConditionMixin",

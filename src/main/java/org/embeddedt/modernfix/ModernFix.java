@@ -2,11 +2,13 @@ package org.embeddedt.modernfix;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -20,6 +22,7 @@ import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.packet.PacketHandler;
 import org.embeddedt.modernfix.registry.ObjectHolderClearer;
 import org.embeddedt.modernfix.structure.AsyncLocator;
+import org.embeddedt.modernfix.util.ClassInfoManager;
 import org.embeddedt.modernfix.util.KubeUtil;
 
 import java.lang.management.ManagementFactory;
@@ -68,6 +71,7 @@ public class ModernFix {
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onLoadComplete);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> MinecraftForge.EVENT_BUS.register(new ModernFixClient()));
         ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST, () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
@@ -101,5 +105,10 @@ public class ModernFix {
             float gameStartTime = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             ModernFix.LOGGER.warn("Dedicated server took " + gameStartTime + " seconds to load");
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onLoadComplete(FMLLoadCompleteEvent event) {
+        ClassInfoManager.clear();
     }
 }

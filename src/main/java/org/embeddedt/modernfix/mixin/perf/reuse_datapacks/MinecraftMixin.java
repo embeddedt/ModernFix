@@ -12,8 +12,11 @@ import net.minecraft.world.level.DataPackConfig;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.reuse_datapacks.ICachingResourceClient;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collection;
 import java.util.List;
@@ -21,7 +24,9 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 @Mixin(Minecraft.class)
-public class MinecraftMixin implements ICachingResourceClient {
+public abstract class MinecraftMixin implements ICachingResourceClient {
+    @Shadow public abstract boolean isLocalServer();
+
     private ServerResources cachedResources;
     private List<String> cachedDataPackConfig;
 
@@ -66,5 +71,11 @@ public class MinecraftMixin implements ICachingResourceClient {
     @Override
     public void setCachedDataPackConfig(Collection<String> c) {
         cachedDataPackConfig = ImmutableList.copyOf(c);
+    }
+
+    @Inject(method = "setLevel", at = @At("HEAD"))
+    private void clearResourcesIfNotLocal(CallbackInfo ci) {
+        if(!this.isLocalServer())
+            cachedResources = null;
     }
 }

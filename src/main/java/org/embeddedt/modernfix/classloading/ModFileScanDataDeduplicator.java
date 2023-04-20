@@ -9,10 +9,13 @@ import org.objectweb.asm.Type;
 
 import java.lang.reflect.Field;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class ModFileScanDataDeduplicator {
     private final Interner<Type> typeInterner = Interners.newStrongInterner();
+
+    private final Function<Type, Type> internerFn = type -> type != null ? typeInterner.intern(type) : null;
 
     private static Field classClazzField, parentField, interfacesField, annotationClazzField, annotationTypeField;
     private static final boolean reflectionSuccessful;
@@ -54,13 +57,13 @@ public class ModFileScanDataDeduplicator {
     private void deduplicateClass(ModFileScanData.ClassData data) {
         try {
             Type type = (Type)classClazzField.get(data);
-            type = typeInterner.intern(type);
+            type = internerFn.apply(type);
             classClazzField.set(data, type);
             type = (Type)parentField.get(data);
-            type = typeInterner.intern(type);
+            type = internerFn.apply(type);
             parentField.set(data, type);
             Set<Type> types = (Set<Type>)interfacesField.get(data);
-            types = types.stream().map(typeInterner::intern).collect(Collectors.toSet());
+            types = types.stream().map(internerFn).collect(Collectors.toSet());
             interfacesField.set(data, types);
         } catch(ReflectiveOperationException e) {
         }
@@ -69,10 +72,10 @@ public class ModFileScanDataDeduplicator {
     private void deduplicateAnnotation(ModFileScanData.AnnotationData data) {
         try {
             Type type = (Type)annotationClazzField.get(data);
-            type = typeInterner.intern(type);
+            type = internerFn.apply(type);
             annotationClazzField.set(data, type);
             type = (Type)annotationTypeField.get(data);
-            type = typeInterner.intern(type);
+            type = internerFn.apply(type);
             annotationTypeField.set(data, type);
         } catch(ReflectiveOperationException e) {
         }

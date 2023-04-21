@@ -1,16 +1,22 @@
 package org.embeddedt.modernfix;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
+import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.network.FMLNetworkConstants;
@@ -27,6 +33,7 @@ import org.embeddedt.modernfix.util.ClassInfoManager;
 import org.embeddedt.modernfix.util.KubeUtil;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -113,5 +120,26 @@ public class ModernFix {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onLoadComplete(FMLLoadCompleteEvent event) {
         ClassInfoManager.clear();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onServerDead(FMLServerStoppedEvent event) {
+        /* Clear as much data from the integrated server as possible, in case a mod holds on to it */
+        try {
+            Field updatingMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "updatingChunkMap");
+            Field visibleMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "visibleChunkMap");
+            Field pendingUnloadsField = ObfuscationReflectionHelper.findField(ChunkMap.class, "pendingUnloads");
+            for(ServerLevel level : event.getServer().getAllLevels()) {
+                ChunkMap chunkMap = level.getChunkSource().chunkMap;
+                Long2ObjectMap<ChunkHolder> map = (Long2ObjectMap<ChunkHolder>)updatingMapField.get(chunkMap);
+                map.clear();
+                map = (Long2ObjectMap<ChunkHolder>)visibleMapField.get(chunkMap);
+                map.clear();
+                map = (Long2ObjectMap<ChunkHolder>)pendingUnloadsField.get(chunkMap);
+                map.clear();
+            }
+        } catch(RuntimeException | IllegalAccessException e) {
+            ModernFix.LOGGER.error("Couldn't clear chunk data", e);
+        }
     }
 }

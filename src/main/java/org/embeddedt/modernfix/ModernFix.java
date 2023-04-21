@@ -1,26 +1,37 @@
 package org.embeddedt.modernfix;
 
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
+import net.minecraftforge.event.server.ServerStoppedEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLLoader;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.network.NetworkConstants;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.packet.PacketHandler;
 import org.embeddedt.modernfix.registry.ObjectHolderClearer;
+import org.embeddedt.modernfix.util.ClassInfoManager;
 
 import java.lang.management.ManagementFactory;
+import java.lang.reflect.Field;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.TimeUnit;
@@ -66,12 +77,14 @@ public class ModernFix {
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onLoadComplete);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> MinecraftForge.EVENT_BUS.register(new ModernFixClient()));
         ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (a, b) -> true));
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
 
         MinecraftForge.EVENT_BUS.register(EntityDataIDSyncHandler.class);
         PacketHandler.register();
+        ModFileScanDataDeduplicator.deduplicate();
     }
 
     private static boolean dfuModPresent() {
@@ -99,6 +112,33 @@ public class ModernFix {
         if(FMLLoader.getDist() == Dist.DEDICATED_SERVER) {
             float gameStartTime = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             ModernFix.LOGGER.warn("Dedicated server took " + gameStartTime + " seconds to load");
+        }
+        ClassInfoManager.clear();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onLoadComplete(FMLLoadCompleteEvent event) {
+        ClassInfoManager.clear();
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onServerDead(ServerStoppedEvent event) {
+        /* Clear as much data from the integrated server as possible, in case a mod holds on to it */
+        try {
+            Field updatingMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "f_140129_");
+            Field visibleMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "f_140130_");
+            Field pendingUnloadsField = ObfuscationReflectionHelper.findField(ChunkMap.class, "f_140131_");
+            for(ServerLevel level : event.getServer().getAllLevels()) {
+                ChunkMap chunkMap = level.getChunkSource().chunkMap;
+                Long2ObjectMap<ChunkHolder> map = (Long2ObjectMap<ChunkHolder>)updatingMapField.get(chunkMap);
+                map.clear();
+                map = (Long2ObjectMap<ChunkHolder>)visibleMapField.get(chunkMap);
+                map.clear();
+                map = (Long2ObjectMap<ChunkHolder>)pendingUnloadsField.get(chunkMap);
+                map.clear();
+            }
+        } catch(RuntimeException | IllegalAccessException e) {
+            ModernFix.LOGGER.error("Couldn't clear chunk data", e);
         }
     }
 }

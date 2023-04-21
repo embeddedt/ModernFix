@@ -34,6 +34,8 @@
     "perf.state_definition_construct.StateDefinitionMixin",
     "perf.compress_blockstate.BlockStateBaseMixin",
     "perf.compress_blockstate.BlockBehaviourMixin",
+    "perf.dedup_blockstate_flattening_map.BlockStateDataMixin",
+    "perf.dedup_blockstate_flattening_map.ChunkPalettedStorageFixMixin",
     "devenv.MinecraftServerMixin"
   ],
   "client": [
@@ -42,6 +44,7 @@
     "feature.measure_time.MinecraftMixin",
     "feature.reduce_loading_screen_freezes.ModelBakeryMixin",
     "bugfix.concurrency.MinecraftMixin",
+    "perf.dynamic_resources.BlockElementFaceDeserializerMixin",
     "perf.dynamic_resources.BlockModelShaperMixin",
     "perf.dynamic_resources.ItemModelShaperMixin",
     "perf.dynamic_resources.ModelBakeryMixin",
@@ -55,6 +58,7 @@
     "perf.model_optimizations.PropertyMixin",
     "perf.thread_priorities.IntegratedServerMixin",
     "safety.BlockColorsMixin",
+    "safety.ItemColorsMixin",
     "perf.flatten_model_predicates.AndConditionMixin",
     "perf.flatten_model_predicates.OrConditionMixin",
     "perf.flatten_model_predicates.PropertyValueConditionMixin",

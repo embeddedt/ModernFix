@@ -39,10 +39,7 @@ import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
-import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
-import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
-import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
-import org.embeddedt.modernfix.dynamicresources.ResourcePackHandler;
+import org.embeddedt.modernfix.dynamicresources.*;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -284,10 +281,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             }
             modelFiles.clear();
             CompletableFuture.allOf(modelBytes.toArray(new CompletableFuture[0])).join();
+            UVController.useDummyUv.set(Boolean.TRUE);
             for(CompletableFuture<Pair<ResourceLocation, JsonElement>> future : modelBytes) {
                 Pair<ResourceLocation, JsonElement> pair = future.join();
                 try {
                     if(pair.getSecond() != null) {
+
                         BlockModel model = ModelLoaderRegistry.ExpandedBlockModelDeserializer.INSTANCE.fromJson(pair.getSecond(), BlockModel.class);
                         model.name = pair.getFirst().toString();
                         modelFiles.addAll(model.getDependencies());
@@ -299,6 +298,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 }
                 basicModels.put(pair.getFirst(), (BlockModel)missingModel);
             }
+            UVController.useDummyUv.set(Boolean.FALSE);
         }
         modelFiles = null;
         Function<ResourceLocation, UnbakedModel> modelGetter = loc -> {

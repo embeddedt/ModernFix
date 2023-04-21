@@ -9,25 +9,29 @@ import org.slf4j.Logger;
 import java.lang.management.ManagementFactory;
 import java.lang.management.ThreadInfo;
 import java.lang.management.ThreadMXBean;
+import java.lang.ref.WeakReference;
 import java.util.concurrent.TimeUnit;
 
 public class IntegratedWatchdog extends Thread {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    private final MinecraftServer server;
+    private final WeakReference<MinecraftServer> server;
 
     private static final long MAX_TICK_DELTA = 40*1000;
 
     public IntegratedWatchdog(MinecraftServer server) {
-        this.server = server;
+        this.server = new WeakReference<>(server);
         this.setDaemon(true);
         this.setUncaughtExceptionHandler(new DefaultUncaughtExceptionHandlerWithName(LOGGER));
         this.setName("ModernFix integrated server watchdog");
     }
 
     public void run() {
-        while(server.isRunning()) {
-            long nextTick = this.server.getNextTickTime();
+        while(true) {
+            MinecraftServer server = this.server.get();
+            if(server == null || !server.isRunning())
+                return;
+            long nextTick = server.getNextTickTime();
             long curTime = Util.getMillis();
             long delta = curTime - nextTick;
             if(delta > MAX_TICK_DELTA) {
@@ -53,6 +57,7 @@ public class IntegratedWatchdog extends Thread {
                 nextTick = 0;
                 curTime = 0;
             }
+            server = null; /* allow GC */
             try {
                 Thread.sleep(nextTick + MAX_TICK_DELTA - curTime);
             } catch(InterruptedException ignored) {

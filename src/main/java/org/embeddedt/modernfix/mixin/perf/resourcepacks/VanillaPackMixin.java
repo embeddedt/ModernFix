@@ -11,6 +11,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.FileWalker;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.FileUtil;
+import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -42,6 +43,8 @@ public class VanillaPackMixin {
         containedPaths = new HashSet<>();
         Joiner slashJoiner = Joiner.on('/');
         for(PackType type : PackType.values()) {
+            if(!PackTypeHelper.isVanillaPackType(type))
+                continue;
             FileSystem fs = JAR_FILESYSTEM_BY_TYPE.get(type);
             if(fs == null)
                 throw new IllegalStateException("No filesystem for vanilla " + type.name() + " assets");
@@ -72,6 +75,8 @@ public class VanillaPackMixin {
 
     @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Ljava/lang/Class;getResource(Ljava/lang/String;)Ljava/net/URL;"), cancellable = true)
     private void useCacheForExistence(PackType type, ResourceLocation location, CallbackInfoReturnable<Boolean> cir) {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         cir.setReturnValue(containedPaths.contains(type.getDirectory() + "/" + location.getNamespace() + "/" + FileUtil.normalize(location.getPath())));
     }
 }

@@ -11,6 +11,7 @@ import net.minecraftforge.fml.packs.ModFileResourcePack;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.util.CachedResourcePath;
 import org.embeddedt.modernfix.util.FileUtil;
+import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -47,12 +48,16 @@ public abstract class ModFileResourcePackMixin {
         this.useNamespaceCaches = false;
         this.namespacesByType = new EnumMap<>(PackType.class);
         for(PackType type : PackType.values()) {
+            if(!PackTypeHelper.isVanillaPackType(type))
+                continue;
             this.namespacesByType.put(type, this.getNamespaces(type));
         }
         this.useNamespaceCaches = true;
         this.rootListingByNamespaceAndType = new EnumMap<>(PackType.class);
         this.containedPaths = new HashSet<>();
         for(PackType type : PackType.values()) {
+            if(!PackTypeHelper.isVanillaPackType(type))
+                continue;
             Set<String> namespaces = this.namespacesByType.get(type);
             HashMap<String, List<CachedResourcePath>> rootListingForNamespaces = new HashMap<>();
             for(String namespace : namespaces) {
@@ -98,7 +103,7 @@ public abstract class ModFileResourcePackMixin {
 
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
     private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
-        if(useNamespaceCaches) {
+        if(useNamespaceCaches && PackTypeHelper.isVanillaPackType(type)) {
             cir.setReturnValue(this.namespacesByType.get(type));
         }
     }
@@ -124,6 +129,8 @@ public abstract class ModFileResourcePackMixin {
     @Inject(method = "getResources", at = @At("HEAD"), cancellable = true)
     private void fastGetResources(PackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<String> filter, CallbackInfoReturnable<Collection<ResourceLocation>> cir)
     {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         if(!pathIn.endsWith("/"))
             pathIn = pathIn + "/";
         final String testPath = pathIn;

@@ -57,6 +57,7 @@ public class IntegratedWatchdog extends Thread {
                 nextTick = 0;
                 curTime = 0;
             }
+            server = null; /* allow GC */
             try {
                 Thread.sleep(nextTick + MAX_TICK_DELTA - curTime);
             } catch(InterruptedException ignored) {

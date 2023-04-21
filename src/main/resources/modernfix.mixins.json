@@ -79,6 +79,7 @@
     "bugfix.concurrency.RenderTypeMixin",
     "bugfix.concurrency.MinecraftMixin",
     "bugfix.concurrency.StaticTagHelperMixin",
+    "perf.dynamic_resources.BlockElementFaceDeserializerMixin",
     "perf.dynamic_resources.BlockModelShaperMixin",
     "perf.dynamic_resources.ItemModelShaperMixin",
     "perf.dynamic_resources.ModelBakeryMixin",

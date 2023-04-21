@@ -126,9 +126,9 @@ public class ModernFix {
     public void onServerDead(FMLServerStoppedEvent event) {
         /* Clear as much data from the integrated server as possible, in case a mod holds on to it */
         try {
-            Field updatingMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "updatingChunkMap");
-            Field visibleMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "visibleChunkMap");
-            Field pendingUnloadsField = ObfuscationReflectionHelper.findField(ChunkMap.class, "pendingUnloads");
+            Field updatingMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "field_219251_e");
+            Field visibleMapField = ObfuscationReflectionHelper.findField(ChunkMap.class, "field_219252_f");
+            Field pendingUnloadsField = ObfuscationReflectionHelper.findField(ChunkMap.class, "field_219253_g");
             for(ServerLevel level : event.getServer().getAllLevels()) {
                 ChunkMap chunkMap = level.getChunkSource().chunkMap;
                 Long2ObjectMap<ChunkHolder> map = (Long2ObjectMap<ChunkHolder>)updatingMapField.get(chunkMap);

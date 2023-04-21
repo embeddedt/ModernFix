@@ -8,6 +8,7 @@ import net.minecraftforge.resource.PathPackResources;
 import org.embeddedt.modernfix.util.CachedResourcePath;
 import org.embeddedt.modernfix.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
+import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -87,7 +88,8 @@ public abstract class PathPackResourcesMixin {
                         rootListingForNamespaces.put(namespace, Collections.emptyList());
                     }
                 }
-                rootListingByNamespaceAndType.put(type, rootListingForNamespaces);
+                if(PackTypeHelper.isVanillaPackType(type))
+                    rootListingByNamespaceAndType.put(type, rootListingForNamespaces);
             }
             this.rootListingByNamespaceAndType = rootListingByNamespaceAndType;
             this.containedPaths = containedPaths;
@@ -111,6 +113,8 @@ public abstract class PathPackResourcesMixin {
 
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
     private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         Set<String> cachedNamespaces;
         synchronized (this.namespacesByType) {
             cachedNamespaces = this.namespacesByType.get(type);
@@ -122,6 +126,8 @@ public abstract class PathPackResourcesMixin {
 
     @Inject(method = "getNamespaces", at = @At("TAIL"))
     private void storeCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         synchronized (this.namespacesByType) {
             this.namespacesByType.put(type, cir.getReturnValue());
         }
@@ -140,6 +146,8 @@ public abstract class PathPackResourcesMixin {
     @Inject(method = "getResources", at = @At("HEAD"), cancellable = true)
     public void getResources(PackType type, String resourceNamespace, String pathIn, Predicate<ResourceLocation> filter, CallbackInfoReturnable<Collection<ResourceLocation>> cir)
     {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         this.generateResourceCache();
         if(!pathIn.endsWith("/"))
             pathIn = pathIn + "/";

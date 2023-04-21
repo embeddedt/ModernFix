@@ -56,9 +56,7 @@ public abstract class ModFileResourcePackMixin {
         this.rootListingByNamespaceAndType = new EnumMap<>(PackType.class);
         this.containedPaths = new HashSet<>();
         for(PackType type : PackType.values()) {
-            if(!PackTypeHelper.isVanillaPackType(type))
-                continue;
-            Set<String> namespaces = this.namespacesByType.get(type);
+            Set<String> namespaces = PackTypeHelper.isVanillaPackType(type) ? this.namespacesByType.get(type) : this.getNamespaces(type);
             HashMap<String, List<CachedResourcePath>> rootListingForNamespaces = new HashMap<>();
             for(String namespace : namespaces) {
                 try {
@@ -82,7 +80,8 @@ public abstract class ModFileResourcePackMixin {
                     rootListingForNamespaces.put(namespace, Collections.emptyList());
                 }
             }
-            this.rootListingByNamespaceAndType.put(type, rootListingForNamespaces);
+            if(PackTypeHelper.isVanillaPackType(type))
+                this.rootListingByNamespaceAndType.put(type, rootListingForNamespaces);
         }
     }
 

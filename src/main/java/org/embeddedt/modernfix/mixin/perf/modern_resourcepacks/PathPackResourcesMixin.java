@@ -5,8 +5,10 @@ import com.mojang.datafixers.util.Pair;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.resource.PathPackResources;
+import org.embeddedt.modernfix.util.CachedResourcePath;
 import org.embeddedt.modernfix.util.FileUtil;
 import org.jetbrains.annotations.NotNull;
+import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -40,9 +42,9 @@ public abstract class PathPackResourcesMixin {
     @Shadow @NotNull protected abstract Set<String> getNamespacesFromDisk(PackType type);
 
     private EnumMap<PackType, Set<String>> namespacesByType;
-    private EnumMap<PackType, HashMap<String, List<Pair<Path, String>>>> rootListingByNamespaceAndType;
+    private EnumMap<PackType, HashMap<String, List<CachedResourcePath>>> rootListingByNamespaceAndType;
     private boolean hasGeneratedListings;
-    private Set<String> containedPaths;
+    private Set<CachedResourcePath> containedPaths;
 
     private FileSystem resourcePackFS;
 
@@ -59,24 +61,25 @@ public abstract class PathPackResourcesMixin {
         synchronized (this) {
             if(hasGeneratedListings)
                 return;
-            EnumMap<PackType, HashMap<String, List<Pair<Path, String>>>> rootListingByNamespaceAndType = new EnumMap<>(PackType.class);
-            HashSet<String> containedPaths = new HashSet<>();
+            EnumMap<PackType, HashMap<String, List<CachedResourcePath>>> rootListingByNamespaceAndType = new EnumMap<>(PackType.class);
+            HashSet<CachedResourcePath> containedPaths = new HashSet<>();
             for(PackType type : PackType.values()) {
                 Set<String> namespaces = this.getNamespacesFromDisk(type);
-                HashMap<String, List<Pair<Path, String>>> rootListingForNamespaces = new HashMap<>();
+                HashMap<String, List<CachedResourcePath>> rootListingForNamespaces = new HashMap<>();
                 for(String namespace : namespaces) {
                     try {
                         Path root = this.resolve(type.getDirectory(), namespace).toAbsolutePath();
                         try (Stream<Path> stream = Files.walk(root)) {
-                            ArrayList<Pair<Path, String>> rootListingPaths = new ArrayList<>();
+                            ArrayList<CachedResourcePath> rootListingPaths = new ArrayList<>();
                             stream
                                     .map(path -> root.relativize(path.toAbsolutePath()))
                                     .filter(this::isValidCachedResourcePath)
                                     .forEach(path -> {
-                                        if(!path.toString().endsWith(".mcmeta"))
-                                            rootListingPaths.add(Pair.of(path, slashJoiner.join(path)));
-                                        String mergedPath = slashJoiner.join(type.getDirectory(), namespace, path);
-                                        containedPaths.add(mergedPath);
+                                        CachedResourcePath listing = new CachedResourcePath(path);
+                                        if(!listing.getFileName().endsWith(".mcmeta")) {
+                                            rootListingPaths.add(listing);
+                                        }
+                                        containedPaths.add(new CachedResourcePath(new String[] { type.getDirectory(), namespace }, listing));
                                     });
                             rootListingPaths.trimToSize();
                             rootListingForNamespaces.put(namespace, rootListingPaths);
@@ -85,7 +88,8 @@ public abstract class PathPackResourcesMixin {
                         rootListingForNamespaces.put(namespace, Collections.emptyList());
                     }
                 }
-                rootListingByNamespaceAndType.put(type, rootListingForNamespaces);
+                if(PackTypeHelper.isVanillaPackType(type))
+                    rootListingByNamespaceAndType.put(type, rootListingForNamespaces);
             }
             this.rootListingByNamespaceAndType = rootListingByNamespaceAndType;
             this.containedPaths = containedPaths;
@@ -94,7 +98,11 @@ public abstract class PathPackResourcesMixin {
     }
 
     private boolean isValidCachedResourcePath(Path path) {
+        if(path.getFileName() == null || path.getNameCount() == 0)
+            return false;
         String str = path.toString();
+        if(str.length() == 0)
+            return false;
         for(int i = 0; i < str.length(); i++) {
             if(!ResourceLocation.validPathChar(str.charAt(i))) {
                 return false;
@@ -105,6 +113,8 @@ public abstract class PathPackResourcesMixin {
 
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
     private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         Set<String> cachedNamespaces;
         synchronized (this.namespacesByType) {
             cachedNamespaces = this.namespacesByType.get(type);
@@ -116,6 +126,8 @@ public abstract class PathPackResourcesMixin {
 
     @Inject(method = "getNamespaces", at = @At("TAIL"))
     private void storeCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         synchronized (this.namespacesByType) {
             this.namespacesByType.put(type, cir.getReturnValue());
         }
@@ -124,7 +136,7 @@ public abstract class PathPackResourcesMixin {
     //@Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
         this.generateResourceCache();
-        cir.setReturnValue(this.containedPaths.contains(FileUtil.normalize(path)));
+        cir.setReturnValue(this.containedPaths.contains(new CachedResourcePath(path)));
     }
 
     /**
@@ -134,16 +146,18 @@ public abstract class PathPackResourcesMixin {
     @Inject(method = "getResources", at = @At("HEAD"), cancellable = true, remap = false)
     public void getResources(PackType type, String resourceNamespace, String pathIn, Predicate<ResourceLocation> filter, CallbackInfoReturnable<Collection<ResourceLocation>> cir)
     {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
         this.generateResourceCache();
         if(!pathIn.endsWith("/"))
             pathIn = pathIn + "/";
         final String testPath = pathIn;
         Collection<ResourceLocation> cachedListing = this.rootListingByNamespaceAndType.get(type).getOrDefault(resourceNamespace, Collections.emptyList()).stream().
-                filter(path -> path.getSecond().startsWith(testPath)). // Make sure the target path is inside this one
+                filter(path -> path.getFullPath().startsWith(testPath)). // Make sure the target path is inside this one
                 // Finally we need to form the RL, so use the first name as the domain, and the rest as the path
                 // It is VERY IMPORTANT that we do not rely on Path.toString as this is inconsistent between operating systems
                 // Join the path names ourselves to force forward slashes
-                map(path -> new ResourceLocation(resourceNamespace, path.getSecond())).
+                map(path -> new ResourceLocation(resourceNamespace, path.getFullPath())).
                 filter(filter::test). // Test the file name against the predicate
                 collect(Collectors.toList());
         cir.setReturnValue(cachedListing);

@@ -37,10 +37,13 @@ public class ModernFixEarlyConfig {
         /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
         this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);
+        this.addMixinRule("perf.dedup_blockstate_flattening_map", false);
+        this.addMixinRule("perf.clear_mixin_classinfo", false);
         this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("perf.compress_blockstate", false);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
+        this.addMixinRule("perf.dynamic_structure_manager", true);
         this.addMixinRule("bugfix.chunk_deadlock", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.scan_cache", true);
@@ -65,14 +68,17 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
-        disableIfModPresent("mixin.perf.faster_baking", "touhou_little_maid");
         disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
     }
 
     private void disableIfModPresent(String configName, String... ids) {
         for(String id : ids) {
             if(FMLLoader.getLoadingModList().getModFileById(id) != null) {
-                this.options.get(configName).addModOverride(false, id);
+                Option option = this.options.get(configName);
+                if(option != null)
+                    option.addModOverride(false, id);
+                else
+                    LOGGER.warn("Can't disable missing option {}", configName);
             }
         }
     }

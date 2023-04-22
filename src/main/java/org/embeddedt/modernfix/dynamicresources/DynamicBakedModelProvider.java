@@ -2,13 +2,12 @@ package org.embeddedt.modernfix.dynamicresources;
 
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.BlockModelRotation;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Triple;
-import org.embeddedt.modernfix.duck.IDynamicModelBakery;
+import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nullable;
@@ -55,7 +54,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     @Override
     public BakedModel get(Object o) {
         BakedModel model = permanentOverrides.get(o);
-        return model != null ? model : ((IDynamicModelBakery)bakery).bakeDefault((ResourceLocation)o);
+        return model != null ? model : ((IExtendedModelBakery)bakery).bakeDefault((ResourceLocation)o);
     }
 
     @Nullable

@@ -7,21 +7,18 @@ import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ImmutableList;
 import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.block.model.BlockModel;
-import net.minecraft.client.renderer.block.model.ItemModelGenerator;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraftforge.client.model.geometry.GeometryLoaderManager;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.duck.IDynamicModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
+import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,7 +36,7 @@ import java.util.function.BiFunction;
 
 /* high priority so that our injectors are added before other mods' */
 @Mixin(value = ModelBakery.class, priority = 600)
-public abstract class ModelBakeryMixin implements IDynamicModelBakery {
+public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
 
@@ -268,8 +265,13 @@ public abstract class ModelBakeryMixin implements IDynamicModelBakery {
 
     @Override
     public BakedModel bakeDefault(ResourceLocation modelLocation) {
-        ModelBakery self = (ModelBakery)(Object)this;
+        ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
         return theBaker.bake(modelLocation, BlockModelRotation.X0_Y0);
+    }
+
+    @Override
+    public ImmutableList<BlockState> getBlockStatesForMRL(StateDefinition<Block, BlockState> stateDefinition, ModelResourceLocation location) {
+        return loadOnlyRelevantBlockState(stateDefinition, location);
     }
 }

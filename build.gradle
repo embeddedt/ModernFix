@@ -108,9 +108,11 @@ tasks.withType(JavaCompile) {
     options.encoding = "UTF-8"
 
     def targetVersion = 17
+    /*
     if (JavaVersion.current().isJava9Compatible()) {
         options.release = targetVersion
     }
+     */
 }
 
 java {

@@ -7,6 +7,7 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
+import org.embeddedt.modernfix.dfu.DFUBlaster;
 import org.embeddedt.modernfix.load.ModWorkManagerQueue;
 import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.Opcodes;
@@ -42,6 +43,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
         FastAccessTransformerList.attemptReplace();
         ModWorkManagerQueue.replace();
+        DFUBlaster.blastMaps();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */
         try {

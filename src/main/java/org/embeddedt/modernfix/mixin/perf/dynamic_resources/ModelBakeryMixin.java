@@ -366,11 +366,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                         ResourceLocation resourcelocation = this.loadingStack.iterator().next();
 
                         try {
-                            if (!this.unbakedCache.containsKey(resourcelocation)) {
+                            existing = this.unbakedCache.get(resourcelocation);
+                            if (existing == null) {
                                 if(debugDynamicModelLoading)
                                     LOGGER.info("Loading {}", resourcelocation);
                                 this.loadModel(resourcelocation);
-                            }
+                            } else
+                                smallLoadingCache.put(resourcelocation, existing);
                         } catch (ModelBakery.BlockStateDefinitionException var9) {
                             LOGGER.warn(var9.getMessage());
                             this.unbakedCache.put(resourcelocation, iunbakedmodel);

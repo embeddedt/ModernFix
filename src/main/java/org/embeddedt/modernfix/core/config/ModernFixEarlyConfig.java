@@ -34,6 +34,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
         this.addMixinRule("perf.model_optimizations", true);
         this.addMixinRule("perf.dynamic_resources", false);
+        this.addMixinRule("perf.dedicated_reload_executor", true);
         /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
         this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);
@@ -65,6 +66,7 @@ public class ModernFixEarlyConfig {
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
+        disableIfModPresent("mixin.perf.boost_worker_count", "smoothboot");
         disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");

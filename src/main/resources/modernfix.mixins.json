@@ -78,6 +78,7 @@
     "feature.measure_time.MinecraftMixin",
     "feature.reduce_loading_screen_freezes.ModelBakeryMixin",
     "perf.skip_first_datapack_reload.MinecraftMixin",
+    "bugfix.preserve_early_window_pos.WindowMixin",
     "bugfix.concurrency.RenderTypeMixin",
     "bugfix.concurrency.MinecraftMixin",
     "bugfix.concurrency.StaticTagHelperMixin",

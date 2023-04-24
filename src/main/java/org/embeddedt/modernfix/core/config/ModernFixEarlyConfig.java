@@ -48,6 +48,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.biome_zoomer", true);
         this.addMixinRule("perf.compress_blockstate", false);
         this.addMixinRule("bugfix.concurrency", true);
+        this.addMixinRule("bugfix.preserve_early_window_pos", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
         this.addMixinRule("bugfix.starlight_emptiness", modPresent("starlight"));
         this.addMixinRule("bugfix.packet_leak", false);

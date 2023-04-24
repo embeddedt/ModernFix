@@ -60,7 +60,6 @@ public class ModernFixEarlyConfig {
         Optional<ModInfo> jeiMod = FMLLoader.getLoadingModList().getMods().stream().filter(mod -> mod.getModId().equals("jei")).findFirst();
         this.addMixinRule("perf.blast_search_trees", (jeiMod.isPresent() && jeiMod.get().getVersion().getMajorVersion() >= 10) || FMLLoader.getLoadingModList().getModFileById("roughlyenoughitems") != null);
         this.addMixinRule("safety", true);
-        this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);
         boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator() instanceof ExplodedDirectoryLocator;
         this.addMixinRule("devenv", isDevEnv);

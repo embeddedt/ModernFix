@@ -59,7 +59,6 @@ public class ModernFixEarlyConfig {
         /* Keep this off if JEI/REI isn't installed to prevent breaking vanilla gameplay */
         this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null || FMLLoader.getLoadingModList().getModFileById("roughlyenoughitems") != null);
         this.addMixinRule("safety", true);
-        this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);
         boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getProvider() instanceof ExplodedDirectoryLocator;
         this.addMixinRule("devenv", isDevEnv);

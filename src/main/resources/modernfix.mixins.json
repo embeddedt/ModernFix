@@ -64,9 +64,6 @@
     "perf.thread_priorities.IntegratedServerMixin",
     "safety.BlockColorsMixin",
     "safety.ItemColorsMixin",
-    "perf.flatten_model_predicates.AndConditionMixin",
-    "perf.flatten_model_predicates.OrConditionMixin",
-    "perf.flatten_model_predicates.PropertyValueConditionMixin",
     "perf.blast_search_trees.MinecraftMixin",
     "perf.blast_search_trees.IngredientFilterInvoker",
     "perf.cache_model_materials.VanillaModelMixin",
@@ -74,7 +71,6 @@
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
     "perf.skip_first_datapack_reload.CreateWorldScreenMixin",
-    "perf.faster_singleplayer_load.MinecraftServerMixin",
     "devenv.MinecraftMixin",
     "devenv.NarratorMixin"
   ],

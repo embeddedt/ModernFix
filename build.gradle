@@ -4,6 +4,7 @@ plugins {
     id 'com.matthewprenger.cursegradle' version '1.4.0'
     id 'com.palantir.git-version' version '1.0.0'
     id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '1.79.0'
+    id "com.modrinth.minotaur" version "2.+"
 }
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
@@ -192,4 +193,24 @@ curseforge {
     }
 }
 
+modrinth {
+    token = System.getenv("MODRINTH_TOKEN")
+    projectId = "modernfix" // This can be the project ID or the slug. Either will work!
+    versionType = "release" // This is the default -- can also be `beta` or `alpha`
+    uploadFile = remapJar
+    gameVersions = [minecraft_version]
+    loaders = ["forge"]
+    File changelogFile = new File("./CHANGELOG.md")
+    if (changelogFile.exists())
+        changelog = changelogFile.getText('UTF-8')
+    else
+        changelog = "No changelog was provided."
+}
+
 tasks.curseforge.dependsOn(":generateChangelog")
+tasks.modrinth.dependsOn(":generateChangelog")
+
+task publishToModSites {
+    publishToModSites.dependsOn modrinth
+    publishToModSites.dependsOn curseforge
+}

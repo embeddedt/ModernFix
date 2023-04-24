@@ -82,6 +82,7 @@ public class ModernFixEarlyConfig {
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");
+        disableIfModPresent("mixin.perf.boost_worker_count", "smoothboot");
         disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");

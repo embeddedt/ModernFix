@@ -1,3 +1,5 @@
 {{#commits}}
+{{#ifMatches messageTitle "^(?!Merge).*"}}
   * [{{{messageTitle}}}](https://github.com/embeddedt/ModernFix/commit/{{hashFull}}) - {{{authorName}}}
+{{/ifMatches}}
 {{/commits}}

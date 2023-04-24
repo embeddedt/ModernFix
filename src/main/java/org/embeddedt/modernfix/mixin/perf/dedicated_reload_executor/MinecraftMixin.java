@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService;
 
 @Mixin(Minecraft.class)
 public class MinecraftMixin {
-    @Redirect(method = { "<init>", "makeWorldStem(Lnet/minecraft/server/packs/repository/PackRepository;ZLnet/minecraft/server/WorldStem$DataPackConfigSupplier;Lnet/minecraft/server/WorldStem$WorldDataSupplier;)Lnet/minecraft/server/WorldStem;", "reloadResourcePacks" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;backgroundExecutor()Ljava/util/concurrent/ExecutorService;", ordinal = 0))
+    @Redirect(method = { "<init>", "makeWorldStem(Lnet/minecraft/server/packs/repository/PackRepository;ZLnet/minecraft/server/WorldStem$DataPackConfigSupplier;Lnet/minecraft/server/WorldStem$WorldDataSupplier;)Lnet/minecraft/server/WorldStem;", "reloadResourcePacks(Z)Ljava/util/concurrent/CompletableFuture;" }, at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;backgroundExecutor()Ljava/util/concurrent/ExecutorService;", ordinal = 0))
     private ExecutorService getResourceReloadExecutor() {
         return ModernFix.resourceReloadExecutor();
     }

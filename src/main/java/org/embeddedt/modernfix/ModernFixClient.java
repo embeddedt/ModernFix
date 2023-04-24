@@ -7,6 +7,7 @@ import net.minecraft.client.gui.components.DebugScreenOverlay;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
+import net.minecraft.util.MemoryReserve;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
@@ -49,8 +50,7 @@ public class ModernFixClient {
 
     public ModernFixClient() {
         // clear reserve as it's not needed
-        // TODO: port 1.18+
-        // ObfuscationReflectionHelper.setPrivateValue(Minecraft.class, null, new byte[0], "field_71444_a");
+        MemoryReserve.release();
         if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
             MinecraftForge.EVENT_BUS.register(new LoadEvents());
         }

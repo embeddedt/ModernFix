@@ -210,7 +210,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     }
                 }
                 return Pair.of(blockstate, null);
-            }, Util.backgroundExecutor()));
+            }, ModernFix.resourceReloadExecutor()));
         }
         blockStateFiles = null;
         CompletableFuture.allOf(blockStateData.toArray(new CompletableFuture[0])).join();
@@ -284,7 +284,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                         }
                     }
                     return Pair.of(fileLocation, null);
-                }, Util.backgroundExecutor()));
+                }, ModernFix.resourceReloadExecutor()));
             }
             modelFiles.clear();
             CompletableFuture.allOf(modelBytes.toArray(new CompletableFuture[0])).join();

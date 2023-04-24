@@ -84,7 +84,7 @@ public abstract class CreateWorldScreenMixin extends Screen {
         }, (argx, arg2x, arg3, arg4) -> {
             argx.close();
             return new WorldCreationContext(arg4, Lifecycle.stable(), arg3, arg2x);
-        }, Util.backgroundExecutor(), this.minecraft);
+        }, ModernFix.resourceReloadExecutor(), this.minecraft);
         this.minecraft.managedBlock(completablefuture::isDone);
         this.worldGenSettingsComponent.updateSettings(completablefuture.join());
         this.rebuildWidgets();

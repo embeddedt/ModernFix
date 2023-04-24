@@ -6,6 +6,7 @@
   "compatibilityLevel": "JAVA_8",
   "refmap": "modernfix.refmap.json",
   "mixins": [
+    "core.BootstrapMixin",
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
     "bugfix.starlight_emptiness.StarLightEngineMixin",
     "perf.dynamic_structure_manager.StructureManagerMixin",

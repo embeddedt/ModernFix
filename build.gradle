@@ -3,6 +3,7 @@ plugins {
     id "maven-publish"
     id 'com.matthewprenger.cursegradle' version '1.4.0'
     id 'com.palantir.git-version' version '1.0.0'
+    id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '1.79.0'
 }
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_1_8
@@ -120,6 +121,22 @@ tasks.withType(JavaCompile) {
      */
 }
 
+task generateChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
+    def details = versionDetails();
+    if(details.commitDistance > 0) {
+        fromRef = details.lastTag;
+    } else {
+        def secondLastTagCmd = "git describe --abbrev=0 " + details.lastTag + "^"
+        def secondLastTag = secondLastTagCmd.execute().text.trim()
+        fromRef = secondLastTag;
+    }
+
+    file = new File("CHANGELOG.md");
+    def otherTemplateContent = new File('gradle/changelog.mustache').getText('UTF-8');
+    templateContent = "## Changes since " + fromRef + "\n" + otherTemplateContent;
+    toCommit = "HEAD";
+}
+
 java {
     // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
     // if it is present.
@@ -165,7 +182,7 @@ curseforge {
         apiKey = System.getenv("CURSEFORGE_TOKEN")
         project {
             id = "790626"
-            changelog = '[Changelog is not currently available]'
+            changelog = file('./CHANGELOG.md')
             changelogType = "markdown"
             releaseType = "release"
             addGameVersion "Forge"
@@ -174,3 +191,5 @@ curseforge {
         }
     }
 }
+
+tasks.curseforge.dependsOn(":generateChangelog")

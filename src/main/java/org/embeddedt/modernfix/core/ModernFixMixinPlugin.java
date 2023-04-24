@@ -42,7 +42,6 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 config.getOptionCount(), config.getOptionOverrideCount());
 
         FastAccessTransformerList.attemptReplace();
-        ModWorkManagerQueue.replace();
         DFUBlaster.blastMaps();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */

@@ -38,6 +38,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.reuse_datapacks", true);
         this.addMixinRule("perf.model_optimizations", true);
         this.addMixinRule("perf.dynamic_resources", false);
+        this.addMixinRule("perf.dedicated_reload_executor", true);
         /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
         this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);

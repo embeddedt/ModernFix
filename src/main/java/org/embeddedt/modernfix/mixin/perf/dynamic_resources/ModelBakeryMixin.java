@@ -208,7 +208,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     ModernFix.LOGGER.error("Error reading blockstate {}: {}", blockstate, e);
                 }
                 return Pair.of(blockstate, null);
-            }, Util.backgroundExecutor()));
+            }, ModernFix.resourceReloadExecutor()));
         }
         blockStateFiles = null;
         CompletableFuture.allOf(blockStateData.toArray(new CompletableFuture[0])).join();

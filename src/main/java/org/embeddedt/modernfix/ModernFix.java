@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import net.minecraft.Util;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
@@ -24,6 +25,7 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.classloading.ModFileScanDataDeduplicator;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.packet.PacketHandler;
@@ -34,9 +36,8 @@ import org.embeddedt.modernfix.util.KubeUtil;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.TimeUnit;
+import java.lang.reflect.Method;
+import java.util.concurrent.*;
 import java.util.function.BooleanSupplier;
 
 // The value here should match an entry in the META-INF/mods.toml file
@@ -54,6 +55,26 @@ public class ModernFix {
     public static boolean runningFirstInjection = false;
 
     public static CountDownLatch worldLoadSemaphore = null;
+
+    private static Executor resourceReloadService = null;
+
+    static {
+        try {
+            if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.dedicated_reload_executor.ReloadExecutor")) {
+                Method makeExecutorMethod = ObfuscationReflectionHelper.findMethod(Util.class, "func_240979_a_", String.class);
+                resourceReloadService = (Executor)makeExecutorMethod.invoke(null, "ResourceReload");
+            } else {
+                resourceReloadService = Util.backgroundExecutor();
+            }
+        } catch(RuntimeException | ReflectiveOperationException e) {
+            LOGGER.error("Could not create resource reload executor", e);
+            resourceReloadService = Util.backgroundExecutor();
+        }
+    }
+
+    public static Executor resourceReloadExecutor() {
+        return resourceReloadService;
+    }
 
     /**
      * Simple mechanism used to delay some background processes until the client is actually in-game, to reduce

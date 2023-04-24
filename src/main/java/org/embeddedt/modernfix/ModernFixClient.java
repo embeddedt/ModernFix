@@ -20,19 +20,15 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
-import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.network.NetworkEvent;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
-import org.embeddedt.modernfix.load.LoadEvents;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
-import org.embeddedt.modernfix.screen.DeferredLevelLoadingScreen;
 import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
-import java.sql.Ref;
 import java.util.*;
 import java.util.function.Supplier;
 
@@ -49,9 +45,6 @@ public class ModernFixClient {
     public ModernFixClient() {
         // clear reserve as it's not needed
         ObfuscationReflectionHelper.setPrivateValue(Minecraft.class, null, new byte[0], "field_71444_a");
-        if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_singleplayer_load.ClientEvents")) {
-            MinecraftForge.EVENT_BUS.register(new LoadEvents());
-        }
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
             Optional<? extends ModContainer> mfContainer = ModList.get().getModContainerById("modernfix");
             if(mfContainer.isPresent())
@@ -91,7 +84,6 @@ public class ModernFixClient {
         if(event.phase == TickEvent.Phase.END
                 && recipesUpdated
                 && tagsUpdated
-                && !(Minecraft.getInstance().screen instanceof DeferredLevelLoadingScreen)
                 && worldLoadStartTime != -1
                 && Minecraft.getInstance().player != null
                 && numRenderTicks++ >= 10) {

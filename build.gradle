@@ -102,6 +102,7 @@ dependencies {
     modCompileOnly("curse.maven:supermartijncore-454372:4455378")
     modCompileOnly("curse.maven:valhesiastructures-347488:3476252")
     modCompileOnly files("deps/starlight-1.2.jar")
+    modCompileOnly("appeng:appliedenergistics2:8.4.7")
 }
 
 tasks.withType(JavaCompile) {

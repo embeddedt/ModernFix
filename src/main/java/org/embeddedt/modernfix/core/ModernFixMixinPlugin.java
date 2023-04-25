@@ -53,6 +53,9 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         this.logger.info("Loaded configuration file for ModernFix: {} options available, {} override(s) found",
                 config.getOptionCount(), config.getOptionOverrideCount());
 
+        if(ModernFixEarlyConfig.OPTIFINE_PRESENT)
+            this.logger.fatal("OptiFine detected. Use of ModernFix with OptiFine is not supported due to its impact on launch time and breakage of Forge features.");
+
         try {
             Class.forName("sun.misc.Unsafe").getDeclaredMethod("defineAnonymousClass", Class.class, byte[].class, Object[].class);
         } catch(ReflectiveOperationException | NullPointerException e) {

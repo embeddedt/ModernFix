@@ -99,6 +99,7 @@ dependencies {
     modRuntimeOnly("curse.maven:ferritecore-429235:4074294")
     modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
     modCompileOnly("curse.maven:supermartijncore-454372:4455384")
+    modImplementation("appeng:appliedenergistics2-forge:11.7.3")
 }
 
 tasks.withType(JavaCompile) {

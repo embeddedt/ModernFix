@@ -18,7 +18,7 @@ public class RecipeEventJSMixin {
     /**
      * The recipe event object can be leaked in scripts and this wastes 40MB of memory.
      */
-    @Inject(method = "post", at = @At("RETURN"))
+    @Inject(method = "post", at = @At("RETURN"), remap = false)
     private void clearRecipeLists(CallbackInfo ci) {
         ModernFix.LOGGER.info("Clearing KubeJS recipe lists...");
         // Even though we are a mixin class, use reflection so this works across a variety of versions

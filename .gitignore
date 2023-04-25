@@ -4,6 +4,9 @@ libs
 media
 classes/
 
+# Changelog
+CHANGELOG.md
+
 # Created by https://www.gitignore.io/api/gradle,intellij,eclipse,windows,osx,linux
 
 ### Gradle ###

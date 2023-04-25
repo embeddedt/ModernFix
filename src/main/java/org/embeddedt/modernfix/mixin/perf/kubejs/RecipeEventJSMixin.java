@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.mixin.perf.kubejs;
 
-import dev.latvian.mods.kubejs.recipe.RecipeEventJS;
+import dev.latvian.mods.kubejs.recipe.RecipesEventJS;
 import org.embeddedt.modernfix.ModernFix;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,7 +12,7 @@ import java.lang.reflect.Modifier;
 import java.util.Collection;
 import java.util.Map;
 
-@Mixin(RecipeEventJS.class)
+@Mixin(RecipesEventJS.class)
 public class RecipeEventJSMixin {
 
     /**
@@ -22,7 +22,7 @@ public class RecipeEventJSMixin {
     private void clearRecipeLists(CallbackInfo ci) {
         ModernFix.LOGGER.info("Clearing KubeJS recipe lists...");
         // Even though we are a mixin class, use reflection so this works across a variety of versions
-        Field[] fields = RecipeEventJS.class.getDeclaredFields();
+        Field[] fields = RecipesEventJS.class.getDeclaredFields();
         for(Field f : fields) {
             try {
                 if(!Modifier.isStatic(f.getModifiers())

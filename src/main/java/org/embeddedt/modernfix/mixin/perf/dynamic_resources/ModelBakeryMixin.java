@@ -103,6 +103,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow public abstract UnbakedModel getModel(ResourceLocation modelLocation);
 
+    @Shadow @Nullable public abstract BakedModel getBakedModel(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter);
+
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
@@ -322,6 +324,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Inject(method = "uploadTextures", at = @At(value = "FIELD", target = "Lnet/minecraft/client/resources/model/ModelBakery;topLevelModels:Ljava/util/Map;", ordinal = 0), cancellable = true)
     private void skipBake(TextureManager resourceManager, ProfilerFiller profiler, CallbackInfoReturnable<AtlasSet> cir) {
         profiler.pop();
+        // ensure missing model is a permanent override
+        this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, this.getBakedModel(MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0, this.atlasSet::getSprite));
         cir.setReturnValue(atlasSet);
     }
 
@@ -446,6 +450,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return loadOnlyRelevantBlockState(stateDefinition, location);
     }
 
+    private BakedModel bakedMissingModel = null;
+
     @Inject(method = "getBakedModel", at = @At("HEAD"), cancellable = true)
     public void getOrLoadBakedModelDynamic(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter, CallbackInfoReturnable<BakedModel> cir) {
         Triple<ResourceLocation, Transformation, Boolean> triple = Triple.of(arg, arg2.getRotation(), arg2.isUvLocked());
@@ -468,7 +474,15 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     }
                 }
                 if(ibakedmodel == null) {
-                    ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
+                    if(iunbakedmodel == missingModel) {
+                        // use a shared baked missing model
+                        if(bakedMissingModel == null) {
+                            bakedMissingModel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
+                            ((DynamicBakedModelProvider)this.bakedTopLevelModels).setMissingModel(bakedMissingModel);
+                        }
+                        ibakedmodel = bakedMissingModel;
+                    } else
+                        ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
                 }
                 DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
                 MinecraftForge.EVENT_BUS.post(event);

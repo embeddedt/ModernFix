@@ -30,6 +30,7 @@
     "feature.branding.BrandingControlMixin",
     "feature.direct_stack_trace.CrashReportMixin",
     "perf.fast_registry_validation.ForgeRegistryMixin",
+    "perf.kubejs.RecipeEventJSMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
     "perf.cache_upgraded_structures.StructureManagerMixin",
     "perf.cache_strongholds.ServerLevelMixin",

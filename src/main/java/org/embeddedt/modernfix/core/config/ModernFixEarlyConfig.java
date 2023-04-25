@@ -63,6 +63,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("bugfix.chunk_deadlock", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.scan_cache", true);
+        this.addMixinRule("perf.kubejs", modPresent("kubejs"));
         this.addMixinRule("perf.flatten_model_predicates", true);
         this.addMixinRule("perf.deduplicate_location", false);
         this.addMixinRule("perf.cache_blockstate_cache_arrays", true);

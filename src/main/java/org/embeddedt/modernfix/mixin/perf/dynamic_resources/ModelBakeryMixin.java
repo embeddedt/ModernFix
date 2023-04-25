@@ -39,6 +39,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.*;
+import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -101,15 +102,16 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow public abstract UnbakedModel getModel(ResourceLocation modelLocation);
 
+    @Shadow @Final @Mutable private BlockColors blockColors;
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
 
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/model/geometry/GeometryLoaderManager;init()V", remap = false))
-    private void replaceTopLevelBakedModels() {
-        GeometryLoaderManager.init();
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/resources/model/ModelBakery;blockColors:Lnet/minecraft/client/color/block/BlockColors;"))
+    private void replaceTopLevelBakedModels(ModelBakery bakery, BlockColors val) {
+        this.blockColors = val;
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(3, TimeUnit.MINUTES)
                 .maximumSize(1000)

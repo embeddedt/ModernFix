@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.BlockModelRotation;
+import net.minecraft.client.resources.model.BuiltInModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.ResourceLocation;
 import org.apache.commons.lang3.tuple.Triple;
@@ -22,12 +23,19 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     private final ModelBakery bakery;
     private final Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> bakedCache;
     private final Map<ResourceLocation, BakedModel> permanentOverrides;
+    private BakedModel missingModel;
+    private static final BakedModel SENTINEL = new BuiltInModel(null, null, null, false);
 
     public DynamicBakedModelProvider(ModelBakery bakery, Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> cache) {
         this.bakery = bakery;
         this.bakedCache = cache;
         this.permanentOverrides = new Object2ObjectOpenHashMap<>();
     }
+
+    public void setMissingModel(BakedModel model) {
+        this.missingModel = model;
+    }
+
     private static Triple<ResourceLocation, Transformation, Boolean> vanillaKey(Object o) {
         return Triple.of((ResourceLocation)o, BlockModelRotation.X0_Y0.getRotation(), false);
     }
@@ -43,7 +51,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public boolean containsKey(Object o) {
-        return true; //permanentOverrides.containsKey(o) || bakedCache.containsKey(vanillaKey(o));
+        return permanentOverrides.getOrDefault(o, SENTINEL) != null;
     }
 
     @Override
@@ -53,8 +61,18 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public BakedModel get(Object o) {
-        BakedModel model = permanentOverrides.get(o);
-        return model != null ? model : bakery.bake((ResourceLocation)o, BlockModelRotation.X0_Y0);
+        BakedModel model = permanentOverrides.getOrDefault(o, SENTINEL);
+        if(model != SENTINEL)
+            return model;
+        else {
+            model = bakery.bake((ResourceLocation)o, BlockModelRotation.X0_Y0);
+            if(model == missingModel) {
+                // to correctly emulate the original map, we return null for missing models
+                permanentOverrides.put((ResourceLocation) o, null);
+                return null;
+            } else
+                return model;
+        }
     }
 
     @Nullable

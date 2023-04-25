@@ -53,6 +53,7 @@
     "perf.dynamic_resources.BlockModelShaperMixin",
     "perf.dynamic_resources.ItemModelShaperMixin",
     "perf.dynamic_resources.ModelBakeryMixin",
+    "perf.dynamic_resources.ae2.RegistrationMixin",
     "perf.dynamic_resources.ctm.TextureMetadataHandlerMixin",
     "perf.dynamic_resources.ctm.CTMPackReloadListenerMixin",
     "perf.dynamic_resources.supermartijncore.ClientRegistrationHandlerMixin",

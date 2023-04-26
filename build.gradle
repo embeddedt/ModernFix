@@ -65,6 +65,7 @@ repositories {
         url "https://maven.tterrag.com/"
     }
     maven { url "https://maven.shedaniel.me" }
+    maven { url 'https://maven.blamejared.com' }
 }
 
 dependencies {
@@ -99,6 +100,7 @@ dependencies {
     modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
     modCompileOnly("curse.maven:supermartijncore-454372:4455391")
     modImplementation("appeng:appliedenergistics2-forge:12.9.4")
+    modImplementation("vazkii.patchouli:Patchouli:1.19.2-77")
 }
 
 tasks.withType(JavaCompile) {

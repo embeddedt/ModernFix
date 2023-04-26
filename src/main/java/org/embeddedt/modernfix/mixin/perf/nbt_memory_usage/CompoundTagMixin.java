@@ -36,7 +36,7 @@ public class CompoundTagMixin {
      * @author embeddedt
      * @reason use more efficient method when copying canonizing string map
      */
-    @Inject(method = "copy()Lnet/minecraft/nbt/Tag;", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "copy()Lnet/minecraft/nbt/CompoundTag;", at = @At("HEAD"), cancellable = true)
     public void copyEfficient(CallbackInfoReturnable<Tag> cir) {
         if(this.tags instanceof CanonizingStringMap) {
             cir.setReturnValue(new CompoundTag(CanonizingStringMap.deepCopy((CanonizingStringMap<Tag>)this.tags, Tag::copy)));

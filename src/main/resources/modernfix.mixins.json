@@ -75,7 +75,6 @@
   "client": [
     "core.MinecraftMixin",
     "core.SynchedEntityDataMixin",
-    "core.ModelBakeryMixin",
     "feature.measure_time.MinecraftMixin",
     "feature.reduce_loading_screen_freezes.ModelBakeryMixin",
     "perf.skip_first_datapack_reload.MinecraftMixin",

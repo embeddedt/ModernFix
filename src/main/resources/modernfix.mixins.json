@@ -75,6 +75,7 @@
   "client": [
     "core.MinecraftMixin",
     "core.SynchedEntityDataMixin",
+    "core.ModelBakeryMixin",
     "feature.measure_time.MinecraftMixin",
     "feature.reduce_loading_screen_freezes.ModelBakeryMixin",
     "perf.skip_first_datapack_reload.MinecraftMixin",
@@ -112,6 +113,7 @@
     "perf.cache_model_materials.BlockModelMixin",
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
+    "perf.faster_texture_loading.TextureAtlasMixin",
     "bugfix.packet_leak.ClientPlayNetHandlerMixin",
     "bugfix.packet_leak.SCustomPayloadPlayPacketMixin",
     "perf.reuse_datapacks.MinecraftMixin",

@@ -68,6 +68,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.deduplicate_location", false);
         this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
         this.addMixinRule("perf.cache_model_materials", true);
+        this.addMixinRule("perf.nbt_memory_usage", true);
         this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
         this.addMixinRule("perf.datapack_reload_exceptions", true);
         this.addMixinRule("perf.faster_texture_stitching", true);

@@ -34,18 +34,25 @@ public class ClientBookRegistryMixin {
         for(Book book : BookRegistry.INSTANCE.books.values()) {
             try {
                 BookContents contents = (BookContents)contentsField.get(book);
+                if(contents == null || contents.entries == null)
+                    continue;
                 for(BookEntry entry : contents.entries.values()) {
-                    for (BookPage page : entry.getPages()) {
-                        if (page instanceof PageTemplate) {
+                    for(BookPage page : entry.getPages()) {
+                        if(page instanceof PageTemplate) {
                             List<TemplateComponent> components;
-
                             BookTemplate template = (BookTemplate) templateField.get(page);
+                            if(template == null)
+                                continue;
                             components = (List<TemplateComponent>) componentsField.get(template);
+                            if(components == null)
+                                continue;
                             for (TemplateComponent component : components) {
                                 if (component instanceof ComponentItemStack) {
                                     ItemStack[] items = (ItemStack[]) itemsField.get(component);
-                                    for(int i = 0; i < items.length; i++) {
-                                        if(items[i] != null && items[i].getItem() == Items.AIR) {
+                                    if(items == null)
+                                        continue;
+                                    for (int i = 0; i < items.length; i++) {
+                                        if (items[i] != null && items[i].getItem() == Items.AIR) {
                                             items[i] = ItemStack.EMPTY;
                                         }
                                     }
@@ -54,8 +61,7 @@ public class ClientBookRegistryMixin {
                         }
                     }
                 }
-            } catch(ReflectiveOperationException e) {
-                continue;
+            } catch(ReflectiveOperationException ignored) {
             }
         }
         ModernFix.LOGGER.info("Cleared {} unneeded book NBT tags", numItemsCleared);

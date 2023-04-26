@@ -59,6 +59,7 @@
     "perf.kubejs.RecipeJSMixin",
     "perf.kubejs.IDFilterMixin",
     "perf.kubejs.CustomIngredientMixin",
+    "perf.nbt_memory_usage.CompoundTagMixin",
     "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
     "perf.cache_upgraded_structures.StructureManagerMixin",

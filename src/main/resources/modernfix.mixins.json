@@ -10,6 +10,7 @@
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
     "perf.modern_resourcepacks.VanillaPackResourcesMixin",
     "perf.modern_resourcepacks.PathPackResourcesMixin",
+    "perf.modern_resourcepacks.ResourceCacheManagerMixin",
     "perf.dynamic_structure_manager.StructureManagerMixin",
     "bugfix.chunk_deadlock.ServerChunkCacheMixin",
     "perf.dedicated_reload_executor.MinecraftServerMixin",

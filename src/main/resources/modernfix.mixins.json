@@ -61,6 +61,7 @@
     "perf.model_optimizations.TransformationMatrixMixin",
     "perf.model_optimizations.BooleanPropertyMixin",
     "perf.model_optimizations.PropertyMixin",
+    "perf.patchouli_deduplicate_books.ClientBookRegistryMixin",
     "perf.thread_priorities.IntegratedServerMixin",
     "safety.BlockColorsMixin",
     "safety.ItemColorsMixin",

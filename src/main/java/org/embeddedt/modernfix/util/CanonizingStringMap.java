@@ -137,11 +137,14 @@ public class CanonizingStringMap<T> implements Map<String, T> {
 
     public static <T> CanonizingStringMap<T> deepCopy(CanonizingStringMap<T> inputMap, Function<T, T> deepCopier) {
         Object2ObjectMap<String, T> copiedBackingMap;
-        if(inputMap.backingMap instanceof Object2ObjectArrayMap)
-            copiedBackingMap = ((Object2ObjectArrayMap<String, T>)inputMap.backingMap).clone();
-        else
-            copiedBackingMap = ((Object2ObjectOpenHashMap<String, T>)inputMap.backingMap).clone();
-        copiedBackingMap.replaceAll((k, v) -> deepCopier.apply(v));
+        int size = inputMap.backingMap.size();
+        if(size > GROWTH_THRESHOLD) {
+            copiedBackingMap = new Object2ObjectOpenHashMap<>(size);
+        } else
+            copiedBackingMap = new Object2ObjectArrayMap<>(size);
+        inputMap.backingMap.object2ObjectEntrySet().forEach(entry -> {
+            copiedBackingMap.put(entry.getKey(), deepCopier.apply(entry.getValue()));
+        });
         return new CanonizingStringMap<>(copiedBackingMap);
     }
 }

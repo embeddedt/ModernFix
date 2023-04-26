@@ -1,6 +1,5 @@
 package org.embeddedt.modernfix.mixin.perf.patchouli_deduplicate_books;
 
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
@@ -21,7 +20,6 @@ import vazkii.patchouli.common.book.Book;
 import vazkii.patchouli.common.book.BookRegistry;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(ClientBookRegistry.class)
@@ -46,16 +44,9 @@ public class ClientBookRegistryMixin {
                             for (TemplateComponent component : components) {
                                 if (component instanceof ComponentItemStack) {
                                     ItemStack[] items = (ItemStack[]) itemsField.get(component);
-                                    for (ItemStack item : items) {
-                                        if (item.getItem() == Items.AIR) {
-                                            // remove any NBT
-                                            CompoundTag tag = item.getTag();
-                                            if (tag != null) {
-                                                numItemsCleared++;
-                                                List<String> keys = new ArrayList<>(tag.getAllKeys());
-                                                for (String key : keys)
-                                                    item.removeTagKey(key);
-                                            }
+                                    for(int i = 0; i < items.length; i++) {
+                                        if(items[i] != null && items[i].getItem() == Items.AIR) {
+                                            items[i] = ItemStack.EMPTY;
                                         }
                                     }
                                 }

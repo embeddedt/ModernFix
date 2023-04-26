@@ -75,6 +75,7 @@
     "perf.cache_model_materials.BlockModelMixin",
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
+    "perf.faster_texture_loading.TextureAtlasMixin",
     "perf.skip_first_datapack_reload.CreateWorldScreenMixin",
     "devenv.MinecraftMixin",
     "devenv.NarratorMixin"

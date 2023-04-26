@@ -72,6 +72,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
         this.addMixinRule("perf.datapack_reload_exceptions", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
+        this.addMixinRule("perf.faster_texture_loading", true);
         /* off by default in 1.18 because it doesn't work as well */
         this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI/REI isn't installed to prevent breaking vanilla gameplay */

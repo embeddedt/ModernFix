@@ -29,6 +29,7 @@
     "feature.measure_time.ReloadableServerResourcesMixin",
     "feature.branding.BrandingControlMixin",
     "feature.direct_stack_trace.CrashReportMixin",
+    "perf.nbt_memory_usage.CompoundTagMixin",
     "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.kubejs.RecipeEventJSMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",

@@ -106,7 +106,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         if(k instanceof ResourceLocation) {
             rl = (ResourceLocation)k;
         } else {
-            rl = ((Triple<ResourceLocation, Transformation, Boolean>)k).getLeft();
+            rl = ((ModelBakery.BakedCacheKey)k).id();
             baked = true;
         }
         ModernFix.LOGGER.warn("Evicted {} model {}", baked ? "baked" : "unbaked", rl);

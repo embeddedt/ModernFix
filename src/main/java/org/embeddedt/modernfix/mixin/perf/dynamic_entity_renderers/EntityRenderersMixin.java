@@ -6,7 +6,7 @@ import com.google.common.cache.LoadingCache;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
 import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.entity.EntityType;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.entity.ErroredEntityRenderer;
@@ -42,9 +42,9 @@ public class EntityRenderersMixin {
                                 if(provider == null)
                                     throw new RuntimeException("Provider not registered");
                                 renderer = provider.create(context);
-                                ModernFix.LOGGER.debug("Loaded entity {}", Registry.ENTITY_TYPE.getKey(key));
+                                ModernFix.LOGGER.debug("Loaded entity {}", BuiltInRegistries.ENTITY_TYPE.getKey(key));
                             } catch(RuntimeException e) {
-                                ModernFix.LOGGER.error("Failed to create entity model for " + Registry.ENTITY_TYPE.getKey(key) + ":", e);
+                                ModernFix.LOGGER.error("Failed to create entity model for " + BuiltInRegistries.ENTITY_TYPE.getKey(key) + ":", e);
                                 renderer = new ErroredEntityRenderer<>(context);
                             }
                             return renderer;

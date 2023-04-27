@@ -33,6 +33,8 @@
     "perf.nbt_memory_usage.CompoundTagMixin",
     "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.kubejs.RecipeEventJSMixin",
+    "perf.tag_id_caching.TagEntryMixin",
+    "perf.tag_id_caching.TagOrElementLocationMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
     "perf.cache_upgraded_structures.StructureManagerMixin",
     "perf.cache_strongholds.ServerLevelMixin",

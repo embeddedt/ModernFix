@@ -89,6 +89,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.async_locator", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
         this.addMixinRule("perf.faster_texture_loading", true);
+        this.addMixinRule("perf.faster_font_loading", true);
         this.addMixinRule("perf.kubejs", modPresent("kubejs"));
         this.addMixinRule("perf.faster_singleplayer_load", false);
         /* Keep this off if JEI isn't installed to prevent breaking vanilla gameplay */

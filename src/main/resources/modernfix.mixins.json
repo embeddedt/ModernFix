@@ -113,6 +113,7 @@
     "perf.cache_model_materials.MultipartMixin",
     "perf.faster_texture_stitching.StitcherMixin",
     "perf.faster_texture_loading.TextureAtlasMixin",
+    "perf.faster_font_loading.LegacyUnicodeBitmapsProviderMixin",
     "bugfix.packet_leak.ClientPlayNetHandlerMixin",
     "bugfix.packet_leak.SCustomPayloadPlayPacketMixin",
     "perf.reuse_datapacks.MinecraftMixin",

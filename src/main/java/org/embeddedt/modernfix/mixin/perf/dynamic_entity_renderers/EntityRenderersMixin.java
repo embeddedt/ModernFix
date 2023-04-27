@@ -42,7 +42,7 @@ public class EntityRenderersMixin {
                                 if(provider == null)
                                     throw new RuntimeException("Provider not registered");
                                 renderer = provider.create(context);
-                                ModernFix.LOGGER.info("Loaded entity {}", Registry.ENTITY_TYPE.getKey(key));
+                                ModernFix.LOGGER.debug("Loaded entity {}", Registry.ENTITY_TYPE.getKey(key));
                             } catch(RuntimeException e) {
                                 ModernFix.LOGGER.error("Failed to create entity model for " + Registry.ENTITY_TYPE.getKey(key) + ":", e);
                                 renderer = new ErroredEntityRenderer<>(context);

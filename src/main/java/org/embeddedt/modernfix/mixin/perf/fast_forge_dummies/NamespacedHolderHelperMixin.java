@@ -26,7 +26,7 @@ public abstract class NamespacedHolderHelperMixin<T> extends MappedRegistry<T>  
         super(arg, lifecycle);
     }
 
-    @Inject(method = "freeze", at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lnet/minecraftforge/registries/NamespacedWrapper;holdersByName:Ljava/util/Map;"), cancellable = true, remap = false)
+    @Inject(method = "freeze", at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lnet/minecraftforge/registries/NamespacedWrapper;holdersByName:Ljava/util/Map;"), cancellable = true)
     private void fastDummyCheck(CallbackInfoReturnable<Registry<T>> cir) {
         // Quickly iterate without making any streams, etc. to see if everything is fine
         // Use the slow path (by returning without cancelling) when there is an error

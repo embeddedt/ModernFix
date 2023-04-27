@@ -14,6 +14,7 @@
     "perf.dynamic_structure_manager.StructureManagerMixin",
     "bugfix.chunk_deadlock.ServerChunkCacheMixin",
     "perf.dedicated_reload_executor.MinecraftServerMixin",
+    "perf.fast_forge_dummies.NamespacedHolderHelperMixin",
     "perf.remove_biome_temperature_cache.BiomeMixin",
     "perf.reduce_blockstate_cache_rebuilds.GameDataMixin",
     "perf.reduce_blockstate_cache_rebuilds.BlockCallbacksMixin",

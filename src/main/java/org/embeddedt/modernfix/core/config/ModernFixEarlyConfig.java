@@ -15,8 +15,23 @@ public class ModernFixEarlyConfig {
 
     private final Map<String, Option> options = new HashMap<>();
 
+    public static final boolean OPTIFINE_PRESENT;
+
+    static {
+        boolean hasOfClass = false;
+        try {
+            Class.forName("optifine.OptiFineTransformationService");
+            hasOfClass = true;
+        } catch(Throwable e) {
+        }
+        OPTIFINE_PRESENT = hasOfClass;
+    }
+
     private static boolean modPresent(String modId) {
-        return FMLLoader.getLoadingModList().getModFileById(modId) != null;
+        if(modId.equals("optifine"))
+            return OPTIFINE_PRESENT;
+        else
+            return FMLLoader.getLoadingModList().getModFileById(modId) != null;
     }
 
     private ModernFixEarlyConfig() {
@@ -44,14 +59,19 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.compress_blockstate", false);
         this.addMixinRule("bugfix.concurrency", true);
         this.addMixinRule("bugfix.edge_chunk_not_saved", true);
+        this.addMixinRule("perf.fast_forge_dummies", true);
         this.addMixinRule("perf.dynamic_structure_manager", true);
         this.addMixinRule("bugfix.chunk_deadlock", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.scan_cache", true);
+        this.addMixinRule("perf.kubejs", modPresent("kubejs"));
         this.addMixinRule("perf.flatten_model_predicates", true);
+        this.addMixinRule("perf.tag_id_caching", true);
         this.addMixinRule("perf.deduplicate_location", false);
         this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
         this.addMixinRule("perf.cache_model_materials", true);
+        this.addMixinRule("perf.nbt_memory_usage", true);
+        this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
         this.addMixinRule("perf.datapack_reload_exceptions", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
         /* off by default in 1.18 because it doesn't work as well */
@@ -59,7 +79,6 @@ public class ModernFixEarlyConfig {
         /* Keep this off if JEI/REI isn't installed to prevent breaking vanilla gameplay */
         this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null || FMLLoader.getLoadingModList().getModFileById("roughlyenoughitems") != null);
         this.addMixinRule("safety", true);
-        this.addMixinRule("launch.transformer_cache", false);
         this.addMixinRule("launch.class_search_cache", true);
         boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getProvider() instanceof ExplodedDirectoryLocator;
         this.addMixinRule("devenv", isDevEnv);
@@ -71,11 +90,12 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
+        disableIfModPresent("mixin.launch.class_search_cache", "optifine");
     }
 
     private void disableIfModPresent(String configName, String... ids) {
         for(String id : ids) {
-            if(FMLLoader.getLoadingModList().getModFileById(id) != null) {
+            if(modPresent(id)) {
                 Option option = this.options.get(configName);
                 if(option != null)
                     option.addModOverride(false, id);

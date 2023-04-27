@@ -3,6 +3,8 @@ plugins {
     id "maven-publish"
     id 'com.matthewprenger.cursegradle' version '1.4.0'
     id 'com.palantir.git-version' version '1.0.0'
+    id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '1.79.0'
+    id "com.modrinth.minotaur" version "2.+"
 }
 
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
@@ -63,6 +65,7 @@ repositories {
         url "https://maven.tterrag.com/"
     }
     maven { url "https://maven.shedaniel.me" }
+    maven { url 'https://maven.blamejared.com' }
 }
 
 dependencies {
@@ -98,6 +101,8 @@ dependencies {
     modRuntimeOnly("curse.maven:ferritecore-429235:4441949")
     modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
     modCompileOnly("curse.maven:supermartijncore-454372:4484241")
+    modCompileOnly("appeng:appliedenergistics2-forge:12.9.4")
+    modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
 }
 
 tasks.withType(JavaCompile) {
@@ -113,6 +118,22 @@ tasks.withType(JavaCompile) {
         options.release = targetVersion
     }
      */
+}
+
+task generateChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
+    def details = versionDetails();
+    if(details.commitDistance > 0) {
+        fromRef = details.lastTag;
+    } else {
+        def secondLastTagCmd = "git describe --abbrev=0 " + details.lastTag + "^"
+        def secondLastTag = secondLastTagCmd.execute().text.trim()
+        fromRef = secondLastTag;
+    }
+
+    file = new File("CHANGELOG.md");
+    def otherTemplateContent = new File('gradle/changelog.mustache').getText('UTF-8');
+    templateContent = "## Changes since " + fromRef + "\n" + otherTemplateContent;
+    toCommit = "HEAD";
 }
 
 java {
@@ -160,12 +181,41 @@ curseforge {
         apiKey = System.getenv("CURSEFORGE_TOKEN")
         project {
             id = "790626"
-            changelog = '[Changelog is not currently available]'
+            changelog = file('./CHANGELOG.md')
             changelogType = "markdown"
-            releaseType = "beta"
+            releaseType = "release"
             addGameVersion "Forge"
             addGameVersion minecraft_version
             mainArtifact remapJar
         }
     }
+}
+
+modrinth {
+    token = System.getenv("MODRINTH_TOKEN")
+    projectId = "modernfix" // This can be the project ID or the slug. Either will work!
+    versionType = "release" // This is the default -- can also be `beta` or `alpha`
+    uploadFile = remapJar
+    gameVersions = [minecraft_version]
+    loaders = ["forge"]
+    changelog.set(provider { file("./CHANGELOG.md").getText('UTF-8') })
+}
+
+tasks.register('checkCleanTag') {
+    doLast {
+        def details = versionDetails()
+        if (!details.isCleanTag || versionDetails().commitDistance != 0) {
+            throw new GradleException('Not a clean tree.')
+        }
+    }
+}
+
+tasks.curseforge.dependsOn(":checkCleanTag")
+tasks.curseforge.dependsOn(":generateChangelog")
+tasks.modrinth.dependsOn(":checkCleanTag")
+tasks.modrinth.dependsOn(":generateChangelog")
+
+tasks.register('publishToModSites') {
+    publishToModSites.dependsOn(tasks.modrinth)
+    publishToModSites.dependsOn(tasks.curseforge)
 }

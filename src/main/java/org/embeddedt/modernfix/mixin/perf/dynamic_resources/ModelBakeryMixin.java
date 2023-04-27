@@ -6,6 +6,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ImmutableList;
 import com.mojang.math.Transformation;
+import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
@@ -19,6 +20,7 @@ import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
+import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
@@ -63,14 +65,17 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final @Mutable private Map<ModelBakery.BakedCacheKey, BakedModel> bakedCache;
 
+    @Shadow @Final @Mutable private BlockColors blockColors;
     private Cache<ModelBakery.BakedCacheKey, BakedModel> loadedBakedModels;
+
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
 
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", ordinal = 0))
-    private void replaceTopLevelBakedModels(ProfilerFiller profiler, String arg) {
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/resources/model/ModelBakery;blockColors:Lnet/minecraft/client/color/block/BlockColors;"))
+    private void replaceTopLevelBakedModels(ModelBakery bakery, BlockColors val) {
+        this.blockColors = val;
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(3, TimeUnit.MINUTES)
                 .maximumSize(1000)
@@ -88,7 +93,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedCache = loadedBakedModels.asMap();
         this.unbakedCache = loadedModels.asMap();
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
-        profiler.push(arg);
     }
 
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
@@ -275,5 +279,19 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Override
     public ImmutableList<BlockState> getBlockStatesForMRL(StateDefinition<Block, BlockState> stateDefinition, ModelResourceLocation location) {
         return loadOnlyRelevantBlockState(stateDefinition, location);
+    }
+
+    private BakedModel bakedMissingModel = null;
+
+    public void setBakedMissingModel(BakedModel m) {
+        bakedMissingModel = m;
+    }
+
+    public BakedModel getBakedMissingModel() {
+        return bakedMissingModel;
+    }
+
+    public UnbakedModel mfix$getUnbakedMissingModel() {
+        return missingModel;
     }
 }

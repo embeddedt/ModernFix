@@ -17,11 +17,13 @@ public class DynamicModelBakeEvent extends Event {
     private BakedModel model;
     private final UnbakedModel unbakedModel;
     private final ModelBaker modelLoader;
-    public DynamicModelBakeEvent(ResourceLocation location, UnbakedModel unbakedModel, BakedModel model, ModelBaker loader) {
+    private final ModelBakery modelBakery;
+    public DynamicModelBakeEvent(ResourceLocation location, UnbakedModel unbakedModel, BakedModel model, ModelBaker loader, ModelBakery bakery) {
         this.location = location;
         this.model = model;
         this.unbakedModel = unbakedModel;
         this.modelLoader = loader;
+        this.modelBakery = bakery;
     }
 
     public ResourceLocation getLocation() {
@@ -38,6 +40,10 @@ public class DynamicModelBakeEvent extends Event {
 
     public ModelBaker getModelLoader() {
         return this.modelLoader;
+    }
+
+    public ModelBakery getModelBakery() {
+        return this.modelBakery;
     }
 
     public void setModel(BakedModel model) {

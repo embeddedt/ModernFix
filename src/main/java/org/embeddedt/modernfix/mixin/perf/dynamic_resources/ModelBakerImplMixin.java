@@ -8,6 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.duck.IExtendedModelBakery;
+import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -46,9 +48,18 @@ public abstract class ModelBakerImplMixin {
                     }
                 }
                 if(ibakedmodel == null) {
-                    ibakedmodel = iunbakedmodel.bake((ModelBaker)this, textureGetter, arg2, arg);
+                    IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
+                    if(iunbakedmodel == extendedBakery.mfix$getUnbakedMissingModel()) {
+                        // use a shared baked missing model
+                        if(extendedBakery.getBakedMissingModel() == null) {
+                            extendedBakery.setBakedMissingModel(iunbakedmodel.bake((ModelBaker)this, textureGetter, arg2, arg));
+                            ((DynamicBakedModelProvider)this.field_40571.getBakedTopLevelModels()).setMissingModel(extendedBakery.getBakedMissingModel());
+                        }
+                        ibakedmodel = extendedBakery.getBakedMissingModel();
+                    } else
+                        ibakedmodel = iunbakedmodel.bake((ModelBaker)this, textureGetter, arg2, arg);
                 }
-                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelBaker)this);
+                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelBaker)this, this.field_40571);
                 MinecraftForge.EVENT_BUS.post(event);
                 this.field_40571.bakedCache.put(key, event.getModel());
                 cir.setReturnValue(event.getModel());

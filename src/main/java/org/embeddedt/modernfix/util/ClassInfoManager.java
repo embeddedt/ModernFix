@@ -42,7 +42,7 @@ public class ClassInfoManager {
         // Clear manifest entries
         int numManifestsCleared = 0;
         for(IModFileInfo mod : ModList.get().getModFiles()) {
-            Manifest manifest = mod.getFile().getSecureJar().getManifest();
+            Manifest manifest = mod.getFile().getSecureJar().moduleDataProvider().getManifest();
             if(manifest.getEntries() instanceof HashMap<String, Attributes> entryMap) {
                 for (Map.Entry<String, Attributes> entry : entryMap.entrySet()) {
                     Attributes attributes = entry.getValue();

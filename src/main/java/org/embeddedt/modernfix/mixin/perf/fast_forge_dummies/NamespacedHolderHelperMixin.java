@@ -3,7 +3,6 @@ package org.embeddedt.modernfix.mixin.perf.fast_forge_dummies;
 import net.minecraft.core.Holder;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.registries.IForgeRegistryEntry;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
@@ -17,7 +16,7 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Mixin(targets = { "net/minecraftforge/registries/NamespacedHolderHelper" })
-public class NamespacedHolderHelperMixin<T extends IForgeRegistryEntry<T>> {
+public class NamespacedHolderHelperMixin<T> {
     @Shadow private Map<ResourceLocation, Holder.Reference<T>> holdersByName;
 
     @Shadow @Final private @Nullable Function<T, Holder.Reference<T>> holderLookup;

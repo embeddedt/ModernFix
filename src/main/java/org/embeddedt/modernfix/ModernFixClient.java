@@ -1,18 +1,23 @@
 package org.embeddedt.modernfix;
 
+import com.mojang.blaze3d.platform.InputConstants;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
 import net.minecraft.client.gui.screens.ConnectScreen;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.util.MemoryReserve;
+import net.minecraftforge.client.ClientRegistry;
+import net.minecraftforge.client.ConfigGuiHandler;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.ForgeIngameGui;
+import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.TickEvent;
@@ -20,13 +25,18 @@ import net.minecraftforge.event.server.ServerStartingEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.IExtensionPoint;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.network.NetworkEvent;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
+import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
 import java.lang.management.ManagementFactory;
@@ -51,6 +61,27 @@ public class ModernFixClient {
             Optional<? extends ModContainer> mfContainer = ModList.get().getModContainerById("modernfix");
             if(mfContainer.isPresent())
                 brandingString = "ModernFix " + mfContainer.get().getModInfo().getVersion().toString();
+        }
+
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::clientSetup);
+        ModLoadingContext.get().registerExtensionPoint(
+                ConfigGuiHandler.ConfigGuiFactory.class,
+                () -> new ConfigGuiHandler.ConfigGuiFactory((mc, screen) -> new ModernFixConfigScreen(screen))
+        );
+    }
+
+    private KeyMapping configKey;
+
+    private void clientSetup(FMLClientSetupEvent event) {
+        configKey = new KeyMapping("key.modernfix.config", KeyConflictContext.UNIVERSAL, InputConstants.UNKNOWN, "key.modernfix");
+        ClientRegistry.registerKeyBinding(configKey);
+
+    }
+
+    @SubscribeEvent
+    public void onConfigKey(TickEvent.ClientTickEvent event) {
+        if(event.phase == TickEvent.Phase.START && configKey.consumeClick()) {
+            Minecraft.getInstance().setScreen(new ModernFixConfigScreen(Minecraft.getInstance().screen));
         }
     }
 

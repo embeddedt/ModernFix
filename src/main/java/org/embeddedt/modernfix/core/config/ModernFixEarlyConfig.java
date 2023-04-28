@@ -17,6 +17,8 @@ public class ModernFixEarlyConfig {
 
     public static final boolean OPTIFINE_PRESENT;
 
+    private File configFile;
+
     static {
         boolean hasOfClass = false;
         try {
@@ -34,7 +36,8 @@ public class ModernFixEarlyConfig {
             return FMLLoader.getLoadingModList().getModFileById(modId) != null;
     }
 
-    private ModernFixEarlyConfig() {
+    private ModernFixEarlyConfig(File file) {
+        this.configFile = file;
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
         this.addMixinRule("core", true); // TODO: Don't actually allow the user to disable this
@@ -188,7 +191,7 @@ public class ModernFixEarlyConfig {
      * created. The file on disk will then be updated to include any new options.
      */
     public static ModernFixEarlyConfig load(File file) {
-        ModernFixEarlyConfig config = new ModernFixEarlyConfig();
+        ModernFixEarlyConfig config = new ModernFixEarlyConfig(file);
         Properties props = new Properties();
         if(file.exists()) {
             try (FileInputStream fin = new FileInputStream(file)){
@@ -200,7 +203,7 @@ public class ModernFixEarlyConfig {
         }
 
         try {
-            config.writeConfig(file, props);
+            config.save();
         } catch (IOException e) {
             LOGGER.warn("Could not write configuration file", e);
         }
@@ -208,8 +211,8 @@ public class ModernFixEarlyConfig {
         return config;
     }
 
-    private void writeConfig(File file, Properties props) throws IOException {
-        File dir = file.getParentFile();
+    public void save() throws IOException {
+        File dir = configFile.getParentFile();
 
         if (!dir.exists()) {
             if (!dir.mkdirs()) {
@@ -219,23 +222,24 @@ public class ModernFixEarlyConfig {
             throw new IOException("The parent file is not a directory");
         }
 
-        try (Writer writer = new FileWriter(file)) {
+        try (Writer writer = new FileWriter(configFile)) {
             writer.write("# This is the configuration file for ModernFix.\n");
             writer.write("#\n");
             writer.write("# The following options can be enabled or disabled if there is a compatibility issue.\n");
             writer.write("# Add a line mixin.example_name=true/false without the # sign to enable/disable a rule.\n");
-            List<String> lines = this.options.keySet().stream()
+            List<String> keys = this.options.keySet().stream()
                     .filter(key -> !key.equals("mixin.core"))
                     .sorted()
-                    .map(key -> "#   " + key + "\n")
                     .collect(Collectors.toList());
-            for(String line : lines) {
-                writer.write(line);
+            for(String line : keys) {
+                if(!line.equals("mixin.core"))
+                    writer.write("#  " + line + "\n");
             }
-            for (Map.Entry<Object, Object> entry : props.entrySet()) {
-                String key = (String) entry.getKey();
-                String value = (String) entry.getValue();
-                writer.write(key + "=" + value + "\n");
+
+            for (String key : keys) {
+                Option option = this.options.get(key);
+                if(option.isUserDefined())
+                    writer.write(key + "=" + option.isEnabled() + "\n");
             }
         }
     }
@@ -253,5 +257,9 @@ public class ModernFixEarlyConfig {
                 .stream()
                 .filter(Option::isOverridden)
                 .count();
+    }
+
+    public Map<String, Option> getOptionMap() {
+        return Collections.unmodifiableMap(this.options);
     }
 }

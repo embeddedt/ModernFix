@@ -19,11 +19,15 @@ public class Option {
     }
 
     public void setEnabled(boolean enabled, boolean userDefined) {
+        if(this.enabled == enabled)
+            return;
         this.enabled = enabled;
         this.userDefined = userDefined;
     }
 
     public void addModOverride(boolean enabled, String modId) {
+        if(this.enabled == enabled)
+            return;
         this.enabled = enabled;
 
         if (this.modDefined == null) {
@@ -55,6 +59,10 @@ public class Option {
 
     public void clearModsDefiningValue() {
         this.modDefined = null;
+    }
+
+    public void clearUserDefined() {
+        this.userDefined = false;
     }
 
     public Collection<String> getDefiningMods() {

@@ -1,0 +1,41 @@
+package org.embeddedt.modernfix.screen;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.gui.components.Button;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.CommonComponents;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.TranslatableComponent;
+
+import javax.annotation.Nullable;
+
+public class ModernFixConfigScreen extends Screen {
+    private OptionList optionList;
+    private Screen lastScreen;
+
+    public boolean madeChanges = false;
+    private Button doneButton;
+    public ModernFixConfigScreen(@Nullable  Screen lastScreen) {
+        super(new TranslatableComponent("modernfix.config"));
+        this.lastScreen = lastScreen;
+    }
+
+    @Override
+    protected void init() {
+        this.optionList = new OptionList(this, this.minecraft);
+        this.children.add(this.optionList);
+        this.doneButton = new Button(this.width / 2 - 100, this.height - 29, 200, 20, CommonComponents.GUI_DONE, (arg) -> {
+            this.minecraft.setScreen(lastScreen);
+        });
+        this.addButton(this.doneButton);
+    }
+
+    @Override
+    public void render(PoseStack poseStack, int mouseX, int mouseY, float partialTicks) {
+        this.renderBackground(poseStack);
+        this.optionList.render(poseStack, mouseX, mouseY, partialTicks);
+        drawCenteredString(poseStack, this.font, this.title, this.width / 2, 8, 16777215);
+        this.doneButton.setMessage(madeChanges ? new TranslatableComponent("modernfix.config.done_restart") : CommonComponents.GUI_DONE);
+        super.render(poseStack, mouseX, mouseY, partialTicks);
+    }
+}

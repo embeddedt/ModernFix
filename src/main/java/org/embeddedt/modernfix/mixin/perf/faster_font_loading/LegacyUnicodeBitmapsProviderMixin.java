@@ -43,6 +43,11 @@ public abstract class LegacyUnicodeBitmapsProviderMixin {
         return image;
     }
 
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lcom/mojang/blaze3d/platform/NativeImage;close()V"))
+    private void skipCloseNativeImage(NativeImage image) {
+        /* we can't close here, as the image has been stored for use later */
+    }
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void clearLocation(CallbackInfo ci) {
         currentCharIdx = null;

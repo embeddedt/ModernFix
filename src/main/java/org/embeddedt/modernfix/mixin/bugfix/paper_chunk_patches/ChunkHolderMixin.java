@@ -45,7 +45,7 @@ public abstract class ChunkHolderMixin implements IPaperChunkHolder {
         return null;
     }
 
-    public static ChunkStatus mfix$getNextStatus(ChunkStatus status) {
+    private static ChunkStatus mfix$getNextStatus(ChunkStatus status) {
         if (status == ChunkStatus.FULL) {
             return status;
         }

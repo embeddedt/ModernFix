@@ -63,6 +63,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.fast_forge_dummies", true);
         this.addMixinRule("perf.dynamic_structure_manager", true);
         this.addMixinRule("bugfix.chunk_deadlock", true);
+        this.addMixinRule("bugfix.paper_chunk_patches", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.scan_cache", true);
         this.addMixinRule("perf.kubejs", modPresent("kubejs"));

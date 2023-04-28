@@ -2,10 +2,13 @@ package org.embeddedt.modernfix.mixin.bugfix.paper_chunk_patches;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ChunkHolder;
-import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.*;
+import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.util.thread.BlockableEventLoop;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.levelgen.structure.templatesystem.StructureManager;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.duck.IPaperChunkHolder;
 import org.spongepowered.asm.mixin.Final;
@@ -16,16 +19,29 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
 
 @Mixin(ChunkMap.class)
-public class ChunkMapMixin {
+public abstract class ChunkMapMixin {
     @Shadow @Final private BlockableEventLoop<Runnable> mainThreadExecutor;
+
+    @Shadow @Final private ChunkMap.DistanceManager distanceManager;
+
+    @Shadow protected abstract CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> protoChunkToFullChunk(ChunkHolder arg);
+
+    @Shadow @Final private ServerLevel level;
+    @Shadow @Final private StructureManager structureManager;
+    @Shadow @Final private ThreadedLevelLightEngine lightEngine;
+    @Shadow @Final private ChunkProgressListener progressListener;
+
+    @Shadow protected abstract CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> scheduleChunkGeneration(ChunkHolder chunkHolder, ChunkStatus chunkStatus);
 
     private Executor mainInvokingExecutor;
 
@@ -63,5 +79,37 @@ public class ChunkMapMixin {
             executor.execute(runnable);
         };
         return inputFuture.thenComposeAsync(function, targetExecutor);
+    }
+
+    /**
+     * @author embeddedt
+     * @reason revert 1.17 chunk system changes, significantly reduces time and RAM needed to load chunks
+     */
+    @Inject(method = "schedule", at = @At("HEAD"), cancellable = true)
+    private void useLegacySchedulingLogic(ChunkHolder holder, ChunkStatus requiredStatus, CallbackInfoReturnable<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> cir) {
+        if(requiredStatus != ChunkStatus.EMPTY) {
+            ChunkPos chunkpos = holder.getPos();
+            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = holder.getOrScheduleFuture(requiredStatus.getParent(), (ChunkMap)(Object)this);
+            cir.setReturnValue(future.thenComposeAsync((either) -> {
+                Optional<ChunkAccess> optional = either.left();
+                if(!optional.isPresent())
+                    return CompletableFuture.completedFuture(either);
+
+                if (requiredStatus == ChunkStatus.LIGHT) {
+                    this.distanceManager.addTicket(TicketType.LIGHT, chunkpos, 33 + ChunkStatus.getDistance(ChunkStatus.LIGHT), chunkpos);
+                }
+
+                // from original method
+                if (optional.get().getStatus().isOrAfter(requiredStatus)) {
+                    CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = requiredStatus.load(this.level, this.structureManager, this.lightEngine, (arg2) -> {
+                        return this.protoChunkToFullChunk(holder);
+                    }, (ChunkAccess)optional.get());
+                    this.progressListener.onStatusChange(chunkpos, requiredStatus);
+                    return completablefuture;
+                } else {
+                    return this.scheduleChunkGeneration(holder, requiredStatus);
+                }
+            }, this.mainThreadExecutor).thenComposeAsync(CompletableFuture::completedFuture, this.mainThreadExecutor));
+        }
     }
 }

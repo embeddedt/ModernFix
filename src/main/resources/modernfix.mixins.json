@@ -9,6 +9,8 @@
     "core.BootstrapMixin",
     "bugfix.edge_chunk_not_saved.ChunkManagerMixin",
     "bugfix.starlight_emptiness.StarLightEngineMixin",
+    "bugfix.paper_chunk_patches.ChunkMapMixin",
+    "bugfix.paper_chunk_patches.ChunkHolderMixin",
     "perf.dynamic_structure_manager.StructureManagerMixin",
     "bugfix.tf_cme_on_load.TwilightForestModMixin",
     "bugfix.refinedstorage.te_bug.ItemExternalStorageProviderMixin",

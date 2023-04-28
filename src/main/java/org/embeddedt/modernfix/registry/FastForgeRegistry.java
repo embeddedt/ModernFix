@@ -2,14 +2,12 @@ package org.embeddedt.modernfix.registry;
 
 import com.google.common.collect.BiMap;
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.IForgeRegistryEntry;
-import org.apache.commons.lang3.tuple.MutablePair;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -25,20 +23,20 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
     private ResourceKey<Registry<V>> registryKey;
 
     private ObjectArrayList<V> valuesById;
-    private Map<V, MutablePair<ResourceKey<V>, Integer>> infoByValue;
+    private Map<V, RegistryValueData> infoByValue;
     private Map<ResourceKey<V>, V> valuesByKey = new Object2ObjectOpenHashMap<>();
 
     private void storeId(V value, int id) {
-        MutablePair<ResourceKey<V>, Integer> pair = infoByValue.computeIfAbsent(value, k -> new MutablePair<>(null, null));
-        pair.setRight(id);
+        RegistryValueData pair = infoByValue.computeIfAbsent(value, k -> new RegistryValueData());
+        pair.id = id;
     }
 
-    private void updateInfoPairAndClearIfNull(V v, Consumer<MutablePair<ResourceKey<V>, Integer>> consumer) {
+    private void updateInfoPairAndClearIfNull(V v, Consumer<RegistryValueData> consumer) {
         infoByValue.compute(v, (oldValue, oldPair) -> {
             if(oldPair == null)
-                oldPair = new MutablePair<>(null, null);
+                oldPair = new RegistryValueData();
             consumer.accept(oldPair);
-            if(oldPair.getLeft() == null && oldPair.getRight() == null)
+            if(oldPair.isEmpty())
                 return null;
             else
                 return oldPair;
@@ -75,7 +73,7 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
                 ensureArrayCanFitId(key);
                 V oldValue = valuesById.set(key, value);
                 if(oldValue != null) {
-                    updateInfoPairAndClearIfNull(oldValue, pair -> pair.setRight(null));
+                    updateInfoPairAndClearIfNull(oldValue, pair -> pair.id = null);
                 }
                 storeId(value, key);
                 return oldValue;
@@ -143,20 +141,20 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
 
                     @Override
                     public Integer get(Object key) {
-                        MutablePair<ResourceKey<V>, Integer> pair = infoByValue.get(key);
+                        RegistryValueData pair = infoByValue.get(key);
                         if(pair == null)
                             return null;
-                        return pair.getRight();
+                        return pair.id;
                     }
 
                     @Override
                     public Integer remove(Object key) {
-                        MutablePair<ResourceKey<V>, Integer> pair = infoByValue.get(key);
+                        RegistryValueData pair = infoByValue.get(key);
                         if(pair == null)
                             return null;
-                        int id = pair.getRight();
+                        int id = pair.id;
                         valuesById.set(id, null);
-                        updateInfoPairAndClearIfNull((V)key, p -> p.setRight(null));
+                        updateInfoPairAndClearIfNull((V)key, p -> p.id = null);
                         return id;
                     }
 
@@ -217,8 +215,8 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
             public void clear() {
                 valuesById.clear();
                 infoByValue.values().removeIf(pair -> {
-                    pair.setRight(null);
-                    return pair.getLeft() == null && pair.getRight() == null;
+                    pair.id = null;
+                    return pair.isEmpty();
                 });
             }
 
@@ -257,9 +255,9 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
             public V forcePut(@Nullable ResourceKey<V> key, @Nullable V value) {
                 V oldValue = valuesByKey.put(key, value);
                 if(oldValue != null) {
-                    updateInfoPairAndClearIfNull(oldValue, p -> p.setLeft(null));
+                    updateInfoPairAndClearIfNull(oldValue, p -> p.key = null);
                 }
-                updateInfoPairAndClearIfNull(value, p -> p.setLeft(key));
+                updateInfoPairAndClearIfNull(value, p -> p.key = key);
                 return oldValue;
             }
 
@@ -325,22 +323,22 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
 
                     @Override
                     public ResourceKey<V> get(Object key) {
-                        MutablePair<ResourceKey<V>, Integer> pair = infoByValue.get(key);
+                        RegistryValueData pair = infoByValue.get(key);
                         if(pair == null)
                             return null;
                         else
-                            return pair.getLeft();
+                            return (ResourceKey<V>)pair.key;
                     }
 
                     @Override
                     public ResourceKey<V> remove(Object key) {
-                        MutablePair<ResourceKey<V>, Integer> pair = infoByValue.get(key);
+                        RegistryValueData pair = infoByValue.get(key);
                         if(pair == null)
                             return null;
                         else {
-                            ResourceKey<V> rk = pair.getLeft();
+                            ResourceKey<V> rk = (ResourceKey<V>)pair.key;
                             valuesByKey.remove(rk);
-                            updateInfoPairAndClearIfNull((V)key, p -> p.setLeft(null));
+                            updateInfoPairAndClearIfNull((V)key, p -> p.key = null);
                             return rk;
                         }
                     }
@@ -396,7 +394,7 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
 
             @Override
             public void clear() {
-                valuesByKey.values().forEach(v -> updateInfoPairAndClearIfNull(v, p -> p.setLeft(null)));
+                valuesByKey.values().forEach(v -> updateInfoPairAndClearIfNull(v, p -> p.key = null));
                 valuesByKey.clear();
             }
 
@@ -488,11 +486,11 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
 
                     @Override
                     public ResourceLocation get(Object key) {
-                        MutablePair<ResourceKey<V>, Integer> pair = infoByValue.get(key);
-                        if(pair == null || pair.getLeft() == null)
+                        RegistryValueData pair = infoByValue.get(key);
+                        if(pair == null || pair.key == null)
                             return null;
                         else
-                            return pair.getLeft().location();
+                            return pair.key.location();
                     }
 
                     @Override
@@ -669,6 +667,15 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
         @Override
         public void clear() {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    static class RegistryValueData {
+        public ResourceKey<?> key;
+        public Integer id;
+
+        boolean isEmpty() {
+            return key == null && id == null;
         }
     }
 }

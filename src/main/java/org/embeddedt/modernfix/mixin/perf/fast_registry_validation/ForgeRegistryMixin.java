@@ -98,7 +98,6 @@ public class ForgeRegistryMixin<V extends IForgeRegistryEntry<V>> {
         this.fastRegistry.optimize();
     }
 
-    /*
     @Redirect(method = "sync", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/BiMap;clear()V"))
     private void clearBiMap(BiMap map) {
         if(map == this.owners) {
@@ -108,6 +107,4 @@ public class ForgeRegistryMixin<V extends IForgeRegistryEntry<V>> {
         } else
             map.clear();
     }
-
-     */
 }

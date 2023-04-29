@@ -18,14 +18,14 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
-    private BiMap<Integer, V> ids;
-    private DataFieldBiMap<ResourceLocation> names;
-    private DataFieldBiMap<ResourceKey<V>> keys;
-    private DataFieldBiMap<?> owners;
-    private ResourceKey<Registry<V>> registryKey;
+    private final BiMap<Integer, V> ids;
+    private final DataFieldBiMap<ResourceLocation> names;
+    private final DataFieldBiMap<ResourceKey<V>> keys;
+    private final DataFieldBiMap<?> owners;
+    private final ResourceKey<Registry<V>> registryKey;
 
-    private ObjectArrayList<V> valuesById;
-    private Object2ObjectOpenHashMap<V, RegistryValueData> infoByValue;
+    private final ObjectArrayList<V> valuesById;
+    private final Object2ObjectOpenHashMap<V, RegistryValueData> infoByValue;
 
     private void storeId(V value, int id) {
         RegistryValueData pair = infoByValue.computeIfAbsent(value, k -> new RegistryValueData());
@@ -58,6 +58,7 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
         }
         this.names.clearUnsafe();
         this.keys.clearUnsafe();
+        this.owners.clearUnsafe();
     }
 
     public FastForgeRegistry(ResourceKey<Registry<V>> registryKey) {

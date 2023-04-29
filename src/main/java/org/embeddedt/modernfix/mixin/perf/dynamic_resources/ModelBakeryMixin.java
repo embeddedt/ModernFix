@@ -62,6 +62,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -248,7 +249,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
      */
     private void gatherModelMaterials(Set<Material> materialSet) {
         Stopwatch stopwatch = Stopwatch.createStarted();
-        List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> blockStateData = new ArrayList<>();
         final Object2IntOpenHashMap<String> blockstateErrors = new Object2IntOpenHashMap<>();
         /*
          * First, gather all vanilla packs, and use listResources on them. This will allow us to (hopefully) avoid
@@ -281,26 +281,29 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         allAvailableStates.clear();
         allAvailableStates.trim();
 
-
+        ConcurrentLinkedQueue<Pair<ResourceLocation, JsonElement>> blockStateLoadedFiles = new ConcurrentLinkedQueue<>();
+        List<CompletableFuture<Void>> blockStateData = new ArrayList<>();
         for(ResourceLocation blockstate : blockStateFiles) {
-            blockStateData.add(CompletableFuture.supplyAsync(() -> {
+            blockStateData.add(CompletableFuture.runAsync(() -> {
                 ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
-                Optional<Resource> resource = this.resourceManager.getResource(fileLocation);
-                if(resource.isPresent()) {
-                    try(InputStream stream = resource.get().open()) {
+                try {
+                    List<Resource> resources = this.resourceManager.getResourceStack(fileLocation);
+                    for(Resource resource : resources) {
                         JsonParser parser = new JsonParser();
-                        return Pair.of(blockstate, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8)));
-                    } catch(IOException | JsonParseException e) {
-                        logOrSuppressError(blockstateErrors, "blockstate", blockstate, e);
+                        try(InputStream stream = resource.open()) {
+                            blockStateLoadedFiles.add(Pair.of(blockstate, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8))));
+                        } catch(JsonParseException e) {
+                            logOrSuppressError(blockstateErrors, "blockstate", blockstate, e);
+                        }
                     }
+                } catch(IOException e) {
+                    logOrSuppressError(blockstateErrors, "blockstate", blockstate, e);
                 }
-                return Pair.of(blockstate, null);
             }, ModernFix.resourceReloadExecutor()));
         }
         blockStateFiles = null;
         CompletableFuture.allOf(blockStateData.toArray(new CompletableFuture[0])).join();
-        for(CompletableFuture<Pair<ResourceLocation, JsonElement>> result : blockStateData) {
-            Pair<ResourceLocation, JsonElement> pair = result.join();
+        for(Pair<ResourceLocation, JsonElement> pair : blockStateLoadedFiles) {
             if(pair.getSecond() != null) {
                 try {
                     JsonObject obj = pair.getSecond().getAsJsonObject();
@@ -353,6 +356,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         });
         blockstateErrors.clear();
         blockStateData = null;
+        blockStateLoadedFiles.clear();
 
         /* figure out which models we should actually load */
         gatherAdditionalViaManualScan(allPackResources, allAvailableModels, modelFiles, "models/");

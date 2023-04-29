@@ -12,6 +12,7 @@ import com.google.gson.*;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.Util;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -20,8 +21,11 @@ import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.resources.ClientPackSource;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.*;
+import net.minecraft.server.packs.resources.FallbackResourceManager;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -35,6 +39,8 @@ import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.fml.packs.DelegatingResourcePack;
+import net.minecraftforge.fml.packs.ModFileResourcePack;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.ForgeRegistryEntry;
 import org.apache.commons.lang3.tuple.Triple;
@@ -207,6 +213,15 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             ModernFix.LOGGER.error("Error reading {} {}: {}", type, location, e);
     }
 
+    private boolean trustedResourcePack(PackResources pack) {
+        return pack instanceof VanillaPackResources ||
+                pack instanceof ModFileResourcePack ||
+                pack instanceof ClientPackSource ||
+                pack instanceof DelegatingResourcePack ||
+                pack instanceof FolderPackResources ||
+                pack instanceof FilePackResources;
+    }
+
     /**
      * Load all blockstate JSONs and model files, collect textures.
      */
@@ -214,6 +229,58 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         Stopwatch stopwatch = Stopwatch.createStarted();
         List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> blockStateData = new ArrayList<>();
         final Object2IntOpenHashMap<String> blockstateErrors = new Object2IntOpenHashMap<>();
+        /*
+         * First, gather all vanilla packs, and use listResources on them. This will allow us to (hopefully) avoid
+         * scanning most packs a lot.
+         */
+        List<PackResources> allPackResources = new ArrayList<>(this.resourceManager.listPacks().collect(Collectors.toList()));
+        Collections.reverse(allPackResources);
+        ObjectOpenHashSet<ResourceLocation> allAvailableModels = new ObjectOpenHashSet<>(), allAvailableStates = new ObjectOpenHashSet<>();
+        allPackResources.removeIf(pack -> {
+            if(trustedResourcePack(pack)) {
+                for(String namespace : pack.getNamespaces(PackType.CLIENT_RESOURCES)) {
+                    Collection<ResourceLocation> allBlockstates = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "blockstates", Integer.MAX_VALUE, p -> p.endsWith(".json"));
+                    for(ResourceLocation blockstate : allBlockstates) {
+                        allAvailableStates.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("blockstates/", "").replace(".json", "")));
+                    }
+                    Collection<ResourceLocation> allModels = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "models", Integer.MAX_VALUE, p -> p.endsWith(".json"));
+                    for(ResourceLocation blockstate : allModels) {
+                        allAvailableModels.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("models/", "").replace(".json", "")));
+                    }
+                }
+                return true;
+            }
+            ModernFix.LOGGER.debug("Pack with class {} needs manual scan", pack.getClass().getName());
+            return false;
+        });
+        if(allPackResources.size() > 0) {
+            /* Now make a fallback resource manager and use it on the remaining packs to see if they actually contain these files */
+            FallbackResourceManager frm = new FallbackResourceManager(PackType.CLIENT_RESOURCES, "dummy");
+            for(int i = allPackResources.size() - 1; i >= 0; i--) {
+                frm.add(allPackResources.get(i));
+            }
+            for(ResourceLocation blockstate : blockStateFiles) {
+                ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
+                try(Resource resource = frm.getResource(fileLocation)) {
+                    allAvailableStates.add(blockstate);
+                } catch(IOException ignored) {
+                }
+            }
+            for(ResourceLocation model : modelFiles) {
+                ResourceLocation fileLocation = new ResourceLocation(model.getNamespace(), "models/" + model.getPath() + ".json");
+                try(Resource resource = frm.getResource(fileLocation)) {
+                    allAvailableModels.add(model);
+                } catch(IOException ignored) {
+                }
+            }
+        }
+        // We now have a list of all vanilla resources known to exist. Delete anything that we don't have
+        blockStateFiles.retainAll(allAvailableStates);
+        modelFiles.retainAll(allAvailableModels);
+        allAvailableModels.clear();
+        allAvailableModels.trim();
+        allAvailableStates.clear();
+        allAvailableStates.trim();
         for(ResourceLocation blockstate : blockStateFiles) {
             blockStateData.add(CompletableFuture.supplyAsync(() -> {
                 ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");

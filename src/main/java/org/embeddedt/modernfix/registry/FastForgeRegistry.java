@@ -88,7 +88,7 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
                 ensureArrayCanFitId(key);
                 V oldValue = valuesById.set(key, value);
                 if(oldValue != null) {
-                    updateInfoPairAndClearIfNull(oldValue, pair -> pair.id = null);
+                    updateInfoPairAndClearIfNull(oldValue, pair -> pair.id = -1);
                 }
                 storeId(value, key);
                 return oldValue;
@@ -159,7 +159,7 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
                         RegistryValueData pair = infoByValue.get(key);
                         if(pair == null)
                             return null;
-                        return pair.id;
+                        return pair.id == -1 ? null : pair.id;
                     }
 
                     @Override
@@ -168,9 +168,10 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
                         if(pair == null)
                             return null;
                         int id = pair.id;
-                        valuesById.set(id, null);
-                        updateInfoPairAndClearIfNull((V)key, p -> p.id = null);
-                        return id;
+                        if(id != -1)
+                            valuesById.set(id, null);
+                        updateInfoPairAndClearIfNull((V)key, p -> p.id = -1);
+                        return id == -1 ? null : id;
                     }
 
                     @Override
@@ -230,7 +231,7 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
             public void clear() {
                 valuesById.clear();
                 infoByValue.values().removeIf(pair -> {
-                    pair.id = null;
+                    pair.id = -1;
                     return pair.isEmpty();
                 });
             }
@@ -589,11 +590,11 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
     static class RegistryValueData {
         public ResourceKey<?> key;
         public ResourceLocation location;
-        public Integer id;
+        public int id;
         public Object overrideOwner;
 
         boolean isEmpty() {
-            return key == null && location == null && id == null && overrideOwner == null;
+            return key == null && location == null && id == -1 && overrideOwner == null;
         }
     }
 }

@@ -231,8 +231,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     }
     @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))
     private ImmutableList<BlockState> loadOnlyRelevantBlockState(StateDefinition<Block, BlockState> stateDefinition, ResourceLocation location) {
-        Set<Property<?>> fixedProperties = new HashSet<>();
         ModelResourceLocation mrl = (ModelResourceLocation)location;
+        if(Objects.equals(mrl.getVariant(), "inventory"))
+            return ImmutableList.of();
+        Set<Property<?>> fixedProperties = new HashSet<>();
         BlockState fixedState = stateDefinition.any();
         for(String s : COMMA_SPLITTER.split(mrl.getVariant())) {
             Iterator<String> iterator = EQUAL_SPLITTER.split(s).iterator();

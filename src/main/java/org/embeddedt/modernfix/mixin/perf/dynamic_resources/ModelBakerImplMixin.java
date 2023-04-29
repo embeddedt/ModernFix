@@ -38,6 +38,9 @@ public abstract class ModelBakerImplMixin {
                 if(debugDynamicModelLoading)
                     ModernFix.LOGGER.info("Baking {}", arg);
                 UnbakedModel iunbakedmodel = this.getModel(arg);
+                IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
+                if(iunbakedmodel == extendedBakery.mfix$getUnbakedMissingModel() && debugDynamicModelLoading)
+                    ModernFix.LOGGER.warn("Model {} not present", arg);
                 // TODO: make sure parent resolution doesn't re-run many times
                 iunbakedmodel.resolveParents(this::getModel);
                 BakedModel ibakedmodel = null;
@@ -48,7 +51,6 @@ public abstract class ModelBakerImplMixin {
                     }
                 }
                 if(ibakedmodel == null) {
-                    IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
                     if(iunbakedmodel == extendedBakery.mfix$getUnbakedMissingModel()) {
                         // use a shared baked missing model
                         if(extendedBakery.getBakedMissingModel() == null) {

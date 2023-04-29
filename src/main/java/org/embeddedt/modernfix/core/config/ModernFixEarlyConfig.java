@@ -48,6 +48,8 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.direct_stack_trace", false);
         this.addMixinRule("perf.fast_registry_validation", true);
         this.addMixinRule("perf.skip_first_datapack_reload", true);
+        // not stable yet
+        this.addMixinRule("perf.rewrite_registry", false);
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
         this.addMixinRule("perf.model_optimizations", true);

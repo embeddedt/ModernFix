@@ -73,13 +73,14 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
             @Nullable
             @Override
             public V put(@Nullable Integer key, @Nullable V value) {
-                ensureArrayCanFitId(key);
-                V oldValue = valuesById.get(key);
-                if(oldValue != null)
-                    throw new IllegalArgumentException("Existing mapping");
-                valuesById.set(key, value);
-                storeId(value, key);
-                return null;
+                RegistryValueData data = infoByValue.get(value);
+                int unboxedKey = key;
+                if(data != null && data.id != -1 && data.id != unboxedKey)
+                    throw new IllegalArgumentException("Existing mapping for ID " + data.id + " value " + value + " when new ID " + unboxedKey + " was requested");
+                ensureArrayCanFitId(unboxedKey);
+                V oldValue = valuesById.set(unboxedKey, value);
+                storeId(value, unboxedKey);
+                return oldValue;
             }
 
             @Nullable
@@ -305,14 +306,16 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
         }
 
         private V forcePut(@Nullable K key, @Nullable V value, boolean throwOnExisting) {
+            if(throwOnExisting) {
+                RegistryValueData dataForValue = infoByValue.get(value);
+                // null check could be wrong if null is a valid value but doesn't matter in Forge's use
+                if(dataForValue != null && getter.apply(dataForValue) != null && !Objects.equals(getter.apply(dataForValue), key)) {
+                    throw new IllegalArgumentException("Existing mapping for key " + key + " value " + value);
+                }
+            }
             V oldValue = valuesByKey.put(key, value);
             if(oldValue != null) {
-                if(throwOnExisting) {
-                    valuesByKey.put(key, oldValue);
-                    throw new IllegalArgumentException("Existing mapping");
-                } else {
-                    updateInfoPairAndClearIfNull(oldValue, p -> setter.accept(p, null));
-                }
+                updateInfoPairAndClearIfNull(oldValue, p -> setter.accept(p, null));
             }
             updateInfoPairAndClearIfNull(value, p -> setter.accept(p, key));
             return oldValue;
@@ -590,7 +593,7 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
     static class RegistryValueData {
         public ResourceKey<?> key;
         public ResourceLocation location;
-        public int id;
+        public int id = -1;
         public Object overrideOwner;
 
         boolean isEmpty() {

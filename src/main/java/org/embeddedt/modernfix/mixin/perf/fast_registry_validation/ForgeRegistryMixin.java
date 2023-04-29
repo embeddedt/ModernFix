@@ -63,13 +63,10 @@ public class ForgeRegistryMixin<V extends IForgeRegistryEntry<V>> {
         expectedNextBit = -1;
     }
 
-    /*
     @Redirect(method = "add(ILnet/minecraftforge/registries/IForgeRegistryEntry;Ljava/lang/String;)I", at = @At(value = "INVOKE", target = "Lorg/apache/logging/log4j/Logger;trace(Lorg/apache/logging/log4j/Marker;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V"))
     private void skipTrace(Logger logger, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4) {
 
     }
-
-     */
 
     @Shadow @Final @Mutable private BiMap<Integer, V> ids;
 
@@ -79,15 +76,38 @@ public class ForgeRegistryMixin<V extends IForgeRegistryEntry<V>> {
 
     @Shadow @Final @Mutable private BiMap<ResourceLocation, V> names;
 
+    @Shadow @Final @Mutable private BiMap owners;
+
+    private FastForgeRegistry<V> fastRegistry;
+
     /**
      * The following code replaces the Forge HashBiMaps with a more efficient data structure based around
      * an array list for IDs and one HashMap going from value -> information.
      */
     @Inject(method = "<init>", at = @At("RETURN"))
     private void replaceBackingMaps(CallbackInfo ci) {
-        FastForgeRegistry<V> fastReg = new FastForgeRegistry<>(this.key);
-        this.ids = fastReg.getIds();
-        this.keys = fastReg.getKeys();
-        this.names = fastReg.getNames();
+        this.fastRegistry = new FastForgeRegistry<>(this.key);
+        this.ids = fastRegistry.getIds();
+        this.keys = fastRegistry.getKeys();
+        this.names = fastRegistry.getNames();
+        this.owners = fastRegistry.getOwners();
     }
+
+    @Inject(method = "freeze", at = @At("RETURN"))
+    private void optimizeRegistry(CallbackInfo ci) {
+        this.fastRegistry.optimize();
+    }
+
+    /*
+    @Redirect(method = "sync", at = @At(value = "INVOKE", target = "Lcom/google/common/collect/BiMap;clear()V"))
+    private void clearBiMap(BiMap map) {
+        if(map == this.owners) {
+            this.fastRegistry.clear();
+        } else if(map == this.keys || map == this.names || map == this.ids) {
+            // do nothing, the registry is faster at clearing everything at once
+        } else
+            map.clear();
+    }
+
+     */
 }

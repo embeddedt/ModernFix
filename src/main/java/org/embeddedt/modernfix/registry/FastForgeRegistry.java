@@ -14,17 +14,18 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
     private BiMap<Integer, V> ids;
-    private BiMap<ResourceLocation, V> names;
-    private BiMap<ResourceKey<V>, V> keys;
+    private DataFieldBiMap<ResourceLocation> names;
+    private DataFieldBiMap<ResourceKey<V>> keys;
+    private DataFieldBiMap<?> owners;
     private ResourceKey<Registry<V>> registryKey;
 
     private ObjectArrayList<V> valuesById;
-    private Map<V, RegistryValueData> infoByValue;
-    private Map<ResourceKey<V>, V> valuesByKey = new Object2ObjectOpenHashMap<>();
+    private Object2ObjectOpenHashMap<V, RegistryValueData> infoByValue;
 
     private void storeId(V value, int id) {
         RegistryValueData pair = infoByValue.computeIfAbsent(value, k -> new RegistryValueData());
@@ -50,10 +51,23 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
         }
     }
 
+    public void clear() {
+        this.infoByValue.clear();
+        for(int i = 0; i < this.valuesById.size(); i++) {
+            this.valuesById.set(i, null);
+        }
+        this.names.clearUnsafe();
+        this.keys.clearUnsafe();
+    }
+
     public FastForgeRegistry(ResourceKey<Registry<V>> registryKey) {
         this.registryKey = registryKey;
         this.valuesById = new ObjectArrayList<>();
-        this.infoByValue = new HashMap<>();
+        this.infoByValue = new Object2ObjectOpenHashMap<>();
+        this.keys = new DataFieldBiMap<>(p -> (ResourceKey<V>) p.key, (p, k) -> p.key = k);
+        this.owners = new DataFieldBiMap<>(p -> p.overrideOwner, (p, k) -> p.overrideOwner = k);
+        this.names = new DataFieldBiMap<>(p -> p.location, (p, l) -> p.location = l);
+        // IDs require a specialized implementation, as we back the K->V direction with an array
         this.ids = new BiMap<Integer, V>() {
             @Nullable
             @Override
@@ -241,332 +255,13 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
                 }
             }
         };
-        this.keys = new BiMap<ResourceKey<V>, V>() {
-            @Nullable
-            @Override
-            public V put(@Nullable ResourceKey<V> key, @Nullable V value) {
-                if(valuesByKey.get(key) != null)
-                    throw new IllegalArgumentException("Existing mapping");
-                return forcePut(key, value);
-            }
+    }
 
-            @Nullable
-            @Override
-            public V forcePut(@Nullable ResourceKey<V> key, @Nullable V value) {
-                V oldValue = valuesByKey.put(key, value);
-                if(oldValue != null) {
-                    updateInfoPairAndClearIfNull(oldValue, p -> p.key = null);
-                }
-                updateInfoPairAndClearIfNull(value, p -> p.key = key);
-                return oldValue;
-            }
-
-            @Override
-            public void putAll(Map<? extends ResourceKey<V>, ? extends V> map) {
-                map.forEach(this::put);
-            }
-
-            @Override
-            public Set<V> values() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public BiMap<V, ResourceKey<V>> inverse() {
-                return new BiMap<V, ResourceKey<V>>() {
-                    @Nullable
-                    @Override
-                    public ResourceKey<V> put(@Nullable V key, @Nullable ResourceKey<V> value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Nullable
-                    @Override
-                    public ResourceKey<V> forcePut(@Nullable V key, @Nullable ResourceKey<V> value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public void putAll(Map<? extends V, ? extends ResourceKey<V>> map) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public Set<ResourceKey<V>> values() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public BiMap<ResourceKey<V>, V> inverse() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public int size() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public boolean isEmpty() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public boolean containsKey(Object key) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public boolean containsValue(Object value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public ResourceKey<V> get(Object key) {
-                        RegistryValueData pair = infoByValue.get(key);
-                        if(pair == null)
-                            return null;
-                        else
-                            return (ResourceKey<V>)pair.key;
-                    }
-
-                    @Override
-                    public ResourceKey<V> remove(Object key) {
-                        RegistryValueData pair = infoByValue.get(key);
-                        if(pair == null)
-                            return null;
-                        else {
-                            ResourceKey<V> rk = (ResourceKey<V>)pair.key;
-                            valuesByKey.remove(rk);
-                            updateInfoPairAndClearIfNull((V)key, p -> p.key = null);
-                            return rk;
-                        }
-                    }
-
-                    @Override
-                    public void clear() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @NotNull
-                    @Override
-                    public Set<V> keySet() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @NotNull
-                    @Override
-                    public Set<Entry<V, ResourceKey<V>>> entrySet() {
-                        throw new UnsupportedOperationException();
-                    }
-                };
-            }
-
-            @Override
-            public int size() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isEmpty() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean containsKey(Object key) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean containsValue(Object value) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public V get(Object key) {
-                return null;
-            }
-
-            @Override
-            public V remove(Object key) {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public void clear() {
-                valuesByKey.values().forEach(v -> updateInfoPairAndClearIfNull(v, p -> p.key = null));
-                valuesByKey.clear();
-            }
-
-            @NotNull
-            @Override
-            public Set<ResourceKey<V>> keySet() {
-                throw new UnsupportedOperationException();
-            }
-
-            @NotNull
-            @Override
-            public Set<Entry<ResourceKey<V>, V>> entrySet() {
-                return valuesByKey.entrySet();
-            }
-        };
-        this.names = new BiMap<ResourceLocation, V>() {
-            @Nullable
-            @Override
-            public V put(@Nullable ResourceLocation key, @Nullable V value) {
-                // not needed
-                return null;
-            }
-
-            @Nullable
-            @Override
-            public V forcePut(@Nullable ResourceLocation key, @Nullable V value) {
-                return null;
-            }
-
-            @Override
-            public void putAll(Map<? extends ResourceLocation, ? extends V> map) {
-                map.forEach(this::put);
-            }
-
-            @Override
-            public Set<V> values() {
-                return infoByValue.keySet();
-            }
-
-            @Override
-            public BiMap<V, ResourceLocation> inverse() {
-                return new BiMap<V, ResourceLocation>() {
-                    @Nullable
-                    @Override
-                    public ResourceLocation put(@Nullable V key, @Nullable ResourceLocation value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Nullable
-                    @Override
-                    public ResourceLocation forcePut(@Nullable V key, @Nullable ResourceLocation value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public void putAll(Map<? extends V, ? extends ResourceLocation> map) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public Set<ResourceLocation> values() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public BiMap<ResourceLocation, V> inverse() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public int size() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public boolean isEmpty() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public boolean containsKey(Object key) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public boolean containsValue(Object value) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public ResourceLocation get(Object key) {
-                        RegistryValueData pair = infoByValue.get(key);
-                        if(pair == null || pair.key == null)
-                            return null;
-                        else
-                            return pair.key.location();
-                    }
-
-                    @Override
-                    public ResourceLocation remove(Object key) {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @Override
-                    public void clear() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @NotNull
-                    @Override
-                    public Set<V> keySet() {
-                        throw new UnsupportedOperationException();
-                    }
-
-                    @NotNull
-                    @Override
-                    public Set<Entry<V, ResourceLocation>> entrySet() {
-                        throw new UnsupportedOperationException();
-                    }
-                };
-            }
-
-            @Override
-            public int size() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean isEmpty() {
-                throw new UnsupportedOperationException();
-            }
-
-            @Override
-            public boolean containsKey(Object key) {
-                ResourceKey<V> rk = ResourceKey.create(FastForgeRegistry.this.registryKey, (ResourceLocation)key);
-                return valuesByKey.containsKey(rk);
-            }
-
-            @Override
-            public boolean containsValue(Object value) {
-                return infoByValue.containsValue(value);
-            }
-
-            @Override
-            public V get(Object key) {
-                ResourceKey<V> rk = ResourceKey.create(FastForgeRegistry.this.registryKey, (ResourceLocation)key);
-                return valuesByKey.get(rk);
-            }
-
-            @Override
-            public V remove(Object key) {
-                // we need to return a non-null value to prevent Forge throwing, but the actual removal is done by this.keys
-                return get(key);
-            }
-
-            @Override
-            public void clear() {
-                // ditto
-            }
-
-            @NotNull
-            @Override
-            public Set<ResourceLocation> keySet() {
-                return new FastForgeRegistryLocationSet(valuesByKey.keySet());
-            }
-
-            @NotNull
-            @Override
-            public Set<Entry<ResourceLocation, V>> entrySet() {
-                return valuesByKey.entrySet().stream().map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey().location(), entry.getValue())).collect(Collectors.toSet());
-            }
-        };
+    public void optimize() {
+        this.keys.optimize();
+        this.owners.optimize();
+        this.names.optimize();
+        this.infoByValue.trim();
     }
 
     public BiMap<Integer, V> getIds() {
@@ -579,6 +274,226 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
 
     public BiMap<ResourceLocation, V> getNames() {
         return names;
+    }
+
+    public DataFieldBiMap<?> getOwners() {
+        return owners;
+    }
+
+    /**
+     * Custom BiMap implementation that uses one internal hash map for the K->V direction, and the shared global
+     * information hash map for the V->K direction.
+     */
+    class DataFieldBiMap<K> implements BiMap<K, V> {
+        public final Object2ObjectOpenHashMap<K, V> valuesByKey = new Object2ObjectOpenHashMap<>();
+        private final Function<RegistryValueData, K> getter;
+        private final BiConsumer<RegistryValueData, K> setter;
+
+        public DataFieldBiMap(Function<RegistryValueData, K> getter, BiConsumer<RegistryValueData, K> setter) {
+            this.getter = getter;
+            this.setter = setter;
+        }
+
+        public void optimize() {
+            this.valuesByKey.trim();
+        }
+
+        public void clearUnsafe() {
+            this.valuesByKey.clear();
+        }
+
+        private V forcePut(@Nullable K key, @Nullable V value, boolean throwOnExisting) {
+            V oldValue = valuesByKey.put(key, value);
+            if(oldValue != null) {
+                if(throwOnExisting) {
+                    valuesByKey.put(key, oldValue);
+                    throw new IllegalArgumentException("Existing mapping");
+                } else {
+                    updateInfoPairAndClearIfNull(oldValue, p -> setter.accept(p, null));
+                }
+            }
+            updateInfoPairAndClearIfNull(value, p -> setter.accept(p, key));
+            return oldValue;
+        }
+
+        @Nullable
+        @Override
+        public V put(@Nullable K key, @Nullable V value) {
+            return forcePut(key, value, true);
+        }
+
+        @Nullable
+        @Override
+        public V forcePut(@Nullable K key, @Nullable V value) {
+            return forcePut(key, value, false);
+        }
+
+        @Override
+        public void putAll(Map<? extends K, ? extends V> map) {
+            map.forEach(this::put);
+        }
+
+        @Override
+        public Set<V> values() {
+            return Collections.unmodifiableSet(infoByValue.keySet());
+        }
+
+        private DataFieldBiMapInverse<K> inverse = null;
+
+        @Override
+        public BiMap<V, K> inverse() {
+            if(inverse == null)
+                inverse = new DataFieldBiMapInverse<>(this);
+            return inverse;
+        }
+
+        @Override
+        public int size() {
+            return valuesByKey.size();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return valuesByKey.isEmpty();
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return valuesByKey.containsKey(key);
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return infoByValue.containsKey(value);
+        }
+
+        @Override
+        public V get(Object key) {
+            return valuesByKey.get(key);
+        }
+
+        @Override
+        public V remove(Object key) {
+            V value = get(key);
+            if(value == null)
+                return null;
+            inverse().remove(value);
+            return value;
+        }
+
+        @Override
+        public void clear() {
+            valuesByKey.values().forEach(v -> updateInfoPairAndClearIfNull(v, p -> p.key = null));
+            valuesByKey.clear();
+        }
+
+        @NotNull
+        @Override
+        public Set<K> keySet() {
+            return Collections.unmodifiableSet(valuesByKey.keySet());
+        }
+
+        @NotNull
+        @Override
+        public Set<Map.Entry<K, V>> entrySet() {
+            return Collections.unmodifiableSet(valuesByKey.entrySet());
+        }
+
+
+    }
+
+    class DataFieldBiMapInverse<K> implements BiMap<V, K> {
+        private final DataFieldBiMap<K> forward;
+
+        public DataFieldBiMapInverse(DataFieldBiMap<K> forward) {
+            this.forward = forward;
+        }
+
+        @Nullable
+        @Override
+        public K put(@Nullable V key, @Nullable K value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Nullable
+        @Override
+        public K forcePut(@Nullable V key, @Nullable K value) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void putAll(Map<? extends V, ? extends K> map) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Set<K> values() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public BiMap<K, V> inverse() {
+            return forward;
+        }
+
+        @Override
+        public int size() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public boolean containsKey(Object key) {
+            return infoByValue.containsKey(key);
+        }
+
+        @Override
+        public boolean containsValue(Object value) {
+            return forward.valuesByKey.containsKey(value);
+        }
+
+        @Override
+        public K get(Object key) {
+            RegistryValueData pair = infoByValue.get(key);
+            if(pair == null)
+                return null;
+            else
+                return forward.getter.apply(pair);
+        }
+
+        @Override
+        public K remove(Object key) {
+            RegistryValueData pair = infoByValue.get(key);
+            if(pair == null)
+                return null;
+            else {
+                K rk = forward.getter.apply(pair);
+                forward.valuesByKey.remove(rk);
+                updateInfoPairAndClearIfNull((V)key, p -> forward.setter.accept(p, null));
+                return rk;
+            }
+        }
+
+        @Override
+        public void clear() {
+            throw new UnsupportedOperationException();
+        }
+
+        @NotNull
+        @Override
+        public Set<V> keySet() {
+            throw new UnsupportedOperationException();
+        }
+
+        @NotNull
+        @Override
+        public Set<Entry<V, K>> entrySet() {
+            throw new UnsupportedOperationException();
+        }
     }
 
     class FastForgeRegistryLocationSet implements Set<ResourceLocation> {
@@ -672,10 +587,12 @@ public class FastForgeRegistry<V extends IForgeRegistryEntry<V>> {
 
     static class RegistryValueData {
         public ResourceKey<?> key;
+        public ResourceLocation location;
         public Integer id;
+        public Object overrideOwner;
 
         boolean isEmpty() {
-            return key == null && id == null;
+            return key == null && location == null && id == null && overrideOwner == null;
         }
     }
 }

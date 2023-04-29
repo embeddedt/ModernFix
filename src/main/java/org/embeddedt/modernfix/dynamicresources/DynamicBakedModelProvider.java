@@ -34,6 +34,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     public void setMissingModel(BakedModel model) {
         this.missingModel = model;
+        this.permanentOverrides.put(ModelBakery.MISSING_MODEL_LOCATION, this.missingModel);
     }
 
     private static Triple<ResourceLocation, Transformation, Boolean> vanillaKey(Object o) {

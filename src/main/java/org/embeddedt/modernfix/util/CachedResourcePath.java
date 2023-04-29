@@ -25,30 +25,30 @@ public class CachedResourcePath {
     private static final String[] NO_PREFIX = new String[0];
 
     public CachedResourcePath(Path path) {
-        this(NO_PREFIX, path, path.getNameCount());
+        this(NO_PREFIX, path, path.getNameCount(), true);
     }
 
     public CachedResourcePath(String s) {
         // normalize so we can guarantee there are no empty sections
-        this(NO_PREFIX, SLASH_SPLITTER.splitToList(FileUtil.normalize(s)));
+        this(NO_PREFIX, SLASH_SPLITTER.splitToList(FileUtil.normalize(s)), false);
     }
 
-    public <T> CachedResourcePath(String[] prefixElements, Collection<T> collection) {
-        this(prefixElements, collection, collection.size());
+    public <T> CachedResourcePath(String[] prefixElements, Collection<T> collection, boolean intern) {
+        this(prefixElements, collection, collection.size(), intern);
     }
 
-    public <T> CachedResourcePath(String[] prefixElements, Iterable<T> path, int count) {
+    public <T> CachedResourcePath(String[] prefixElements, Iterable<T> path, int count, boolean intern) {
         String[] components = new String[prefixElements.length + count];
         int i = 0;
         while(i < prefixElements.length) {
-            components[i] = PATH_COMPONENT_INTERNER.intern(prefixElements[i]);
+            components[i] = intern ? PATH_COMPONENT_INTERNER.intern(prefixElements[i]) : prefixElements[i];
             i++;
         }
         for(Object component : path) {
             String s = component.toString();
             if(s.length() == 0)
                 continue;
-            components[i] = PATH_COMPONENT_INTERNER.intern(s);
+            components[i] = intern ? PATH_COMPONENT_INTERNER.intern(s) : s;
             i++;
         }
         pathComponents = components;

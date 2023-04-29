@@ -6,6 +6,7 @@ import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.TicketType;
 import net.minecraft.util.Unit;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -14,9 +15,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class MinecraftServerMixin {
     @Redirect(method = "prepareLevels", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerChunkCache;addRegionTicket(Lnet/minecraft/server/level/TicketType;Lnet/minecraft/world/level/ChunkPos;ILjava/lang/Object;)V"))
     private void addSpawnChunkTicket(ServerChunkCache cache, TicketType<?> type, ChunkPos pos, int distance, Object o) {
-        DistanceManager manager = ((ServerChunkCacheAccessor)cache).getDistanceManager();
-        /* make one chunk load */
-        manager.addTicket(TicketType.START, pos, 44, Unit.INSTANCE);
+        // load first chunk
+        cache.getChunk(pos.x, pos.z, ChunkStatus.FULL, true);
     }
 
     @Redirect(method = "prepareLevels", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerChunkCache;getTickingGenerated()I"), require = 0)

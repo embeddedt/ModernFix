@@ -20,6 +20,7 @@
     "bugfix.refinedstorage.te_bug.FluidExternalStorageMixin",
     "bugfix.refinedstorage.te_bug.ItemExternalStorageCacheMixin",
     "bugfix.refinedstorage.te_bug.ItemExternalStorageMixin",
+    "bugfix.remove_block_chunkloading.RemoveBlockGoalMixin",
     "bugfix.chunk_deadlock.ServerChunkCacheMixin",
     "bugfix.chunk_deadlock.valhesia.BlockStateBaseMixin",
     "perf.dedicated_reload_executor.MinecraftServerMixin",

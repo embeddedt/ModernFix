@@ -222,6 +222,26 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 pack instanceof FilePackResources;
     }
 
+    private void gatherAdditionalViaManualScan(List<PackResources> untrustedPacks, Set<ResourceLocation> knownLocations,
+                                               Collection<ResourceLocation> uncertainLocations, String filePrefix) {
+        if(untrustedPacks.size() > 0) {
+            /* Now make a fallback resource manager and use it on the remaining packs to see if they actually contain these files */
+            FallbackResourceManager frm = new FallbackResourceManager(PackType.CLIENT_RESOURCES, "dummy");
+            for (int i = untrustedPacks.size() - 1; i >= 0; i--) {
+                frm.add(untrustedPacks.get(i));
+            }
+            for (ResourceLocation blockstate : uncertainLocations) {
+                if (knownLocations.contains(blockstate))
+                    continue; // don't check ones we know exist
+                ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), filePrefix + blockstate.getPath() + ".json");
+                try (Resource resource = frm.getResource(fileLocation)) {
+                    knownLocations.add(blockstate);
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
+
     /**
      * Load all blockstate JSONs and model files, collect textures.
      */
@@ -253,38 +273,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             ModernFix.LOGGER.debug("Pack with class {} needs manual scan", pack.getClass().getName());
             return false;
         });
-        if(allPackResources.size() > 0) {
-            /* Now make a fallback resource manager and use it on the remaining packs to see if they actually contain these files */
-            FallbackResourceManager frm = new FallbackResourceManager(PackType.CLIENT_RESOURCES, "dummy");
-            for(int i = allPackResources.size() - 1; i >= 0; i--) {
-                frm.add(allPackResources.get(i));
-            }
-            for(ResourceLocation blockstate : blockStateFiles) {
-                if(allAvailableStates.contains(blockstate))
-                    continue; // don't check ones we know exist
-                ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
-                try(Resource resource = frm.getResource(fileLocation)) {
-                    allAvailableStates.add(blockstate);
-                } catch(IOException ignored) {
-                }
-            }
-            for(ResourceLocation model : modelFiles) {
-                if(allAvailableModels.contains(model))
-                    continue; // don't check ones we know exist
-                ResourceLocation fileLocation = new ResourceLocation(model.getNamespace(), "models/" + model.getPath() + ".json");
-                try(Resource resource = frm.getResource(fileLocation)) {
-                    allAvailableModels.add(model);
-                } catch(IOException ignored) {
-                }
-            }
-        }
-        // We now have a list of all vanilla resources known to exist. Delete anything that we don't have
+
+        gatherAdditionalViaManualScan(allPackResources, allAvailableStates, blockStateFiles, "blockstates/");
+        // We now have a list of all blockstates known to exist. Delete anything that we don't have
         blockStateFiles.retainAll(allAvailableStates);
-        modelFiles.retainAll(allAvailableModels);
-        allAvailableModels.clear();
-        allAvailableModels.trim();
         allAvailableStates.clear();
         allAvailableStates.trim();
+
+
         for(ResourceLocation blockstate : blockStateFiles) {
             blockStateData.add(CompletableFuture.supplyAsync(() -> {
                 ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
@@ -353,6 +349,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         });
         blockstateErrors.clear();
         blockStateData = null;
+
+        /* figure out which models we should actually load */
+        gatherAdditionalViaManualScan(allPackResources, allAvailableModels, modelFiles, "models/");
+        modelFiles.retainAll(allAvailableModels);
+        allAvailableModels.clear();
+        allAvailableModels.trim();
+
         Map<ResourceLocation, BlockModel> basicModels = new HashMap<>();
         basicModels.put(MISSING_MODEL_LOCATION, (BlockModel)missingModel);
         basicModels.put(new ResourceLocation("builtin/generated"), GENERATION_MARKER);

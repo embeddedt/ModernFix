@@ -11,6 +11,8 @@ import com.google.common.collect.Sets;
 import com.google.gson.*;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Transformation;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.Util;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -19,8 +21,11 @@ import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
+import net.minecraft.client.resources.ClientPackSource;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.*;
+import net.minecraft.server.packs.resources.FallbackResourceManager;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -36,6 +41,8 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.ForgeRegistryEntry;
+import net.minecraftforge.resource.DelegatingResourcePack;
+import net.minecraftforge.resource.PathResourcePack;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
@@ -56,6 +63,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -192,12 +200,85 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return ImmutableList.of();
     }
 
+    private static final int ERROR_THRESHOLD = 200;
+
+    private void logOrSuppressError(Object2IntOpenHashMap<String> suppressionMap, String type, ResourceLocation location, Throwable e) {
+        int numErrors;
+        synchronized (suppressionMap) {
+            numErrors = suppressionMap.computeInt(location.getNamespace(), (k, oldVal) -> (oldVal == null ? 1 : oldVal + 1));
+        }
+        if(numErrors <= ERROR_THRESHOLD)
+            ModernFix.LOGGER.error("Error reading {} {}: {}", type, location, e);
+    }
+
+    private boolean trustedResourcePack(PackResources pack) {
+        return pack instanceof VanillaPackResources ||
+                pack instanceof PathResourcePack ||
+                pack instanceof ClientPackSource ||
+                pack instanceof DelegatingResourcePack ||
+                pack instanceof FolderPackResources ||
+                pack instanceof FilePackResources;
+    }
+
+    private void gatherAdditionalViaManualScan(List<PackResources> untrustedPacks, Set<ResourceLocation> knownLocations,
+                                               Collection<ResourceLocation> uncertainLocations, String filePrefix) {
+        if(untrustedPacks.size() > 0) {
+            /* Now make a fallback resource manager and use it on the remaining packs to see if they actually contain these files */
+            FallbackResourceManager frm = new FallbackResourceManager(PackType.CLIENT_RESOURCES, "dummy");
+            for (int i = untrustedPacks.size() - 1; i >= 0; i--) {
+                frm.add(untrustedPacks.get(i));
+            }
+            for (ResourceLocation blockstate : uncertainLocations) {
+                if (knownLocations.contains(blockstate))
+                    continue; // don't check ones we know exist
+                ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), filePrefix + blockstate.getPath() + ".json");
+                try (Resource resource = frm.getResource(fileLocation)) {
+                    knownLocations.add(blockstate);
+                } catch (IOException ignored) {
+                }
+            }
+        }
+    }
+
     /**
      * Load all blockstate JSONs and model files, collect textures.
      */
     private void gatherModelMaterials(Set<Material> materialSet) {
         Stopwatch stopwatch = Stopwatch.createStarted();
         List<CompletableFuture<Pair<ResourceLocation, JsonElement>>> blockStateData = new ArrayList<>();
+        final Object2IntOpenHashMap<String> blockstateErrors = new Object2IntOpenHashMap<>();
+        /*
+         * First, gather all vanilla packs, and use listResources on them. This will allow us to (hopefully) avoid
+         * scanning most packs a lot.
+         */
+        List<PackResources> allPackResources = new ArrayList<>(this.resourceManager.listPacks().collect(Collectors.toList()));
+        Collections.reverse(allPackResources);
+        ObjectOpenHashSet<ResourceLocation> allAvailableModels = new ObjectOpenHashSet<>(), allAvailableStates = new ObjectOpenHashSet<>();
+        allPackResources.removeIf(pack -> {
+            if(trustedResourcePack(pack)) {
+                for(String namespace : pack.getNamespaces(PackType.CLIENT_RESOURCES)) {
+                    Collection<ResourceLocation> allBlockstates = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "blockstates", Integer.MAX_VALUE, p -> p.endsWith(".json"));
+                    for(ResourceLocation blockstate : allBlockstates) {
+                        allAvailableStates.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("blockstates/", "").replace(".json", "")));
+                    }
+                    Collection<ResourceLocation> allModels = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "models", Integer.MAX_VALUE, p -> p.endsWith(".json"));
+                    for(ResourceLocation blockstate : allModels) {
+                        allAvailableModels.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("models/", "").replace(".json", "")));
+                    }
+                }
+                return true;
+            }
+            ModernFix.LOGGER.debug("Pack with class {} needs manual scan", pack.getClass().getName());
+            return false;
+        });
+
+        gatherAdditionalViaManualScan(allPackResources, allAvailableStates, blockStateFiles, "blockstates/");
+        // We now have a list of all blockstates known to exist. Delete anything that we don't have
+        blockStateFiles.retainAll(allAvailableStates);
+        allAvailableStates.clear();
+        allAvailableStates.trim();
+
+
         for(ResourceLocation blockstate : blockStateFiles) {
             blockStateData.add(CompletableFuture.supplyAsync(() -> {
                 ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
@@ -205,7 +286,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     JsonParser parser = new JsonParser();
                     return Pair.of(blockstate, parser.parse(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)));
                 } catch(IOException | JsonParseException e) {
-                    ModernFix.LOGGER.error("Error reading blockstate {}: {}", blockstate, e);
+                    logOrSuppressError(blockstateErrors, "blockstate", blockstate, e);
                 }
                 return Pair.of(blockstate, null);
             }, ModernFix.resourceReloadExecutor()));
@@ -254,12 +335,25 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
                     }
                 } catch(RuntimeException e) {
-                    ModernFix.LOGGER.error("Error with blockstate {}: {}", pair.getFirst(), e);
+                    logOrSuppressError(blockstateErrors, "blockstate", pair.getFirst(), e);
                 }
 
             }
         }
+        blockstateErrors.object2IntEntrySet().forEach(entry -> {
+            if(entry.getIntValue() > ERROR_THRESHOLD) {
+                ModernFix.LOGGER.error("Suppressed additional {} blockstate errors for domain {}", entry.getIntValue(), entry.getKey());
+            }
+        });
+        blockstateErrors.clear();
         blockStateData = null;
+
+        /* figure out which models we should actually load */
+        gatherAdditionalViaManualScan(allPackResources, allAvailableModels, modelFiles, "models/");
+        modelFiles.retainAll(allAvailableModels);
+        allAvailableModels.clear();
+        allAvailableModels.trim();
+
         Map<ResourceLocation, BlockModel> basicModels = new HashMap<>();
         basicModels.put(MISSING_MODEL_LOCATION, (BlockModel)missingModel);
         basicModels.put(new ResourceLocation("builtin/generated"), GENERATION_MARKER);
@@ -276,7 +370,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                         JsonParser parser = new JsonParser();
                         return Pair.of(model, parser.parse(new InputStreamReader(resource.getInputStream(), StandardCharsets.UTF_8)));
                     } catch(IOException | JsonParseException e) {
-                        ModernFix.LOGGER.error("Error reading model {}: {}", fileLocation, e);
+                        logOrSuppressError(blockstateErrors, "model", fileLocation, e);
                         return Pair.of(fileLocation, null);
                     }
                 }, ModernFix.resourceReloadExecutor()));
@@ -296,12 +390,17 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                         continue;
                     }
                 } catch(Throwable e) {
-                    ModernFix.LOGGER.warn("Unable to parse {}: {}", pair.getFirst(), e);
+                    logOrSuppressError(blockstateErrors, "model", pair.getFirst(), e);
                 }
                 basicModels.put(pair.getFirst(), (BlockModel)missingModel);
             }
             UVController.useDummyUv.set(Boolean.FALSE);
         }
+        blockstateErrors.object2IntEntrySet().forEach(entry -> {
+            if(entry.getIntValue() > ERROR_THRESHOLD) {
+                ModernFix.LOGGER.error("Suppressed additional {} model errors for domain {}", entry.getIntValue(), entry.getKey());
+            }
+        });
         modelFiles = null;
         Function<ResourceLocation, UnbakedModel> modelGetter = loc -> {
             UnbakedModel m = basicModels.get(loc);

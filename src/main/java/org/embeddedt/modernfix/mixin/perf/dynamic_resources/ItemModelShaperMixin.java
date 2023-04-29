@@ -7,6 +7,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.client.ItemModelMesherForge;
 import net.minecraftforge.registries.IRegistryDelegate;
+import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -22,6 +23,8 @@ public abstract class ItemModelShaperMixin extends ItemModelShaper {
         super(arg);
     }
 
+    private static final ModelResourceLocation SENTINEL = new ModelResourceLocation("modernfix", "sentinel");
+
     /**
      * @reason Get the stored location for that item and meta, and get the model
      * from that location from the model manager.
@@ -29,7 +32,11 @@ public abstract class ItemModelShaperMixin extends ItemModelShaper {
     @Overwrite
     @Override
     public BakedModel getItemModel(Item item) {
-        ModelResourceLocation map = locations.get(item.delegate);
+        ModelResourceLocation map = locations.getOrDefault(item.delegate, SENTINEL);
+        if(map == SENTINEL) {
+            /* generate the appropriate location from our cache */
+            map = ModelLocationCache.get(item);
+        }
         return map == null ? null : getModelManager().getModel(map);
     }
 

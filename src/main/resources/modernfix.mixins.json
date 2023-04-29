@@ -34,8 +34,10 @@
     "feature.branding.BrandingControlMixin",
     "feature.direct_stack_trace.CrashReportMixin",
     "perf.nbt_memory_usage.CompoundTagMixin",
-    "perf.fast_registry_validation.ForgeRegistryMixin",
     "perf.kubejs.RecipeEventJSMixin",
+    "perf.fast_registry_validation.ForgeRegistryMixin",
+    "perf.fast_registry_validation.ForgeRegistrySnapshotMixin",
+    "perf.fast_registry_validation.ResourceKeyMixin",
     "perf.cache_strongholds.ChunkGeneratorMixin",
     "perf.cache_upgraded_structures.StructureManagerMixin",
     "perf.cache_strongholds.ServerLevelMixin",
@@ -44,7 +46,8 @@
     "perf.compress_blockstate.BlockBehaviourMixin",
     "perf.dedup_blockstate_flattening_map.BlockStateDataMixin",
     "perf.dedup_blockstate_flattening_map.ChunkPalettedStorageFixMixin",
-    "devenv.MinecraftServerMixin"
+    "devenv.MinecraftServerMixin",
+    "devenv.GameDataMixin"
   ],
   "client": [
     "core.MinecraftMixin",
@@ -56,6 +59,7 @@
     "perf.dynamic_resources.BlockElementFaceDeserializerMixin",
     "perf.dynamic_resources.BlockModelShaperMixin",
     "perf.dynamic_resources.ItemModelShaperMixin",
+    "perf.dynamic_resources.ItemRendererMixin",
     "perf.dynamic_resources.ModelBakeryMixin",
     "perf.dynamic_resources.ae2.RegistrationMixin",
     "perf.dynamic_resources.ctm.TextureMetadataHandlerMixin",

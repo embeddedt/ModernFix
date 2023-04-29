@@ -260,6 +260,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 frm.add(allPackResources.get(i));
             }
             for(ResourceLocation blockstate : blockStateFiles) {
+                if(allAvailableStates.contains(blockstate))
+                    continue; // don't check ones we know exist
                 ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
                 try(Resource resource = frm.getResource(fileLocation)) {
                     allAvailableStates.add(blockstate);
@@ -267,6 +269,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 }
             }
             for(ResourceLocation model : modelFiles) {
+                if(allAvailableModels.contains(model))
+                    continue; // don't check ones we know exist
                 ResourceLocation fileLocation = new ResourceLocation(model.getNamespace(), "models/" + model.getPath() + ".json");
                 try(Resource resource = frm.getResource(fileLocation)) {
                     allAvailableModels.add(model);

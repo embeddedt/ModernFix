@@ -47,6 +47,8 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("feature.reduce_loading_screen_freezes", false);
         this.addMixinRule("feature.direct_stack_trace", false);
         this.addMixinRule("perf.fast_registry_validation", true);
+        // not stable yet
+        this.addMixinRule("perf.rewrite_registry", false);
         this.addMixinRule("perf.jeresources_startup", modPresent("jeresources"));
         this.addMixinRule("perf.remove_biome_temperature_cache", true);
         this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);

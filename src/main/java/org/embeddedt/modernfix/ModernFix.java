@@ -2,9 +2,11 @@ package org.embeddedt.modernfix;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
 import net.minecraft.Util;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.server.ServerStartedEvent;
@@ -21,6 +23,8 @@ import net.minecraftforge.fml.loading.FMLConfig;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.network.NetworkConstants;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -99,6 +103,7 @@ public class ModernFix {
         MinecraftForge.EVENT_BUS.register(this);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onLoadComplete);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerItems);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> MinecraftForge.EVENT_BUS.register(new ModernFixClient()));
         ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> NetworkConstants.IGNORESERVERONLY, (a, b) -> true));
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
@@ -106,6 +111,17 @@ public class ModernFix {
         MinecraftForge.EVENT_BUS.register(EntityDataIDSyncHandler.class);
         PacketHandler.register();
         ModFileScanDataDeduplicator.deduplicate();
+    }
+
+    private void registerItems(RegisterEvent event) {
+        if(Boolean.getBoolean("modernfix.largeRegistryTest")) {
+            event.register(ForgeRegistries.Keys.ITEMS, helper -> {
+                Item.Properties props = new Item.Properties();
+                for(int i = 0; i < 1000000; i++) {
+                    helper.register(new ResourceLocation("modernfix", "item_" + i), new Item(props));
+                }
+            });
+        }
     }
 
     private static boolean dfuModPresent() {

@@ -98,7 +98,8 @@ public class CanonizingStringMap<T> implements Map<String, T> {
     @NotNull
     @Override
     public Set<String> keySet() {
-        return Collections.unmodifiableSet(this.backingMap.keySet());
+        // has to be modifiable because mods (cough, Tinkers) use it to clear the tag
+        return this.backingMap.keySet();
     }
 
     @NotNull

@@ -10,6 +10,7 @@ import net.minecraft.Util;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Registry;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -20,7 +21,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
 
 public class ModelLocationCache {
-    private static final LoadingCache<BlockState, ModelResourceLocation> locationCache = CacheBuilder.newBuilder()
+    private static final LoadingCache<BlockState, ModelResourceLocation> blockLocationCache = CacheBuilder.newBuilder()
             .maximumSize(10000)
             .build(new CacheLoader<BlockState, ModelResourceLocation>() {
                 @Override
@@ -29,9 +30,26 @@ public class ModelLocationCache {
                 }
             });
 
+    private static final LoadingCache<Item, ModelResourceLocation> itemLocationCache = CacheBuilder.newBuilder()
+            .maximumSize(10000)
+            .build(new CacheLoader<Item, ModelResourceLocation>() {
+                @Override
+                public ModelResourceLocation load(Item key) throws Exception {
+                    return new ModelResourceLocation(Registry.ITEM.getKey(key), "inventory");
+                }
+            });
+
     public static ModelResourceLocation get(BlockState state) {
         try {
-            return locationCache.get(state);
+            return blockLocationCache.get(state);
+        } catch(ExecutionException e) {
+            throw new RuntimeException(e.getCause());
+        }
+    }
+
+    public static ModelResourceLocation get(Item item) {
+        try {
+            return itemLocationCache.get(item);
         } catch(ExecutionException e) {
             throw new RuntimeException(e.getCause());
         }

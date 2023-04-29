@@ -104,6 +104,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("launch.class_search_cache", true);
         boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator() instanceof ExplodedDirectoryLocator;
         this.addMixinRule("devenv", isDevEnv);
+        this.addMixinRule("perf.remove_spawn_chunks", isDevEnv);
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");

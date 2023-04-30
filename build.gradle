@@ -86,7 +86,6 @@ dependencies {
 
     // your forge dependency, this is **required** when using Forge Loom in forge mode!
     forge "net.minecraftforge:forge:${project.forge_version}"
-    modRuntimeOnly "curse.maven:lazydfu-460819:${lazydfu_version}"
 
     modCompileOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
     //modRuntimeOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")

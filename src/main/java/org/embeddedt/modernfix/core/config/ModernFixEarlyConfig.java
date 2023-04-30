@@ -2,7 +2,10 @@ package org.embeddedt.modernfix.core.config;
 
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
+import net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.forgespi.locating.IModLocator;
+import net.minecraftforge.forgespi.locating.IModProvider;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,7 +62,6 @@ public class ModernFixEarlyConfig {
         /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
         this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);
-        this.addMixinRule("perf.dedup_blockstate_flattening_map", false);
         this.addMixinRule("perf.clear_mixin_classinfo", false);
         this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("perf.compress_blockstate", false);
@@ -68,6 +70,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.fast_forge_dummies", true);
         this.addMixinRule("perf.dynamic_structure_manager", true);
         this.addMixinRule("bugfix.chunk_deadlock", true);
+        this.addMixinRule("bugfix.remove_block_chunkloading", true);
         this.addMixinRule("bugfix.paper_chunk_patches", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.scan_cache", true);
@@ -80,6 +83,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.nbt_memory_usage", true);
         this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
         this.addMixinRule("perf.datapack_reload_exceptions", true);
+        this.addMixinRule("perf.dynamic_dfu", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
         /* off by default in 1.18 because it doesn't work as well */
         this.addMixinRule("perf.faster_singleplayer_load", false);
@@ -87,8 +91,10 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.blast_search_trees", FMLLoader.getLoadingModList().getModFileById("jei") != null || FMLLoader.getLoadingModList().getModFileById("roughlyenoughitems") != null);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.class_search_cache", true);
-        boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getProvider() instanceof ExplodedDirectoryLocator;
+        IModProvider mfLocator = FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getProvider();
+        boolean isDevEnv = !FMLLoader.isProduction() && (mfLocator instanceof ExplodedDirectoryLocator || mfLocator instanceof MinecraftLocator);
         this.addMixinRule("devenv", isDevEnv);
+        this.addMixinRule("perf.remove_spawn_chunks", isDevEnv);
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");

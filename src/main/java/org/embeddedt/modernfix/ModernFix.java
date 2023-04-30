@@ -131,7 +131,7 @@ public class ModernFix {
             if(ModList.get().isLoaded(modId))
                 return true;
         }
-        return false;
+        return !FMLLoader.isProduction();
     }
 
     @SubscribeEvent

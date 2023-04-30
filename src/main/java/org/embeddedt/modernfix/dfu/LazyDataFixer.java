@@ -55,7 +55,7 @@ public class LazyDataFixer implements DataFixer {
      */
     static class EmptySchema extends Schema {
         public EmptySchema() {
-            super(DataFixUtils.makeKey(SharedConstants.getCurrentVersion().getWorldVersion()), null);
+            super(DataFixUtils.makeKey(SharedConstants.getCurrentVersion().getDataVersion().getVersion()), null);
         }
 
         private static final Type<?> EMPTY_TYPE = new EmptyPart();

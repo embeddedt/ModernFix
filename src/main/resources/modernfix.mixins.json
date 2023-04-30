@@ -47,7 +47,9 @@
     "perf.compress_blockstate.BlockBehaviourMixin",
     "perf.dedup_blockstate_flattening_map.BlockStateDataMixin",
     "perf.dedup_blockstate_flattening_map.ChunkPalettedStorageFixMixin",
-    "devenv.MinecraftServerMixin",
+    "perf.remove_spawn_chunks.ServerChunkCacheAccessor",
+    "perf.remove_spawn_chunks.MinecraftServerMixin",
+    "perf.remove_spawn_chunks.ServerLevelMixin",
     "devenv.GameDataMixin"
   ],
   "client": [

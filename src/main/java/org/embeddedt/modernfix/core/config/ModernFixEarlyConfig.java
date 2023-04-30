@@ -68,6 +68,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.fast_forge_dummies", true);
         this.addMixinRule("perf.dynamic_structure_manager", true);
         this.addMixinRule("bugfix.chunk_deadlock", true);
+        this.addMixinRule("bugfix.remove_block_chunkloading", true);
         this.addMixinRule("bugfix.paper_chunk_patches", true);
         this.addMixinRule("perf.thread_priorities", true);
         this.addMixinRule("perf.scan_cache", true);
@@ -91,6 +92,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("launch.class_search_cache", true);
         boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator() instanceof ExplodedDirectoryLocator;
         this.addMixinRule("devenv", isDevEnv);
+        this.addMixinRule("perf.remove_spawn_chunks", isDevEnv);
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");

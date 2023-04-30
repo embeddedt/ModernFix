@@ -2,7 +2,9 @@ package org.embeddedt.modernfix.core.config;
 
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
+import net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
+import net.minecraftforge.forgespi.locating.IModLocator;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -90,7 +92,8 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.blast_search_trees", (jeiMod.isPresent() && jeiMod.get().getVersion().getMajorVersion() >= 10) || FMLLoader.getLoadingModList().getModFileById("roughlyenoughitems") != null);
         this.addMixinRule("safety", true);
         this.addMixinRule("launch.class_search_cache", true);
-        boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator() instanceof ExplodedDirectoryLocator;
+        IModLocator mfLocator = FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator();
+        boolean isDevEnv = !FMLLoader.isProduction() && (mfLocator instanceof ExplodedDirectoryLocator || mfLocator instanceof MinecraftLocator);
         this.addMixinRule("devenv", isDevEnv);
         this.addMixinRule("perf.remove_spawn_chunks", isDevEnv);
 

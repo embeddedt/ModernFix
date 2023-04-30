@@ -61,7 +61,6 @@ public class ModernFixEarlyConfig {
         /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
         this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
         this.addMixinRule("perf.cache_strongholds", true);
-        this.addMixinRule("perf.dedup_blockstate_flattening_map", false);
         this.addMixinRule("perf.clear_mixin_classinfo", false);
         this.addMixinRule("perf.cache_upgraded_structures", true);
         this.addMixinRule("perf.compress_blockstate", false);
@@ -82,6 +81,7 @@ public class ModernFixEarlyConfig {
         this.addMixinRule("perf.nbt_memory_usage", true);
         this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
         this.addMixinRule("perf.datapack_reload_exceptions", true);
+        this.addMixinRule("perf.dynamic_dfu", true);
         this.addMixinRule("perf.faster_texture_stitching", true);
         this.addMixinRule("perf.faster_texture_loading", true);
         this.addMixinRule("perf.faster_font_loading", true);

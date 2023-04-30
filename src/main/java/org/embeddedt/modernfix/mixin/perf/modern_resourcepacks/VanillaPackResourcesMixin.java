@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.mixin.perf.modern_resourcepacks;
 import com.google.common.base.Joiner;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.LoadingCache;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.VanillaPackResources;
@@ -41,7 +42,7 @@ public class VanillaPackResourcesMixin {
     private void cacheContainedPaths(PackMetadataSection arg, String[] p_i47912_1_, CallbackInfo ci) {
         if(containedPaths != null)
             return;
-        containedPaths = new HashSet<>();
+        containedPaths = new ObjectOpenHashSet<>();
         Joiner slashJoiner = Joiner.on('/');
         for(PackType type : PackType.values()) {
             if(!PackTypeHelper.isVanillaPackType(type))
@@ -59,6 +60,7 @@ public class VanillaPackResourcesMixin {
                 e.printStackTrace();
             }
         }
+        ((ObjectOpenHashSet<String>)containedPaths).trim();
     }
 
     @Redirect(method = "getResources(Ljava/util/Collection;Ljava/lang/String;Ljava/nio/file/Path;Ljava/lang/String;Ljava/util/function/Predicate;)V", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;walk(Ljava/nio/file/Path;[Ljava/nio/file/FileVisitOption;)Ljava/util/stream/Stream;"))

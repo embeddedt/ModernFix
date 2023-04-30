@@ -2,7 +2,7 @@
   "key.modernfix": "ModernFix",
   "key.modernfix.config": "Open config screen",
   "modernfix.jei_load": "Loading JEI, this may take a while",
-  "modernfix.no_lazydfu": "ModernFix detected that DFU rules were compiled on startup. This slows down game launching. Installing LazyDFU to resolve this is highly recommended.",
+  "modernfix.no_lazydfu": "LazyDFU is not installed. If Minecraft needs to update game data from an older version, there may be noticeable lag.",
   "modernfix.config": "ModernFix mixin config",
   "modernfix.config.done_restart": "Done (restart required)",
   "modernfix.option.on": "on",

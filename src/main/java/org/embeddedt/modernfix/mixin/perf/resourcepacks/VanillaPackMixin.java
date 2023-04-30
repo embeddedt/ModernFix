@@ -4,6 +4,7 @@ import com.google.common.base.Joiner;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.VanillaPackResources;
 import net.minecraft.resources.ResourceLocation;
@@ -40,7 +41,7 @@ public class VanillaPackMixin {
     private void cacheContainedPaths(String[] p_i47912_1_, CallbackInfo ci) {
         if(containedPaths != null)
             return;
-        containedPaths = new HashSet<>();
+        containedPaths = new ObjectOpenHashSet<>();
         Joiner slashJoiner = Joiner.on('/');
         for(PackType type : PackType.values()) {
             if(!PackTypeHelper.isVanillaPackType(type))
@@ -59,6 +60,7 @@ public class VanillaPackMixin {
                 e.printStackTrace();
             }
         }
+        ((ObjectOpenHashSet<String>)containedPaths).trim();
     }
 
     @Redirect(method = "getResources(Ljava/util/Collection;ILjava/lang/String;Ljava/nio/file/Path;Ljava/lang/String;Ljava/util/function/Predicate;)V", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;walk(Ljava/nio/file/Path;I[Ljava/nio/file/FileVisitOption;)Ljava/util/stream/Stream;"))

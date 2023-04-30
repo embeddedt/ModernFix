@@ -1,31 +1,23 @@
-package org.embeddedt.modernfix.util;
+package org.embeddedt.modernfix.resources;
 
-import com.google.common.base.Joiner;
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
-import com.google.common.collect.Streams;
+import org.embeddedt.modernfix.util.FileUtil;
 
-import java.lang.ref.WeakReference;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.List;
 
 public class CachedResourcePath {
     private final String[] pathComponents;
-    private int hashCode = 0;
 
-    private static final Interner<String> PATH_COMPONENT_INTERNER = Interners.newStrongInterner();
+    public static final Interner<String> PATH_COMPONENT_INTERNER = Interners.newStrongInterner();
     private static final Splitter SLASH_SPLITTER = Splitter.on('/');
-    private static final Joiner SLASH_JOINER = Joiner.on('/');
-    private WeakReference<String> fullPathCache = new WeakReference<>(null);
     private static final String[] NO_PREFIX = new String[0];
 
-    public CachedResourcePath(Path path) {
-        this(NO_PREFIX, path, path.getNameCount(), true);
+    public CachedResourcePath(String[] prefix, Path path) {
+        this(prefix, path, path.getNameCount(), true);
     }
 
     public CachedResourcePath(String s) {
@@ -67,11 +59,7 @@ public class CachedResourcePath {
 
     @Override
     public int hashCode() {
-        int result = hashCode;
-        if(result != 0)
-            return result;
-        hashCode = Arrays.hashCode(pathComponents);
-        return hashCode;
+        return Arrays.hashCode(pathComponents);
     }
 
     @Override
@@ -90,12 +78,17 @@ public class CachedResourcePath {
         return pathComponents.length;
     }
 
-    public String getFullPath() {
-        String fPath = fullPathCache.get();
-        if(fPath == null) {
-            fPath = SLASH_JOINER.join(pathComponents);
-            fullPathCache = new WeakReference<>(fPath);
+    public String getNameAt(int i) {
+        return pathComponents[i];
+    }
+
+    public String getFullPath(int startIndex) {
+        StringBuilder sb = new StringBuilder();
+        for(int i = startIndex; i < pathComponents.length; i++) {
+            sb.append(pathComponents[i]);
+            if(i != (pathComponents.length - 1))
+                sb.append('/');
         }
-        return fPath;
+        return sb.toString();
     }
 }

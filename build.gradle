@@ -90,7 +90,7 @@ subprojects {
 
     processResources {
         def mixinFileList = []
-        def mixinDirectory = file("src/main/java/org/embeddedt/modernfix/mixin")
+        def mixinDirectory = file("src/main/java/org/embeddedt/modernfix/" + project.name + "/mixin")
         fileTree(mixinDirectory).visit { FileVisitDetails details ->
             if(details.file.isFile()) {
                 def fileName = mixinDirectory.relativePath(details.file).toString().replaceFirst(/\.java$/, "").replace('/', '.')

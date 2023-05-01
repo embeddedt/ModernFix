@@ -21,11 +21,11 @@ import net.minecraftforge.fml.loading.LoadingModList;
 import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
-import org.embeddedt.modernfix.classloading.FastAccessTransformerList;
-import org.embeddedt.modernfix.classloading.ModernFixResourceFinder;
+import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
+import org.embeddedt.modernfix.forge.classloading.ModernFixResourceFinder;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.dfu.DFUBlaster;
-import org.embeddedt.modernfix.packet.PacketHandler;
+import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.tree.*;
@@ -200,7 +200,7 @@ public class ModernFixPlatformHooksImpl {
     }
 
     public static void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
-        if(mixinClassName.equals("org.embeddedt.modernfix.mixin.perf.compress_blockstate.BlockStateBaseMixin")) {
+        if(mixinClassName.equals("org.embeddedt.modernfix.common.compress_blockstate.perf.mixin.BlockStateBaseMixin")) {
             // Delete unused fields off BlockStateBase
             Set<String> fieldsToDelete = Stream.of(
                     "field_235702_f_", // isAir
@@ -233,7 +233,7 @@ public class ModernFixPlatformHooksImpl {
                     }
                 }
             }
-        } else if(mixinClassName.equals("org.embeddedt.modernfix.mixin.bugfix.chunk_deadlock.valhesia.BlockStateBaseMixin")) {
+        } else if(mixinClassName.equals("org.embeddedt.modernfix.forge.valhesia.chunk_deadlock.bugfix.mixin.BlockStateBaseMixin")) {
             // We need to destroy Valhelsia's callback so it can never run getBlockState
             for(MethodNode m : targetClass.methods) {
                 if(m.name.contains("valhelsia_placeDousedTorch")) {

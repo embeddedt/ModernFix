@@ -11,6 +11,7 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 import java.io.File;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     private static final String MIXIN_PACKAGE_ROOT = "org.embeddedt.modernfix.mixin.";
@@ -61,6 +62,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
+        mixinClassName = ModernFixEarlyConfig.sanitize(mixinClassName);
         if (!mixinClassName.startsWith(MIXIN_PACKAGE_ROOT)) {
             this.logger.error("Expected mixin '{}' to start with package root '{}', treating as foreign and " +
                     "disabling!", mixinClassName, MIXIN_PACKAGE_ROOT);

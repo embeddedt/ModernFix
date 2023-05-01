@@ -130,7 +130,8 @@ public class ModernFixEarlyConfig {
     private static final boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getProvider() instanceof ExplodedDirectoryLocator;;
 
     static {
-        shouldReplaceSearchTrees = modPresent("jei");
+        Optional<ModInfo> jeiMod = FMLLoader.getLoadingModList().getMods().stream().filter(mod -> mod.getModId().equals("jei")).findFirst();
+        shouldReplaceSearchTrees =  (jeiMod.isPresent() && jeiMod.get().getVersion().getMajorVersion() >= 10) || FMLLoader.getLoadingModList().getModFileById("roughlyenoughitems") != null;
     }
 
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = ImmutableMap.<String, Boolean>builder()

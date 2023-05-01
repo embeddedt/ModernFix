@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.mixin.perf.kubejs;
 
 import dev.latvian.mods.kubejs.recipe.RecipeEventJS;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,6 +14,7 @@ import java.util.Collection;
 import java.util.Map;
 
 @Mixin(RecipeEventJS.class)
+@RequiresMod("kubejs")
 public class RecipeEventJSMixin {
 
     /**

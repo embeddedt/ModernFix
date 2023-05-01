@@ -80,7 +80,10 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         }
 
         String mixin = mixinClassName.substring(MIXIN_PACKAGE_ROOT.length());
-        return isOptionEnabled(mixin);
+        if(!isOptionEnabled(mixin))
+            return false;
+        String disabledBecauseMod = config.getPermanentlyDisabledMixins().get(mixin);
+        return disabledBecauseMod == null;
     }
 
     public boolean isOptionEnabled(String mixin) {

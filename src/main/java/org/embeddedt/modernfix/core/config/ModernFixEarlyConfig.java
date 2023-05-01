@@ -1,16 +1,30 @@
 package org.embeddedt.modernfix.core.config;
 
+import com.google.common.base.Splitter;
+import com.google.common.collect.ImmutableMap;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
 import net.minecraftforge.fml.loading.moddiscovery.MinecraftLocator;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.forgespi.locating.IModLocator;
+import net.minecraftforge.forgespi.locating.IModFile;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.ModernFix;
+import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.tree.AnnotationNode;
+import org.objectweb.asm.tree.ClassNode;
+import org.objectweb.asm.tree.TypeAnnotationNode;
 
 import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class ModernFixEarlyConfig {
     private static final Logger LOGGER = LogManager.getLogger("ModernFixConfig");
@@ -38,64 +52,127 @@ public class ModernFixEarlyConfig {
             return FMLLoader.getLoadingModList().getModFileById(modId) != null;
     }
 
+    private static final String MIXIN_DESC = "Lorg/spongepowered/asm/mixin/Mixin;";
+    private static final String MIXIN_CLIENT_ONLY_DESC = "Lorg/embeddedt/modernfix/annotation/ClientOnlyMixin;";
+    private static final String MIXIN_REQUIRES_MOD_DESC = "Lorg/embeddedt/modernfix/annotation/RequiresMod;";
+
+    private final Set<String> mixinOptions = new ObjectOpenHashSet<>();
+    private final Map<String, String> mixinsMissingMods = new Object2ObjectOpenHashMap<>();
+
+    public Map<String, String> getPermanentlyDisabledMixins() {
+        return mixinsMissingMods;
+    }
+
+    private void scanForAndBuildMixinOptions() {
+        IModFile file = FMLLoader.getLoadingModList().getModFileById("modernfix").getFile();
+        Path mixinFolder = file.findResource("org", "embeddedt", "modernfix", "mixin");
+        try(Stream<Path> mixinFiles = Files.find(mixinFolder, Integer.MAX_VALUE, (p, a) -> true)) {
+            Splitter dotSplitter = Splitter.on('.');
+            // filter via toString
+            mixinFiles
+                    .filter(p -> {
+                        Path fileName = p.getFileName();
+                        return fileName != null && fileName.toString().endsWith(".class");
+                    })
+                    .forEach(path -> {
+                        try(InputStream stream = Files.newInputStream(path)) {
+                            ClassReader reader = new ClassReader(stream);
+                            ClassNode node = new ClassNode();
+                            reader.accept(node,  ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+                            if(node.invisibleAnnotations == null)
+                                return;
+                            boolean isMixin = false, isClientOnly = false, requiredModPresent = true;
+                            String requiredModId = "";
+                            for(AnnotationNode annotation : node.invisibleAnnotations) {
+                                if(Objects.equals(annotation.desc, MIXIN_DESC)) {
+                                    isMixin = true;
+                                } else if(Objects.equals(annotation.desc, MIXIN_CLIENT_ONLY_DESC)) {
+                                    isClientOnly = true;
+                                } else if(Objects.equals(annotation.desc, MIXIN_REQUIRES_MOD_DESC)) {
+                                    for(int i = 0; i < annotation.values.size(); i += 2) {
+                                        if(annotation.values.get(i).equals("value")) {
+                                            String modId = (String)annotation.values.get(i + 1);
+                                            if(modId != null) {
+                                                requiredModPresent = modPresent(modId);
+                                                requiredModId = modId;
+                                            }
+                                            break;
+                                        }
+                                    }
+                                }
+                            }
+                            if(isMixin) {
+                                String mixinClassName = node.name.replace("org/embeddedt/modernfix/mixin/", "").replace('/', '.');
+                                if(!requiredModPresent)
+                                    mixinsMissingMods.put(mixinClassName, requiredModId);
+                                else if(isClientOnly && FMLLoader.getDist() != Dist.CLIENT)
+                                    mixinsMissingMods.put(mixinClassName, "[not client]");
+                                List<String> mixinOptionNames = dotSplitter.splitToList(mixinClassName);
+                                StringBuilder optionBuilder = new StringBuilder(mixinClassName.length());
+                                optionBuilder.append("mixin");
+                                for(int i = 0; i < mixinOptionNames.size() - 1; i++) {
+                                    optionBuilder.append('.');
+                                    optionBuilder.append(mixinOptionNames.get(i));
+                                    mixinOptions.add(optionBuilder.toString());
+                                }
+                            }
+                        } catch(IOException e) {
+                            ModernFix.LOGGER.error("Error scanning file " + path, e);
+                        }
+                    });
+        } catch(IOException e) {
+            ModernFix.LOGGER.error("Error scanning for mixins", e);
+        }
+    }
+
+    private static final boolean shouldReplaceSearchTrees;
+    private static final boolean isDevEnv = !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator() instanceof ExplodedDirectoryLocator;;
+
+    static {
+        shouldReplaceSearchTrees = modPresent("jei");
+    }
+
+    private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = ImmutableMap.<String, Boolean>builder()
+            .put("mixin.perf.dynamic_resources", false)
+            .put("mixin.feature.reduce_loading_screen_freezes", false)
+            .put("mixin.feature.direct_stack_trace", false)
+            .put("mixin.perf.rewrite_registry", false)
+            .put("mixin.perf.clear_mixin_classinfo", false)
+            .put("mixin.perf.compress_blockstate", false)
+            .put("mixin.bugfix.packet_leak", false)
+            .put("mixin.perf.deduplicate_location", false)
+            .put("mixin.perf.preload_block_classes", false)
+            .put("mixin.perf.faster_singleplayer_load", false)
+            .put("mixin.perf.blast_search_trees", shouldReplaceSearchTrees)
+            .put("mixin.devenv", isDevEnv)
+            .put("mixin.perf.remove_spawn_chunks", isDevEnv)
+            .build();
+
     private ModernFixEarlyConfig(File file) {
         this.configFile = file;
+
+        this.scanForAndBuildMixinOptions();
+        for(String optionName : mixinOptions) {
+            boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(optionName, true);
+            this.options.putIfAbsent(optionName, new Option(optionName, defaultEnabled, false));
+        }
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
-        this.addMixinRule("core", true); // TODO: Don't actually allow the user to disable this
-        this.addMixinRule("perf.modern_resourcepacks", true);
-        this.addMixinRule("feature.branding", true);
-        this.addMixinRule("feature.measure_time", true);
-        this.addMixinRule("feature.reduce_loading_screen_freezes", false);
-        this.addMixinRule("feature.direct_stack_trace", false);
-        this.addMixinRule("perf.fast_registry_validation", true);
-        // not stable yet
-        this.addMixinRule("perf.rewrite_registry", false);
-        this.addMixinRule("perf.jeresources_startup", modPresent("jeresources"));
-        this.addMixinRule("perf.remove_biome_temperature_cache", true);
-        this.addMixinRule("perf.reduce_blockstate_cache_rebuilds", true);
-        this.addMixinRule("perf.model_optimizations", true);
-        this.addMixinRule("perf.dynamic_resources", false);
-        this.addMixinRule("perf.dynamic_entity_renderers", true);
-        this.addMixinRule("perf.dedicated_reload_executor", true);
-        /* Use a simpler ArrayMap if FerriteCore is using the map intelligently anyway */
-        this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
-        this.addMixinRule("perf.cache_strongholds", true);
-        this.addMixinRule("perf.clear_mixin_classinfo", false);
-        this.addMixinRule("perf.cache_upgraded_structures", true);
-        this.addMixinRule("perf.compress_blockstate", false);
-        this.addMixinRule("bugfix.concurrency", true);
-        this.addMixinRule("bugfix.edge_chunk_not_saved", true);
-        this.addMixinRule("perf.fast_forge_dummies", true);
-        this.addMixinRule("perf.dynamic_structure_manager", true);
-        this.addMixinRule("bugfix.chunk_deadlock", true);
-        this.addMixinRule("bugfix.remove_block_chunkloading", true);
-        this.addMixinRule("bugfix.paper_chunk_patches", true);
-        this.addMixinRule("perf.thread_priorities", true);
-        this.addMixinRule("perf.scan_cache", true);
-        this.addMixinRule("perf.kubejs", modPresent("kubejs"));
-        this.addMixinRule("perf.flatten_model_predicates", true);
-        this.addMixinRule("perf.deduplicate_location", false);
-        this.addMixinRule("perf.cache_blockstate_cache_arrays", true);
-        this.addMixinRule("perf.cache_model_materials", true);
-        this.addMixinRule("perf.nbt_memory_usage", true);
-        this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
-        this.addMixinRule("perf.datapack_reload_exceptions", true);
-        this.addMixinRule("perf.dynamic_dfu", true);
-        this.addMixinRule("perf.faster_texture_stitching", true);
-        this.addMixinRule("perf.faster_texture_loading", true);
-        this.addMixinRule("perf.faster_font_loading", true);
-        /* off by default in 1.18 because it doesn't work as well */
-        this.addMixinRule("perf.faster_singleplayer_load", false);
-        /* Keep this off if JEI/REI isn't installed to prevent breaking vanilla gameplay */
-        Optional<ModInfo> jeiMod = FMLLoader.getLoadingModList().getMods().stream().filter(mod -> mod.getModId().equals("jei")).findFirst();
-        this.addMixinRule("perf.blast_search_trees", (jeiMod.isPresent() && jeiMod.get().getVersion().getMajorVersion() >= 10) || FMLLoader.getLoadingModList().getModFileById("roughlyenoughitems") != null);
-        this.addMixinRule("safety", true);
+
         this.addMixinRule("launch.class_search_cache", true);
-        IModLocator mfLocator = FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator();
-        boolean isDevEnv = !FMLLoader.isProduction() && (mfLocator instanceof ExplodedDirectoryLocator || mfLocator instanceof MinecraftLocator);
-        this.addMixinRule("devenv", isDevEnv);
-        this.addMixinRule("perf.remove_spawn_chunks", isDevEnv);
+        /*
+        this.addMixinRule("perf.use_integrated_resources.jepb", modPresent("jepb"));
+        this.addMixinRule("perf.use_integrated_resources.jeresources", modPresent("jeresources"));
+        this.addMixinRule("perf.jeresources_startup", modPresent("jeresources"));
+        this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
+        this.addMixinRule("bugfix.starlight_emptiness", modPresent("starlight"));
+        this.addMixinRule("bugfix.chunk_deadlock.valhesia", modPresent("valhelsia_structures"));
+        this.addMixinRule("bugfix.tf_cme_on_load", modPresent("twilightforest"));
+        this.addMixinRule("bugfix.refinedstorage", modPresent("refinedstorage"));
+        this.addMixinRule("perf.async_jei", modPresent("jei"));
+        this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
+        this.addMixinRule("perf.kubejs", modPresent("kubejs"));
+         */
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot");

@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.mixin.perf.faster_font_loading;
 import com.mojang.blaze3d.platform.NativeImage;
 import net.minecraft.client.gui.font.providers.LegacyUnicodeBitmapsProvider;
 import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -21,6 +22,7 @@ import java.util.Map;
  * only to do it again later.
  */
 @Mixin(LegacyUnicodeBitmapsProvider.class)
+@ClientOnlyMixin
 public abstract class LegacyUnicodeBitmapsProviderMixin {
     @Shadow protected abstract ResourceLocation getSheetLocation(int i);
 

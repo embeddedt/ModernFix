@@ -22,5 +22,9 @@ jobs:
         run: ./gradlew --no-daemon build
       - uses: actions/upload-artifact@v2
         with:
-          name: Package
-          path: build/libs
+          name: Forge
+          path: forge/build/libs
+      - uses: actions/upload-artifact@v2
+        with:
+          name: Fabric
+          path: fabric/build/libs

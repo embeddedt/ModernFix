@@ -5,6 +5,8 @@ import appeng.init.client.InitAutoRotatingModel;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraftforge.common.MinecraftForge;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +19,8 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Mixin(InitAutoRotatingModel.class)
+@RequiresMod("appliedenergistics2")
+@ClientOnlyMixin
 public class RegistrationMixin {
     @Shadow @Final private static Map<String, Function<BakedModel, BakedModel>> CUSTOMIZERS;
     @Inject(method = "init", at = @At("TAIL"), remap = false)

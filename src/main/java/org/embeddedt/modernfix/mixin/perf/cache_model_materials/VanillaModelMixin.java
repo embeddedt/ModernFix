@@ -7,6 +7,7 @@ import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.renderer.block.model.MultiVariant;
 import net.minecraft.client.renderer.block.model.multipart.MultiPart;
 import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.duck.ICachedMaterialsModel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -19,6 +20,7 @@ import java.util.Set;
 import java.util.function.Function;
 
 @Mixin(value = {MultiVariant.class, MultiPart.class, BlockModel.class})
+@ClientOnlyMixin
 public class VanillaModelMixin implements ICachedMaterialsModel {
     private Collection<Material> materialsCache = null;
 

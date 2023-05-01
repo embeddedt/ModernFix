@@ -8,6 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,6 +27,8 @@ import java.util.function.Supplier;
 import java.util.stream.Stream;
 
 @Mixin(ClientRegistrationHandler.class)
+@RequiresMod("supermartijn642corelib")
+@ClientOnlyMixin
 public class ClientRegistrationHandlerMixin {
     @Shadow @Final private List<Pair<Supplier<Stream<ResourceLocation>>, Function<BakedModel, BakedModel>>> modelOverwrites;
 

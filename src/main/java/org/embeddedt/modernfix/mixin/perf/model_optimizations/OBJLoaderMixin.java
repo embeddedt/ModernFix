@@ -4,6 +4,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjMaterialLibrary;
 import net.minecraftforge.client.model.obj.ObjModel;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -16,6 +17,7 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(ObjLoader.class)
+@ClientOnlyMixin
 public class OBJLoaderMixin {
     @Final
     @Mutable

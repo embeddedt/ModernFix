@@ -9,6 +9,8 @@ import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -28,6 +30,8 @@ import java.io.IOException;
 import java.util.*;
 
 @Mixin(TextureMetadataHandler.class)
+@RequiresMod("ctm")
+@ClientOnlyMixin
 public abstract class TextureMetadataHandlerMixin {
 
     @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelBakery loader) throws IOException;

@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.mixin.perf.cache_model_materials;
 import com.mojang.datafixers.util.Either;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.Material;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.duck.ICachedMaterialsModel;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -19,6 +20,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Mixin(BlockModel.class)
+@ClientOnlyMixin
 public class BlockModelMixin {
     @Shadow @Final @Mutable public Map<String, Either<Material, String>> textureMap;
 

@@ -20,6 +20,8 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
@@ -37,6 +39,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 @Mixin(CTMPackReloadListener.class)
+@RequiresMod("ctm")
+@ClientOnlyMixin
 public abstract class CTMPackReloadListenerMixin {
     /* caches the original render checks */
     @Shadow @Final private static Map<Holder.Reference<Block>, Predicate<RenderType>> blockRenderChecks;

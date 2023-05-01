@@ -184,17 +184,19 @@ public class StbStitcher {
                     STBRectPack.stbrp_pack_rects(ctx, rectBuf);
 
                     for (STBRPRect rect : rectBuf) {
-                        Stitcher.Holder holder = holders[rect.id()];
-
                         // Ensure that everything is properly packed!
                         if (!rect.was_packed()) {
+                            Stitcher.Holder holder = holders[rect.id()];
                             throw new StitcherException(holder.spriteInfo,
                                     Stream.of(holders).map(arg -> arg.spriteInfo).collect(ImmutableList.toImmutableList()));
                         }
+                    }
+
+                    for (STBRPRect rect : rectBuf) {
+                        Stitcher.Holder holder = holders[rect.id()];
 
                         // Initialize the sprite now with the position and size that we've calculated so far
                         infoList.add(new LoadableSpriteInfo(holder.spriteInfo, longestWidth, longestHeight, getX(rect), getY(rect)));
-                        //holder.spriteInfo.initSprite(size, size, rect.x(), rect.y(), false);
                     }
 
                     return Pair.of(Pair.of(longestWidth, longestHeight), infoList);

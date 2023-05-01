@@ -4,6 +4,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.color.block.BlockColor;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,6 +14,7 @@ import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
 @Mixin(value = BlockColors.class, priority = 700)
+@ClientOnlyMixin
 public class BlockColorsMixin {
     private Lock mapLock = new ReentrantLock();
     @Inject(method = "register", at = @At("HEAD"))

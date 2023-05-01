@@ -17,6 +17,7 @@ import org.objectweb.asm.tree.ClassNode;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 public class ModernFixEarlyConfig {
@@ -49,6 +50,12 @@ public class ModernFixEarlyConfig {
     private static final String MIXIN_CLIENT_ONLY_DESC = "Lorg/embeddedt/modernfix/annotation/ClientOnlyMixin;";
     private static final String MIXIN_REQUIRES_MOD_DESC = "Lorg/embeddedt/modernfix/annotation/RequiresMod;";
 
+    private static final Pattern PLATFORM_PREFIX = Pattern.compile("(forge|fabric|common)\\.");
+
+    public static String sanitize(String mixinClassName) {
+        return PLATFORM_PREFIX.matcher(mixinClassName).replaceFirst("");
+    }
+
     private final Set<String> mixinOptions = new ObjectOpenHashSet<>();
     private final Map<String, String> mixinsMissingMods = new Object2ObjectOpenHashMap<>();
 
@@ -66,8 +73,9 @@ public class ModernFixEarlyConfig {
             try(Reader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
                 JsonObject configObject = (JsonObject)new JsonParser().parse(reader);
                 JsonArray mixinList = configObject.getAsJsonArray("mixins");
+                String packageName = configObject.get("package").getAsString().replace('.', '/');
                 for(JsonElement mixin : mixinList) {
-                    mixinPaths.add("org/embeddedt/modernfix/mixin/" + mixin.getAsString().replace('.', '/') + ".class");
+                    mixinPaths.add(packageName + "/" + mixin.getAsString().replace('.', '/') + ".class");
                 }
             } catch(IOException | JsonParseException e) {
                 LOGGER.error("Error loading config " + configFile, e);
@@ -102,7 +110,7 @@ public class ModernFixEarlyConfig {
                     }
                 }
                 if(isMixin) {
-                    String mixinClassName = node.name.replace("org/embeddedt/modernfix/mixin/", "").replace('/', '.');
+                    String mixinClassName = sanitize(node.name.replace('/', '.')).replace("org.embeddedt.modernfix.mixin.", "");
                     if(!requiredModPresent)
                         mixinsMissingMods.put(mixinClassName, requiredModId);
                     else if(isClientOnly && !ModernFixPlatformHooks.isClient())

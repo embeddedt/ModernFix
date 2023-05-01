@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "minVersion": "0.8",
+  "package": "org.embeddedt.modernfix.mixin",
+  "plugin": "org.embeddedt.modernfix.core.ModernFixMixinPlugin",
+  "compatibilityLevel": "JAVA_17",
+  "mixins": [
+${mixin_classes}
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

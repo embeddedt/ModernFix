@@ -1,0 +1,113 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+}
+
+apply plugin: 'com.matthewprenger.cursegradle'
+apply plugin: 'com.modrinth.minotaur'
+
+architectury {
+    platformSetupLoomIde()
+    fabric()
+}
+
+loom {
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+}
+
+configurations {
+    common
+    shadowCommon // Don't use shadow from the shadow plugin since it *excludes* files.
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentFabric.extendsFrom common
+
+    modIncludeImplementation
+
+    include.extendsFrom modIncludeImplementation
+    modImplementation.extendsFrom modIncludeImplementation
+}
+
+dependencies {
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modIncludeImplementation(fabricApi.module("fabric-lifecycle-events-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modIncludeImplementation(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    // Remove the next line if you don't want to depend on the API
+    // modApi "me.shedaniel:architectury-fabric:${rootProject.architectury_version}"
+
+    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+
+shadowJar {
+    exclude "architectury.common.json"
+
+    configurations = [project.configurations.shadowCommon]
+    classifier "dev-shadow"
+}
+
+remapJar {
+    injectAccessWidener = true
+    input.set shadowJar.archiveFile
+    dependsOn shadowJar
+    classifier null
+}
+
+jar {
+    classifier "dev"
+}
+
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+publishing {
+    publications {
+        mavenFabric(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            from components.java
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+    }
+}
+
+curseforge {
+    if (System.getenv("CURSEFORGE_TOKEN") != null) {
+        apiKey = System.getenv("CURSEFORGE_TOKEN")
+        project {
+            id = "790626"
+            changelog = file('../CHANGELOG.md')
+            changelogType = "markdown"
+            releaseType = "release"
+            addGameVersion "Fabric"
+            addGameVersion minecraft_version
+            mainArtifact remapJar
+        }
+    }
+}
+
+modrinth {
+    token = System.getenv("MODRINTH_TOKEN")
+    projectId = "modernfix" // This can be the project ID or the slug. Either will work!
+    versionType = "release" // This is the default -- can also be `beta` or `alpha`
+    uploadFile = remapJar
+    gameVersions = [minecraft_version]
+    loaders = ["fabric"]
+    changelog.set(provider { file("../CHANGELOG.md").getText('UTF-8') })
+}
+
+tasks.curseforge.dependsOn(rootProject.generateChangelog)
+tasks.modrinth.dependsOn(rootProject.generateChangelog)

@@ -1,0 +1,39 @@
+accessWidener   v2  named
+
+accessible class net/minecraft/client/renderer/RenderType$CompositeRenderType
+accessible method net/minecraft/client/renderer/RenderType$CompositeRenderType <init> (Ljava/lang/String;Lcom/mojang/blaze3d/vertex/VertexFormat;IIZZLnet/minecraft/client/renderer/RenderType$CompositeState;)V
+accessible method net/minecraft/nbt/CompoundTag <init> (Ljava/util/Map;)V
+
+accessible class net/minecraft/client/Minecraft$ExperimentalDialogType
+accessible class net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase$Cache
+accessible class net/minecraft/server/level/ServerChunkCache$MainThreadExecutor
+accessible field net/minecraft/world/level/block/state/BlockBehaviour properties Lnet/minecraft/world/level/block/state/BlockBehaviour$Properties;
+accessible class net/minecraft/client/renderer/block/model/BlockElementFace$Deserializer
+accessible class net/minecraft/client/renderer/texture/Stitcher$Holder
+accessible field net/minecraft/client/renderer/texture/Stitcher$Holder width I
+accessible field net/minecraft/client/renderer/texture/Stitcher$Holder height I
+accessible field net/minecraft/network/syncher/EntityDataAccessor id I
+mutable field net/minecraft/network/syncher/EntityDataAccessor id I
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties isAir Z
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties material Lnet/minecraft/world/level/material/Material;
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties destroyTime F
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties requiresCorrectToolForDrops Z
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties canOcclude Z
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties isRedstoneConductor Lnet/minecraft/world/level/block/state/BlockBehaviour$StatePredicate;
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties isSuffocating Lnet/minecraft/world/level/block/state/BlockBehaviour$StatePredicate;
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties isViewBlocking Lnet/minecraft/world/level/block/state/BlockBehaviour$StatePredicate;
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties hasPostProcess Lnet/minecraft/world/level/block/state/BlockBehaviour$StatePredicate;
+accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties emissiveRendering Lnet/minecraft/world/level/block/state/BlockBehaviour$StatePredicate;
+accessible class net/minecraft/client/resources/model/ModelBakery$BlockStateDefinitionException
+accessible field net/minecraft/network/syncher/SynchedEntityData itemsById Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;
+accessible field net/minecraft/network/syncher/SynchedEntityData ENTITY_ID_POOL Lit/unimi/dsi/fastutil/objects/Object2IntMap;
+accessible field net/minecraft/network/syncher/SynchedEntityData lock Ljava/util/concurrent/locks/ReadWriteLock;
+accessible method net/minecraft/Util makeExecutor (Ljava/lang/String;)Ljava/util/concurrent/ExecutorService;
+accessible field net/minecraft/server/level/ChunkMap updatingChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
+accessible field net/minecraft/server/level/ChunkMap visibleChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
+accessible field net/minecraft/server/level/ChunkMap pendingUnloads Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
+accessible field net/minecraft/client/Minecraft reserve [B
+accessible method net/minecraft/resources/ResourceKey <init> (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;)V
+accessible method net/minecraft/client/renderer/texture/TextureAtlasSprite <init> (Lnet/minecraft/client/renderer/texture/TextureAtlas;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite$Info;IIIIILcom/mojang/blaze3d/platform/NativeImage;)V
+accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
+accessible class net/minecraft/server/level/ChunkMap$DistanceManager

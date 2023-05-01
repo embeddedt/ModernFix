@@ -1,0 +1,144 @@
+plugins {
+    id "com.github.johnrengelman.shadow" version "7.1.2"
+}
+
+apply plugin: 'com.matthewprenger.cursegradle'
+apply plugin: 'com.modrinth.minotaur'
+
+architectury {
+    platformSetupLoomIde()
+    forge()
+}
+
+loom {
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+
+    forge {
+        convertAccessWideners = true
+        extraAccessWideners.add loom.accessWidenerPath.get().asFile.name
+
+        mixinConfig "modernfix-common.mixins.json"
+        mixinConfig "modernfix-forge.mixins.json"
+    }
+    mixin.defaultRefmapName = "modernfix.refmap.json"
+}
+
+configurations {
+    common
+    shadowCommon // Don't use shadow from the shadow plugin since it *excludes* files.
+    compileClasspath.extendsFrom common
+    runtimeClasspath.extendsFrom common
+    developmentForge.extendsFrom common
+}
+
+dependencies {
+    forge "net.minecraftforge:forge:${rootProject.forge_version}"
+    // Remove the next line if you don't want to depend on the API
+    // modApi "me.shedaniel:architectury-forge:${rootProject.architectury_version}"
+
+    modCompileOnly("curse.maven:refinedstorage-243076:${refined_storage_version}")
+
+    // compile against the JEI API but do not include it at runtime
+    modCompileOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+
+    modCompileOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
+
+    modCompileOnly("curse.maven:jeresources-240630:3951643")
+    modCompileOnly "me.shedaniel:RoughlyEnoughItems-forge:${rei_version}"
+    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    modRuntimeOnly("curse.maven:ferritecore-429235:4117906")
+    modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
+
+    modCompileOnly("curse.maven:supermartijncore-454372:4455391")
+    modCompileOnly("appeng:appliedenergistics2-forge:12.9.4")
+    modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
+
+    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("META-INF/mods.toml") {
+        expand "version": project.version
+    }
+}
+
+shadowJar {
+    exclude "fabric.mod.json"
+    exclude "architectury.common.json"
+
+    configurations = [project.configurations.shadowCommon]
+    classifier "dev-shadow"
+}
+
+remapJar {
+    input.set shadowJar.archiveFile
+    dependsOn shadowJar
+    classifier null
+}
+
+jar {
+    classifier "dev"
+    manifest {
+        attributes([
+                "Specification-Title"     : "modernfix",
+                "Operative-Class"         : "org.embeddedt.modernfix.agent.Agent",
+                //"Specification-Vendor": "modernfix authors",
+                "Specification-Version"   : "1", // We are version 1 of ourselves
+                "Implementation-Title"    : project.name,
+                "Implementation-Version"  : project.jar.archiveVersion,
+                //"Implementation-Vendor": "modernfix authors",
+                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+        ])
+    }
+}
+
+components.java {
+    withVariantsFromConfiguration(project.configurations.shadowRuntimeElements) {
+        skip()
+    }
+}
+
+publishing {
+    publications {
+        mavenForge(MavenPublication) {
+            artifactId = rootProject.archives_base_name + "-" + project.name
+            from components.java
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+    }
+}
+
+curseforge {
+    if (System.getenv("CURSEFORGE_TOKEN") != null) {
+        apiKey = System.getenv("CURSEFORGE_TOKEN")
+        project {
+            id = "790626"
+            changelog = file('../CHANGELOG.md')
+            changelogType = "markdown"
+            releaseType = "release"
+            addGameVersion "Forge"
+            addGameVersion minecraft_version
+            mainArtifact remapJar
+        }
+    }
+}
+
+modrinth {
+    token = System.getenv("MODRINTH_TOKEN")
+    projectId = "modernfix" // This can be the project ID or the slug. Either will work!
+    versionType = "release" // This is the default -- can also be `beta` or `alpha`
+    uploadFile = remapJar
+    gameVersions = [minecraft_version]
+    loaders = ["forge"]
+    changelog.set(provider { file("../CHANGELOG.md").getText('UTF-8') })
+}
+
+tasks.curseforge.dependsOn(rootProject.generateChangelog)
+tasks.modrinth.dependsOn(rootProject.generateChangelog)

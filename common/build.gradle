@@ -1,0 +1,42 @@
+architectury {
+    common(rootProject.enabled_platforms.split(","))
+}
+
+loom {
+    accessWidenerPath = file("src/main/resources/modernfix.accesswidener")
+}
+
+dependencies {
+    // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies
+    // Do NOT use other classes from fabric loader
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+
+    modApi("dev.latvian.mods:kubejs:${kubejs_version}") {
+        transitive = false
+    }
+    modApi("dev.latvian.mods:rhino:${rhino_version}") {
+        transitive = false
+    }
+    modApi("me.shedaniel:RoughlyEnoughItems-api:${rei_version}") {
+        transitive = false
+    }
+    modCompileOnly("me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}") {
+        transitive = false
+    }
+    // Remove the next line if you don't want to depend on the API
+    // modApi "me.shedaniel:architectury:${rootProject.architectury_version}"
+}
+
+publishing {
+    publications {
+        mavenCommon(MavenPublication) {
+            artifactId = rootProject.archives_base_name
+            from components.java
+        }
+    }
+
+    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
+    repositories {
+        // Add repositories to publish to here.
+    }
+}

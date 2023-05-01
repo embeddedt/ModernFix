@@ -1,6 +1,13 @@
 {
-  "modernfix.jei_load": "正在加载JEI，这需要一点时间。",
-  "modernfix.no_lazydfu": "现代化修复检测到DFU规则在游戏启动时已被编译。这会降低游戏启动速度。非常推荐安装DFU载入优化来解决这个问题。",
+  "key.modernfix": "现代化修复",
+  "key.modernfix.config": "打开配置屏幕",
+  "modernfix.jei_load": "正在加载JEI，这可能会花费一段时间。",
+  "modernfix.no_lazydfu": "未检测到DFU载入优化。如果Minecraft需要从旧版本更新游戏数据，可能会出现极大的延迟。",
+  "modernfix.config": "现代化修复Mixin配置",
+  "modernfix.config.done_restart": "完成（生效需重启）",
+  "modernfix.option.on": "开启",
+  "modernfix.option.off": "关闭",
+  "modernfix.config.not_default": " （已修改）",
   "asynclocator.map.locating": "地图（定位中……）",
-  "asynclocator.map.none": "地图（未能找到相关地物）"
+  "asynclocator.map.none": "地图（未能在附近找到相关地物）"
 }

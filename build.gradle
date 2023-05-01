@@ -124,6 +124,36 @@ tasks.withType(JavaCompile) {
      */
 }
 
+processResources {
+    def mixinFileList = []
+    def mixinDirectory = file("src/main/java/org/embeddedt/modernfix/mixin")
+    fileTree(mixinDirectory).visit { FileVisitDetails details ->
+        if(details.file.isFile()) {
+            def fileName = mixinDirectory.relativePath(details.file).toString().replaceFirst(/\.java$/, "").replace('/', '.')
+            mixinFileList << fileName
+        }
+    }
+
+    def mixinClassesStringB = new StringBuilder()
+    for(int i = 0; i < mixinFileList.size(); i++) {
+        mixinClassesStringB.append("    \"")
+        mixinClassesStringB.append(mixinFileList.get(i))
+        mixinClassesStringB.append('"')
+        if(i < (mixinFileList.size() - 1))
+            mixinClassesStringB.append(',')
+        mixinClassesStringB.append('\n')
+    }
+
+    def replacements = [
+            mixin_classes: mixinClassesStringB.toString()
+    ]
+
+    inputs.properties replacements
+    filesMatching("modernfix.mixins.json") {
+        expand replacements
+    }
+}
+
 task generateChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
     def details = versionDetails();
     if(details.commitDistance > 0) {

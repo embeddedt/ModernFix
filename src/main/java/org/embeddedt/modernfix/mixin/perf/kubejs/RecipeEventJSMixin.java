@@ -8,6 +8,7 @@ import dev.latvian.kubejs.recipe.filter.RecipeFilter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeManager;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.util.KubeUtil;
 import org.embeddedt.modernfix.util.ModUtil;
 import org.spongepowered.asm.mixin.Final;
@@ -27,6 +28,7 @@ import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
 @Mixin(RecipeEventJS.class)
+@RequiresMod("kubejs")
 public class RecipeEventJSMixin {
     @Shadow(remap = false) @Final private List<RecipeJS> originalRecipes;
 

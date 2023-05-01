@@ -14,6 +14,8 @@ import mezz.jei.startup.NetworkHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.jei.async.JEILoadingInterruptedException;
 import org.embeddedt.modernfix.jei.async.JEIReloadThread;
 import org.embeddedt.modernfix.util.JEIUtil;
@@ -28,6 +30,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.List;
 
 @Mixin(ClientLifecycleHandler.class)
+@RequiresMod("jei")
+@ClientOnlyMixin
 public class ClientLifecycleHandlerMixin {
     @Shadow(remap = false) @Final private JeiStarter starter;
     @Shadow(remap = false) @Final private List<IModPlugin> plugins;

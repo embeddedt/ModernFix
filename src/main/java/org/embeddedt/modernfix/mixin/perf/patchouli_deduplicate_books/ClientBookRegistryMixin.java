@@ -4,6 +4,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -23,6 +25,8 @@ import java.lang.reflect.Field;
 import java.util.List;
 
 @Mixin(ClientBookRegistry.class)
+@RequiresMod("patchouli")
+@ClientOnlyMixin
 public class ClientBookRegistryMixin {
     @Inject(method = "reload", at = @At("RETURN"), remap = false)
     private void performDeduplication(CallbackInfo ci) {

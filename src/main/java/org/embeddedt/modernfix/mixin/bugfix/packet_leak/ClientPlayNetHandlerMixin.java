@@ -3,12 +3,14 @@ package org.embeddedt.modernfix.mixin.bugfix.packet_leak;
 import net.minecraft.client.multiplayer.ClientPacketListener;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.duck.IClientNetHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ClientPacketListener.class)
+@ClientOnlyMixin
 public class ClientPlayNetHandlerMixin implements IClientNetHandler {
     private FriendlyByteBuf savedCopy = null;
     /**

@@ -3,11 +3,13 @@ package org.embeddedt.modernfix.mixin.bugfix.concurrency;
 import net.minecraft.client.Minecraft;
 import net.minecraft.util.thread.BlockableEventLoop;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 
 import java.util.function.BooleanSupplier;
 
 @Mixin(Minecraft.class)
+@ClientOnlyMixin
 public abstract class MinecraftMixin<R extends Runnable> extends BlockableEventLoop<R> {
 
     protected MinecraftMixin(String p_i50403_1_) {

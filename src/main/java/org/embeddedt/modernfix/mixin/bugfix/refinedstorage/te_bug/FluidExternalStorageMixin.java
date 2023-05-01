@@ -5,6 +5,7 @@ import com.refinedmods.refinedstorage.apiimpl.storage.externalstorage.FluidExter
 import com.refinedmods.refinedstorage.apiimpl.storage.externalstorage.ItemExternalStorageCache;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.duck.rs.IFluidExternalStorageCache;
 import org.embeddedt.modernfix.duck.rs.IItemExternalStorageCache;
 import org.spongepowered.asm.mixin.Final;
@@ -16,6 +17,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import java.util.function.Supplier;
 
 @Mixin(FluidExternalStorage.class)
+@RequiresMod("refinedstorage")
 public class FluidExternalStorageMixin {
     @Shadow(remap = false)
     @Final

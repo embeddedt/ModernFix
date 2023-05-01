@@ -9,6 +9,7 @@ import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.level.storage.LevelStorageSource;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.duck.ILevelSave;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,6 +24,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 
 @Mixin(Minecraft.class)
+@ClientOnlyMixin
 public abstract class MinecraftMixin {
     @Shadow public abstract Minecraft.ServerStem makeServerStem(RegistryAccess.RegistryHolder dynamicRegistries, Function<LevelStorageSource.LevelStorageAccess, DataPackConfig> worldStorageToDatapackFunction, Function4<LevelStorageSource.LevelStorageAccess, RegistryAccess.RegistryHolder, ResourceManager, DataPackConfig, WorldData> quadFunction, boolean vanillaOnly, LevelStorageSource.LevelStorageAccess worldStorage) throws InterruptedException, ExecutionException;
 

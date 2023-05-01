@@ -11,10 +11,12 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.fluids.FluidStack;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 
 @Mixin(FluidExternalStorageProvider.class)
+@RequiresMod("refinedstorage")
 public class FluidExternalStorageProviderMixin {
     /**
      * @author embeddedt

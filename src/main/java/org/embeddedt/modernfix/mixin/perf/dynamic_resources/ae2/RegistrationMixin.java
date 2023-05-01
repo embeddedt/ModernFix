@@ -10,6 +10,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -21,6 +23,8 @@ import java.util.Map;
 import java.util.function.BiFunction;
 
 @Mixin(targets = { "appeng/core/Registration" })
+@RequiresMod("appliedenergistics2")
+@ClientOnlyMixin
 public class RegistrationMixin {
     private static Field customizerField;
     @Inject(method = "registerClientEvents", at = @At("TAIL"), remap = false)

@@ -4,6 +4,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.client.renderer.block.model.multipart.Selector;
 import net.minecraft.world.level.block.state.StateDefinition;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,6 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 @Mixin(Selector.class)
+@ClientOnlyMixin
 public class SelectorMixin {
     private ConcurrentHashMap<StateDefinition<Block, BlockState>, Predicate<BlockState>> predicateCache = new ConcurrentHashMap<>();
     @Inject(method = "getPredicate", at = @At("HEAD"), cancellable = true)

@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.texture.Stitcher;
 import net.minecraftforge.fml.ModLoader;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.textures.StbStitcher;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,6 +21,7 @@ import java.util.List;
 import java.util.Set;
 
 @Mixin(Stitcher.class)
+@ClientOnlyMixin
 public class StitcherMixin {
     @Shadow @Final private Set<Stitcher.Holder> texturesToBeStitched;
 

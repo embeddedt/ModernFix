@@ -4,6 +4,7 @@ import jeresources.entry.VillagerEntry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.npc.Villager;
 import net.minecraft.world.level.Level;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -13,6 +14,7 @@ import java.lang.ref.WeakReference;
 
 /* Cache the created villager instead of reconstructing it every time */
 @Mixin(VillagerEntry.class)
+@RequiresMod("jeresources")
 public class VillagerEntryMixin {
     private WeakReference<Villager> cachedVillager = new WeakReference<>(null);
 

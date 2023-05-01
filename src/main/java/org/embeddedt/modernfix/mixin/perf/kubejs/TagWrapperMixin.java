@@ -4,6 +4,7 @@ import dev.latvian.kubejs.server.TagEventJS;
 import dev.latvian.kubejs.util.UtilsJS;
 import me.shedaniel.architectury.registry.Registry;
 import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.util.KubeUtil;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -18,6 +19,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Mixin(TagEventJS.TagWrapper.class)
+@RequiresMod("kubejs")
 public class TagWrapperMixin<T> {
     private String currentPatternStr = null;
     @Inject(method = "add", at = @At(value = "INVOKE", target = "Lme/shedaniel/architectury/registry/Registry;getIds()Ljava/util/Set;", ordinal = 0), locals = LocalCapture.CAPTURE_FAILHARD, remap = false)

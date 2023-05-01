@@ -4,6 +4,7 @@ import mezz.jei.api.IModPlugin;
 import mezz.jei.load.PluginCaller;
 import net.minecraft.client.Minecraft;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.core.config.ModernFixConfig;
 import org.embeddedt.modernfix.jei.async.IAsyncJeiStarter;
 import org.spongepowered.asm.mixin.Mixin;
@@ -18,6 +19,7 @@ import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 @Mixin(PluginCaller.class)
+@RequiresMod("jei")
 public class PluginCallerMixin {
     @Inject(method = "callOnPlugins", at = @At(value = "INVOKE", target = "Ljava/util/Iterator;hasNext()Z"), remap = false)
     private static void checkForInterrupt(String title, List<IModPlugin> plugins, Consumer<IModPlugin> func, CallbackInfo ci) {

@@ -13,6 +13,7 @@ import net.minecraftforge.client.ForgeHooksClient;
 import net.minecraftforge.fml.ModLoader;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,6 +29,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
 @Mixin(TextureAtlas.class)
+@ClientOnlyMixin
 public abstract class TextureAtlasMixin {
     @Shadow protected abstract ResourceLocation getResourceLocation(ResourceLocation location);
 

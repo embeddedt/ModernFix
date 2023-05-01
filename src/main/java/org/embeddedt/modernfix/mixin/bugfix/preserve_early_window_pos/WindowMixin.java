@@ -5,6 +5,7 @@ import com.mojang.blaze3d.platform.ScreenManager;
 import com.mojang.blaze3d.platform.Window;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.progress.EarlyProgressVisualization;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.lwjgl.glfw.GLFW;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,6 +17,7 @@ import java.util.function.LongSupplier;
 import java.util.function.Supplier;
 
 @Mixin(Window.class)
+@ClientOnlyMixin
 public class WindowMixin {
     @Shadow private boolean fullscreen;
     @Shadow private int width;

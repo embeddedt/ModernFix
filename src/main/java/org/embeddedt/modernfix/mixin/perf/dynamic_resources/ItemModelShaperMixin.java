@@ -8,6 +8,7 @@ import net.minecraft.world.item.Item;
 import net.minecraftforge.client.ItemModelMesherForge;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.IRegistryDelegate;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.util.ItemMesherMap;
 import org.jetbrains.annotations.NotNull;
@@ -23,6 +24,7 @@ import java.util.Map;
 import java.util.Set;
 
 @Mixin(ItemModelMesherForge.class)
+@ClientOnlyMixin
 public abstract class ItemModelShaperMixin extends ItemModelShaper {
     @Shadow @Final @Mutable private Map<IRegistryDelegate<Item>, ModelResourceLocation> locations;
 

@@ -4,6 +4,7 @@ import com.refinedmods.refinedstorage.api.network.INetwork;
 import com.refinedmods.refinedstorage.apiimpl.storage.externalstorage.FluidExternalStorageCache;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.duck.rs.IFluidExternalStorageCache;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -16,6 +17,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Mixin(FluidExternalStorageCache.class)
+@RequiresMod("refinedstorage")
 public class FluidExternalStorageCacheMixin implements IFluidExternalStorageCache {
     @Shadow(remap = false) private List<FluidStack> cache;
 

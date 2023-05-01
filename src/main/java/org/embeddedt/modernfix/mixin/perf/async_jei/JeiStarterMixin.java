@@ -9,6 +9,7 @@ import mezz.jei.ingredients.IIngredientSorter;
 import mezz.jei.load.PluginCaller;
 import mezz.jei.startup.JeiStarter;
 import net.minecraft.client.Minecraft;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.jei.async.IAsyncJeiStarter;
 import org.embeddedt.modernfix.jei.async.JEILoadingInterruptedException;
 import org.spongepowered.asm.mixin.Mixin;
@@ -25,6 +26,7 @@ import java.util.concurrent.CompletionException;
 import java.util.function.Consumer;
 
 @Mixin(JeiStarter.class)
+@RequiresMod("jei")
 public class JeiStarterMixin {
     @Shadow(remap = false) private boolean started;
 

@@ -4,6 +4,7 @@ import ca.spottedleaf.starlight.common.light.StarLightEngine;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.LightChunkGetter;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
@@ -13,6 +14,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(StarLightEngine.class)
+@RequiresMod("starlight")
 public abstract class StarLightEngineMixin {
     @Shadow protected abstract LevelChunkSection getChunkSection(int chunkX, int chunkY, int chunkZ);
 

@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.mixin.bugfix.mc218112;
 
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.world.entity.Entity;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -12,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.locks.ReadWriteLock;
 
 @Mixin(SynchedEntityData.class)
+@ClientOnlyMixin
 public abstract class SynchedEntityDataMixin_Client {
     @Shadow @Final private ReadWriteLock lock;
 

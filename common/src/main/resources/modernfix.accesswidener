@@ -35,3 +35,4 @@ accessible method net/minecraft/resources/ResourceKey <init> (Lnet/minecraft/res
 accessible method net/minecraft/client/renderer/texture/TextureAtlasSprite <init> (Lnet/minecraft/client/renderer/texture/TextureAtlas;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite$Info;IIIIILcom/mojang/blaze3d/platform/NativeImage;)V
 accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
 accessible class net/minecraft/server/level/ChunkMap$DistanceManager
+accessible class net/minecraft/world/level/chunk/PalettedContainer$Data

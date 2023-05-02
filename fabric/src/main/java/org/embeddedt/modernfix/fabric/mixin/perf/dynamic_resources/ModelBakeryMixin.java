@@ -33,10 +33,7 @@ import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
 import org.jetbrains.annotations.Nullable;
-import org.spongepowered.asm.mixin.Final;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Mutable;
-import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -60,7 +57,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final public static ModelResourceLocation MISSING_MODEL_LOCATION;
 
-    @Shadow protected abstract BlockModel loadBlockModel(ResourceLocation location) throws IOException;
+    @Dynamic
+    @Shadow(remap = false) protected abstract BlockModel method_4718(ResourceLocation location) throws IOException;
 
     @Shadow @Final protected ResourceManager resourceManager;
     @Shadow private AtlasSet atlasSet;
@@ -134,7 +132,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBakery;loadBlockModel(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/block/model/BlockModel;", ordinal = 0))
     private BlockModel captureMissingModel(ModelBakery bakery, ResourceLocation location) throws IOException {
-        this.missingModel = this.loadBlockModel(location);
+        this.missingModel = this.method_4718(location);
         this.blockStateFiles = new HashSet<>();
         this.modelFiles = new HashSet<>();
         return (BlockModel)this.missingModel;

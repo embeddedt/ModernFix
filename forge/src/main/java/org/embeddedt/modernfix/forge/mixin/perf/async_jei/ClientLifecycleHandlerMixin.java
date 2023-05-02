@@ -82,6 +82,8 @@ public class ClientLifecycleHandlerMixin {
 
     private void startJEIAsync(Runnable whenFinishedCb) {
         cancelPreviousStart();
+        if(Minecraft.getInstance().level == null)
+            return;
         ModernFix.LOGGER.info("Starting new JEI thread.");
         JEIReloadThread newThread = new JEIReloadThread(() -> {
             if(((JEIReloadThread)Thread.currentThread()).isStopRequested())

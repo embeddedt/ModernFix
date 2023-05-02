@@ -157,6 +157,7 @@ public class ModernFixEarlyConfig {
         this.configFile = file;
 
         this.scanForAndBuildMixinOptions();
+        mixinOptions.addAll(DEFAULT_SETTING_OVERRIDES.keySet());
         for(String optionName : mixinOptions) {
             boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(optionName, true);
             this.options.putIfAbsent(optionName, new Option(optionName, defaultEnabled, false));

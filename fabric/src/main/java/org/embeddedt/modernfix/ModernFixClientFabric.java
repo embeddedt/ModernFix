@@ -19,7 +19,7 @@ public class ModernFixClientFabric implements ClientModInitializer {
         ScreenEvents.AFTER_INIT.register((client, screen, scaledWidth, scaledHeight) -> {
             AtomicBoolean hasOpened = new AtomicBoolean(false);
             ScreenEvents.beforeTick(screen).register(screen1 -> {
-                if(Minecraft.getInstance().overlay != null)
+                if(Minecraft.getInstance().getOverlay() != null)
                     return;
                 if(!hasOpened.getAndSet(true)) {
                     commonMod.onScreenOpening(screen1);

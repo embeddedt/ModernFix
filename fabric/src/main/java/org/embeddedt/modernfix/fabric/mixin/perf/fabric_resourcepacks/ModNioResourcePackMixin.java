@@ -1,7 +1,9 @@
 package org.embeddedt.modernfix.fabric.mixin.perf.fabric_resourcepacks;
 
 import net.fabricmc.fabric.impl.resource.loader.ModNioResourcePack;
+import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.server.packs.PackType;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.resources.PackResourcesCacheEngine;
 import org.spongepowered.asm.mixin.Final;
@@ -13,8 +15,8 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Set;
 
 @Mixin(ModNioResourcePack.class)
@@ -22,19 +24,24 @@ import java.util.Set;
 public abstract class ModNioResourcePackMixin {
     @Shadow public abstract Set<String> getNamespaces(PackType type);
 
-    @Shadow @Final private Path basePath;
+    @Shadow @Final private List<Path> basePaths;
+    @Shadow @Final private ModMetadata modInfo;
     private PackResourcesCacheEngine cacheEngine;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void cacheResources(CallbackInfo ci) {
-        this.cacheEngine = new PackResourcesCacheEngine(this::getNamespaces, (type, namespace) -> {
-            return basePath.resolve(type.getDirectory()).resolve(namespace);
-        });
+        if(this.basePaths.size() == 1) {
+            Path basePath = this.basePaths.get(0);
+            this.cacheEngine = new PackResourcesCacheEngine(this::getNamespaces, (type, namespace) -> {
+                return basePath.resolve(type.getDirectory()).resolve(namespace);
+            });
+        } else
+            ModernFix.LOGGER.warn("Cannot cache resource pack for mod '{}' as it uses multiple base paths", modInfo.getId());
     }
 
     // this check wastes CPU time, it is checked later anyway
-    @Redirect(method = "getPath", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;exists(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z"), remap = false)
-    private boolean checkExists(Path p, LinkOption[] opts) {
+    @Redirect(method = "getPath", at = @At(value = "INVOKE", target = "Lnet/fabricmc/fabric/impl/resource/loader/ModNioResourcePack;exists(Ljava/nio/file/Path;)Z"), remap = false)
+    private boolean checkExists(Path path) {
         return true;
     }
 

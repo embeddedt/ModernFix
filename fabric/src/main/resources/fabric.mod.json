@@ -25,6 +25,8 @@
     "modernfix-common.mixins.json"
   ],
   "depends": {
+    "fabric-lifecycle-events-v1": "*",
+    "fabric-screen-api-v1": "*",
     "minecraft": ">=1.16.5"
   }
 }

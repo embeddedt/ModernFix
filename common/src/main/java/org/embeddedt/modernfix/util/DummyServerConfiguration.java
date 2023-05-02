@@ -6,7 +6,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.*;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.world.Difficulty;
-import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.level.storage.ServerLevelData;

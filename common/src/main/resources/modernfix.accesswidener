@@ -33,7 +33,6 @@ accessible field net/minecraft/server/level/ChunkMap pendingUnloads Lit/unimi/ds
 accessible method net/minecraft/resources/ResourceKey <init> (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;)V
 accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
 accessible class net/minecraft/server/level/ChunkMap$DistanceManager
-accessible method net/minecraft/client/gui/screens/worldselection/WorldGenSettingsComponent updateSettings (Lnet/minecraft/client/gui/screens/worldselection/WorldCreationContext;)V
 accessible class net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
 accessible field net/minecraft/client/resources/model/ModelBakery bakedCache Ljava/util/Map;
 accessible field net/minecraft/client/resources/model/ModelBakery ITEM_MODEL_GENERATOR Lnet/minecraft/client/renderer/block/model/ItemModelGenerator;

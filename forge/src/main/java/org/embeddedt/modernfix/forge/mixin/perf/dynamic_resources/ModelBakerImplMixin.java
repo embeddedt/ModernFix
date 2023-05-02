@@ -1,12 +1,10 @@
 package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources;
 
-import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.MinecraftForge;
-import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;

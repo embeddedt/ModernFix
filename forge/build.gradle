@@ -77,6 +77,13 @@ remapJar {
     classifier null
 }
 
+task copyJarToBin(type: Copy) {
+    from remapJar // shortcut for createJar.outputs.files
+    into rootProject.file("bin")
+}
+
+tasks.build.dependsOn(copyJarToBin)
+
 jar {
     classifier "dev"
     manifest {

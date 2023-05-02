@@ -77,7 +77,6 @@ fabric.properties
 ### Eclipse ###
 *.pydevproject
 .metadata
-bin/
 tmp/
 *.tmp
 *.bak

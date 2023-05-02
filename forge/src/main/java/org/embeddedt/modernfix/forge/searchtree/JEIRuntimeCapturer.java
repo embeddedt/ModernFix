@@ -7,7 +7,6 @@ import mezz.jei.library.runtime.JeiRuntime;
 import net.minecraft.resources.ResourceLocation;
 import org.embeddedt.modernfix.ModernFix;
 
-import java.lang.ref.WeakReference;
 import java.util.Optional;
 
 @JeiPlugin

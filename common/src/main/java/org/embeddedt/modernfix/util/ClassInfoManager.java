@@ -6,13 +6,11 @@ import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.transformer.ClassInfo;
-import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
 import java.security.CodeSigner;
 import java.util.*;
 import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 public class ClassInfoManager {
     private static Map<String, ClassInfo> classInfoCache = null;

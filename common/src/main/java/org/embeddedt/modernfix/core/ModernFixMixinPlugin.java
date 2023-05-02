@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
 
 import java.io.File;
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     private static final String MIXIN_PACKAGE_ROOT = "org.embeddedt.modernfix.mixin.";

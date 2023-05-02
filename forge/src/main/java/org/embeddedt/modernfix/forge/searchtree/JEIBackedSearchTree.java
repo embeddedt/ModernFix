@@ -1,7 +1,6 @@
 package org.embeddedt.modernfix.forge.searchtree;
 
 import mezz.jei.api.ingredients.ITypedIngredient;
-import mezz.jei.common.Internal;
 import mezz.jei.gui.ingredients.IngredientFilter;
 import mezz.jei.gui.ingredients.IngredientFilterApi;
 import mezz.jei.library.runtime.JeiRuntime;

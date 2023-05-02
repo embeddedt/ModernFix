@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.fabric.mixin.perf.fabric_resourcepacks;
 
 import net.fabricmc.fabric.impl.resource.loader.ModNioResourcePack;
 import net.fabricmc.loader.api.metadata.ModMetadata;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.RequiresMod;
@@ -14,6 +15,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.callback.LocalCapture;
 
 import java.nio.file.Path;
 import java.util.List;
@@ -55,9 +57,9 @@ public abstract class ModNioResourcePackMixin {
         }
     }
 
-    @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Lnet/fabricmc/fabric/impl/resource/loader/ModNioResourcePack;getPath(Ljava/lang/String;)Ljava/nio/file/Path;"), cancellable = true)
-    private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
+    @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Lnet/fabricmc/fabric/impl/resource/loader/ModNioResourcePack;getPath(Ljava/lang/String;)Ljava/nio/file/Path;"), cancellable = true, locals = LocalCapture.CAPTURE_FAILHARD)
+    private void useCacheForExistence(PackType type, ResourceLocation id, CallbackInfoReturnable<Boolean> cir, String filename) {
         if(cacheEngine != null)
-            cir.setReturnValue(this.cacheEngine.hasResource(path));
+            cir.setReturnValue(this.cacheEngine.hasResource(filename));
     }
 }

@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.fabric.mixin.perf.dynamic_resources;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonElement;
 import com.mojang.math.Transformation;
@@ -42,6 +43,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -100,7 +102,19 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 .softValues()
                 .build();
         this.bakedCache = loadedBakedModels.asMap();
-        this.unbakedCache = loadedModels.asMap();
+        ConcurrentMap<ResourceLocation, UnbakedModel> unbakedCacheBackingMap = loadedModels.asMap();
+        this.unbakedCache = new ForwardingMap<ResourceLocation, UnbakedModel>() {
+            @Override
+            protected Map<ResourceLocation, UnbakedModel> delegate() {
+                return unbakedCacheBackingMap;
+            }
+
+            @Override
+            public UnbakedModel put(ResourceLocation key, UnbakedModel value) {
+                smallLoadingCache.put(key, value);
+                return super.put(key, value);
+            }
+        };
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
         filler.push(s);
     }
@@ -204,11 +218,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         if(rl == MISSING_MODEL_LOCATION && map == unbakedCache)
             return missingModel;
         return unbakedCache.get(rl);
-    }
-
-    @Inject(method = "cacheAndQueueDependencies", at = @At("RETURN"))
-    private void addToSmallLoadingCache(ResourceLocation location, UnbakedModel model, CallbackInfo ci) {
-        smallLoadingCache.put(location, model);
     }
 
 

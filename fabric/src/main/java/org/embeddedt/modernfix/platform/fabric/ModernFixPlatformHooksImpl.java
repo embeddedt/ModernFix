@@ -51,15 +51,6 @@ public class ModernFixPlatformHooksImpl {
         return true;
     }
 
-    public static TextureAtlasSprite loadTextureAtlasSprite(TextureAtlas atlasTexture,
-                                                            ResourceManager resourceManager, TextureAtlasSprite.Info textureInfo,
-                                                            Resource resource,
-                                                            int atlasWidth, int atlasHeight,
-                                                            int spriteX, int spriteY, int mipmapLevel,
-                                                            NativeImage image) {
-        return new TextureAtlasSprite(atlasTexture, textureInfo, mipmapLevel, atlasWidth, atlasHeight, spriteX, spriteY, image);
-    }
-
     public static Path getGameDirectory() {
         return FabricLoader.getInstance().getGameDir();
     }

@@ -7,7 +7,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 @Mixin(Minecraft.class)

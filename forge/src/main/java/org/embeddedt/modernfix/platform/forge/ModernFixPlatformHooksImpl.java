@@ -1,10 +1,8 @@
 package org.embeddedt.modernfix.platform.forge;
 
-import com.google.common.io.Resources;
 import com.mojang.blaze3d.platform.NativeImage;
 import cpw.mods.modlauncher.*;
 import cpw.mods.modlauncher.api.INameMappingService;
-import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.server.MinecraftServer;

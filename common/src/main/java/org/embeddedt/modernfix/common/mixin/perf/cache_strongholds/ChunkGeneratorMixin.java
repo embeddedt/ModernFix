@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.common.mixin.perf.cache_strongholds;
 
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkGenerator;
@@ -11,7 +10,6 @@ import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStr
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.IChunkGenerator;
 import org.embeddedt.modernfix.duck.IServerLevel;
-import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.world.StrongholdLocationCache;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;

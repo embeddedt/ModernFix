@@ -25,7 +25,7 @@ public abstract class ModelBakerImplMixin {
 
     @Shadow @Final private Function<Material, TextureAtlasSprite> modelTextureGetter;
 
-    @Inject(method = "bake", at = @At("HEAD"), cancellable = true, remap = false)
+    @Inject(method = "bake", at = @At("HEAD"), cancellable = true)
     public void getOrLoadBakedModelDynamic(ResourceLocation arg, ModelState arg2, CallbackInfoReturnable<BakedModel> cir) {
         ModelBakery.BakedCacheKey key = new ModelBakery.BakedCacheKey(arg, arg2.getRotation(), arg2.isUvLocked());
         BakedModel existing = this.field_40571.bakedCache.get(key);

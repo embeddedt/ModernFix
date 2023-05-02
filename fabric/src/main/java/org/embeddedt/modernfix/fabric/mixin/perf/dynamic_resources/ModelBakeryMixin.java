@@ -5,7 +5,6 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.color.block.BlockColors;
-import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;

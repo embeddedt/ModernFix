@@ -1,6 +1,0 @@
-{
-  "modernfix.jei_load": "正在加载JEI，这需要一点时间。",
-  "modernfix.no_lazydfu": "现代化修复检测到DFU规则在游戏启动时已被编译。这会降低游戏启动速度。非常推荐安装DFU载入优化来解决这个问题。",
-  "asynclocator.map.locating": "地图（定位中……）",
-  "asynclocator.map.none": "地图（未能找到相关地物）"
-}

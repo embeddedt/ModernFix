@@ -1,109 +1,140 @@
 plugins {
-    id "dev.architectury.loom" version "1.1-SNAPSHOT"
+    id "architectury-plugin" version "3.4-SNAPSHOT"
+    id "dev.architectury.loom" version "1.1-SNAPSHOT" apply false
     id "maven-publish"
-    id 'com.matthewprenger.cursegradle' version '1.4.0'
+    id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
     id 'com.palantir.git-version' version '1.0.0'
     id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '1.79.0'
-    id "com.modrinth.minotaur" version "2.+"
+    id "com.modrinth.minotaur" version "2.+" apply false
+	id("com.diffplug.spotless") version "6.18.0" apply false
 }
 
-sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
-
-group = 'org.embeddedt'
-version = gitVersion()
-
-java {
-    archivesBaseName = 'modernfix-mc' + minecraft_version
+architectury {
+    minecraft = rootProject.minecraft_version
 }
 
-loom {
-    // use this if you are using the official mojang mappings
-    // and want loom to stop warning you about their license
-    silentMojangMappingsLicense()
+ext.archives_base_name = 'modernfix-mc' + minecraft_version
 
-    // since loom 0.10, you are **required** to use the
-    // "forge" block to configure forge-specific features,
-    // such as the mixinConfigs array or datagen
-    forge {
-        // specify the mixin configs used in this mod
-        // this will be added to the jar manifest as well!
-        mixinConfigs = [
-                "modernfix.mixins.json"
+allprojects {
+    apply plugin: "java"
+    apply plugin: "architectury-plugin"
+    apply plugin: "maven-publish"
+	apply plugin: "com.diffplug.spotless"
+
+	spotless {
+		java {
+			removeUnusedImports()
+		}
+	}
+
+	group = 'org.embeddedt'
+	version = gitVersion()
+    archivesBaseName = rootProject.archives_base_name + '-' + project.name
+
+    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
+
+    repositories {
+        maven { url 'https://modmaven.dev/' }
+        maven {
+            url "https://cursemaven.com"
+            content {
+                includeGroup "curse.maven"
+            }
+        }
+        maven {
+            name = 'ParchmentMC'
+            url = 'https://maven.parchmentmc.org'
+        }
+        maven {
+            // Shedaniel's maven (Architectury API)
+            url = "https://maven.architectury.dev"
+            content {
+                includeGroup "me.shedaniel"
+            }
+        }
+
+        maven {
+            // saps.dev Maven (KubeJS and Rhino)
+            url = "https://maven.saps.dev/minecraft"
+            content {
+                includeGroup "dev.latvian.mods"
+            }
+        }
+        maven { // CTM
+            url "https://maven.tterrag.com/"
+        }
+        maven { url 'https://maven.blamejared.com' }
+        repositories {
+            maven {
+                name = "Fuzs Mod Resources"
+                url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+            }
+        }
+    }
+}
+
+subprojects {
+    apply plugin: "dev.architectury.loom"
+
+    loom {
+        silentMojangMappingsLicense()
+    }
+
+    dependencies {
+        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+        mappings loom.officialMojangMappings()
+    }
+
+    processResources {
+        def mixinFileList = []
+        def mixinDirectory = file("src/main/java/org/embeddedt/modernfix/" + project.name + "/mixin")
+        fileTree(mixinDirectory).visit { FileVisitDetails details ->
+            if(details.file.isFile()) {
+                def fileName = mixinDirectory.relativePath(details.file).toString().replaceFirst(/\.java$/, "").replace('/', '.')
+                mixinFileList << fileName
+            }
+        }
+
+        def mixinClassesStringB = new StringBuilder()
+        for(int i = 0; i < mixinFileList.size(); i++) {
+            mixinClassesStringB.append("    \"")
+            mixinClassesStringB.append(mixinFileList.get(i))
+            mixinClassesStringB.append('"')
+            if(i < (mixinFileList.size() - 1))
+                mixinClassesStringB.append(',')
+            mixinClassesStringB.append('\n')
+        }
+
+        def replacements = [
+                mixin_classes: mixinClassesStringB.toString()
         ]
+
+        inputs.properties replacements
+        def filePattern = "modernfix-" + project.name + ".mixins.json"
+        filesMatching(filePattern) {
+            expand replacements
+        }
     }
-    mixin.defaultRefmapName = "modernfix.refmap.json"
 }
 
-repositories {
-    maven { url 'https://modmaven.dev/' }
-    maven {
-        url "https://cursemaven.com"
-        content {
-            includeGroup "curse.maven"
-        }
-    }
-    maven {
-        name = 'ParchmentMC'
-        url = 'https://maven.parchmentmc.org'
-    }
-    maven {
-        // Shedaniel's maven (Architectury API)
-        url = "https://maven.architectury.dev"
-        content {
-            includeGroup "me.shedaniel"
-        }
-    }
-
-    maven {
-        // saps.dev Maven (KubeJS and Rhino)
-        url = "https://maven.saps.dev/minecraft"
-        content {
-            includeGroup "dev.latvian.mods"
-        }
-    }
-    maven { // CTM
-        url "https://maven.tterrag.com/"
-    }
-    maven { url "https://maven.shedaniel.me" }
-    maven { url 'https://maven.blamejared.com' }
-}
-
-dependencies {
-    // to change the versions see the gradle.properties file
-    minecraft "com.mojang:minecraft:${project.minecraft_version}"
-
-    // choose what mappings you want to use here
-    // leave this uncommented if you want to use
-    // mojang's official mappings, or feel free
-    // to add your own mappings here (how about
-    // mojmap layered with parchment, for example?)
-    mappings loom.officialMojangMappings()
-    /*
-    mappings loom.layered() {
-        officialMojangMappings()
-        parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
-    }
-    */
-
-    // uncomment this if you want to use yarn mappings
-    // mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
-
-    // your forge dependency, this is **required** when using Forge Loom in forge mode!
-    forge "net.minecraftforge:forge:${project.forge_version}"
+/*
+    modCompileOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
+    //modRuntimeOnly("mezz.jei:jei-${minecraft_version}:${jei_version}")
 
     modCompileOnly("curse.maven:refinedstorage-243076:${refined_storage_version}")
 
     // compile against the JEI API but do not include it at runtime
     modCompileOnly("mezz.jei:jei-${minecraft_version}-forge:${jei_version}")
 
+    modCompileOnly("curse.maven:jeresources-240630:3951643")
     modCompileOnly "me.shedaniel:RoughlyEnoughItems-forge:${rei_version}"
     modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
-    modRuntimeOnly("curse.maven:ferritecore-429235:4441949")
+    modRuntimeOnly("curse.maven:ferritecore-429235:4117906")
     modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
-    modCompileOnly("curse.maven:supermartijncore-454372:4484241")
+    modCompileOnly("curse.maven:supermartijncore-454372:4455391")
     modCompileOnly("appeng:appliedenergistics2-forge:12.9.4")
     modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
-}
+*/
 
 tasks.withType(JavaCompile) {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
@@ -112,7 +143,10 @@ tasks.withType(JavaCompile) {
     // If Javadoc is generated, this must be specified in that task too.
     options.encoding = "UTF-8"
 
-    def targetVersion = 17
+    // The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
+    // JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
+    // We'll use that if it's available, but otherwise we'll use the older option.
+    def targetVersion = 8
     /*
     if (JavaVersion.current().isJava9Compatible()) {
         options.release = targetVersion
@@ -136,46 +170,7 @@ task generateChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTas
     toCommit = "HEAD";
 }
 
-java {
-    // Loom will automatically attach sourcesJar to a RemapSourcesJar task and to the "build" task
-    // if it is present.
-    // If you remove this line, sources will not be generated.
-    // withSourcesJar()
-}
-
-// Example for how to get properties into the manifest for reading at runtime.
-jar {
-    manifest {
-        attributes([
-                "Specification-Title"     : "modernfix",
-                "Operative-Class"         : "org.embeddedt.modernfix.agent.Agent",
-                //"Specification-Vendor": "modernfix authors",
-                "Specification-Version"   : "1", // We are version 1 of ourselves
-                "Implementation-Title"    : project.name,
-                "Implementation-Version"  : project.jar.archiveVersion,
-                //"Implementation-Vendor": "modernfix authors",
-                "Implementation-Timestamp": new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
-        ])
-    }
-}
-
-// configure the maven publication
-publishing {
-    publications {
-        mavenJava(MavenPublication) {
-            from components.java
-        }
-    }
-
-    // See https://docs.gradle.org/current/userguide/publishing_maven.html for information on how to set up publishing.
-    repositories {
-        // Add repositories to publish to here.
-        // Notice: This block does NOT have the same function as the block in the top level.
-        // The repositories here will be used for publishing your artifact, not for
-        // retrieving dependencies.
-    }
-}
-
+/*
 curseforge {
     if (System.getenv("CURSEFORGE_TOKEN") != null) {
         apiKey = System.getenv("CURSEFORGE_TOKEN")
@@ -219,3 +214,4 @@ tasks.register('publishToModSites') {
     publishToModSites.dependsOn(tasks.modrinth)
     publishToModSites.dependsOn(tasks.curseforge)
 }
+ */

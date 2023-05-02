@@ -39,11 +39,11 @@ import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
@@ -59,8 +59,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Shadow @Final @Mutable public Map<ResourceLocation, UnbakedModel> unbakedCache;
 
     @Shadow @Final public static ModelResourceLocation MISSING_MODEL_LOCATION;
-
-    @Shadow protected abstract BlockModel loadBlockModel(ResourceLocation location) throws IOException;
 
     @Shadow @Final protected ResourceManager resourceManager;
     @Shadow private AtlasSet atlasSet;
@@ -132,12 +130,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private Set<ResourceLocation> blockStateFiles;
     private Set<ResourceLocation> modelFiles;
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBakery;loadBlockModel(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/block/model/BlockModel;", ordinal = 0))
-    private BlockModel captureMissingModel(ModelBakery bakery, ResourceLocation location) throws IOException {
-        this.missingModel = this.loadBlockModel(location);
+    @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 0), index = 1)
+    private Object captureMissingModel(Object model) {
+        this.missingModel = (UnbakedModel)model;
         this.blockStateFiles = new HashSet<>();
         this.modelFiles = new HashSet<>();
-        return (BlockModel)this.missingModel;
+        return this.missingModel;
     }
 
     /**
@@ -147,6 +145,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
      */
     @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
     private void addTopLevelFile(ModelResourceLocation location, CallbackInfo ci) {
+        if(location == MISSING_MODEL_LOCATION)
+            return; /* needed for FAPI compat */
         ci.cancel();
         if(Objects.equals(location.getVariant(), "inventory")) {
             modelFiles.add(new ResourceLocation(location.getNamespace(), "item/" + location.getPath()));

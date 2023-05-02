@@ -1,23 +1,13 @@
 package org.embeddedt.modernfix.common.mixin.feature.measure_time;
 
-import com.mojang.datafixers.util.Function4;
 import net.minecraft.client.Minecraft;
-import net.minecraft.server.WorldStem;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.world.level.DataPackConfig;
-import net.minecraft.core.RegistryAccess;
-import net.minecraft.world.level.storage.WorldData;
-import net.minecraft.world.level.storage.LevelStorageSource;
-import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.function.Function;
 
 @Mixin(Minecraft.class)
 @ClientOnlyMixin

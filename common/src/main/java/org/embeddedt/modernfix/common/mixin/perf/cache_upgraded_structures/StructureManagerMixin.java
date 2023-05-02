@@ -16,7 +16,6 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Optional;
 
 @Mixin(StructureTemplateManager.class)

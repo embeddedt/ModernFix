@@ -4,7 +4,6 @@ import net.minecraft.client.searchtree.RefreshableSearchTree;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Stream;
 
 /**
  * Dummy search tree that stores nothing and returns nothing on searches.

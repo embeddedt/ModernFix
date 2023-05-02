@@ -2,19 +2,23 @@ package org.embeddedt.modernfix.dynamicresources;
 
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.ItemOverrides;
+import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.BlockModelRotation;
-import net.minecraft.client.resources.model.BuiltInModel;
 import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.util.AbstractMap;
-import java.util.Collection;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -23,7 +27,47 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     private final Map<ModelBakery.BakedCacheKey, BakedModel> bakedCache;
     private final Map<ResourceLocation, BakedModel> permanentOverrides;
     private BakedModel missingModel;
-    private static final BakedModel SENTINEL = new BuiltInModel(null, null, null, false);
+    private static final BakedModel SENTINEL = new BakedModel() {
+        @Override
+        public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction direction, RandomSource random) {
+            return null;
+        }
+
+        @Override
+        public boolean useAmbientOcclusion() {
+            return false;
+        }
+
+        @Override
+        public boolean isGui3d() {
+            return false;
+        }
+
+        @Override
+        public boolean usesBlockLight() {
+            return false;
+        }
+
+        @Override
+        public boolean isCustomRenderer() {
+            return false;
+        }
+
+        @Override
+        public TextureAtlasSprite getParticleIcon() {
+            return null;
+        }
+
+        @Override
+        public ItemTransforms getTransforms() {
+            return null;
+        }
+
+        @Override
+        public ItemOverrides getOverrides() {
+            return null;
+        }
+    };
 
     public DynamicBakedModelProvider(ModelBakery bakery, Map<ModelBakery.BakedCacheKey, BakedModel> cache) {
         this.bakery = bakery;

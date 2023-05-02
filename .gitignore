@@ -3,6 +3,7 @@ run
 libs
 media
 classes/
+.architectury-transformer/
 
 # Changelog
 CHANGELOG.md

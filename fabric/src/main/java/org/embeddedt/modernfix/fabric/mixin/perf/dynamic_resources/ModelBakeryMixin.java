@@ -5,27 +5,19 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
-import com.google.gson.JsonElement;
 import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
 import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
-import net.minecraft.client.resources.ClientPackSource;
 import net.minecraft.client.resources.model.*;
-import net.minecraft.core.Registry;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.FilePackResources;
-import net.minecraft.server.packs.FolderPackResources;
-import net.minecraft.server.packs.PackResources;
-import net.minecraft.server.packs.VanillaPackResources;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.Property;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
@@ -42,13 +34,11 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /* high priority so that our injectors are added before other mods' */
@@ -83,13 +73,17 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Nullable public abstract BakedModel bake(ResourceLocation location, ModelState transform);
 
+    @Shadow @Final private Map<ResourceLocation, UnbakedModel> topLevelModels;
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
 
+    private boolean inTextureGatheringPass;
+
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", ordinal = 0))
     private void replaceTopLevelBakedModels(ProfilerFiller filler, String s) {
+        this.inTextureGatheringPass = true;
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(3, TimeUnit.MINUTES)
                 .maximumSize(1000)
@@ -104,12 +98,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 .removalListener(this::onModelRemoved)
                 .softValues()
                 .build();
-        this.bakedCache = loadedBakedModels.asMap();
-        ConcurrentMap<ResourceLocation, UnbakedModel> unbakedCacheBackingMap = loadedModels.asMap();
+        // temporarily replace this map to capture models into the small loading cache
+        Map<ResourceLocation, UnbakedModel> oldMap = this.unbakedCache;
         this.unbakedCache = new ForwardingMap<ResourceLocation, UnbakedModel>() {
             @Override
             protected Map<ResourceLocation, UnbakedModel> delegate() {
-                return unbakedCacheBackingMap;
+                return oldMap;
             }
 
             @Override
@@ -118,7 +112,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 return super.put(key, value);
             }
         };
-        this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
         filler.push(s);
     }
 
@@ -141,75 +134,41 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private UnbakedModel missingModel;
 
-    private Set<ResourceLocation> blockStateFiles;
-    private Set<ResourceLocation> modelFiles;
-
     @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 0), index = 1)
     private Object captureMissingModel(Object model) {
         this.missingModel = (UnbakedModel)model;
-        this.blockStateFiles = new HashSet<>();
-        this.modelFiles = new HashSet<>();
         return this.missingModel;
-    }
-
-    /**
-     * @author embeddedt
-     * @reason don't actually load the model. instead, keep track of if we need to load a blockstate or a model,
-     * and save the info into the two lists
-     */
-    @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
-    private void addTopLevelFile(ModelResourceLocation location, CallbackInfo ci) {
-        if(location == MISSING_MODEL_LOCATION)
-            return; /* needed for FAPI compat */
-        ci.cancel();
-        if(Objects.equals(location.getVariant(), "inventory")) {
-            modelFiles.add(new ResourceLocation(location.getNamespace(), "item/" + location.getPath()));
-        } else {
-            blockStateFiles.add(new ResourceLocation(location.getNamespace(), location.getPath()));
-        }
-    }
-
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Set;addAll(Ljava/util/Collection;)Z", ordinal = 0))
-    private boolean gatherModelTextures(Set<Material> materialSet, Collection<Material> collection) {
-        materialSet.addAll(collection);
-        gatherModelMaterials(materialSet);
-        return true;
-    }
-
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0))
-    private void fetchStaticDefinitions(Map<ResourceLocation, StateDefinition<Block, BlockState>> map, BiConsumer<ResourceLocation, StateDefinition<Block, BlockState>> func) {
-        map.forEach((loc, def) -> blockStateFiles.add(loc));
-    }
-
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;", ordinal = 0))
-    private ImmutableList<BlockState> fetchBlocks(StateDefinition<Block, BlockState> def) {
-        blockStateFiles.add(Registry.BLOCK.getKey(def.any().getBlock()));
-        return ImmutableList.of();
-    }
-
-    private boolean trustedResourcePack(PackResources pack) {
-        return pack instanceof VanillaPackResources ||
-                pack instanceof ClientPackSource ||
-                pack instanceof FolderPackResources ||
-                pack instanceof FilePackResources;
-    }
-
-    /**
-     * Load all blockstate JSONs and model files, collect textures.
-     */
-    private void gatherModelMaterials(Set<Material> materialSet) {
-        Function<JsonElement, BlockModel> modelDeserializer = model -> BlockModel.GSON.fromJson(model, BlockModel.class);
-        ModelBakeryHelpers.gatherModelMaterials(this.resourceManager, this::trustedResourcePack, materialSet, blockStateFiles,
-                modelFiles, missingModel, modelDeserializer, this::getModel);
-        loadedModels.invalidateAll();
-        loadedModels.put(MISSING_MODEL_LOCATION, missingModel);
     }
 
     @Inject(method = "uploadTextures", at = @At(value = "FIELD", target = "Lnet/minecraft/client/resources/model/ModelBakery;topLevelModels:Ljava/util/Map;", ordinal = 0), cancellable = true)
     private void skipBake(TextureManager resourceManager, ProfilerFiller profiler, CallbackInfoReturnable<AtlasSet> cir) {
         profiler.pop();
+        this.inTextureGatheringPass = false;
+        // hand off to the dynamic model system
+        this.loadedModels.put(MISSING_MODEL_LOCATION, this.missingModel);
+        this.bakedCache = loadedBakedModels.asMap();
+        ConcurrentMap<ResourceLocation, UnbakedModel> unbakedCacheBackingMap = loadedModels.asMap();
+        this.unbakedCache = new ForwardingMap<ResourceLocation, UnbakedModel>() {
+            @Override
+            protected Map<ResourceLocation, UnbakedModel> delegate() {
+                return unbakedCacheBackingMap;
+            }
+
+            @Override
+            public UnbakedModel put(ResourceLocation key, UnbakedModel value) {
+                smallLoadingCache.put(key, value);
+                return super.put(key, value);
+            }
+        };
+        this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
+
         // ensure missing model is a permanent override
         this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, this.bake(MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0));
+        this.loadedModels.invalidateAll();
+        this.loadedModels.put(MISSING_MODEL_LOCATION, this.missingModel);
+        this.topLevelModels.clear();
+        this.topLevelModels.put(MISSING_MODEL_LOCATION, this.missingModel);
+        this.smallLoadingCache.clear();
         cir.setReturnValue(atlasSet);
     }
 
@@ -281,12 +240,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         }
     }
 
-    private <T extends Comparable<T>, V extends T> BlockState setPropertyGeneric(BlockState state, Property<T> prop, Object o) {
-        return state.setValue(prop, (V)o);
-    }
     @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))
     private ImmutableList<BlockState> loadOnlyRelevantBlockState(StateDefinition<Block, BlockState> stateDefinition, ResourceLocation location) {
-        return ModelBakeryHelpers.getBlockStatesForMRL(stateDefinition, (ModelResourceLocation)location);
+        if(this.inTextureGatheringPass)
+            return stateDefinition.getPossibleStates();
+        else
+            return ModelBakeryHelpers.getBlockStatesForMRL(stateDefinition, (ModelResourceLocation)location);
     }
 
     @Override

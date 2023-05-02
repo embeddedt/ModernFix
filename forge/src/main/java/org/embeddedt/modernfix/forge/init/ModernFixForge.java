@@ -21,7 +21,6 @@ import net.minecraftforge.fml.server.ServerLifecycleHooks;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;

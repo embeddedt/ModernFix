@@ -298,6 +298,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     } else
                         ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
                 }
+                if(ibakedmodel == null) {
+                    ModernFix.LOGGER.error("Model {} returned null baked model", arg);
+                    ibakedmodel = bakedMissingModel;
+                }
                 // TODO event
                 this.bakedCache.put(triple, ibakedmodel);
                 cir.setReturnValue(ibakedmodel);

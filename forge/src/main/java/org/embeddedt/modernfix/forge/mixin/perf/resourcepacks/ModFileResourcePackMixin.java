@@ -55,6 +55,7 @@ public abstract class ModFileResourcePackMixin {
 
     @Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
+        this.generateResourceCache();
         if(cacheEngine != null)
             cir.setReturnValue(this.cacheEngine.hasResource(path));
     }

@@ -45,7 +45,7 @@ public class CachingStructureManager {
         return sb.toString();
     }
 
-    private static CompoundTag readStructureTag(ResourceLocation location, DataFixer datafixer, InputStream stream) throws IOException {
+    public static CompoundTag readStructureTag(ResourceLocation location, DataFixer datafixer, InputStream stream) throws IOException {
         byte[] structureBytes = toBytes(stream);
         CompoundTag currentTag = NbtIo.readCompressed(new ByteArrayInputStream(structureBytes));
         if (!currentTag.contains("DataVersion", 99)) {

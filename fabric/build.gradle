@@ -32,6 +32,7 @@ dependencies {
     modIncludeImplementation(fabricApi.module("fabric-api-base", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modIncludeImplementation(fabricApi.module("fabric-lifecycle-events-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modIncludeImplementation(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modIncludeImplementation(fabricApi.module("fabric-command-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury-fabric:${rootProject.architectury_version}"

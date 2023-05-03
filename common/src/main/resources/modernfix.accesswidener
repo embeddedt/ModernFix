@@ -36,3 +36,5 @@ accessible method net/minecraft/client/renderer/texture/TextureAtlasSprite <init
 accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
 accessible class net/minecraft/server/level/ChunkMap$DistanceManager
 accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
+accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/server/MinecraftServer$ReloadableResources;
+accessible class net/minecraft/server/MinecraftServer$ReloadableResources

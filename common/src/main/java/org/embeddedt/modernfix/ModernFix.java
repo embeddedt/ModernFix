@@ -6,6 +6,7 @@ import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.command.ModernFixCommands;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.util.ClassInfoManager;
@@ -43,6 +44,7 @@ public class ModernFix {
 
     public ModernFix() {
         INSTANCE = this;
+        ModernFixPlatformHooks.onServerCommandRegister(ModernFixCommands::register);
     }
 
     public void onServerStarted() {

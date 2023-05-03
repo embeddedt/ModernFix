@@ -1,9 +1,11 @@
 package org.embeddedt.modernfix.platform;
 
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.brigadier.CommandDispatcher;
 import dev.architectury.injectables.annotations.ExpectPlatform;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.Resource;
@@ -11,6 +13,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.nio.file.Path;
+import java.util.function.Consumer;
 
 public class ModernFixPlatformHooks {
     @ExpectPlatform
@@ -75,6 +78,11 @@ public class ModernFixPlatformHooks {
 
     @ExpectPlatform
     public static void sendPacket(ServerPlayer player, Object packet) {
+        throw new AssertionError();
+    }
+
+    @ExpectPlatform
+    public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
         throw new AssertionError();
     }
 }

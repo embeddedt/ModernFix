@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(Minecraft.class)
 @ClientOnlyMixin
 public class MinecraftMixin_Forge {
-    @Inject(method = "doWorldLoad", at = @At("HEAD"), remap = false)
+    @Inject(method = "doWorldLoad", at = @At("HEAD"))
     private void recordWorldLoadStart(CallbackInfo ci) {
         ModernFixClient.worldLoadStartTime = System.nanoTime();
     }

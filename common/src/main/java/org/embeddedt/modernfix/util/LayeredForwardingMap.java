@@ -7,8 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
 /**
- * Simple forwarding map implementation that allows layering multiple maps together, with the last layer being
- * mutable.
+ * Simple forwarding map implementation that allows layering multiple maps together.
  */
 public class LayeredForwardingMap<K, V> implements Map<K, V> {
     private final Map<K, V>[] layers;
@@ -70,7 +69,14 @@ public class LayeredForwardingMap<K, V> implements Map<K, V> {
     public V put(K key, V value) {
         if(value == null)
             throw new IllegalArgumentException();
-        return layers[layers.length - 1].put(key, value);
+        V originalValue = null;
+        for(Map<K, V> map : layers) {
+            V oldVal = map.remove(key);
+            if(originalValue == null)
+                originalValue = oldVal;
+            map.put(key, value);
+        }
+        return originalValue;
     }
 
     @Override
@@ -87,7 +93,9 @@ public class LayeredForwardingMap<K, V> implements Map<K, V> {
             if(value == null)
                 throw new IllegalArgumentException();
         }
-        layers[layers.length - 1].putAll(m);
+        for(Map<K, V> map : layers) {
+            map.putAll(m);
+        }
     }
 
     @Override

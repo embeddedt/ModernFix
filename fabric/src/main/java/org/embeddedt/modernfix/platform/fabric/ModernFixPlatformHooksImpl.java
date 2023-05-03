@@ -1,15 +1,18 @@
 package org.embeddedt.modernfix.platform.fabric;
 
+import com.mojang.brigadier.CommandDispatcher;
 import net.fabricmc.api.EnvType;
+import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import org.embeddedt.modernfix.ModernFixFabric;
 import org.objectweb.asm.tree.*;
 
 import java.nio.file.Path;
-import java.util.*;
+import java.util.function.Consumer;
 
 public class ModernFixPlatformHooksImpl {
     public static boolean isClient() {
@@ -59,5 +62,9 @@ public class ModernFixPlatformHooksImpl {
 
     public static void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
 
+    }
+
+    public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
+        CommandRegistrationCallback.EVENT.register((dispatcher, arg, env) -> handler.accept(dispatcher));
     }
 }

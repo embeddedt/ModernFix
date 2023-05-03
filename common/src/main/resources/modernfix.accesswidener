@@ -36,3 +36,5 @@ accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/
 accessible class net/minecraft/server/level/ChunkMap$DistanceManager
 accessible method net/minecraft/client/gui/screens/worldselection/WorldGenSettingsComponent updateSettings (Lnet/minecraft/client/gui/screens/worldselection/WorldCreationContext;)V
 accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
+accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/server/MinecraftServer$ReloadableResources;
+accessible class net/minecraft/server/MinecraftServer$ReloadableResources

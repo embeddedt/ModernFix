@@ -31,17 +31,14 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
-/* high priority so that our injectors are added before other mods' */
-@Mixin(value = ModelBakery.class, priority = 600)
+/* low priority so that our injectors are added after other mods' */
+@Mixin(value = ModelBakery.class, priority = 1100)
 @ClientOnlyMixin
 public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
@@ -172,10 +169,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private BiFunction<ResourceLocation, Material, TextureAtlasSprite> textureGetter;
 
-    @Inject(method = "bakeModels", at = @At("HEAD"), cancellable = true)
-    private void skipBake(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
+    @Inject(method = "bakeModels", at = @At("HEAD"))
+    private void captureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
         textureGetter = getter;
-        ci.cancel();
+    }
+
+    @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;"))
+    private Set<ResourceLocation> skipBake(Map<ResourceLocation, UnbakedModel> instance) {
+        return Collections.emptySet();
     }
 
     /**

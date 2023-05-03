@@ -8,6 +8,8 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
+import net.minecraft.client.renderer.block.model.MultiVariant;
+import net.minecraft.client.renderer.block.model.multipart.MultiPart;
 import net.minecraft.client.renderer.texture.AtlasSet;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.renderer.texture.TextureManager;
@@ -24,6 +26,7 @@ import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
+import org.embeddedt.modernfix.util.LayeredForwardingMap;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -148,7 +151,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.loadedModels.put(MISSING_MODEL_LOCATION, this.missingModel);
         this.bakedCache = loadedBakedModels.asMap();
         ConcurrentMap<ResourceLocation, UnbakedModel> unbakedCacheBackingMap = loadedModels.asMap();
-        this.unbakedCache = new ForwardingMap<ResourceLocation, UnbakedModel>() {
+        Map<ResourceLocation, UnbakedModel> mutableBackingMap = new ForwardingMap<ResourceLocation, UnbakedModel>() {
             @Override
             protected Map<ResourceLocation, UnbakedModel> delegate() {
                 return unbakedCacheBackingMap;
@@ -160,6 +163,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 return super.put(key, value);
             }
         };
+        // discard unwrapped models
+        int oldSize = this.unbakedCache.size();
+        this.unbakedCache.entrySet().removeIf(entry -> entry.getValue() instanceof BlockModel || entry.getValue() instanceof MultiVariant || entry.getValue() instanceof MultiPart);
+        ModernFix.LOGGER.info("{} models evicted, {} custom models loaded permanently", oldSize - this.unbakedCache.size(), this.unbakedCache.size());
+        this.unbakedCache = new LayeredForwardingMap<>(new Map[] { this.unbakedCache, mutableBackingMap });
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
 
         // ensure missing model is a permanent override

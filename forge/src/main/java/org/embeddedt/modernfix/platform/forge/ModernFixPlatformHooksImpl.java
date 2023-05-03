@@ -2,17 +2,22 @@ package org.embeddedt.modernfix.platform.forge;
 
 import com.google.common.io.Resources;
 import com.mojang.blaze3d.platform.NativeImage;
+import com.mojang.brigadier.CommandDispatcher;
 import cpw.mods.modlauncher.*;
 import cpw.mods.modlauncher.api.INameMappingService;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.commands.CommandSource;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ForgeHooksClient;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.loading.FMLLoader;
@@ -41,6 +46,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -242,5 +248,11 @@ public class ModernFixPlatformHooksImpl {
                 }
             }
         }
+    }
+
+    public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
+        MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
+            handler.accept(event.getDispatcher());
+        });
     }
 }

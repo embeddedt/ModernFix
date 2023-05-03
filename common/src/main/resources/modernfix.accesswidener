@@ -36,6 +36,8 @@ accessible class net/minecraft/server/level/ChunkMap$DistanceManager
 accessible class net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
 accessible field net/minecraft/client/resources/model/ModelBakery bakedCache Ljava/util/Map;
 accessible field net/minecraft/client/resources/model/ModelBakery ITEM_MODEL_GENERATOR Lnet/minecraft/client/renderer/block/model/ItemModelGenerator;
+accessible method net/minecraft/client/resources/model/ModelBakery loadTopLevel (Lnet/minecraft/client/resources/model/ModelResourceLocation;)V
+accessible field net/minecraft/client/resources/model/ModelBakery topLevelModels Ljava/util/Map;
 accessible class net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl
 accessible method net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl <init> (Lnet/minecraft/client/resources/model/ModelBakery;Ljava/util/function/BiFunction;Lnet/minecraft/resources/ResourceLocation;)V
 accessible method net/minecraft/client/resources/model/ModelBakery$BakedCacheKey <init> (Lnet/minecraft/resources/ResourceLocation;Lcom/mojang/math/Transformation;Z)V

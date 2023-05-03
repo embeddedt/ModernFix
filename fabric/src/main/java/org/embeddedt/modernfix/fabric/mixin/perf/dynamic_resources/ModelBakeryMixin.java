@@ -62,16 +62,23 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final @Mutable private BlockColors blockColors;
     @Shadow @Final private static Logger LOGGER;
+
+    @Shadow
+    public abstract void loadTopLevel(ModelResourceLocation modelResourceLocation);
+
     private Cache<ModelBakery.BakedCacheKey, BakedModel> loadedBakedModels;
 
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
 
+    private boolean ignoreModelLoad;
+
 
     @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/resources/model/ModelBakery;blockColors:Lnet/minecraft/client/color/block/BlockColors;"))
     private void replaceTopLevelBakedModels(ModelBakery bakery, BlockColors val) {
         this.blockColors = val;
+        this.ignoreModelLoad = true;
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(3, TimeUnit.MINUTES)
                 .maximumSize(1000)
@@ -84,7 +91,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 .maximumSize(1000)
                 .concurrencyLevel(8)
                 .removalListener(this::onModelRemoved)
-                .softValues()
+                //.softValues()
                 .build();
         this.bakedCache = loadedBakedModels.asMap();
         ConcurrentMap<ResourceLocation, UnbakedModel> unbakedCacheBackingMap = loadedModels.asMap();
@@ -103,6 +110,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
     }
 
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void stopIgnore(CallbackInfo ci) {
+        this.ignoreModelLoad = false;
+    }
+
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
         if(!debugDynamicModelLoading)
             return;
@@ -117,6 +129,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             rl = ((ModelBakery.BakedCacheKey)k).id();
             baked = true;
         }
+        /* can fire when a model is replaced */
+        if(!baked && this.loadedModels.getIfPresent(rl) != null)
+            return;
         ModernFix.LOGGER.warn("Evicted {} model {}", baked ? "baked" : "unbaked", rl);
     }
 
@@ -135,13 +150,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     /**
      * @author embeddedt
-     * @reason don't actually load the model.
+     * @reason don't actually load most models
      */
-    @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
-    private void addTopLevelFile(ModelResourceLocation location, CallbackInfo ci) {
-        if(location == MISSING_MODEL_LOCATION)
-            return; /* needed for FAPI compat */
-        ci.cancel();
+    @Redirect(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBakery;loadTopLevel(Lnet/minecraft/client/resources/model/ModelResourceLocation;)V"))
+    private void addTopLevelFile(ModelBakery bakery, ModelResourceLocation location) {
+        if(location == MISSING_MODEL_LOCATION || !this.ignoreModelLoad) {
+            loadTopLevel(location);
+        }
     }
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0))

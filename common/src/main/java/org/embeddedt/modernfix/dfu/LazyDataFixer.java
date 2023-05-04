@@ -35,6 +35,7 @@ public class LazyDataFixer implements DataFixer {
         synchronized (this) {
             if(backingDataFixer == null) {
                 LOGGER.info("Instantiating Mojang DFU");
+                DFUBlaster.blastMaps();
                 backingDataFixer = dfuSupplier.get();
             }
         }

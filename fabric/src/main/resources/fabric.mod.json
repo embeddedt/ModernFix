@@ -3,14 +3,17 @@
   "id": "modernfix",
   "version": "${version}",
   "name": "ModernFix",
-  "description": "Optimization mod",
+  "description": "Egregious, yet effective performance improvements for modern Minecraft",
   "authors": [
     "embeddedt"
   ],
   "contact": {
+    "sources": "https://github.com/embeddedt/ModernFix",
+    "homepage": "https://modrinth.com/mod/modernfix",
+    "issues": "https://github.com/embeddedt/ModernFix/issues"
   },
   "license": "LGPL-3.0",
-  "icon": "assets/modernfix/icon.png",
+  "icon": "icon.png",
   "environment": "*",
   "entrypoints": {
     "main": [
@@ -18,7 +21,8 @@
     ],
     "client": [
       "org.embeddedt.modernfix.ModernFixClientFabric"
-    ]
+    ],
+    "modmenu": [ "org.embeddedt.modernfix.fabric.modmenu.ModernFixModMenuApiImpl" ]
   },
   "mixins": [
     "modernfix-fabric.mixins.json",
@@ -27,6 +31,7 @@
   "depends": {
     "fabric-lifecycle-events-v1": "*",
     "fabric-screen-api-v1": "*",
+    "fabric-command-api-v1": "*",
     "minecraft": ">=1.16.5"
   }
 }

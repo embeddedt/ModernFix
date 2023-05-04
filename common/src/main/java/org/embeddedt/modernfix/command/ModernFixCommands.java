@@ -7,9 +7,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.structure.CachingStructureManager;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -41,7 +41,8 @@ public class ModernFixCommands {
                                 try(Resource resource = manager.getResource(found)) {
                                     CachingStructureManager.readStructureTag(structureLocation, level.getServer().getFixerUpper(), resource.getInputStream());
                                     context.getSource().sendSuccess(new TextComponent("checked " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")"), false);
-                                } catch(IOException e) {
+                                } catch(Throwable e) {
+                                    ModernFix.LOGGER.error("Couldn't upgrade structure " + found, e);
                                     context.getSource().sendFailure(new TextComponent("error reading " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")"));
                                 }
                             }

@@ -257,9 +257,16 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Override
     public BakedModel bakeDefault(ResourceLocation modelLocation) {
+        ModelBakery.BakedCacheKey key = new ModelBakery.BakedCacheKey(modelLocation, BlockModelRotation.X0_Y0.getRotation(), BlockModelRotation.X0_Y0.isUvLocked());
+        BakedModel m = loadedBakedModels.getIfPresent(key);
+        if(m != null)
+            return m;
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
-        return theBaker.bake(modelLocation, BlockModelRotation.X0_Y0);
+        m = theBaker.bake(modelLocation, BlockModelRotation.X0_Y0);
+        if(m != null)
+            loadedBakedModels.put(key, m);
+        return m;
     }
 
     @Override

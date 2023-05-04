@@ -59,7 +59,7 @@ public class CachingStructureManager {
         if(currentDataVersion < SharedConstants.getCurrentVersion().getWorldVersion()) {
             synchronized (laggyStructureMods) {
                 if(laggyStructureMods.add(location.getNamespace())) {
-                    ModernFix.LOGGER.warn("Mod {} is shipping outdated structure files; please report this to them.", location.getNamespace());
+                    ModernFix.LOGGER.warn("Mod {} is shipping outdated structure files, which can cause worldgen lag; please report this to them.", location.getNamespace());
                 }
             }
             /* Needs upgrade, try looking up from cache */

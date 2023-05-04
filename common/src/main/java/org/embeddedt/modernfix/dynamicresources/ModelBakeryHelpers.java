@@ -50,7 +50,7 @@ public class ModelBakeryHelpers {
     /**
      * The time in seconds after which a model becomes eligible for eviction if not used.
      */
-    public static final int MAX_MODEL_LIFETIME_SECS = 90;
+    public static final int MAX_MODEL_LIFETIME_SECS = 300;
 
     private static void gatherAdditionalViaManualScan(List<PackResources> untrustedPacks, Set<ResourceLocation> knownLocations,
                                                Collection<ResourceLocation> uncertainLocations, String filePrefix) {

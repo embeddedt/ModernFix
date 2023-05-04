@@ -40,6 +40,19 @@ import static net.minecraft.client.resources.model.ModelBakery.BLOCK_ENTITY_MARK
 import static net.minecraft.client.resources.model.ModelBakery.GENERATION_MARKER;
 
 public class ModelBakeryHelpers {
+    /**
+     * The maximum number of baked models kept in memory at once.
+     */
+    public static final int MAX_BAKED_MODEL_COUNT = 10000;
+    /**
+     * The maximum number of unbaked models kept in memory at once.
+     */
+    public static final int MAX_UNBAKED_MODEL_COUNT = 10000;
+    /**
+     * The time in seconds after which a model becomes eligible for eviction if not used.
+     */
+    public static final int MAX_MODEL_LIFETIME_SECS = 300;
+
     private static void gatherAdditionalViaManualScan(List<PackResources> untrustedPacks, Set<ResourceLocation> knownLocations,
                                                Collection<ResourceLocation> uncertainLocations, String filePrefix) {
         if(untrustedPacks.size() > 0) {

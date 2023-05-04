@@ -40,6 +40,7 @@ import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /* high priority so that our injectors are added before other mods' */
 @Mixin(value = ModelBakery.class, priority = 600)
@@ -162,7 +163,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         };
         // discard unwrapped models
         int oldSize = this.unbakedCache.size();
-        this.unbakedCache.entrySet().removeIf(entry -> entry.getValue() instanceof BlockModel || entry.getValue() instanceof MultiVariant || entry.getValue() instanceof MultiPart);
+        Predicate<Map.Entry<ResourceLocation, UnbakedModel>> isVanillaModel = entry -> entry.getValue() instanceof BlockModel || entry.getValue() instanceof MultiVariant || entry.getValue() instanceof MultiPart;
+        // bake indigo models
+        this.topLevelModels.entrySet().forEach((entry) -> {
+            if(!isVanillaModel.test(entry))
+                this.bake(entry.getKey(), BlockModelRotation.X0_Y0);
+        });
+        this.unbakedCache.entrySet().removeIf(isVanillaModel);
         ModernFix.LOGGER.info("{} models evicted, {} custom models loaded permanently", oldSize - this.unbakedCache.size(), this.unbakedCache.size());
         this.unbakedCache = new LayeredForwardingMap<>(new Map[] { this.unbakedCache, mutableBackingMap });
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);

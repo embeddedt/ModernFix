@@ -7,15 +7,15 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.structure.CachingStructureManager;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static net.minecraft.commands.Commands.*;
+import static net.minecraft.commands.Commands.literal;
 
 public class ModernFixCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
@@ -43,7 +43,8 @@ public class ModernFixCommands {
                                 try(InputStream resource = entry.getValue().open()) {
                                     CachingStructureManager.readStructureTag(structureLocation, level.getServer().getFixerUpper(), resource);
                                     context.getSource().sendSuccess(Component.literal("checked " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")"), false);
-                                } catch(IOException e) {
+                                } catch(Throwable e) {
+                                    ModernFix.LOGGER.error("Couldn't upgrade structure " + found, e);
                                     context.getSource().sendFailure(Component.literal("error reading " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")"));
                                 }
                             }

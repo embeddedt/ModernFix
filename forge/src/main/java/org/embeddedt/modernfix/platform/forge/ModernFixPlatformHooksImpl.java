@@ -18,7 +18,6 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
-import org.embeddedt.modernfix.dfu.DFUBlaster;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.Opcodes;
@@ -76,7 +75,6 @@ public class ModernFixPlatformHooksImpl {
 
     public static void injectPlatformSpecificHacks() {
         FastAccessTransformerList.attemptReplace();
-        DFUBlaster.blastMaps();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */
         try {

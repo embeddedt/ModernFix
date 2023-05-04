@@ -70,6 +70,9 @@ allprojects {
                 url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
             }
         }
+        maven {
+            url 'https://maven.terraformersmc.com/releases'
+        }
     }
 }
 

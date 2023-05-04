@@ -17,15 +17,13 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.IntFunction;
 
 public class DFUBlaster {
+    private static final Cache<Pair<IntFunction<RewriteResult<?, ?>>, Integer>, RewriteResult<?, ?>> hmapApplyCache = CacheBuilder.newBuilder()
+            .expireAfterAccess(3, TimeUnit.MINUTES)
+            .build();
+    private static final Cache<Triple<Type<?>, TypeRewriteRule, PointFreeRule>, Optional<? extends RewriteResult<?, ?>>> rewriteCache = CacheBuilder.newBuilder()
+            .expireAfterAccess(3, TimeUnit.MINUTES)
+            .build();
     public static void blastMaps() {
-        Cache<Pair<IntFunction<RewriteResult<?, ?>>, Integer>, RewriteResult<?, ?>> hmapApplyCache = CacheBuilder.newBuilder()
-                .maximumSize(200) /* should mean approximately 50MB used max */
-                .expireAfterAccess(3, TimeUnit.MINUTES)
-                .build();
-        Cache<Triple<Type<?>, TypeRewriteRule, PointFreeRule>, Optional<? extends RewriteResult<?, ?>>> rewriteCache = CacheBuilder.newBuilder()
-                .maximumSize(1000)
-                .expireAfterAccess(3, TimeUnit.MINUTES)
-                .build();
         try {
             Class<?> FOLD_CLASS = Class.forName("com.mojang.datafixers.functions.Fold");
             Field hmapField = FOLD_CLASS.getDeclaredField("HMAP_APPLY_CACHE");
@@ -41,8 +39,30 @@ public class DFUBlaster {
             base = unsafe.staticFieldBase(rewriteCacheField);
             offset = unsafe.staticFieldOffset(rewriteCacheField);
             unsafe.putObject(base, offset, rewriteCache.asMap());
+            new CleanerThread().start();
         } catch(Throwable e) {
             ModernFix.LOGGER.error("Could not replace DFU map", e);
+        }
+    }
+
+    static class CleanerThread extends Thread {
+        CleanerThread() {
+            this.setName("DFU cleaning thread");
+            this.setPriority(1);
+            this.setDaemon(true);
+        }
+
+        @Override
+        public void run() {
+            while(true) {
+                try {
+                    Thread.sleep(15000);
+                } catch(InterruptedException e){
+                    return;
+                }
+                rewriteCache.cleanUp();
+                hmapApplyCache.cleanUp();
+            }
         }
     }
 }

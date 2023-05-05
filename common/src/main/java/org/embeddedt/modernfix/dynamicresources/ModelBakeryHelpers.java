@@ -97,6 +97,12 @@ public class ModelBakeryHelpers {
         List<PackResources> allPackResources = new ArrayList<>(manager.listPacks().collect(Collectors.toList()));
         Collections.reverse(allPackResources);
         ObjectOpenHashSet<ResourceLocation> allAvailableModels = new ObjectOpenHashSet<>(), allAvailableStates = new ObjectOpenHashSet<>();
+        /* try to fix CME in some runtime packs by forcing generation */
+        for(PackResources pack : allPackResources) {
+            try(InputStream stream = pack.getResource(PackType.CLIENT_RESOURCES, new ResourceLocation("modernfix", "dummy.json"))) {
+            } catch(Exception ignored) {
+            }
+        }
         allPackResources.removeIf(pack -> {
             if(isTrustedPack.test(pack)) {
                 for(String namespace : pack.getNamespaces(PackType.CLIENT_RESOURCES)) {
@@ -124,10 +130,12 @@ public class ModelBakeryHelpers {
         ConcurrentLinkedQueue<Pair<ResourceLocation, JsonElement>> blockStateLoadedFiles = new ConcurrentLinkedQueue<>();
         List<CompletableFuture<Void>> blockStateData = new ArrayList<>();
         for(ResourceLocation blockstate : blockStateFiles) {
+            ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
+            List<Resource> resources = manager.getResourceStack(fileLocation);
+            if(resources.isEmpty())
+                continue;
             blockStateData.add(CompletableFuture.runAsync(() -> {
-                ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), "blockstates/" + blockstate.getPath() + ".json");
                 try {
-                    List<Resource> resources = manager.getResourceStack(fileLocation);
                     for(Resource resource : resources) {
                         JsonParser parser = new JsonParser();
                         try(InputStream stream = resource.open()) {

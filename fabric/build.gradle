@@ -102,7 +102,7 @@ curseforge {
             id = "790626"
             changelog = file('../CHANGELOG.md')
             changelogType = "markdown"
-            releaseType = "release"
+            releaseType = "beta"
             addGameVersion "Fabric"
             addGameVersion minecraft_version
             mainArtifact remapJar
@@ -113,7 +113,7 @@ curseforge {
 modrinth {
     token = System.getenv("MODRINTH_TOKEN")
     projectId = "modernfix" // This can be the project ID or the slug. Either will work!
-    versionType = "release" // This is the default -- can also be `beta` or `alpha`
+    versionType = "beta" // This is the default -- can also be `beta` or `alpha`
     uploadFile = remapJar
     gameVersions = [minecraft_version]
     loaders = ["fabric"]
@@ -122,3 +122,8 @@ modrinth {
 
 tasks.curseforge.dependsOn(rootProject.generateChangelog)
 tasks.modrinth.dependsOn(rootProject.generateChangelog)
+
+tasks.register('publishToModSites') {
+    publishToModSites.dependsOn(tasks.modrinth)
+    publishToModSites.dependsOn(tasks.curseforge)
+}

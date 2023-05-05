@@ -6,4 +6,4 @@ read newtag
 git tag -a $newtag -m "$newtag"
 git push
 git push --tags
-./gradlew publishToModSites
+./gradlew fabric:publishToModSites forge:publishToModSites

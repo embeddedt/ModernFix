@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.structure;
 
 import com.mojang.datafixers.DataFixer;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.nbt.CompoundTag;
@@ -16,6 +17,7 @@ import org.embeddedt.modernfix.util.FileUtil;
 import java.io.*;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Set;
 
 public class CachingStructureManager {
     private static ThreadLocal<MessageDigest> digestThreadLocal = ThreadLocal.withInitial(() -> {
@@ -46,6 +48,8 @@ public class CachingStructureManager {
         return sb.toString();
     }
 
+    private static final Set<String> laggyStructureMods = new ObjectOpenHashSet<>();
+
     public static CompoundTag readStructureTag(ResourceLocation location, DataFixer datafixer, InputStream stream) throws IOException {
         byte[] structureBytes = toBytes(stream);
         CompoundTag currentTag = NbtIo.readCompressed(new ByteArrayInputStream(structureBytes));
@@ -54,6 +58,11 @@ public class CachingStructureManager {
         }
         int currentDataVersion = currentTag.getInt("DataVersion");
         if(currentDataVersion < SharedConstants.getCurrentVersion().getDataVersion().getVersion()) {
+            synchronized (laggyStructureMods) {
+                if(laggyStructureMods.add(location.getNamespace())) {
+                    ModernFix.LOGGER.warn("Mod {} is shipping outdated structure files, which can cause worldgen lag; please report this to them.", location.getNamespace());
+                }
+            }
             /* Needs upgrade, try looking up from cache */
             MessageDigest hasher = digestThreadLocal.get();
             hasher.reset();

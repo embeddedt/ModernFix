@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import net.minecraft.client.renderer.ItemModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
@@ -7,6 +8,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
+import org.embeddedt.modernfix.util.DynamicInt2ObjectMap;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -20,6 +22,8 @@ public abstract class ItemModelShaperMixin {
 
     @Shadow public abstract ModelManager getModelManager();
 
+    @Shadow @Final @Mutable private Int2ObjectMap<BakedModel> shapesCache;
+
     private Map<Item, ModelResourceLocation> overrideLocationsVanilla;
 
     public ItemModelShaperMixin() {
@@ -31,6 +35,7 @@ public abstract class ItemModelShaperMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void replaceLocationMap(CallbackInfo ci) {
         overrideLocationsVanilla = new HashMap<>();
+        this.shapesCache = new DynamicInt2ObjectMap<>(index -> getModelManager().getModel(ModelLocationCache.get(Item.byId(index))));
     }
 
     @Unique

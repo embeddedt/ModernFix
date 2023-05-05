@@ -71,15 +71,15 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private void replaceTopLevelBakedModels(ModelBakery bakery, BlockColors val) {
         this.blockColors = val;
         this.loadedBakedModels = CacheBuilder.newBuilder()
-                .expireAfterAccess(3, TimeUnit.MINUTES)
-                .maximumSize(1000)
+                .expireAfterAccess(ModelBakeryHelpers.MAX_MODEL_LIFETIME_SECS, TimeUnit.SECONDS)
+                .maximumSize(ModelBakeryHelpers.MAX_BAKED_MODEL_COUNT)
                 .concurrencyLevel(8)
                 .removalListener(this::onModelRemoved)
                 .softValues()
                 .build();
         this.loadedModels = CacheBuilder.newBuilder()
-                .expireAfterAccess(3, TimeUnit.MINUTES)
-                .maximumSize(1000)
+                .expireAfterAccess(ModelBakeryHelpers.MAX_MODEL_LIFETIME_SECS, TimeUnit.SECONDS)
+                .maximumSize(ModelBakeryHelpers.MAX_UNBAKED_MODEL_COUNT)
                 .concurrencyLevel(8)
                 .removalListener(this::onModelRemoved)
                 .softValues()

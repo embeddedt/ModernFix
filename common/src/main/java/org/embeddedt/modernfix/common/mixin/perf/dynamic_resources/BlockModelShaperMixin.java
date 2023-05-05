@@ -6,7 +6,7 @@ import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
-import org.embeddedt.modernfix.util.DynamicMap;
+import org.embeddedt.modernfix.util.DynamicOverridableMap;
 import org.spongepowered.asm.mixin.*;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -26,7 +26,7 @@ public class BlockModelShaperMixin {
     @Inject(method = { "<init>", "replaceCache" }, at = @At("RETURN"))
     private void replaceModelMap(CallbackInfo ci) {
         // replace the backing map for mods which will access it
-        this.modelByStateCache = new DynamicMap<>(state -> modelManager.getModel(ModelLocationCache.get(state)));
+        this.modelByStateCache = new DynamicOverridableMap<>(state -> modelManager.getModel(ModelLocationCache.get(state)));
     }
 
     @Overwrite

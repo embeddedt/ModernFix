@@ -11,6 +11,18 @@ import net.minecraft.world.level.block.state.properties.Property;
 import java.util.*;
 
 public class ModelBakeryHelpers {
+    /**
+     * The maximum number of baked models kept in memory at once.
+     */
+    public static final int MAX_BAKED_MODEL_COUNT = 10000;
+    /**
+     * The maximum number of unbaked models kept in memory at once.
+     */
+    public static final int MAX_UNBAKED_MODEL_COUNT = 10000;
+    /**
+     * The time in seconds after which a model becomes eligible for eviction if not used.
+     */
+    public static final int MAX_MODEL_LIFETIME_SECS = 300;
 
     private static <T extends Comparable<T>, V extends T> BlockState setPropertyGeneric(BlockState state, Property<T> prop, Object o) {
         return state.setValue(prop, (V)o);

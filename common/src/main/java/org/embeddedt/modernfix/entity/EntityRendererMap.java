@@ -75,7 +75,9 @@ public class EntityRendererMap implements Map<EntityType<?>, EntityRenderer<?>> 
             if(renderer == null)
                 throw new AssertionError("Returned entity renderer should never be null");
             return renderer;
-        } catch(ExecutionException e) {
+        } catch (IllegalStateException e) {
+            return null; /* emulate value not being present if recursive load occurs */
+        } catch (ExecutionException e) {
             throw new RuntimeException(e);
         }
     }

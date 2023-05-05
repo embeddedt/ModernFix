@@ -122,3 +122,8 @@ modrinth {
 
 tasks.curseforge.dependsOn(rootProject.generateChangelog)
 tasks.modrinth.dependsOn(rootProject.generateChangelog)
+
+tasks.register('publishToModSites') {
+    publishToModSites.dependsOn(tasks.modrinth)
+    publishToModSites.dependsOn(tasks.curseforge)
+}

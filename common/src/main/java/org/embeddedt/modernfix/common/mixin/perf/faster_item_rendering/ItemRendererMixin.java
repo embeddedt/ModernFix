@@ -12,6 +12,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.SimpleBakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,10 +31,10 @@ public abstract class ItemRendererMixin {
 
     private static final float[] COLOR_MULTIPLIER = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
 
-    private ItemTransforms.TransformType transformType;
+    private ItemDisplayContext transformType;
 
     @Inject(method = "render", at = @At("HEAD"))
-    private void markRenderingType(ItemStack itemStack, ItemTransforms.TransformType transformType, boolean leftHand, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, BakedModel model, CallbackInfo ci) {
+    private void markRenderingType(ItemStack itemStack, ItemDisplayContext transformType, boolean leftHand, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, BakedModel model, CallbackInfo ci) {
         this.transformType = transformType;
     }
 
@@ -47,7 +48,7 @@ public abstract class ItemRendererMixin {
      */
     @Inject(method = "renderModelLists", at = @At("HEAD"), cancellable = true)
     private void fasterItemRender(BakedModel model, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer, CallbackInfo ci) {
-        if(!stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemTransforms.TransformType.GUI && model.getTransforms().gui == ItemTransform.NO_TRANSFORM) {
+        if(!stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemDisplayContext.GUI && model.getTransforms().gui == ItemTransform.NO_TRANSFORM) {
             ci.cancel();
             PoseStack.Pose pose = matrixStack.last();
             int[] combinedLights = new int[] {combinedLight, combinedLight, combinedLight, combinedLight};

@@ -11,6 +11,7 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.SimpleBakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -20,13 +21,12 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
-import java.util.Random;
 
 @Mixin(ItemRenderer.class)
 public abstract class ItemRendererMixin {
     @Shadow @Final private ItemColors itemColors;
 
-    private final Random dummyRandom = new Random();
+    private final RandomSource dummyRandom = RandomSource.createNewThreadLocalInstance();
 
     private static final float[] COLOR_MULTIPLIER = new float[]{1.0F, 1.0F, 1.0F, 1.0F};
 

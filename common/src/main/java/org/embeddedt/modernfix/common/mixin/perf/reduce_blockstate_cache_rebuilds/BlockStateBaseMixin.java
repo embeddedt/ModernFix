@@ -20,7 +20,6 @@ public abstract class BlockStateBaseMixin implements IBlockState {
 
     private volatile boolean cacheInvalid = false;
     private static boolean buildingCache = false;
-    private static final ThreadLocal<Boolean> isMakingCache = ThreadLocal.withInitial(() -> false);
     @Override
     public void clearCache() {
         cacheInvalid = true;

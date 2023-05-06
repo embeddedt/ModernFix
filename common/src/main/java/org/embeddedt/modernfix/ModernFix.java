@@ -31,7 +31,12 @@ public class ModernFix {
 
     static {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.dedicated_reload_executor.ReloadExecutor")) {
-            resourceReloadService = Util.makeExecutor("ResourceReload");
+            try {
+                resourceReloadService = Util.makeExecutor("ResourceReload");
+            } catch(Throwable e) {
+                LOGGER.error("Error creating resource reload service, using fallback", e);
+                resourceReloadService = Util.backgroundExecutor();
+            }
         } else {
             resourceReloadService = Util.backgroundExecutor();
         }

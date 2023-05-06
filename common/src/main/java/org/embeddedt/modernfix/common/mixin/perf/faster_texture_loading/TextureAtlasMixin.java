@@ -27,7 +27,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@Mixin(TextureAtlas.class)
+@Mixin(value = TextureAtlas.class, priority = 1500)
 @ClientOnlyMixin
 public abstract class TextureAtlasMixin {
     @Shadow protected abstract ResourceLocation getResourceLocation(ResourceLocation location);

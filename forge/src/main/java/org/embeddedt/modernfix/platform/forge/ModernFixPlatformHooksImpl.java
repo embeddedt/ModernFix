@@ -110,7 +110,10 @@ public class ModernFixPlatformHooksImpl {
             try {
                 return (TextureAtlasSprite)textureAtlasSpriteConstruct.invokeExact(atlasTexture, textureInfo, mipmapLevel, atlasWidth, atlasHeight, spriteX, spriteY, image);
             } catch(Throwable e) {
-                throw new AssertionError("MethodHandle failed", e);
+                if(e instanceof RuntimeException)
+                    throw (RuntimeException)e;
+                else
+                    throw new RuntimeException("TextureAtlasSprite construction failed", e);
             }
         }
     }

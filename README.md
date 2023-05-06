@@ -5,6 +5,13 @@ A performance mod for modern Minecraft that significantly improves launch times,
 Some fixes are based on prior work in various Forge PRs (check commit history and/or code comments). The config system
 is directly derived from Sodium and used under the terms of the LGPL-3.0 license.
 
+## Development builds (generally stable, but may occasionally have bugs)
+﻿
+1.16.5, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/main/Package.zip
+1.18.2, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/1.18/Package.zip
+1.19.2, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/1.19.2/Package.zip
+1.19.4, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/1.19.4/Package.zip
+
 ------------
 
 ![YourKit logo](https://www.yourkit.com/images/yklogo.png)

@@ -173,6 +173,8 @@ public class ModernFixClient {
     }
 
     public void onServerStarted(MinecraftServer server) {
+        if(!ModernFixMixinPlugin.instance.isOptionEnabled("feature.integrated_server_watchdog.IntegratedWatchdog"))
+            return;
         IntegratedWatchdog watchdog = new IntegratedWatchdog(server);
         watchdog.start();
     }

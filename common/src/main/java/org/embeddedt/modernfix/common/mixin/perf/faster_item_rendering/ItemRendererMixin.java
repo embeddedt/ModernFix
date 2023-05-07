@@ -13,6 +13,7 @@ import net.minecraft.client.resources.model.SimpleBakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
+import org.embeddedt.modernfix.render.RenderState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -47,7 +48,7 @@ public abstract class ItemRendererMixin {
      */
     @Inject(method = "renderModelLists", at = @At("HEAD"), cancellable = true)
     private void fasterItemRender(BakedModel model, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer, CallbackInfo ci) {
-        if(!stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemTransforms.TransformType.GUI && model.getTransforms().gui == ItemTransform.NO_TRANSFORM) {
+        if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemTransforms.TransformType.GUI && model.getTransforms().gui == ItemTransform.NO_TRANSFORM) {
             ci.cancel();
             PoseStack.Pose pose = matrixStack.last();
             int[] combinedLights = new int[] {combinedLight, combinedLight, combinedLight, combinedLight};

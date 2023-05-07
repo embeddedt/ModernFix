@@ -145,6 +145,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.compress_blockstate", false)
             .put("mixin.bugfix.packet_leak", false)
             .put("mixin.perf.deduplicate_location", false)
+            .put("mixin.perf.dynamic_entity_renderers", false)
             .put("mixin.feature.integrated_server_watchdog", true)
             .put("mixin.perf.blast_search_trees", shouldReplaceSearchTrees)
             .put("mixin.devenv", isDevEnv)

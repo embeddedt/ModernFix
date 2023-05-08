@@ -85,6 +85,11 @@ public abstract class TextureAtlasMixin {
             cir.getReturnValue().addAll(storedResults);
     }
 
+    @Inject(method = "prepareToStitch", at = @At("HEAD"))
+    private void initMap(CallbackInfoReturnable<TextureAtlas.Preparations> cir) {
+        loadedImages = new ConcurrentHashMap<>();
+    }
+
     @Inject(method = "prepareToStitch", at = @At("RETURN"))
     private void clearLoadedImages(CallbackInfoReturnable<TextureAtlas.Preparations> cir) {
         loadedImages = Collections.emptyMap();

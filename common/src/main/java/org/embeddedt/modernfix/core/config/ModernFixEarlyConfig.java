@@ -184,6 +184,8 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
+        disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");
+        disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
         disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
         disableIfModPresent("mixin.launch.class_search_cache", "optifine");
         disableIfModPresent("mixin.perf.datapack_reload_exceptions", "cyanide");
@@ -195,8 +197,6 @@ public class ModernFixEarlyConfig {
                 Option option = this.options.get(configName);
                 if(option != null)
                     option.addModOverride(false, id);
-                else
-                    LOGGER.warn("Can't disable missing option {}", configName);
             }
         }
     }

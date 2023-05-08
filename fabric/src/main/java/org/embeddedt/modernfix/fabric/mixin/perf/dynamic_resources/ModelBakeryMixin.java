@@ -296,6 +296,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         ModernFix.LOGGER.info("{} unbaked models, {} baked models loaded permanently", this.unbakedCache.size(), this.bakedCache.size());
         this.unbakedCache = new LayeredForwardingMap<>(new Map[] { this.unbakedCache, mutableBackingMap });
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
+        if(this.bakedMissingModel != null)
+            ((DynamicBakedModelProvider)this.bakedTopLevelModels).setMissingModel(this.bakedMissingModel);
 
         // ensure missing model is a permanent override
         this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, this.bake(MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0));

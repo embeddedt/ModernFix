@@ -187,6 +187,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
         disableIfModPresent("mixin.launch.class_search_cache", "optifine");
+        disableIfModPresent("mixin.perf.datapack_reload_exceptions", "cyanide");
     }
 
     private void disableIfModPresent(String configName, String... ids) {

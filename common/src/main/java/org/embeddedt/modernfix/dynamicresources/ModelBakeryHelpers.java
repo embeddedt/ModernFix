@@ -268,6 +268,7 @@ public class ModelBakeryHelpers {
                 ModernFix.LOGGER.error("Suppressed additional {} model errors for domain {}", entry.getIntValue(), entry.getKey());
             }
         });
+        blockstateErrors.clear();
         modelFiles = null;
         Function<ResourceLocation, UnbakedModel> modelGetter = loc -> {
             UnbakedModel m = basicModels.get(loc);
@@ -275,7 +276,11 @@ public class ModelBakeryHelpers {
             return m != null ? m : bakeryModelGetter.apply(loc);
         };
         for(BlockModel model : basicModels.values()) {
-            materialSet.addAll(model.getMaterials(modelGetter, errorSet));
+            try {
+                materialSet.addAll(model.getMaterials(modelGetter, errorSet));
+            } catch(Throwable e) {
+                ModernFix.LOGGER.error("Model {} threw error while getting materials", model.name, e);
+            }
         }
         //errorSet.stream().filter(pair -> !pair.getSecond().equals(MISSING_MODEL_LOCATION_STRING)).forEach(pair -> LOGGER.warn("Unable to resolve texture reference: {} in {}", pair.getFirst(), pair.getSecond()));
         stopwatch.stop();

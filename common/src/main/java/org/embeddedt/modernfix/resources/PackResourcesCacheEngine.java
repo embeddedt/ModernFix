@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.resources;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
@@ -17,6 +18,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -46,12 +48,14 @@ public class PackResourcesCacheEngine {
         Path debugPath = basePathRetriever.apply(PackType.CLIENT_RESOURCES, "minecraft").toAbsolutePath();
         for(PackType type : PackType.values()) {
             Collection<String> namespaces = PackTypeHelper.isVanillaPackType(type) ? this.namespacesByType.get(type) : namespacesRetriever.apply(type);
+            Collection<Pair<String, Path>> namespacedRoots = namespaces.stream().map(s -> Pair.of(s, basePathRetriever.apply(type, s).toAbsolutePath())).collect(Collectors.toList());
             future = future.thenRunAsync(() -> {
                 ImmutableMap.Builder<String, List<CachedResourcePath>> packTypedMap = ImmutableMap.builder();
-                for(String namespace : namespaces) {
+                for(Pair<String, Path> pair : namespacedRoots) {
                     try {
                         ImmutableList.Builder<CachedResourcePath> namespacedList = ImmutableList.builder();
-                        Path root = basePathRetriever.apply(type, namespace).toAbsolutePath();
+                        String namespace = pair.getFirst();
+                        Path root = pair.getSecond();
                         String[] prefix = new String[] { type.getDirectory(), namespace };
                         try (Stream<Path> stream = Files.walk(root)) {
                             stream

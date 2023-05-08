@@ -11,7 +11,9 @@ import net.minecraft.client.renderer.entity.ItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.SimpleBakedModel;
 import net.minecraft.core.Direction;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
+import org.embeddedt.modernfix.render.FastItemRenderType;
 import org.embeddedt.modernfix.render.RenderState;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -38,6 +40,17 @@ public abstract class ItemRendererMixin {
         this.transformType = transformType;
     }
 
+    private static final Direction[] ITEM_DIRECTIONS = new Direction[] { Direction.SOUTH };
+    private static final Direction[] BLOCK_DIRECTIONS = new Direction[] { Direction.UP, Direction.EAST, Direction.NORTH };
+
+    private boolean isCorrectDirectionForType(FastItemRenderType type, Direction direction) {
+        if(type == FastItemRenderType.SIMPLE_ITEM)
+            return direction == Direction.SOUTH;
+        else {
+            return direction == Direction.UP || direction == Direction.EAST || direction == Direction.NORTH;
+        }
+    }
+
     /**
      * If a model
      * - is a vanilla item model (SimpleBakedModel),
@@ -48,23 +61,40 @@ public abstract class ItemRendererMixin {
      */
     @Inject(method = "renderModelLists", at = @At("HEAD"), cancellable = true)
     private void fasterItemRender(BakedModel model, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer, CallbackInfo ci) {
-        if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemTransforms.TransformType.GUI && model.getTransforms().gui == ItemTransform.NO_TRANSFORM) {
+        if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemTransforms.TransformType.GUI) {
+            FastItemRenderType type;
+            ItemTransform transform = model.getTransforms().gui;
+            if(transform == ItemTransform.NO_TRANSFORM)
+                type = FastItemRenderType.SIMPLE_ITEM;
+            else if(stack.getItem() instanceof BlockItem && isBlockTransforms(transform))
+                type = FastItemRenderType.SIMPLE_BLOCK;
+            else
+                return;
             ci.cancel();
             PoseStack.Pose pose = matrixStack.last();
             int[] combinedLights = new int[] {combinedLight, combinedLight, combinedLight, combinedLight};
-            List<BakedQuad> culledFaces = model.getQuads(null, Direction.SOUTH, dummyRandom);
-            List<BakedQuad> unculledFaces = model.getQuads(null, null, dummyRandom);
-            /* check size to avoid instantiating iterator when the list is empty */
-            if(culledFaces.size() > 0) {
-                for(BakedQuad quad : culledFaces) {
-                    render2dItemFace(quad, stack, buffer, pose, combinedLights, combinedOverlay);
+            Direction[] directions = type == FastItemRenderType.SIMPLE_ITEM ? ITEM_DIRECTIONS : BLOCK_DIRECTIONS;
+            for(Direction direction : directions) {
+                List<BakedQuad> culledFaces = model.getQuads(null, direction, dummyRandom);
+                /* check size to avoid instantiating iterator when the list is empty */
+                if(culledFaces.size() > 0) {
+                    for(BakedQuad quad : culledFaces) {
+                        render2dItemFace(quad, stack, buffer, pose, combinedLights, combinedOverlay);
+                    }
                 }
             }
+            List<BakedQuad> unculledFaces = model.getQuads(null, null, dummyRandom);
             for(BakedQuad quad : unculledFaces) {
-                if(quad.getDirection() == Direction.SOUTH)
+                if(isCorrectDirectionForType(type, quad.getDirection()))
                     render2dItemFace(quad, stack, buffer, pose, combinedLights, combinedOverlay);
             }
         }
+    }
+
+    private boolean isBlockTransforms(ItemTransform transform) {
+        return transform.rotation.x() == 30f
+                && transform.rotation.y() == 225f
+                && transform.rotation.z() == 0f;
     }
 
     private void render2dItemFace(BakedQuad quad, ItemStack stack, VertexConsumer buffer, PoseStack.Pose pose, int[] combinedLights, int combinedOverlay) {

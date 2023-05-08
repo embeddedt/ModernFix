@@ -6,10 +6,9 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableSet;
-import com.mojang.datafixers.util.Pair;
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import net.fabricmc.fabric.impl.client.model.ModelLoadingRegistryImpl;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.BlockModelDefinition;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
@@ -102,6 +101,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private boolean inTextureGatheringPass;
 
+    private Set<ResourceLocation> injectedModels;
+
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;push(Ljava/lang/String;)V", ordinal = 0))
     private void replaceTopLevelBakedModels(ProfilerFiller filler, String s) {
         this.inTextureGatheringPass = true;
@@ -134,6 +135,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             }
         };
         filler.push(s);
+        this.injectedModels = new ObjectOpenHashSet<>();
+        ModelLoadingRegistryImpl.LoaderInstance instance = ModelLoadingRegistryImpl.begin((ModelBakery)(Object)this, this.resourceManager);
+        instance.onModelPopulation(this.injectedModels::add);
+        instance.finish();
     }
 
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
@@ -166,9 +171,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private boolean forceLoadModel = false;
 
-    @Inject(method = "loadModel", at = @At(value = "HEAD", shift = At.Shift.AFTER), cancellable = true)
+    @Inject(method = "loadModel", at = @At(value = "HEAD"), cancellable = true)
     private void ignoreNonFabricModel(ResourceLocation modelLocation, CallbackInfo ci) throws Exception {
-        if(this.inTextureGatheringPass && !this.forceLoadModel) {
+        if(this.inTextureGatheringPass && !this.forceLoadModel && !this.injectedModels.contains(modelLocation)) {
             // Custom model processor, try to avoid loading unwrapped models
             // First add this to the list of models to scan for textures
             ResourceLocation blockStateLocation = null;
@@ -184,7 +189,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 modelFiles.add(modelLocation);
             // Now check if it's a wrapped model
             boolean isWrappedModel = false;
-            Set<ResourceLocation> oldLoadingStack = this.loadingStack.size() > 0 ? new ObjectOpenHashSet<>(this.loadingStack) : ImmutableSet.of();
             // Set the correct blockstate context
             StateDefinition<Block, BlockState> statecontainer;
             if(blockStateLocation != null) {
@@ -199,8 +203,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             this.forceLoadModel = true;
             this.cacheAndQueueDependencies(modelLocation, this.missingModel);
             this.forceLoadModel = false;
-            this.loadingStack.clear();
-            this.loadingStack.addAll(oldLoadingStack);
             if(this.smallLoadingCache.get(modelLocation) != this.missingModel) {
                 /* probably a wrapped model, allow it to load normally */
                 isWrappedModel = true;
@@ -262,6 +264,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private void skipBake(TextureManager resourceManager, ProfilerFiller profiler, CallbackInfoReturnable<AtlasSet> cir) {
         profiler.pop();
         this.inTextureGatheringPass = false;
+        this.injectedModels = null;
         // hand off to the dynamic model system
         this.loadedModels.put(MISSING_MODEL_LOCATION, this.missingModel);
         this.bakedCache = loadedBakedModels.asMap();
@@ -391,6 +394,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private BakedModel bakedMissingModel = null;
 
+    private Set<ResourceLocation> bakeStack = new LinkedHashSet<>();
+
     @Inject(method = "bake", at = @At("HEAD"), cancellable = true)
     public void getOrLoadBakedModelDynamic(ResourceLocation arg, ModelState arg2, CallbackInfoReturnable<BakedModel> cir) {
         Function<Material, TextureAtlasSprite> textureGetter = mat -> this.atlasSet.getSprite(mat);
@@ -405,8 +410,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 if(debugDynamicModelLoading)
                     LOGGER.info("Baking {}", arg);
                 UnbakedModel iunbakedmodel = this.getModel(arg);
-                Set<Pair<String, String>> errorSet = new HashSet<>();
-                Collection<Material> theMaterials = iunbakedmodel.getMaterials(this::getModel, errorSet);
+                Collection<Material> theMaterials = iunbakedmodel.getMaterials(this::getModel, new HashSet<>());
                 /* check if sprites are actually present */
                 TextureAtlasSprite missingSprite = this.atlasSet.getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(MissingTextureAtlasSprite.getLocation());
                 for(Material m : theMaterials) {
@@ -416,7 +420,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                             ModernFix.LOGGER.warn("Texture {} is not present in blocks atlas", m.texture());
                     }
                 }
-                errorSet.stream().filter(pair -> !pair.getSecond().equals(MISSING_MODEL_LOCATION_STRING)).forEach(pair -> LOGGER.warn("Unable to resolve texture reference: {} in {}", pair.getFirst(), pair.getSecond()));
 
                 if(iunbakedmodel == missingModel && debugDynamicModelLoading)
                     LOGGER.warn("Model {} not present", arg);

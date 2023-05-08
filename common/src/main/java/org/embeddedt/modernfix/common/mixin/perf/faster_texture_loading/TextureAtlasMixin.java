@@ -36,16 +36,17 @@ public abstract class TextureAtlasMixin {
 
     private Map<ResourceLocation, Pair<Resource, NativeImage>> loadedImages;
     private boolean usingFasterLoad;
+    private Collection<TextureAtlasSprite.Info> storedResults;
     /**
      * @author embeddedt
      * @reason simplify texture loading by loading whole image once, avoid slow PngInfo code
      */
-    @Redirect(method = "prepareToStitch", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/texture/TextureAtlas;getBasicSpriteInfos(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/Set;)Ljava/util/Collection;"))
-    private Collection<TextureAtlasSprite.Info> loadImages(TextureAtlas atlas, ResourceManager manager, Set<ResourceLocation> imageLocations) {
+    @Inject(method = "getBasicSpriteInfos", at = @At("HEAD"))
+    private void loadImages(ResourceManager manager, Set<ResourceLocation> imageLocations, CallbackInfoReturnable<Collection<TextureAtlasSprite.Info>> cir) {
         usingFasterLoad = ModernFixPlatformHooks.isLoadingNormally();
         // bail if Forge is erroring to avoid AT crashes
         if(!usingFasterLoad) {
-            return getBasicSpriteInfos(manager, imageLocations);
+            return;
         }
         List<CompletableFuture<?>> futures = new ArrayList<>();
         ConcurrentLinkedQueue<TextureAtlasSprite.Info> results = new ConcurrentLinkedQueue<>();
@@ -81,12 +82,24 @@ public abstract class TextureAtlasMixin {
             }, ModernFix.resourceReloadExecutor()));
         }
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
-        return results;
+        storedResults = results;
+    }
+
+    @Redirect(method = "getBasicSpriteInfos", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;", ordinal = 0))
+    private Iterator<?> skipIteration(Set<?> instance) {
+        return usingFasterLoad ? Collections.emptyIterator() : instance.iterator();
+    }
+
+    @Inject(method = "getBasicSpriteInfos", at = @At("RETURN"))
+    private void injectFastSprites(ResourceManager resourceManager, Set<ResourceLocation> spriteLocations, CallbackInfoReturnable<Collection<TextureAtlasSprite.Info>> cir) {
+        if(usingFasterLoad)
+            cir.getReturnValue().addAll(storedResults);
     }
 
     @Inject(method = "prepareToStitch", at = @At("RETURN"))
     private void clearLoadedImages(CallbackInfoReturnable<TextureAtlas.Preparations> cir) {
         loadedImages = Collections.emptyMap();
+        storedResults = null;
     }
 
     @Inject(method = "load(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite$Info;IIIII)Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;",

@@ -14,7 +14,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.concurrent.CompletableFuture;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -31,7 +30,9 @@ public class PackResourcesCacheEngine {
     private final Map<PackType, Set<String>> namespacesByType;
     private final Set<CachedResourcePath> containedPaths;
     private final EnumMap<PackType, Map<String, List<CachedResourcePath>>> resourceListings;
-    private volatile CompletableFuture<Void> cacheFuture;
+    private volatile boolean cacheGenerationFlag = false;
+    private List<Runnable> cacheGenerationTasks = new ArrayList<>();
+    private Path debugPath;
 
     public PackResourcesCacheEngine(Function<PackType, Set<String>> namespacesRetriever, BiFunction<PackType, String, Path> basePathRetriever) {
         this.namespacesByType = new EnumMap<>(PackType.class);
@@ -42,14 +43,12 @@ public class PackResourcesCacheEngine {
         }
         this.containedPaths = new ObjectOpenHashSet<>();
         this.resourceListings = new EnumMap<>(PackType.class);
-        CompletableFuture<Void> future = CompletableFuture.completedFuture(null);
-        Stopwatch watch = Stopwatch.createStarted();
         // used for log message
-        Path debugPath = basePathRetriever.apply(PackType.CLIENT_RESOURCES, "minecraft").toAbsolutePath();
+        this.debugPath = basePathRetriever.apply(PackType.CLIENT_RESOURCES, "minecraft").toAbsolutePath();
         for(PackType type : PackType.values()) {
             Collection<String> namespaces = PackTypeHelper.isVanillaPackType(type) ? this.namespacesByType.get(type) : namespacesRetriever.apply(type);
             Collection<Pair<String, Path>> namespacedRoots = namespaces.stream().map(s -> Pair.of(s, basePathRetriever.apply(type, s).toAbsolutePath())).collect(Collectors.toList());
-            future = future.thenRunAsync(() -> {
+            cacheGenerationTasks.add(() -> {
                 ImmutableMap.Builder<String, List<CachedResourcePath>> packTypedMap = ImmutableMap.builder();
                 for(Pair<String, Path> pair : namespacedRoots) {
                     try {
@@ -77,17 +76,11 @@ public class PackResourcesCacheEngine {
                 synchronized (this.resourceListings) {
                     this.resourceListings.put(type, packTypedMap.build());
                 }
-            }, ModernFix.resourceReloadExecutor());
+            });
         }
-        future = future.thenRunAsync(() -> {
+        cacheGenerationTasks.add(() -> {
             ((ObjectOpenHashSet<CachedResourcePath>)this.containedPaths).trim();
-            watch.stop();
-        }, ModernFix.resourceReloadExecutor());
-        this.cacheFuture = future;
-        // print debug message in separate task to prevent slowing down rest of load
-        future.thenRunAsync(() -> {
-            ModernFix.LOGGER.debug("Generated cache for {} in {}", debugPath, watch);
-        }, ModernFix.resourceReloadExecutor());
+        });
     }
 
     private static boolean isValidCachedResourcePath(Path path) {
@@ -112,12 +105,23 @@ public class PackResourcesCacheEngine {
             return null;
     }
 
+    private void doGenerateCache() {
+        Stopwatch watch = Stopwatch.createStarted();
+        for(Runnable r : this.cacheGenerationTasks) {
+            r.run();
+        }
+        watch.stop();
+        ModernFix.LOGGER.debug("Generated cache for {} in {}", debugPath, watch);
+        debugPath = null;
+        cacheGenerationTasks = ImmutableList.of();
+    }
+
     private void awaitLoad() {
-        if(this.cacheFuture != null) {
+        if(!this.cacheGenerationFlag) {
             synchronized (this) {
-                if(this.cacheFuture != null) {
-                    this.cacheFuture.join();
-                    this.cacheFuture = null;
+                if(!this.cacheGenerationFlag) {
+                    this.doGenerateCache();
+                    this.cacheGenerationFlag = true;
                 }
             }
         }

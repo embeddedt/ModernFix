@@ -243,7 +243,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 "bettergrass"
         };
         for(String folder : extraFolders) {
-            Collection<ResourceLocation> textureLocations = this.resourceManager.listResources("textures/" + folder, p -> p.endsWith(".png"));
+            Collection<ResourceLocation> textureLocations = this.resourceManager.listResources("textures/" + folder, p -> p.getPath().endsWith(".png")).keySet();
             for(ResourceLocation rl : textureLocations) {
                 if(rl.getNamespace().equals("assets")) {
                     /* buggy pack, correct path */

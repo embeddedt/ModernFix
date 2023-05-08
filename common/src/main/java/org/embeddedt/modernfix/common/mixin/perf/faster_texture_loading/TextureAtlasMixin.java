@@ -27,14 +27,14 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 
-@Mixin(value = TextureAtlas.class, priority = 1500)
+@Mixin(value = TextureAtlas.class, priority = 600)
 @ClientOnlyMixin
 public abstract class TextureAtlasMixin {
     @Shadow protected abstract ResourceLocation getResourceLocation(ResourceLocation location);
 
     @Shadow protected abstract Collection<TextureAtlasSprite.Info> getBasicSpriteInfos(ResourceManager resourceManager, Set<ResourceLocation> spriteLocations);
 
-    private Map<ResourceLocation, Pair<Resource, NativeImage>> loadedImages;
+    private Map<ResourceLocation, Pair<Resource, NativeImage>> loadedImages = new ConcurrentHashMap<>();
     private boolean usingFasterLoad;
     private Collection<TextureAtlasSprite.Info> storedResults;
     /**
@@ -50,7 +50,6 @@ public abstract class TextureAtlasMixin {
         }
         List<CompletableFuture<?>> futures = new ArrayList<>();
         ConcurrentLinkedQueue<TextureAtlasSprite.Info> results = new ConcurrentLinkedQueue<>();
-        loadedImages = new ConcurrentHashMap<>();
         for(ResourceLocation location : imageLocations) {
             if(MissingTextureAtlasSprite.getLocation().equals(location))
                 continue;

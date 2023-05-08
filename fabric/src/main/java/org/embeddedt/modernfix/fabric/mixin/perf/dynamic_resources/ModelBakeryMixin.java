@@ -430,8 +430,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                         // use a shared baked missing model
                         if(bakedMissingModel == null) {
                             bakedMissingModel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
-                            ((DynamicBakedModelProvider)this.bakedTopLevelModels).setMissingModel(bakedMissingModel);
                         }
+                        if(this.bakedTopLevelModels instanceof DynamicBakedModelProvider)
+                            ((DynamicBakedModelProvider)this.bakedTopLevelModels).setMissingModel(bakedMissingModel);
                         ibakedmodel = bakedMissingModel;
                     } else
                         ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);

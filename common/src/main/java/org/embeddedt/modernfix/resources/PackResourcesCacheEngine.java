@@ -31,7 +31,7 @@ public class PackResourcesCacheEngine {
     private final Map<PackType, Set<String>> namespacesByType;
     private final Set<CachedResourcePath> containedPaths;
     private final EnumMap<PackType, Map<String, List<CachedResourcePath>>> resourceListings;
-    private CompletableFuture<Void> cacheFuture;
+    private volatile CompletableFuture<Void> cacheFuture;
 
     public PackResourcesCacheEngine(Function<PackType, Set<String>> namespacesRetriever, BiFunction<PackType, String, Path> basePathRetriever) {
         this.namespacesByType = new EnumMap<>(PackType.class);
@@ -114,8 +114,12 @@ public class PackResourcesCacheEngine {
 
     private void awaitLoad() {
         if(this.cacheFuture != null) {
-            this.cacheFuture.join();
-            this.cacheFuture = null;
+            synchronized (this) {
+                if(this.cacheFuture != null) {
+                    this.cacheFuture.join();
+                    this.cacheFuture = null;
+                }
+            }
         }
     }
 

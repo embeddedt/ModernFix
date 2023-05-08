@@ -13,7 +13,7 @@ import org.embeddedt.modernfix.resources.ReloadExecutor;
 import org.embeddedt.modernfix.util.ClassInfoManager;
 
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 
 // The value here should match an entry in the META-INF/mods.toml file
 public class ModernFix {

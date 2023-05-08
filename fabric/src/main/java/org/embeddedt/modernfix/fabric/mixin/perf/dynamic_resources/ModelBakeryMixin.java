@@ -238,11 +238,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 this::getModel);
         /* take every texture from these folders (1.19.3+ emulation) */
         String[] extraFolders = new String[] {
+                "attachment",
+                "bettergrass",
                 "block",
                 "blocks",
+                "cape",
                 "item",
                 "items",
-                "bettergrass"
+                "pipe"
         };
         for(String folder : extraFolders) {
             Collection<ResourceLocation> textureLocations = this.resourceManager.listResources("textures/" + folder, p -> p.endsWith(".png"));

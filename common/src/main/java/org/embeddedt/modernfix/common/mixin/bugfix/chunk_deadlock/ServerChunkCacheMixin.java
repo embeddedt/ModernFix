@@ -29,7 +29,7 @@ public abstract class ServerChunkCacheMixin {
 
     @Inject(method = "getChunk", at = @At("HEAD"), cancellable = true)
     private void bailIfServerDead(int chunkX, int chunkZ, ChunkStatus requiredStatus, boolean load, CallbackInfoReturnable<ChunkAccess> cir) {
-        if(!this.mainThread.isAlive()) {
+        if(!this.level.getServer().isRunning() && !this.mainThread.isAlive()) {
             ModernFix.LOGGER.fatal("A mod is accessing chunks from a stopped server (this will also cause memory leaks)");
             if(debugDeadServerAccess) {
                 new Exception().printStackTrace();

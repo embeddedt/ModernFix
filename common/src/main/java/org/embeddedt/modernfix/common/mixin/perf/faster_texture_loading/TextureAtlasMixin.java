@@ -44,10 +44,13 @@ public abstract class TextureAtlasMixin {
     @Inject(method = "getBasicSpriteInfos", at = @At("HEAD"))
     private void loadImages(ResourceManager manager, Set<ResourceLocation> imageLocations, CallbackInfoReturnable<Collection<TextureAtlasSprite.Info>> cir) {
         usingFasterLoad = ModernFixPlatformHooks.isLoadingNormally();
+    }
+
+    @Redirect(method = "getBasicSpriteInfos", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;", ordinal = 0))
+    private Iterator<?> skipIteration(Set<?> instance, ResourceManager manager, Set<ResourceLocation> imageLocations) {
         // bail if Forge is erroring to avoid AT crashes
-        if(!usingFasterLoad) {
-            return;
-        }
+        if(!usingFasterLoad)
+            return instance.iterator();
         List<CompletableFuture<?>> futures = new ArrayList<>();
         ConcurrentLinkedQueue<TextureAtlasSprite.Info> results = new ConcurrentLinkedQueue<>();
         for(ResourceLocation location : imageLocations) {
@@ -82,11 +85,7 @@ public abstract class TextureAtlasMixin {
         }
         CompletableFuture.allOf(futures.toArray(new CompletableFuture[0])).join();
         storedResults = results;
-    }
-
-    @Redirect(method = "getBasicSpriteInfos", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;", ordinal = 0))
-    private Iterator<?> skipIteration(Set<?> instance) {
-        return usingFasterLoad ? Collections.emptyIterator() : instance.iterator();
+        return Collections.emptyIterator();
     }
 
     @Inject(method = "getBasicSpriteInfos", at = @At("RETURN"))

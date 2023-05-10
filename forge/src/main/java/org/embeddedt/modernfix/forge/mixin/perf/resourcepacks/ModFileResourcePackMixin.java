@@ -5,6 +5,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.ResourcePackFileNotFoundException;
 import net.minecraftforge.fml.loading.moddiscovery.ModFile;
 import net.minecraftforge.fml.packs.ModFileResourcePack;
+import org.embeddedt.modernfix.resources.ICachingResourcePack;
 import org.embeddedt.modernfix.resources.PackResourcesCacheEngine;
 import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.spongepowered.asm.mixin.Final;
@@ -23,7 +24,7 @@ import java.util.*;
 import java.util.function.Predicate;
 
 @Mixin(ModFileResourcePack.class)
-public abstract class ModFileResourcePackMixin {
+public abstract class ModFileResourcePackMixin implements ICachingResourcePack {
     @Shadow public abstract Set<String> getNamespaces(PackType type);
 
     @Shadow(remap = false) @Final private ModFile modFile;
@@ -32,10 +33,17 @@ public abstract class ModFileResourcePackMixin {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void cacheResources(ModFile modFile, CallbackInfo ci) {
+        invalidateCache();
+    }
+
+    @Override
+    public void invalidateCache() {
+        this.cacheEngine = null;
         this.cacheEngine = new PackResourcesCacheEngine(this::getNamespaces, (type, namespace) -> {
             return modFile.getLocator().findPath(modFile, type.getDirectory(), namespace);
         });
     }
+
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
     private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
         if(cacheEngine != null) {

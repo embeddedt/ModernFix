@@ -38,3 +38,4 @@ accessible method net/minecraft/client/renderer/texture/TextureAtlasSprite <init
 accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
 accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/server/ServerResources;
 accessible field net/minecraft/client/renderer/RenderStateShard name Ljava/lang/String;
+accessible method net/minecraft/client/gui/screens/Screen addButton (Lnet/minecraft/client/gui/components/AbstractWidget;)Lnet/minecraft/client/gui/components/AbstractWidget;

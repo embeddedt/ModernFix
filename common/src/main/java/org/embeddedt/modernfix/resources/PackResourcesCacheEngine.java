@@ -154,4 +154,20 @@ public class PackResourcesCacheEngine {
         }
         return resources;
     }
+
+    private static final WeakHashMap<ICachingResourcePack, Boolean> cachingPacks = new WeakHashMap<>();
+    public static void track(ICachingResourcePack pack) {
+        synchronized (cachingPacks) {
+            cachingPacks.put(pack, Boolean.TRUE);
+        }
+    }
+
+    public static void invalidate() {
+        synchronized (cachingPacks) {
+            cachingPacks.keySet().forEach(pack -> {
+                if(pack != null)
+                    pack.invalidateCache();
+            });
+        }
+    }
 }

@@ -34,6 +34,7 @@ public abstract class ModFileResourcePackMixin implements ICachingResourcePack {
     @Inject(method = "<init>", at = @At("TAIL"))
     private void cacheResources(ModFile modFile, CallbackInfo ci) {
         invalidateCache();
+        PackResourcesCacheEngine.track(this);
     }
 
     @Override

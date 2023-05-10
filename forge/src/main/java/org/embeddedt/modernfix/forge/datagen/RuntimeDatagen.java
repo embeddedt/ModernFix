@@ -3,19 +3,19 @@ package org.embeddedt.modernfix.forge.datagen;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.data.loading.DatagenModLoader;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
-import net.minecraftforge.forge.event.lifecycle.GatherDataEvent;
 import org.embeddedt.modernfix.ModernFix;
 
 import java.nio.file.Path;
@@ -69,10 +69,10 @@ public class RuntimeDatagen {
     }
 
     @SubscribeEvent
-    public static void onInitTitleScreen(ScreenEvent.InitScreenEvent.Post event) {
+    public static void onInitTitleScreen(ScreenEvent.Init.Post event) {
         if(isDatagenAvailable() && event.getScreen() instanceof TitleScreen) {
             TitleScreen screen = (TitleScreen)event.getScreen();
-            screen.addRenderableWidget(new Button(screen.width / 2 - 100 - 50, screen.height / 4 + 48, 50, 20, new TextComponent("DG"), (arg) -> {
+            screen.addRenderableWidget(new Button(screen.width / 2 - 100 - 50, screen.height / 4 + 48, 50, 20, Component.literal("DG"), (arg) -> {
                 runRuntimeDatagen();
             }));
         }

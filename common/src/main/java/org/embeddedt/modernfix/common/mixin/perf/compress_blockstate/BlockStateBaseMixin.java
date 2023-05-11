@@ -7,7 +7,6 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.Property;
-import net.minecraft.world.level.material.Material;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -17,15 +16,6 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState> {
     protected BlockStateBaseMixin(Block object, ImmutableMap<Property<?>, Comparable<?>> immutableMap, MapCodec<BlockState> mapCodec) {
         super(object, immutableMap, mapCodec);
-    }
-
-    @Redirect(method = "*", at = @At(
-            value = "FIELD",
-            opcode = Opcodes.GETFIELD,
-            target = "Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase;material:Lnet/minecraft/world/level/material/Material;"
-    ))
-    private Material getMaterial(BlockBehaviour.BlockStateBase base) {
-        return this.owner.properties.material;
     }
 
     @Redirect(method = "*", at = @At(

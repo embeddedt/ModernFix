@@ -4,6 +4,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.events.GuiEventListener;
@@ -79,14 +80,14 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         }
 
         @Override
-        public void render(PoseStack matrixStack, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
+        public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
             MutableComponent nameComponent = Component.literal(this.name);
             if(this.option.isUserDefined())
                 nameComponent = nameComponent.withStyle(ChatFormatting.ITALIC).append(Component.translatable("modernfix.config.not_default"));
-            OptionList.this.minecraft.font.draw(matrixStack, nameComponent, (float)(left + 160 - OptionList.this.maxNameWidth), (float)(top + height / 2 - 4), 16777215);
+            guiGraphics.drawString(OptionList.this.minecraft.font, nameComponent, left + 160 - OptionList.this.maxNameWidth, top + height / 2 - 4, 16777215, false);
             this.toggleButton.setPosition(left + 175, top);
             this.toggleButton.setMessage(getOptionMessage(this.option));
-            this.toggleButton.render(matrixStack, mouseX, mouseY, partialTicks);
+            this.toggleButton.render(guiGraphics, mouseX, mouseY, partialTicks);
         }
 
         private Component getOptionMessage(Option option) {

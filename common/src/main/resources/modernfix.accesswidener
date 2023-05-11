@@ -13,7 +13,6 @@ accessible field net/minecraft/client/renderer/texture/Stitcher$Holder height I
 accessible field net/minecraft/network/syncher/EntityDataAccessor id I
 mutable field net/minecraft/network/syncher/EntityDataAccessor id I
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties isAir Z
-accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties material Lnet/minecraft/world/level/material/Material;
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties destroyTime F
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties requiresCorrectToolForDrops Z
 accessible field net/minecraft/world/level/block/state/BlockBehaviour$Properties canOcclude Z

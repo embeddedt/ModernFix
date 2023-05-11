@@ -10,6 +10,7 @@ import net.minecraft.world.level.levelgen.WorldOptions;
 import net.minecraft.world.level.storage.WorldData;
 import net.minecraft.world.level.storage.ServerLevelData;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class DummyServerConfiguration implements WorldData {
@@ -21,6 +22,11 @@ public class DummyServerConfiguration implements WorldData {
     @Override
     public void setDataConfiguration(WorldDataConfiguration arg) {
 
+    }
+
+    @Override
+    public Set<String> getRemovedFeatureFlags() {
+        return Collections.emptySet();
     }
 
     @Override

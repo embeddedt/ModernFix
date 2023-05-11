@@ -1,8 +1,9 @@
 package org.embeddedt.modernfix.forge.mixin.perf.resourcepacks;
 
-import net.minecraft.server.packs.PackType;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
 import net.minecraftforge.resource.PathPackResources;
+import org.embeddedt.modernfix.resources.ICachingResourcePack;
 import org.embeddedt.modernfix.resources.PackResourcesCacheEngine;
 import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.jetbrains.annotations.NotNull;
@@ -13,8 +14,9 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.nio.file.*;
-import java.util.*;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Set;
 import java.util.function.Predicate;
 
 /**
@@ -23,7 +25,7 @@ import java.util.function.Predicate;
  * and 1.18.
  */
 @Mixin(PathPackResources.class)
-public abstract class ModFileResourcePackMixin {
+public abstract class ModFileResourcePackMixin implements ICachingResourcePack {
     @Shadow protected abstract Path resolve(String... paths);
 
     @Shadow @NotNull
@@ -33,21 +35,30 @@ public abstract class ModFileResourcePackMixin {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void cacheResources(String packName, Path source, CallbackInfo ci) {
-        this.cacheEngine = null;
+        invalidateCache();
+        PackResourcesCacheEngine.track(this);
     }
 
-    private void generateResourceCache() {
+    private PackResourcesCacheEngine generateResourceCache() {
         synchronized (this) {
-            if(this.cacheEngine != null)
-                return;
-            this.cacheEngine = new PackResourcesCacheEngine(this::getNamespacesFromDisk, (type, namespace) -> this.resolve(type.getDirectory(), namespace));
+            PackResourcesCacheEngine engine = this.cacheEngine;
+            if(engine != null)
+                return engine;
+            this.cacheEngine = engine = new PackResourcesCacheEngine(this::getNamespacesFromDisk, (type, namespace) -> this.resolve(type.getDirectory(), namespace));
+            return engine;
         }
+    }
+
+    @Override
+    public void invalidateCache() {
+        this.cacheEngine = null;
     }
 
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
     private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
-        if(cacheEngine != null) {
-            Set<String> namespaces = cacheEngine.getNamespaces(type);
+        PackResourcesCacheEngine engine = cacheEngine;
+        if(engine != null) {
+            Set<String> namespaces = engine.getNamespaces(type);
             if(namespaces != null)
                 cir.setReturnValue(namespaces);
         }
@@ -55,9 +66,9 @@ public abstract class ModFileResourcePackMixin {
 
     @Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
-        this.generateResourceCache();
-        if(cacheEngine != null)
-            cir.setReturnValue(this.cacheEngine.hasResource(path));
+        PackResourcesCacheEngine engine = this.generateResourceCache();
+        if(engine != null)
+            cir.setReturnValue(engine.hasResource(path));
     }
 
     /**
@@ -69,7 +80,6 @@ public abstract class ModFileResourcePackMixin {
     {
         if(!PackTypeHelper.isVanillaPackType(type) || this.cacheEngine == null)
             return;
-        this.generateResourceCache();
-        cir.setReturnValue(this.cacheEngine.getResources(type, resourceNamespace, pathIn, Integer.MAX_VALUE, filter));
+        cir.setReturnValue(this.generateResourceCache().getResources(type, resourceNamespace, pathIn, Integer.MAX_VALUE, filter));
     }
 }

@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.fabric.mixin.perf.fabric_resourcepacks;
+package org.embeddedt.modernfix.fabric.mixin.perf.resourcepacks;
 
 import net.fabricmc.fabric.impl.resource.loader.ModNioResourcePack;
 import net.fabricmc.loader.api.metadata.ModMetadata;
@@ -6,6 +6,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.RequiresMod;
+import org.embeddedt.modernfix.resources.ICachingResourcePack;
 import org.embeddedt.modernfix.resources.PackResourcesCacheEngine;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -23,7 +24,7 @@ import java.util.Set;
 
 @Mixin(ModNioResourcePack.class)
 @RequiresMod("fabric-resource-loader-v0")
-public abstract class ModNioResourcePackMixin {
+public abstract class ModNioResourcePackMixin implements ICachingResourcePack {
     @Shadow public abstract Set<String> getNamespaces(PackType type);
 
     @Shadow @Final private List<Path> basePaths;
@@ -32,6 +33,13 @@ public abstract class ModNioResourcePackMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void cacheResources(CallbackInfo ci) {
+        invalidateCache();
+        PackResourcesCacheEngine.track(this);
+    }
+
+    @Override
+    public void invalidateCache() {
+        this.cacheEngine = null;
         if(this.basePaths.size() == 1) {
             Path basePath = this.basePaths.get(0);
             this.cacheEngine = new PackResourcesCacheEngine(this::getNamespaces, (type, namespace) -> {

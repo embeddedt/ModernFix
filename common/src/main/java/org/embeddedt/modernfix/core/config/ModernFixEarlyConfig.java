@@ -139,15 +139,15 @@ public class ModernFixEarlyConfig {
 
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = ImmutableMap.<String, Boolean>builder()
             .put("mixin.perf.dynamic_resources", false)
-            .put("mixin.feature.reduce_loading_screen_freezes", false)
             .put("mixin.feature.direct_stack_trace", false)
             .put("mixin.perf.rewrite_registry", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.compress_blockstate", false)
             .put("mixin.bugfix.packet_leak", false)
             .put("mixin.perf.deduplicate_location", false)
-            .put("mixin.perf.preload_block_classes", false)
-            .put("mixin.perf.faster_singleplayer_load", false)
+            .put("mixin.perf.dynamic_entity_renderers", false)
+            .put("mixin.feature.integrated_server_watchdog", true)
+            .put("mixin.perf.faster_item_rendering", false)
             .put("mixin.perf.blast_search_trees", shouldReplaceSearchTrees)
             .put("mixin.devenv", isDevEnv)
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)
@@ -185,8 +185,12 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
+        disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");
+        disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
         disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
         disableIfModPresent("mixin.launch.class_search_cache", "optifine");
+        disableIfModPresent("mixin.perf.datapack_reload_exceptions", "cyanide");
+        disableIfModPresent("mixin.perf.faster_texture_loading", "stitch");
     }
 
     private void disableIfModPresent(String configName, String... ids) {
@@ -195,8 +199,6 @@ public class ModernFixEarlyConfig {
                 Option option = this.options.get(configName);
                 if(option != null)
                     option.addModOverride(false, id);
-                else
-                    LOGGER.warn("Can't disable missing option {}", configName);
             }
         }
     }

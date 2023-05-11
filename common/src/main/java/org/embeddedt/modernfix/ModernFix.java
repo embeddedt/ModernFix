@@ -9,10 +9,11 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.command.ModernFixCommands;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
+import org.embeddedt.modernfix.resources.ReloadExecutor;
 import org.embeddedt.modernfix.util.ClassInfoManager;
 
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.*;
+import java.util.concurrent.ExecutorService;
 
 // The value here should match an entry in the META-INF/mods.toml file
 public class ModernFix {
@@ -31,12 +32,7 @@ public class ModernFix {
 
     static {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.dedicated_reload_executor.ReloadExecutor")) {
-            try {
-                resourceReloadService = Util.makeExecutor("ResourceReload");
-            } catch(Throwable e) {
-                LOGGER.error("Error creating resource reload service, using fallback", e);
-                resourceReloadService = Util.backgroundExecutor();
-            }
+            resourceReloadService = ReloadExecutor.createCustomResourceReloadExecutor();
         } else {
             resourceReloadService = Util.backgroundExecutor();
         }

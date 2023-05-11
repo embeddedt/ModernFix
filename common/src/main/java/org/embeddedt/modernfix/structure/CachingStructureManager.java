@@ -50,6 +50,12 @@ public class CachingStructureManager {
 
     private static final Set<String> laggyStructureMods = new ObjectOpenHashSet<>();
 
+    private static final int MAX_HASH_LENGTH = 9;
+
+    private static String truncateHash(String hash) {
+        return hash.substring(0, MAX_HASH_LENGTH + 1);
+    }
+
     public static CompoundTag readStructureTag(ResourceLocation location, DataFixer datafixer, InputStream stream) throws IOException {
         byte[] structureBytes = toBytes(stream);
         CompoundTag currentTag = NbtIo.readCompressed(new ByteArrayInputStream(structureBytes));
@@ -58,20 +64,22 @@ public class CachingStructureManager {
         }
         int currentDataVersion = currentTag.getInt("DataVersion");
         if(currentDataVersion < SharedConstants.getCurrentVersion().getDataVersion().getVersion()) {
-            synchronized (laggyStructureMods) {
-                if(laggyStructureMods.add(location.getNamespace())) {
-                    ModernFix.LOGGER.warn("Mod {} is shipping outdated structure files, which can cause worldgen lag; please report this to them.", location.getNamespace());
-                }
-            }
             /* Needs upgrade, try looking up from cache */
             MessageDigest hasher = digestThreadLocal.get();
             hasher.reset();
             String hash = encodeHex(hasher.digest(structureBytes));
-            CompoundTag cachedUpgraded = getCachedUpgraded(location, hash);
+            CompoundTag cachedUpgraded = getCachedUpgraded(location, truncateHash(hash));
+            if(cachedUpgraded == null)
+                cachedUpgraded = getCachedUpgraded(location, hash); /* pick up old cache */
             if(cachedUpgraded != null && cachedUpgraded.getInt("DataVersion") == SharedConstants.getCurrentVersion().getDataVersion().getVersion()) {
                 ModernFix.LOGGER.debug("Using cached upgraded version of {}", location);
                 currentTag = cachedUpgraded;
             } else {
+                synchronized (laggyStructureMods) {
+                    if(laggyStructureMods.add(location.getNamespace())) {
+                        ModernFix.LOGGER.warn("Mod {} is shipping outdated structure files, which can cause worldgen lag; please report this to them.", location.getNamespace());
+                    }
+                }
                 ModernFix.LOGGER.debug("Structure {} is being run through DFU (hash {}), this will cause launch time delays", location, hash);
                 currentTag = DataFixTypes.STRUCTURE.update(datafixer, currentTag, currentDataVersion,
                         SharedConstants.getCurrentVersion().getDataVersion().getVersion());
@@ -100,7 +108,7 @@ public class CachingStructureManager {
     }
 
     private static synchronized void saveCachedUpgraded(ResourceLocation location, String hash, CompoundTag tagToSave) {
-        File theFile = getCachePath(location, hash);
+        File theFile = getCachePath(location, truncateHash(hash));
         try {
             NbtIo.writeCompressed(tagToSave, theFile);
         } catch(IOException e) {

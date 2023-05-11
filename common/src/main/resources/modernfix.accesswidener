@@ -44,3 +44,4 @@ accessible method net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
 accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
 accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/server/MinecraftServer$ReloadableResources;
 accessible class net/minecraft/server/MinecraftServer$ReloadableResources
+accessible method net/minecraft/client/gui/screens/Screen addRenderableWidget (Lnet/minecraft/client/gui/components/events/GuiEventListener;)Lnet/minecraft/client/gui/components/events/GuiEventListener;

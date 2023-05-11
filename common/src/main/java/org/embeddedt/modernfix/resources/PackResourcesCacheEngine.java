@@ -1,10 +1,13 @@
 package org.embeddedt.modernfix.resources;
 
+import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
+import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.PackTypeHelper;
 
 import java.io.IOException;
@@ -14,6 +17,7 @@ import java.util.*;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 /**
@@ -26,6 +30,9 @@ public class PackResourcesCacheEngine {
     private final Map<PackType, Set<String>> namespacesByType;
     private final Set<CachedResourcePath> containedPaths;
     private final EnumMap<PackType, Map<String, List<CachedResourcePath>>> resourceListings;
+    private volatile boolean cacheGenerationFlag = false;
+    private List<Runnable> cacheGenerationTasks = new ArrayList<>();
+    private Path debugPath;
 
     public PackResourcesCacheEngine(Function<PackType, Set<String>> namespacesRetriever, BiFunction<PackType, String, Path> basePathRetriever) {
         this.namespacesByType = new EnumMap<>(PackType.class);
@@ -36,32 +43,44 @@ public class PackResourcesCacheEngine {
         }
         this.containedPaths = new ObjectOpenHashSet<>();
         this.resourceListings = new EnumMap<>(PackType.class);
+        // used for log message
+        this.debugPath = basePathRetriever.apply(PackType.CLIENT_RESOURCES, "minecraft").toAbsolutePath();
         for(PackType type : PackType.values()) {
             Collection<String> namespaces = PackTypeHelper.isVanillaPackType(type) ? this.namespacesByType.get(type) : namespacesRetriever.apply(type);
-            ImmutableMap.Builder<String, List<CachedResourcePath>> packTypedMap = ImmutableMap.builder();
-            for(String namespace : namespaces) {
-                try {
-                    ImmutableList.Builder<CachedResourcePath> namespacedList = ImmutableList.builder();
-                    Path root = basePathRetriever.apply(type, namespace).toAbsolutePath();
-                    String[] prefix = new String[] { type.getDirectory(), namespace };
-                    try (Stream<Path> stream = Files.walk(root)) {
-                        stream
-                                .map(path -> root.relativize(path.toAbsolutePath()))
-                                .filter(PackResourcesCacheEngine::isValidCachedResourcePath)
-                                .forEach(path -> {
-                                    CachedResourcePath cachedPath = new CachedResourcePath(prefix, path);
-                                    this.containedPaths.add(cachedPath);
-                                    if(!cachedPath.getFileName().endsWith(".mcmeta"))
-                                        namespacedList.add(cachedPath);
-                                });
+            Collection<Pair<String, Path>> namespacedRoots = namespaces.stream().map(s -> Pair.of(s, basePathRetriever.apply(type, s).toAbsolutePath())).collect(Collectors.toList());
+            cacheGenerationTasks.add(() -> {
+                ImmutableMap.Builder<String, List<CachedResourcePath>> packTypedMap = ImmutableMap.builder();
+                for(Pair<String, Path> pair : namespacedRoots) {
+                    try {
+                        ImmutableList.Builder<CachedResourcePath> namespacedList = ImmutableList.builder();
+                        String namespace = pair.getFirst();
+                        Path root = pair.getSecond();
+                        String[] prefix = new String[] { type.getDirectory(), namespace };
+                        try (Stream<Path> stream = Files.walk(root)) {
+                            stream
+                                    .map(path -> root.relativize(path.toAbsolutePath()))
+                                    .filter(PackResourcesCacheEngine::isValidCachedResourcePath)
+                                    .forEach(path -> {
+                                        CachedResourcePath cachedPath = new CachedResourcePath(prefix, path);
+                                        synchronized (this.containedPaths) {
+                                            this.containedPaths.add(cachedPath);
+                                        }
+                                        if(!cachedPath.getFileName().endsWith(".mcmeta"))
+                                            namespacedList.add(cachedPath);
+                                    });
+                        }
+                        packTypedMap.put(namespace, namespacedList.build());
+                    } catch(IOException ignored) {
                     }
-                    packTypedMap.put(namespace, namespacedList.build());
-                } catch(IOException ignored) {
                 }
-            }
-            this.resourceListings.put(type, packTypedMap.build());
+                synchronized (this.resourceListings) {
+                    this.resourceListings.put(type, packTypedMap.build());
+                }
+            });
         }
-        ((ObjectOpenHashSet<CachedResourcePath>)this.containedPaths).trim();
+        cacheGenerationTasks.add(() -> {
+            ((ObjectOpenHashSet<CachedResourcePath>)this.containedPaths).trim();
+        });
     }
 
     private static boolean isValidCachedResourcePath(Path path) {
@@ -86,13 +105,37 @@ public class PackResourcesCacheEngine {
             return null;
     }
 
+    private void doGenerateCache() {
+        Stopwatch watch = Stopwatch.createStarted();
+        for(Runnable r : this.cacheGenerationTasks) {
+            r.run();
+        }
+        watch.stop();
+        ModernFix.LOGGER.debug("Generated cache for {} in {}", debugPath, watch);
+        debugPath = null;
+        cacheGenerationTasks = ImmutableList.of();
+    }
+
+    private void awaitLoad() {
+        if(!this.cacheGenerationFlag) {
+            synchronized (this) {
+                if(!this.cacheGenerationFlag) {
+                    this.doGenerateCache();
+                    this.cacheGenerationFlag = true;
+                }
+            }
+        }
+    }
+
     public boolean hasResource(String path) {
+        awaitLoad();
         return this.containedPaths.contains(new CachedResourcePath(path));
     }
 
     public Collection<ResourceLocation> getResources(PackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<ResourceLocation> filter) {
         if(!PackTypeHelper.isVanillaPackType(type))
             throw new IllegalArgumentException("Only vanilla PackTypes are supported");
+        awaitLoad();
         List<CachedResourcePath> paths = resourceListings.get(type).getOrDefault(resourceNamespace, Collections.emptyList());
         if(paths.isEmpty())
             return Collections.emptyList();
@@ -110,5 +153,21 @@ public class PackResourcesCacheEngine {
             resources.add(foundResource);
         }
         return resources;
+    }
+
+    private static final WeakHashMap<ICachingResourcePack, Boolean> cachingPacks = new WeakHashMap<>();
+    public static void track(ICachingResourcePack pack) {
+        synchronized (cachingPacks) {
+            cachingPacks.put(pack, Boolean.TRUE);
+        }
+    }
+
+    public static void invalidate() {
+        synchronized (cachingPacks) {
+            cachingPacks.keySet().forEach(pack -> {
+                if(pack != null)
+                    pack.invalidateCache();
+            });
+        }
     }
 }

@@ -58,6 +58,10 @@ public class ModelBakeryHelpers {
                 }
             }
         }
+        // check if there is only one possible state
+        if(fixedProperties.size() == stateDefinition.getProperties().size()) {
+            return ImmutableList.of(fixedState);
+        }
         // generate all possible blockstates from the remaining properties
         ArrayList<Property<?>> anyProperties = new ArrayList<>(stateDefinition.getProperties());
         anyProperties.removeAll(fixedProperties);

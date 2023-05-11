@@ -4,7 +4,9 @@ import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
+import org.embeddedt.modernfix.fabric.datagen.RuntimeDatagen;
 
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -29,5 +31,8 @@ public class ModernFixClientFabric implements ClientModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             commonMod.onServerStarted(server);
         });
+        if(FabricLoader.getInstance().isModLoaded("fabric-data-generation-api-v1")) {
+            RuntimeDatagen.init();
+        }
     }
 }

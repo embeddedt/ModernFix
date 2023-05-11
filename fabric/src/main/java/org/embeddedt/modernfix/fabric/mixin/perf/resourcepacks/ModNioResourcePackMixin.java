@@ -32,6 +32,7 @@ public abstract class ModNioResourcePackMixin implements ICachingResourcePack {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void cacheResources(CallbackInfo ci) {
         invalidateCache();
+        PackResourcesCacheEngine.track(this);
     }
 
     @Override

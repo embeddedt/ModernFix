@@ -10,6 +10,8 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.entity.Entity;
+import org.embeddedt.modernfix.api.constants.IntegrationConstants;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -29,11 +31,23 @@ public class ModernFixClient {
 
     public String brandingString = null;
 
+    /**
+     * The list of loaded client integrations.
+     */
+    public static List<ModernFixClientIntegration> CLIENT_INTEGRATIONS = new ArrayList<>();
+
     public ModernFixClient() {
         // clear reserve as it's not needed
         Minecraft.reserve = new byte[0];
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
             brandingString = "ModernFix " + ModernFixPlatformHooks.getVersionString();
+        }
+        for(String className : ModernFixPlatformHooks.getCustomModOptions().get(IntegrationConstants.CLIENT_INTEGRATION_CLASS)) {
+            try {
+                CLIENT_INTEGRATIONS.add((ModernFixClientIntegration)Class.forName(className).getDeclaredConstructor().newInstance());
+            } catch(ReflectiveOperationException | ClassCastException e) {
+                ModernFix.LOGGER.error("Could not instantiate integration {}", className, e);
+            }
         }
     }
 

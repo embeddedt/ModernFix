@@ -5,6 +5,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.network.protocol.game.ClientboundCustomPayloadPacket;
 import net.minecraft.resources.ResourceLocation;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.duck.IClientNetHandler;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -31,9 +32,14 @@ public class SCustomPayloadPlayPacketMixin {
 
     @Redirect(method = "handle(Lnet/minecraft/network/protocol/game/ClientGamePacketListener;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/game/ClientGamePacketListener;handleCustomPayload(Lnet/minecraft/network/protocol/game/ClientboundCustomPayloadPacket;)V"))
     private void handleAndFree(ClientGamePacketListener instance, ClientboundCustomPayloadPacket sCustomPayloadPlayPacket) {
-        /* in 1.16, this method creates a copy inside it, but handles freeing correctly */
-        instance.handleCustomPayload(sCustomPayloadPlayPacket);
+        try {
+            instance.handleCustomPayload(sCustomPayloadPlayPacket);
+        } finally {
+            FriendlyByteBuf copied = ((IClientNetHandler)instance).getCopiedCustomBuffer();
+            if(copied != null)
+                copied.release();
+        }
         if(this.needsRelease)
-            this.data.release(); /* free our own copy of the data if needed */
+            this.data.release();
     }
 }

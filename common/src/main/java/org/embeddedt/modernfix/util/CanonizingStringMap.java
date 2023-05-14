@@ -77,11 +77,15 @@ public class CanonizingStringMap<T> implements Map<String, T> {
     public void putAll(@NotNull Map<? extends String, ? extends T> map) {
         if(map.size() == 0)
             return;
+        // grow early if we know there are enough non-overlapping keys
+        if((map.size() - backingMap.size()) > GROWTH_THRESHOLD && !(backingMap instanceof Object2ObjectOpenHashMap)) {
+            backingMap = new Object2ObjectOpenHashMap<>(backingMap);
+        }
         map.forEach((String key, T val) -> {
             key = KEY_INTERNER.intern(key);
             backingMap.put(key, val);
         });
-        // if it's too big to be an array, grow it
+        // if it's still an array, and now too big, grow it
         if(backingMap.size() > GROWTH_THRESHOLD && !(backingMap instanceof Object2ObjectOpenHashMap)) {
             backingMap = new Object2ObjectOpenHashMap<>(backingMap);
         }

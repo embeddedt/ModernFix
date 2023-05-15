@@ -2,8 +2,6 @@ package org.embeddedt.modernfix.platform.forge;
 
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.brigadier.CommandDispatcher;
-import cpw.mods.modlauncher.*;
-import cpw.mods.modlauncher.api.INameMappingService;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.commands.CommandSourceStack;
@@ -20,15 +18,13 @@ import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.LoadingModList;
 import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.util.DummyList;
-import org.objectweb.asm.Opcodes;
-import org.objectweb.asm.tree.*;
+import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
 
 import java.io.IOException;
@@ -37,10 +33,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-import java.util.*;
 import java.util.function.Consumer;
-import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class ModernFixPlatformHooksImpl {
     public static boolean isClient() {
@@ -144,40 +137,7 @@ public class ModernFixPlatformHooksImpl {
     }
 
     public static void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
-        if(mixinClassName.equals("org.embeddedt.modernfix.common.compress_blockstate.perf.mixin.BlockStateBaseMixin")) {
-            // Delete unused fields off BlockStateBase
-            Set<String> fieldsToDelete = Stream.of(
-                    "field_235702_f_", // isAir
-                    "field_235703_g_", // material
-                    "field_235705_i_", // destroySpeed
-                    "field_235706_j_", // requiresCorrectToolForDrops
-                    "field_235707_k_", // canOcclude
-                    "field_235708_l_", // isRedstoneConductor
-                    "field_235709_m_", // isSuffocating
-                    "field_235710_n_", // isViewBlocking
-                    "field_235711_o_", // hasPostProcess
-                    "field_235712_p_"  // emissiveRendering
-            ).map(name -> ObfuscationReflectionHelper.remapName(INameMappingService.Domain.FIELD, name)).collect(Collectors.toSet());
-            targetClass.fields.removeIf(field -> {
-                if(fieldsToDelete.contains(field.name)) {
-                    return true;
-                }
-                return false;
-            });
-            for(MethodNode m : targetClass.methods) {
-                if(m.name.equals("<init>")) {
-                    ListIterator<AbstractInsnNode> iter = m.instructions.iterator();
-                    while(iter.hasNext()) {
-                        AbstractInsnNode node = iter.next();
-                        if(node.getOpcode() == Opcodes.PUTFIELD) {
-                            if(fieldsToDelete.contains(((FieldInsnNode)node).name)) {
-                                iter.remove();
-                            }
-                        }
-                    }
-                }
-            }
-        }
+
     }
 
     public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {

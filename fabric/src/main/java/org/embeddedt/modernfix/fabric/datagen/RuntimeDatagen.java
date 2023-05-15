@@ -4,7 +4,7 @@ import net.fabricmc.fabric.api.client.screen.v1.ScreenEvents;
 import net.fabricmc.fabric.impl.datagen.FabricDataGenHelper;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.TitleScreen;
-import net.minecraft.network.chat.TextComponent;
+import net.minecraft.network.chat.Component;
 import org.embeddedt.modernfix.ModernFix;
 
 import java.lang.reflect.Method;
@@ -31,7 +31,7 @@ public class RuntimeDatagen {
             return;
         ScreenEvents.AFTER_INIT.register(((client, s, scaledWidth, scaledHeight) -> {
             if(s instanceof TitleScreen screen) {
-                screen.addRenderableWidget(new Button(screen.width / 2 - 100 - 50, screen.height / 4 + 48, 50, 20, new TextComponent("DG"), (arg) -> {
+                screen.addRenderableWidget(new Button(screen.width / 2 - 100 - 50, screen.height / 4 + 48, 50, 20, Component.literal("DG"), (arg) -> {
                     runRuntimeDatagen();
                 }));
             }

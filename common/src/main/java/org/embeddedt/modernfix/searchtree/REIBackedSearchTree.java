@@ -4,8 +4,10 @@ import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
 import me.shedaniel.rei.impl.client.search.AsyncSearchManager;
+import net.minecraft.client.searchtree.RefreshableSearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -53,4 +55,21 @@ public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
         }
         return listCache;
     }
+
+    public static final SearchTreeProviderRegistry.Provider PROVIDER = new SearchTreeProviderRegistry.Provider() {
+        @Override
+        public RefreshableSearchTree<ItemStack> getSearchTree(boolean tag) {
+            return new REIBackedSearchTree(tag);
+        }
+
+        @Override
+        public boolean canUse() {
+            return ModernFixPlatformHooks.modPresent("roughlyenoughitems");
+        }
+
+        @Override
+        public String getName() {
+            return "REI";
+        }
+    };
 }

@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.forge.searchtree;
+package org.embeddedt.modernfix.searchtree;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;

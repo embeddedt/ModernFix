@@ -5,13 +5,17 @@ import net.fabricmc.api.EnvType;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFixFabric;
 import org.objectweb.asm.tree.*;
 
 import java.nio.file.Path;
+import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ModernFixPlatformHooksImpl {
@@ -66,5 +70,9 @@ public class ModernFixPlatformHooksImpl {
 
     public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
         CommandRegistrationCallback.EVENT.register((dispatcher, arg, env) -> handler.accept(dispatcher));
+    }
+
+    public static void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
+        /* no-op on Fabric */
     }
 }

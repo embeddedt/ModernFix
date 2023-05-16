@@ -88,7 +88,8 @@ public abstract class ModelBakerImplMixin {
             if(arg != ModelBakery.MISSING_MODEL_LOCATION && debugDynamicModelLoading)
                 ModernFix.LOGGER.warn("Model {} not present", arg);
             wasMissingModel = true;
-        }
+        } else
+            wasMissingModel = false; /* sometimes this runs more than once e.g. for recursive model baking */
         cir.getReturnValue().resolveParents(this.field_40571::getModel);
     }
 

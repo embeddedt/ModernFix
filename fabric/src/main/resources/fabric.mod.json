@@ -22,7 +22,8 @@
     "client": [
       "org.embeddedt.modernfix.ModernFixClientFabric"
     ],
-    "modmenu": [ "org.embeddedt.modernfix.fabric.modmenu.ModernFixModMenuApiImpl" ]
+    "modmenu": [ "org.embeddedt.modernfix.fabric.modmenu.ModernFixModMenuApiImpl" ],
+    "jei_mod_plugin": [ "org.embeddedt.modernfix.searchtree.JEIRuntimeCapturer"]
   },
   "mixins": [
     "modernfix-fabric.mixins.json",

@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.searchtree;
 import net.minecraft.client.searchtree.RefreshableSearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.core.config.Option;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -15,7 +16,8 @@ public class SearchTreeProviderRegistry {
             if(p.canUse())
                 return p;
         }
-        if(ModernFixMixinPlugin.instance.config.getEffectiveOptionForMixin("mixin.perf.blast_search_trees.Registry").isOverridden())
+        Option option = ModernFixMixinPlugin.instance.config.getEffectiveOptionForMixin("perf.blast_search_trees.Registry");
+        if(option != null && option.isOverridden())
             return DummySearchTree.PROVIDER;
         else
             return null;

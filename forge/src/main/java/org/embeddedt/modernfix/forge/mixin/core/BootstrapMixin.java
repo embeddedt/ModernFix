@@ -28,9 +28,6 @@ public class BootstrapMixin {
     /* for https://github.com/MinecraftForge/MinecraftForge/issues/9505 */
     @Inject(method = "bootStrap", at = @At("RETURN"))
     private static void doClassloadHack(CallbackInfo ci) {
-        if(!isBootstrapped) {
-            NetworkConstants.init();
-            LOGGER.info("Worked around Forge issue #9505");
-        }
+        NetworkConstants.init();
     }
 }

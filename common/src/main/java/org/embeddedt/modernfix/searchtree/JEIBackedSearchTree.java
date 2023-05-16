@@ -1,5 +1,6 @@
-package org.embeddedt.modernfix.forge.searchtree;
+package org.embeddedt.modernfix.searchtree;
 
+import com.google.common.collect.ImmutableList;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.common.Internal;
 import mezz.jei.common.ingredients.IngredientFilter;
@@ -8,12 +9,12 @@ import mezz.jei.common.runtime.JeiRuntime;
 import net.minecraft.client.searchtree.ReloadableIdSearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.forge.mixin.perf.blast_search_trees.IngredientFilterInvoker;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
-import org.embeddedt.modernfix.searchtree.DummySearchTree;
-import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -27,7 +28,25 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     private String lastSearchText = "";
     private final List<ItemStack> listCache = new ArrayList<>();
 
-    private static Field filterField = null;
+    private static final Field filterField;
+    private static final MethodHandle getIngredientListUncached;
+
+    static {
+        MethodHandle m;
+        Field f;
+        try {
+            Method jeiMethod = IngredientFilter.class.getDeclaredMethod("getIngredientListUncached", String.class);
+            jeiMethod.setAccessible(true);
+            m = MethodHandles.lookup().unreflect(jeiMethod);
+            f = IngredientFilterApi.class.getDeclaredField("ingredientFilter");
+            f.setAccessible(true);
+        } catch(ReflectiveOperationException | RuntimeException | NoClassDefFoundError e) {
+            m = null;
+            f = null;
+        }
+        getIngredientListUncached = m;
+        filterField = f;
+    }
 
     public JEIBackedSearchTree(boolean filteringByTag) {
         this.filteringByTag = filteringByTag;
@@ -39,10 +58,6 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
             IngredientFilterApi iFilterApi = (IngredientFilterApi)runtime.get().getIngredientFilter();
             IngredientFilter filter;
             try {
-                if(filterField == null) {
-                    filterField = IngredientFilterApi.class.getDeclaredField("ingredientFilter");
-                    filterField.setAccessible(true);
-                }
                 filter = (IngredientFilter)filterField.get(iFilterApi);
             } catch(ReflectiveOperationException e) {
                 ModernFix.LOGGER.error(e);
@@ -58,7 +73,14 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     private List<ItemStack> searchJEI(IngredientFilter filter, String pSearchText) {
         if(!pSearchText.equals(lastSearchText)) {
             listCache.clear();
-            List<ITypedIngredient<?>> ingredients = ((IngredientFilterInvoker)filter).invokeGetIngredientListUncached(filteringByTag ? ("$" + pSearchText) : pSearchText);
+            List<ITypedIngredient<?>> ingredients;
+            String finalSearchTerm = filteringByTag ? ("$" + pSearchText) : pSearchText;
+            try {
+                ingredients = (List<ITypedIngredient<?>>)getIngredientListUncached.invokeExact(filter, finalSearchTerm);
+            } catch(Throwable e) {
+                ModernFix.LOGGER.error("Error searching", e);
+                ingredients = ImmutableList.of();
+            }
             for(ITypedIngredient<?> ingredient : ingredients) {
                 if(ingredient.getIngredient() instanceof ItemStack) {
                     listCache.add((ItemStack)ingredient.getIngredient());
@@ -77,7 +99,7 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
 
         @Override
         public boolean canUse() {
-            return ModernFixPlatformHooks.modPresent("jei");
+            return ModernFixPlatformHooks.modPresent("jei") && getIngredientListUncached != null && filterField != null;
         }
 
         @Override

@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.searchtree;
 
 import net.minecraft.client.searchtree.ReloadableIdSearchTree;
 import net.minecraft.world.item.ItemStack;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,7 +15,10 @@ public class SearchTreeProviderRegistry {
             if(p.canUse())
                 return p;
         }
-        return DummySearchTree.PROVIDER;
+        if(ModernFixMixinPlugin.instance.config.getEffectiveOptionForMixin("mixin.perf.blast_search_trees.Registry").isOverridden())
+            return DummySearchTree.PROVIDER;
+        else
+            return null;
     }
 
     public static synchronized void register(Provider p) {

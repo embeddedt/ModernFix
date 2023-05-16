@@ -21,6 +21,8 @@ public class MinecraftMixin {
     @Inject(method = "createSearchTrees", at = @At("HEAD"), cancellable = true)
     private void replaceSearchTrees(CallbackInfo ci) {
         SearchTreeProviderRegistry.Provider provider = SearchTreeProviderRegistry.getSearchTreeProvider();
+        if(provider == null)
+            return;
         ModernFix.LOGGER.info("Replacing search trees with '{}' provider", provider.getName());
         this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, provider.getSearchTree(false));
         this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, provider.getSearchTree(true));

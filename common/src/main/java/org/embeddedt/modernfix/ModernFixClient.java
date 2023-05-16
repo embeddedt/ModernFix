@@ -14,6 +14,9 @@ import net.minecraft.world.entity.Entity;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
+import org.embeddedt.modernfix.searchtree.JEIBackedSearchTree;
+import org.embeddedt.modernfix.searchtree.REIBackedSearchTree;
+import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
 import java.lang.management.ManagementFactory;
@@ -36,6 +39,8 @@ public class ModernFixClient {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
             brandingString = "ModernFix " + ModernFixPlatformHooks.getVersionString();
         }
+        SearchTreeProviderRegistry.register(JEIBackedSearchTree.PROVIDER);
+        SearchTreeProviderRegistry.register(REIBackedSearchTree.PROVIDER);
     }
 
     public void resetWorldLoadStateMachine() {

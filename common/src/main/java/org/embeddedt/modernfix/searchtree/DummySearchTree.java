@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.searchtree;
 
 import net.minecraft.client.searchtree.MutableSearchTree;
 import net.minecraft.client.searchtree.ReloadableIdSearchTree;
+import net.minecraft.world.item.ItemStack;
 
 import java.util.Collections;
 import java.util.List;
@@ -34,4 +35,22 @@ public class DummySearchTree<T> extends ReloadableIdSearchTree<T> implements Mut
     public List<T> search(String pSearchText) {
         return Collections.emptyList();
     }
+
+    static final SearchTreeProviderRegistry.Provider PROVIDER = new SearchTreeProviderRegistry.Provider() {
+
+        @Override
+        public ReloadableIdSearchTree<ItemStack> getSearchTree(boolean tag) {
+            return new DummySearchTree<>();
+        }
+
+        @Override
+        public boolean canUse() {
+            return true;
+        }
+
+        @Override
+        public String getName() {
+            return "Dummy";
+        }
+    };
 }

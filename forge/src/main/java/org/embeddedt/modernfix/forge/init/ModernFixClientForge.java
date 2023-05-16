@@ -22,7 +22,9 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.forge.searchtree.JEIBackedSearchTree;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
+import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 
 public class ModernFixClientForge {
     private static ModernFixClient commonMod;
@@ -34,6 +36,7 @@ public class ModernFixClientForge {
                 ConfigGuiHandler.ConfigGuiFactory.class,
                 () ->  new ConfigGuiHandler.ConfigGuiFactory((mc, screen) -> new ModernFixConfigScreen(screen))
         );
+        SearchTreeProviderRegistry.register(JEIBackedSearchTree.PROVIDER);
     }
 
     private KeyMapping configKey;

@@ -5,10 +5,13 @@ import mezz.jei.common.Internal;
 import mezz.jei.common.ingredients.IngredientFilter;
 import mezz.jei.common.ingredients.IngredientFilterApi;
 import mezz.jei.common.runtime.JeiRuntime;
+import net.minecraft.client.searchtree.ReloadableIdSearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.forge.mixin.perf.blast_search_trees.IngredientFilterInvoker;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
+import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -65,4 +68,21 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
         }
         return listCache;
     }
+
+    public static final SearchTreeProviderRegistry.Provider PROVIDER = new SearchTreeProviderRegistry.Provider() {
+        @Override
+        public ReloadableIdSearchTree<ItemStack> getSearchTree(boolean tag) {
+            return new JEIBackedSearchTree(tag);
+        }
+
+        @Override
+        public boolean canUse() {
+            return ModernFixPlatformHooks.modPresent("jei");
+        }
+
+        @Override
+        public String getName() {
+            return "JEI";
+        }
+    };
 }

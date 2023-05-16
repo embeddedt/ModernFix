@@ -3,19 +3,13 @@ package org.embeddedt.modernfix.common.mixin.perf.cache_strongholds;
 import net.minecraft.core.Holder;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.util.profiling.ProfilerFiller;
-import net.minecraft.world.level.CustomSpawner;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.dimension.LevelStem;
 import net.minecraft.world.level.storage.DimensionDataStorage;
-import net.minecraft.world.level.storage.LevelStorageSource;
-import net.minecraft.world.level.storage.ServerLevelData;
 import net.minecraft.world.level.storage.WritableLevelData;
 import org.embeddedt.modernfix.duck.IChunkGenerator;
 import org.embeddedt.modernfix.duck.IServerLevel;
@@ -28,8 +22,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.function.Supplier;
 
 @Mixin(ServerLevel.class)
@@ -55,7 +47,7 @@ public abstract class ServerLevelMixin extends Level implements IServerLevel {
      * Now start the stronghold generation process.
      */
     @Inject(method = "<init>", at = @At("TAIL"))
-    private void ensureGeneration(MinecraftServer minecraftServer, Executor executor, LevelStorageSource.LevelStorageAccess arg, ServerLevelData arg2, ResourceKey<Level> arg3, LevelStem arg4, ChunkProgressListener arg5, boolean bl, long l, List<CustomSpawner> list, boolean bl2, CallbackInfo ci) {
+    private void ensureGeneration(CallbackInfo ci) {
         mfix$strongholdCache = this.getDataStorage().computeIfAbsent(StrongholdLocationCache::load,
                 StrongholdLocationCache::new,
                 StrongholdLocationCache.getFileId(this.dimensionTypeRegistration()));

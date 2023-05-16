@@ -42,14 +42,15 @@ public class ModernFixCommands {
                                 ResourceLocation structureLocation = new ResourceLocation(found.getNamespace(), matcher.group(1));
                                 try(InputStream resource = entry.getValue().open()) {
                                     CachingStructureManager.readStructureTag(structureLocation, level.getServer().getFixerUpper(), resource);
-                                    context.getSource().sendSuccess(Component.literal("checked " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")"), false);
+                                    Component msg = Component.literal("checked " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")");
+                                    context.getSource().sendSuccess(() -> msg, false);
                                 } catch(Throwable e) {
                                     ModernFix.LOGGER.error("Couldn't upgrade structure " + found, e);
                                     context.getSource().sendFailure(Component.literal("error reading " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")"));
                                 }
                             }
 
-                            context.getSource().sendSuccess(Component.literal("All structures upgraded"), false);
+                            context.getSource().sendSuccess(() -> Component.literal("All structures upgraded"), false);
 
                             return 1;
                         }))

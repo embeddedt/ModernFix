@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.common.mixin.perf.blast_search_trees;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.searchtree.SearchRegistry;
-import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
@@ -17,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.List;
-import java.util.Map;
 
 @Mixin(Minecraft.class)
 @ClientOnlyMixin

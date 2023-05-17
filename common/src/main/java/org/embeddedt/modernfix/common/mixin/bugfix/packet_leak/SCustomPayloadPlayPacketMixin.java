@@ -15,12 +15,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(ClientboundCustomPayloadPacket.class)
 @ClientOnlyMixin
-public abstract class SCustomPayloadPlayPacketMixin implements IClientNetHandler {
+public class SCustomPayloadPlayPacketMixin {
     @Shadow private FriendlyByteBuf data;
-
-    @Shadow public abstract FriendlyByteBuf getData();
-
-    private FriendlyByteBuf usedByteBuf = null;
 
     private boolean needsRelease;
 
@@ -34,25 +30,16 @@ public abstract class SCustomPayloadPlayPacketMixin implements IClientNetHandler
         this.needsRelease = true;
     }
 
-    @Override
-    public FriendlyByteBuf getCopiedCustomBuffer() {
-        FriendlyByteBuf buf = this.getData();
-        usedByteBuf = buf;
-        return buf;
-    }
-
     @Redirect(method = "handle(Lnet/minecraft/network/protocol/game/ClientGamePacketListener;)V", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/game/ClientGamePacketListener;handleCustomPayload(Lnet/minecraft/network/protocol/game/ClientboundCustomPayloadPacket;)V"))
     private void handleAndFree(ClientGamePacketListener instance, ClientboundCustomPayloadPacket sCustomPayloadPlayPacket) {
-        usedByteBuf = null;
         try {
             instance.handleCustomPayload(sCustomPayloadPlayPacket);
         } finally {
-            FriendlyByteBuf buf = usedByteBuf;
-            if(buf != null && buf.refCnt() > 0) {
-                buf.release();
-            }
+            FriendlyByteBuf copied = ((IClientNetHandler)instance).getCopiedCustomBuffer();
+            if(copied != null)
+                copied.release();
         }
-        if(this.needsRelease && this.data.refCnt() > 0)
+        if(this.needsRelease)
             this.data.release();
     }
 }

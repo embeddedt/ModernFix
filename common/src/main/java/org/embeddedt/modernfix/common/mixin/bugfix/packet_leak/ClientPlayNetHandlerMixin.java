@@ -11,13 +11,23 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(ClientPacketListener.class)
 @ClientOnlyMixin
-public class ClientPlayNetHandlerMixin {
+public class ClientPlayNetHandlerMixin implements IClientNetHandler {
+    private FriendlyByteBuf savedCopy = null;
     /**
      * @author embeddedt
-     * @reason allow the other function to track use of the buffer
+     * @reason Release the packet buffer at the end. Needed in f
      */
     @Redirect(method = "handleCustomPayload", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/protocol/game/ClientboundCustomPayloadPacket;getData()Lnet/minecraft/network/FriendlyByteBuf;"))
     private FriendlyByteBuf saveCopyForRelease(ClientboundCustomPayloadPacket instance) {
-        return ((IClientNetHandler)instance).getCopiedCustomBuffer();
+        FriendlyByteBuf copy = instance.getData();
+        savedCopy = copy;
+        return copy;
+    }
+
+    @Override
+    public FriendlyByteBuf getCopiedCustomBuffer() {
+        FriendlyByteBuf copy = savedCopy;
+        savedCopy = null;
+        return copy;
     }
 }

@@ -20,6 +20,7 @@ import org.embeddedt.modernfix.world.IntegratedWatchdog;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ModernFixClient {
     public static long worldLoadStartTime;
@@ -34,7 +35,7 @@ public class ModernFixClient {
     /**
      * The list of loaded client integrations.
      */
-    public static List<ModernFixClientIntegration> CLIENT_INTEGRATIONS = new ArrayList<>();
+    public static List<ModernFixClientIntegration> CLIENT_INTEGRATIONS = new CopyOnWriteArrayList<>();
 
     public ModernFixClient() {
         // clear reserve as it's not needed

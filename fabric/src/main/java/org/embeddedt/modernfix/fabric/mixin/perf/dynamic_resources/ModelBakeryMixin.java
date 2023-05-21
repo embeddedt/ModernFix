@@ -247,6 +247,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 "entity/chest",
                 "item",
                 "items",
+                "part",
                 "pipe",
                 "ropebridge"
         };
@@ -267,6 +268,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         blockStateFiles = null;
         modelFiles = null;
         return materialsSet;
+    }
+
+    @Inject(method = "<init>", at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", args = "ldc=textures"))
+    private void clearDummyModels(CallbackInfo ci) {
+        // discard unwrapped models
+        Predicate<Map.Entry<ResourceLocation, UnbakedModel>> isVanillaModel = entry -> entry.getValue() instanceof BlockModel || entry.getValue() instanceof MultiVariant || entry.getValue() instanceof MultiPart;
+        this.unbakedCache.entrySet().removeIf(isVanillaModel);
+        this.topLevelModels.entrySet().removeIf(isVanillaModel);
     }
 
     @Inject(method = "uploadTextures", at = @At(value = "FIELD", target = "Lnet/minecraft/client/resources/model/ModelBakery;topLevelModels:Ljava/util/Map;", ordinal = 0), cancellable = true)
@@ -290,10 +299,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 return super.put(key, value);
             }
         };
-        // discard unwrapped models
-        Predicate<Map.Entry<ResourceLocation, UnbakedModel>> isVanillaModel = entry -> entry.getValue() instanceof BlockModel || entry.getValue() instanceof MultiVariant || entry.getValue() instanceof MultiPart;
-        this.unbakedCache.entrySet().removeIf(isVanillaModel);
-        this.topLevelModels.entrySet().removeIf(isVanillaModel);
         // bake indigo models
         Stopwatch watch = Stopwatch.createStarted();
         this.topLevelModels.forEach((key, value) -> {

@@ -1,5 +1,7 @@
 package org.embeddedt.modernfix.platform.forge;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.client.renderer.texture.TextureAtlas;
@@ -20,7 +22,9 @@ import net.minecraftforge.fml.loading.LoadingModList;
 import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.util.DummyList;
@@ -32,6 +36,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
+import java.util.Map;
 import java.util.function.Consumer;
 
 public class ModernFixPlatformHooksImpl {
@@ -143,5 +148,25 @@ public class ModernFixPlatformHooksImpl {
         MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
             handler.accept(event.getDispatcher());
         });
+    }
+
+    private static Multimap<String, String> modOptions;
+    public static Multimap<String, String> getCustomModOptions() {
+        if(modOptions == null) {
+            modOptions = ArrayListMultimap.create();
+            for (ModInfo meta : LoadingModList.get().getMods()) {
+                meta.getConfigElement(IntegrationConstants.INTEGRATIONS_KEY).ifPresent(optionsObj -> {
+                    if(optionsObj instanceof Map) {
+                        Map<Object, Object> options = (Map<Object, Object>)optionsObj;
+                        options.forEach((key, value) -> {
+                            if(key instanceof String && value instanceof String) {
+                                modOptions.put((String)key, (String)value);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+        return modOptions;
     }
 }

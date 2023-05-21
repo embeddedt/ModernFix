@@ -4,11 +4,13 @@ import appeng.core.AppEng;
 import appeng.init.client.InitAutoRotatingModel;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraftforge.common.MinecraftForge;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.spongepowered.asm.mixin.Final;
-import org.embeddedt.modernfix.forge.dynamicresources.DynamicModelBakeEvent;
+import net.minecraft.client.resources.model.*;
+import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -23,20 +25,22 @@ import java.util.function.Function;
 @ClientOnlyMixin
 public class RegistrationMixin {
     @Shadow @Final private static Map<String, Function<BakedModel, BakedModel>> CUSTOMIZERS;
-    @Inject(method = "init", at = @At("TAIL"), remap = false)
-    private static void doRegisterDynBake(CallbackInfo ci) {
-        MinecraftForge.EVENT_BUS.addListener(RegistrationMixin::onDynamicModelBake);
-    }
 
-    private static void onDynamicModelBake(DynamicModelBakeEvent event) {
-        if (!event.getLocation().getNamespace().equals(AppEng.MOD_ID)) {
-            return;
-        }
-        BakedModel missing = event.getModelLoader().getBakedTopLevelModels().get(ModelBakery.MISSING_MODEL_LOCATION);
-        if(event.getModel() == missing)
-            return;
-        Function<BakedModel, BakedModel> customizerFn = CUSTOMIZERS.get(event.getLocation().getPath());
-        if(customizerFn != null)
-            event.setModel(customizerFn.apply(event.getModel()));
+    @Inject(method = "init", at = @At("TAIL"), remap = false)
+    private void doRegisterDynBake(CallbackInfo ci) {
+        ModernFixClient.CLIENT_INTEGRATIONS.add(new ModernFixClientIntegration() {
+            @Override
+            public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState state, ModelBakery bakery) {
+                if(location.getNamespace().equals(AppEng.MOD_ID)) {
+                    BakedModel m = bakery.bake(ModelBakery.MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0);
+                    if(originalModel == m)
+                        return originalModel;
+                    Function<BakedModel, BakedModel> customizerFn = CUSTOMIZERS.get(location.getPath());
+                    if(customizerFn != null)
+                        originalModel = customizerFn.apply(originalModel);
+                }
+                return originalModel;
+            }
+        });
     }
 }

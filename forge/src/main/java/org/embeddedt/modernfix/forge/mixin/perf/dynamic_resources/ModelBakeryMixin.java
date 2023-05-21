@@ -26,26 +26,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraftforge.client.ForgeHooksClient;
-import net.minecraftforge.client.model.ModelLoader;
 import net.minecraftforge.client.model.ModelLoaderRegistry;
-import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.fml.packs.DelegatingResourcePack;
 import net.minecraftforge.fml.packs.ModFileResourcePack;
 import org.apache.commons.lang3.tuple.Triple;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
-import org.embeddedt.modernfix.forge.dynamicresources.DynamicModelBakeEvent;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -89,6 +86,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Shadow public abstract UnbakedModel getModel(ResourceLocation modelLocation);
 
     @Shadow @Nullable public abstract BakedModel getBakedModel(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter);
+
+    @Shadow @org.jetbrains.annotations.Nullable public abstract BakedModel bake(ResourceLocation location, ModelState transform);
 
     private Cache<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> loadedBakedModels;
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
@@ -217,6 +216,18 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return unbakedCache.get(rl);
     }
 
+    @ModifyVariable(method = "cacheAndQueueDependencies", at = @At("HEAD"), argsOnly = true)
+    private UnbakedModel fireUnbakedEvent(UnbakedModel model, ResourceLocation location) {
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            try {
+                model = integration.onUnbakedModelLoad(location, model, (ModelBakery)(Object)this);
+            } catch(RuntimeException e) {
+                ModernFix.LOGGER.error("Exception firing model load event for {}", location, e);
+            }
+        }
+        return model;
+    }
+
     @Inject(method = "cacheAndQueueDependencies", at = @At("RETURN"))
     private void addToSmallLoadingCache(ResourceLocation location, UnbakedModel model, CallbackInfo ci) {
         smallLoadingCache.put(location, model);
@@ -329,10 +340,15 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     } else
                         ibakedmodel = iunbakedmodel.bake((ModelBakery) (Object) this, textureGetter, arg2, arg);
                 }
-                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelLoader)(Object)this);
-                MinecraftForge.EVENT_BUS.post(event);
-                this.bakedCache.put(triple, event.getModel());
-                cir.setReturnValue(event.getModel());
+                for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                    try {
+                        ibakedmodel = integration.onBakedModelLoad(arg, iunbakedmodel, ibakedmodel, arg2, (ModelBakery)(Object)this);
+                    } catch(RuntimeException e) {
+                        ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
+                    }
+                }
+                this.bakedCache.put(triple, ibakedmodel);
+                cir.setReturnValue(ibakedmodel);
             }
         }
     }

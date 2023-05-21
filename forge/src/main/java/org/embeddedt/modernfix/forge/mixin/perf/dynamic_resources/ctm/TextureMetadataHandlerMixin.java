@@ -1,15 +1,13 @@
 package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources.ctm;
 
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.Material;
-import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.model.ModelLoader;
-import net.minecraftforge.common.MinecraftForge;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.RequiresMod;
-import org.embeddedt.modernfix.forge.dynamicresources.DynamicModelBakeEvent;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -29,13 +27,13 @@ import java.util.*;
 @Mixin(TextureMetadataHandler.class)
 @RequiresMod("ctm")
 @ClientOnlyMixin
-public abstract class TextureMetadataHandlerMixin {
+public abstract class TextureMetadataHandlerMixin implements ModernFixClientIntegration {
 
     @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelLoader loader) throws IOException;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void subscribeDynamic(CallbackInfo ci) {
-        MinecraftForge.EVENT_BUS.addListener(this::onDynamicModelBake);
+        ModernFixClient.CLIENT_INTEGRATIONS.add(this);
     }
 
     @Redirect(method = "onModelBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/BakedModel;isCustomRenderer()Z"))
@@ -43,10 +41,8 @@ public abstract class TextureMetadataHandlerMixin {
         return model == null || model.isCustomRenderer();
     }
 
-    public void onDynamicModelBake(DynamicModelBakeEvent event) {
-        UnbakedModel rootModel = event.getUnbakedModel();
-        BakedModel baked = event.getModel();
-        ResourceLocation rl = event.getLocation();
+    @Override
+    public BakedModel onBakedModelLoad(ResourceLocation rl, UnbakedModel rootModel, BakedModel baked, ModelState state, ModelBakery bakery) {
         if (!(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer()) {
             Deque<ResourceLocation> dependencies = new ArrayDeque<>();
             Set<ResourceLocation> seenModels = new HashSet<>();
@@ -59,12 +55,12 @@ public abstract class TextureMetadataHandlerMixin {
                 ResourceLocation dep = dependencies.pop();
                 UnbakedModel model;
                 try {
-                    model = dep == rl ? rootModel : event.getModelLoader().getModel(dep);
+                    model = dep == rl ? rootModel : bakery.getModel(dep);
                 } catch (Exception e) {
                     continue;
                 }
 
-                Collection<Material> textures = model.getMaterials(event.getModelLoader()::getModel, errors);
+                Collection<Material> textures = model.getMaterials(bakery::getModel, errors);
                 Collection<ResourceLocation> newDependencies = model.getDependencies();
                 for (Material tex : textures) {
                     IMetadataSectionCTM meta = null;
@@ -86,12 +82,13 @@ public abstract class TextureMetadataHandlerMixin {
             }
             if (shouldWrap) {
                 try {
-                    event.setModel(wrap(rl, rootModel, baked, event.getModelLoader()));
+                    baked = wrap(rl, rootModel, baked, (ModelLoader)bakery);
                     dependencies.clear();
                 } catch (IOException e) {
                     CTM.logger.error("Could not wrap model " + rl + ". Aborting...", e);
                 }
             }
         }
+        return baked;
     }
 }

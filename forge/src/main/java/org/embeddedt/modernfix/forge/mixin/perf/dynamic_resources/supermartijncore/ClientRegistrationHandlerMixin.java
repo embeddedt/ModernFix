@@ -4,12 +4,14 @@ import com.supermartijn642.core.registry.ClientRegistrationHandler;
 import com.supermartijn642.core.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.RequiresMod;
-import org.embeddedt.modernfix.forge.dynamicresources.DynamicModelBakeEvent;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -48,13 +50,15 @@ public class ClientRegistrationHandlerMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void registerDynBake(String modid, CallbackInfo ci) {
-        MinecraftForge.EVENT_BUS.addListener(this::onDynamicModelBake);
-    }
-
-    @SubscribeEvent
-    public void onDynamicModelBake(DynamicModelBakeEvent event) {
-        Function<BakedModel, BakedModel> replacer = modelOverwritesByLocation.get(event.getLocation());
-        if(replacer != null)
-            event.setModel(replacer.apply(event.getModel()));
+        ModernFixClient.CLIENT_INTEGRATIONS.add(new ModernFixClientIntegration() {
+            @Override
+            public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState state, ModelBakery bakery) {
+                Function<BakedModel, BakedModel> replacer = modelOverwritesByLocation.get(location);
+                if(replacer != null)
+                    return replacer.apply(originalModel);
+                else
+                    return originalModel;
+            }
+        });
     }
 }

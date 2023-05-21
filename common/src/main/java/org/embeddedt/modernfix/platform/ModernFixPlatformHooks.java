@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.platform;
 
+import com.google.common.collect.Multimap;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.brigadier.CommandDispatcher;
 import dev.architectury.injectables.annotations.ExpectPlatform;
@@ -83,6 +84,11 @@ public class ModernFixPlatformHooks {
 
     @ExpectPlatform
     public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
+        throw new AssertionError();
+    }
+
+    @ExpectPlatform
+    public static Multimap<String, String> getCustomModOptions() {
         throw new AssertionError();
     }
 }

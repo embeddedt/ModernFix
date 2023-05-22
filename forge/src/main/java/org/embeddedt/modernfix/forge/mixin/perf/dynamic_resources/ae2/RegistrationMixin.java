@@ -21,13 +21,13 @@ import java.util.Map;
 import java.util.function.Function;
 
 @Mixin(InitAutoRotatingModel.class)
-@RequiresMod("appliedenergistics2")
+@RequiresMod("ae2")
 @ClientOnlyMixin
 public class RegistrationMixin {
     @Shadow @Final private static Map<String, Function<BakedModel, BakedModel>> CUSTOMIZERS;
 
     @Inject(method = "init", at = @At("TAIL"), remap = false)
-    private void doRegisterDynBake(CallbackInfo ci) {
+    private static void doRegisterDynBake(CallbackInfo ci) {
         ModernFixClient.CLIENT_INTEGRATIONS.add(new ModernFixClientIntegration() {
             @Override
             public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState state, ModelBakery bakery) {

@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources.ae2;
+package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.ae2;
 
 import appeng.core.AppEng;
 import appeng.init.client.InitAutoRotatingModel;

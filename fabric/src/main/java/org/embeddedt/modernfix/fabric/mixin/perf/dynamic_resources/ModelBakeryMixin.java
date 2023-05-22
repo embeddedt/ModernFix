@@ -31,7 +31,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
@@ -46,6 +48,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -247,6 +250,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 "entity/chest",
                 "item",
                 "items",
+                "part",
                 "pipe",
                 "ropebridge"
         };
@@ -267,6 +271,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         blockStateFiles = null;
         modelFiles = null;
         return materialsSet;
+    }
+
+    @Inject(method = "<init>", at = @At(value = "INVOKE_STRING", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", args = "ldc=textures"))
+    private void clearDummyModels(CallbackInfo ci) {
+        // discard unwrapped models
+        Predicate<Map.Entry<ResourceLocation, UnbakedModel>> isVanillaModel = entry -> entry.getValue() instanceof BlockModel || entry.getValue() instanceof MultiVariant || entry.getValue() instanceof MultiPart;
+        this.unbakedCache.entrySet().removeIf(isVanillaModel);
+        this.topLevelModels.entrySet().removeIf(isVanillaModel);
     }
 
     @Inject(method = "uploadTextures", at = @At(value = "FIELD", target = "Lnet/minecraft/client/resources/model/ModelBakery;topLevelModels:Ljava/util/Map;", ordinal = 0), cancellable = true)
@@ -290,10 +302,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 return super.put(key, value);
             }
         };
-        // discard unwrapped models
-        Predicate<Map.Entry<ResourceLocation, UnbakedModel>> isVanillaModel = entry -> entry.getValue() instanceof BlockModel || entry.getValue() instanceof MultiVariant || entry.getValue() instanceof MultiPart;
-        this.unbakedCache.entrySet().removeIf(isVanillaModel);
-        this.topLevelModels.entrySet().removeIf(isVanillaModel);
         // bake indigo models
         Stopwatch watch = Stopwatch.createStarted();
         this.topLevelModels.forEach((key, value) -> {
@@ -329,6 +337,18 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         if(rl == MISSING_MODEL_LOCATION && map == unbakedCache)
             return missingModel;
         return unbakedCache.get(rl);
+    }
+
+    @ModifyVariable(method = "cacheAndQueueDependencies", at = @At("HEAD"), argsOnly = true)
+    private UnbakedModel fireUnbakedEvent(UnbakedModel model, ResourceLocation location) {
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            try {
+                model = integration.onUnbakedModelLoad(location, model, (ModelBakery)(Object)this);
+            } catch(RuntimeException e) {
+                ModernFix.LOGGER.error("Exception firing model load event for {}", location, e);
+            }
+        }
+        return model;
     }
 
     /**
@@ -455,7 +475,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     ModernFix.LOGGER.error("Model {} returned null baked model", arg);
                     ibakedmodel = bakedMissingModel;
                 }
-                // TODO event
+                for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                    try {
+                        ibakedmodel = integration.onBakedModelLoad(arg, iunbakedmodel, ibakedmodel, arg2, (ModelBakery)(Object)this);
+                    } catch(RuntimeException e) {
+                        ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
+                    }
+                }
                 this.bakedCache.put(triple, ibakedmodel);
                 cir.setReturnValue(ibakedmodel);
             }

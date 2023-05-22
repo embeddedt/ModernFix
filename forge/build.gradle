@@ -45,7 +45,6 @@ dependencies {
     modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
 
     modCompileOnly("curse.maven:supermartijncore-454372:4455391")
-    modCompileOnly("appeng:appliedenergistics2-forge:12.9.4")
     modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }

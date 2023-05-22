@@ -23,6 +23,9 @@ dependencies {
     modCompileOnly("me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}") {
         transitive = false
     }
+    modCompileOnly("appeng:appliedenergistics2-fabric:${appeng_version}") {
+        transitive = false
+    }
     // compile against the JEI API but do not include it at runtime
     modCompileOnly("mezz.jei:jei-${minecraft_version}-common:${jei_version}")
     modCompileOnly("mezz.jei:jei-${minecraft_version}-gui:${jei_version}")

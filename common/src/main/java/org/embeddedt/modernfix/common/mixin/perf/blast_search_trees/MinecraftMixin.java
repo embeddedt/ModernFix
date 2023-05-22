@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.blast_search_trees;
 
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.searchtree.SearchRegistry;
 import org.embeddedt.modernfix.ModernFix;
@@ -27,6 +28,11 @@ public class MinecraftMixin {
         this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> provider.getSearchTree(false));
         this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> provider.getSearchTree(true));
         this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new DummySearchTree<>());
+        // grab components for all key mappings in order to prevent them from being loaded off-thread later
+        // this populates the LazyLoadedValues
+        for(KeyMapping mapping : KeyMapping.ALL.values()) {
+            mapping.getTranslatedKeyMessage();
+        }
         ci.cancel();
     }
 }

@@ -31,7 +31,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
@@ -46,6 +48,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -336,6 +339,18 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return unbakedCache.get(rl);
     }
 
+    @ModifyVariable(method = "cacheAndQueueDependencies", at = @At("HEAD"), argsOnly = true)
+    private UnbakedModel fireUnbakedEvent(UnbakedModel model, ResourceLocation location) {
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            try {
+                model = integration.onUnbakedModelLoad(location, model, (ModelBakery)(Object)this);
+            } catch(RuntimeException e) {
+                ModernFix.LOGGER.error("Exception firing model load event for {}", location, e);
+            }
+        }
+        return model;
+    }
+
     /**
      * @author embeddedt
      * @reason synchronize
@@ -460,7 +475,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     ModernFix.LOGGER.error("Model {} returned null baked model", arg);
                     ibakedmodel = bakedMissingModel;
                 }
-                // TODO event
+                for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                    try {
+                        ibakedmodel = integration.onBakedModelLoad(arg, iunbakedmodel, ibakedmodel, arg2, (ModelBakery)(Object)this);
+                    } catch(RuntimeException e) {
+                        ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
+                    }
+                }
                 this.bakedCache.put(triple, ibakedmodel);
                 cir.setReturnValue(ibakedmodel);
             }

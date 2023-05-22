@@ -3,24 +3,20 @@ package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources.ctm;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.client.resources.model.MultiPartBakedModel;
-import net.minecraft.client.resources.model.WeightedBakedModel;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.RequiresMod;
-import org.embeddedt.modernfix.duck.IExtendedModelBakery;
-import org.embeddedt.modernfix.forge.dynamicresources.DynamicModelBakeEvent;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
+import org.embeddedt.modernfix.api.helpers.ModelHelpers;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -38,7 +34,7 @@ import java.util.function.Predicate;
 @Mixin(CTMPackReloadListener.class)
 @RequiresMod("ctm")
 @ClientOnlyMixin
-public abstract class CTMPackReloadListenerMixin {
+public abstract class CTMPackReloadListenerMixin implements ModernFixClientIntegration {
     /* caches the original render checks */
     @Shadow @Final private static Map<Holder.Reference<Block>, Predicate<RenderType>> blockRenderChecks;
 
@@ -52,7 +48,7 @@ public abstract class CTMPackReloadListenerMixin {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
-        MinecraftForge.EVENT_BUS.addListener(EventPriority.LOW, this::onModelBake);
+        ModernFixClient.CLIENT_INTEGRATIONS.add(this);
     }
 
     @Overwrite(remap = false)
@@ -77,28 +73,32 @@ public abstract class CTMPackReloadListenerMixin {
         return override.test(type);
     }
 
-    private void onModelBake(DynamicModelBakeEvent event) {
-        if(!(event.getModel() instanceof AbstractCTMBakedModel || event.getModel() instanceof WeightedBakedModel || event.getModel() instanceof MultiPartBakedModel))
-            return;
+    @Override
+    public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState modelState, ModelBakery bakery) {
+        if(!(location instanceof ModelResourceLocation))
+            return originalModel;
+        if(!(originalModel instanceof AbstractCTMBakedModel || originalModel instanceof WeightedBakedModel || originalModel instanceof MultiPartBakedModel))
+            return originalModel;
         /* we construct a new ResourceLocation because an MRL is coming in */
-        Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(event.getLocation().getNamespace(), event.getLocation().getPath()));
+        Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(location.getNamespace(), location.getPath()));
         Holder.Reference<Block> delegate = block != null ? ForgeRegistries.BLOCKS.getDelegateOrThrow(block) : null;
         if(block == null || block == Blocks.AIR || renderCheckOverrides.containsKey(delegate))
-            return;
+            return originalModel;
         /* find all states that match this MRL */
         ImmutableList<BlockState> allStates;
         try {
-            allStates = ((IExtendedModelBakery)(Object)event.getModelLoader()).getBlockStatesForMRL(block.getStateDefinition(), (ModelResourceLocation)event.getLocation());
+            allStates = ModelHelpers.getBlockStateForLocation(block.getStateDefinition(), (ModelResourceLocation)location);
         } catch(RuntimeException e) {
-            ModernFix.LOGGER.error("Couldn't get state for MRL " + event.getLocation(), e);
-            return;
+            ModernFix.LOGGER.error("Couldn't get state for MRL " + location, e);
+            return originalModel;
         }
         for(BlockState state : allStates) {
-            Predicate<RenderType> newPredicate = this.getLayerCheck(state, event.getModel());
+            Predicate<RenderType> newPredicate = this.getLayerCheck(state, originalModel);
             if(newPredicate != null) {
                 renderCheckOverrides.put(delegate, newPredicate);
-                return;
+                return originalModel;
             }
         }
+        return originalModel;
     }
 }

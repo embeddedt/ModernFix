@@ -1,5 +1,7 @@
 package org.embeddedt.modernfix.platform.forge;
 
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
@@ -18,7 +20,9 @@ import net.minecraftforge.fml.loading.LoadingModList;
 import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
+import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.util.DummyList;
@@ -100,11 +104,31 @@ public class ModernFixPlatformHooksImpl {
         });
     }
 
+    private static Multimap<String, String> modOptions;
+    public static Multimap<String, String> getCustomModOptions() {
+        if(modOptions == null) {
+            modOptions = ArrayListMultimap.create();
+            for (ModInfo meta : LoadingModList.get().getMods()) {
+                meta.getConfigElement(IntegrationConstants.INTEGRATIONS_KEY).ifPresent(optionsObj -> {
+                    if(optionsObj instanceof Map) {
+                        Map<Object, Object> options = (Map<Object, Object>)optionsObj;
+                        options.forEach((key, value) -> {
+                            if(key instanceof String && value instanceof String) {
+                                modOptions.put((String)key, (String)value);
+                            }
+                        });
+                    }
+                });
+            }
+        }
+        return modOptions;
+    }
+
     public static void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
-        for(SearchRegistry.Key<ItemStack> nameKey : CreativeModeTabSearchRegistry.getNameSearchKeys().values()) {
+        for (SearchRegistry.Key<ItemStack> nameKey : CreativeModeTabSearchRegistry.getNameSearchKeys().values()) {
             registry.register(nameKey, nameSupplier);
         }
-        for(SearchRegistry.Key<ItemStack> tagKey : CreativeModeTabSearchRegistry.getTagSearchKeys().values()) {
+        for (SearchRegistry.Key<ItemStack> tagKey : CreativeModeTabSearchRegistry.getTagSearchKeys().values()) {
             registry.register(tagKey, tagSupplier);
         }
         Map<CreativeModeTab, SearchRegistry.Key<ItemStack>> tagSearchKeys = CreativeModeTabSearchRegistry.getTagSearchKeys();

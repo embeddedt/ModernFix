@@ -8,6 +8,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.spongepowered.asm.mixin.Final;
@@ -58,9 +60,18 @@ public abstract class ModelBakerImplMixin {
     }
 
     private boolean wasMissingModel = false;
+    private ResourceLocation capturedLocation;
+    private UnbakedModel capturedModel;
+    private ModelState capturedState;
+
+    @Inject(method = "bake", at = @At("HEAD"))
+    private void captureState(ResourceLocation rl, ModelState state, CallbackInfoReturnable<BakedModel> cir) {
+        capturedState = state;
+    }
 
     @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)
     private void obtainModel(ResourceLocation arg, CallbackInfoReturnable<UnbakedModel> cir) {
+        capturedLocation = arg;
         if(debugDynamicModelLoading)
             ModernFix.LOGGER.info("Baking {}", arg);
         IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
@@ -91,6 +102,7 @@ public abstract class ModelBakerImplMixin {
         } else
             wasMissingModel = false; /* sometimes this runs more than once e.g. for recursive model baking */
         cir.getReturnValue().resolveParents(this.field_40571::getModel);
+        capturedModel = cir.getReturnValue();
     }
 
     @ModifyVariable(method = "bake", at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
@@ -108,6 +120,9 @@ public abstract class ModelBakerImplMixin {
                 }
             }
             return missing;
+        }
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            model = integration.onBakedModelLoad(capturedLocation, capturedModel, model, capturedState, this.field_40571);
         }
         return model;
     }

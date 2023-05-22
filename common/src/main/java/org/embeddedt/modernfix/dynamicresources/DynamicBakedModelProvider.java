@@ -15,6 +15,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
+import org.embeddedt.modernfix.ModernFix;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -109,7 +110,12 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         if(model != SENTINEL)
             return model;
         else {
-            model = ((IExtendedModelBakery)bakery).bakeDefault((ResourceLocation)o);
+            try {
+                model = ((IExtendedModelBakery)bakery).bakeDefault((ResourceLocation)o, BlockModelRotation.X0_Y0);
+            } catch(RuntimeException e) {
+                ModernFix.LOGGER.error("Exception baking {}: {}", o, e);
+                model = missingModel;
+            }
             if(model == missingModel) {
                 // to correctly emulate the original map, we return null for missing models
                 permanentOverrides.put((ResourceLocation) o, null);

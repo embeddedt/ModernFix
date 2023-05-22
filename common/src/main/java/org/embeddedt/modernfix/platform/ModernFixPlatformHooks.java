@@ -1,7 +1,8 @@
 package org.embeddedt.modernfix.platform;
 
-import dev.architectury.injectables.annotations.ExpectPlatform;
+import com.google.common.collect.Multimap;
 import com.mojang.brigadier.CommandDispatcher;
+import dev.architectury.injectables.annotations.ExpectPlatform;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
@@ -72,6 +73,11 @@ public class ModernFixPlatformHooks {
 
     @ExpectPlatform
     public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
+        throw new AssertionError();
+    }
+
+    @ExpectPlatform
+    public static Multimap<String, String> getCustomModOptions() {
         throw new AssertionError();
     }
 

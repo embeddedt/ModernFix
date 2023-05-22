@@ -250,9 +250,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 "entity/chest",
                 "item",
                 "items",
+                "model",
+                "models",
                 "part",
                 "pipe",
-                "ropebridge"
+                "ropebridge",
+                "solid_block"
         };
         for(String folder : extraFolders) {
             Collection<ResourceLocation> textureLocations = this.resourceManager.listResources("textures/" + folder, p -> p.getPath().endsWith(".png")).keySet();

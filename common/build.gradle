@@ -26,6 +26,7 @@ dependencies {
     modCompileOnly("appeng:appliedenergistics2-fabric:${appeng_version}") {
         transitive = false
     }
+    modCompileOnly("curse.maven:diagonal-fences-458048:${diagonal_fences_version}")
     // compile against the JEI API but do not include it at runtime
     modCompileOnly("mezz.jei:jei-${minecraft_version}-common:${jei_version}")
     modCompileOnly("mezz.jei:jei-${minecraft_version}-gui:${jei_version}")

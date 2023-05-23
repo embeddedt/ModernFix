@@ -25,8 +25,13 @@ public abstract class MultipartAppenderMixin {
         throw new AssertionError();
     }
 
+    private static boolean handlerInjected = false;
+
     @Inject(method = "onPrepareModelBaking", at = @At("RETURN"))
     private static void setupHelper(CallbackInfo ci) {
+        if(handlerInjected)
+            return;
+        handlerInjected = true;
         ModernFixClient.CLIENT_INTEGRATIONS.add(new ModernFixClientIntegration() {
             @Override
             public UnbakedModel onUnbakedModelLoad(ResourceLocation location, UnbakedModel originalModel, ModelBakery bakery) {

@@ -44,10 +44,6 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -179,7 +175,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Inject(method = "loadModel", at = @At(value = "HEAD"), cancellable = true)
     private void ignoreNonFabricModel(ResourceLocation modelLocation, CallbackInfo ci) throws Exception {
-        if(this.inTextureGatheringPass && !this.forceLoadModel && !this.injectedModels.contains(modelLocation)) {
+        if(this.inTextureGatheringPass && this.blockStateFiles != null && !this.forceLoadModel && !this.injectedModels.contains(modelLocation)) {
             // Custom model processor, try to avoid loading unwrapped models
             // First add this to the list of models to scan for textures
             ResourceLocation blockStateLocation = null;
@@ -210,7 +206,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             this.cacheAndQueueDependencies(modelLocation, this.missingModel);
             this.forceLoadModel = false;
             if(this.smallLoadingCache.get(modelLocation) != this.missingModel) {
-                /* probably a wrapped model, allow it to load normally */
+                // probably a wrapped model, allow it to load normally
                 isWrappedModel = true;
             }
             this.smallLoadingCache.clear();
@@ -344,6 +340,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @ModifyVariable(method = "cacheAndQueueDependencies", at = @At("HEAD"), argsOnly = true)
     private UnbakedModel fireUnbakedEvent(UnbakedModel model, ResourceLocation location) {
+        if(this.inTextureGatheringPass)
+            return model;
         for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
             try {
                 model = integration.onUnbakedModelLoad(location, model, (ModelBakery)(Object)this);

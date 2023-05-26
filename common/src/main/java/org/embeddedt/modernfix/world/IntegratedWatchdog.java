@@ -25,6 +25,27 @@ public class IntegratedWatchdog extends Thread {
         this.setName("ModernFix integrated server watchdog");
     }
 
+    public static String obtainThreadDump() {
+        ThreadMXBean threadmxbean = ManagementFactory.getThreadMXBean();
+        ThreadInfo[] athreadinfo = threadmxbean.dumpAllThreads(true, true);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Thread Dump:\n");
+        for(ThreadInfo threadinfo : athreadinfo) {
+            sb.append(threadinfo);
+            StackTraceElement[] elements = threadinfo.getStackTrace();
+            if(elements.length > 8) {
+                sb.append("extended trace:\n");
+                for(int i = 8; i < elements.length; i++) {
+                    sb.append("\tat ");
+                    sb.append(elements[i]);
+                    sb.append('\n');
+                }
+            }
+            sb.append('\n');
+        }
+        return sb.toString();
+    }
+
     public void run() {
         while(true) {
             MinecraftServer server = this.server.get();
@@ -35,24 +56,7 @@ public class IntegratedWatchdog extends Thread {
             long delta = curTime - nextTick;
             if(delta > MAX_TICK_DELTA) {
                 LOGGER.error("A single server tick has taken {}, more than {} milliseconds", delta, MAX_TICK_DELTA);
-                ThreadMXBean threadmxbean = ManagementFactory.getThreadMXBean();
-                ThreadInfo[] athreadinfo = threadmxbean.dumpAllThreads(true, true);
-                StringBuilder sb = new StringBuilder();
-                sb.append("Thread Dump:\n");
-                for(ThreadInfo threadinfo : athreadinfo) {
-                    sb.append(threadinfo);
-                    StackTraceElement[] elements = threadinfo.getStackTrace();
-                    if(elements.length > 8) {
-                        sb.append("extended trace:\n");
-                        for(int i = 8; i < elements.length; i++) {
-                            sb.append("\tat ");
-                            sb.append(elements[i]);
-                            sb.append('\n');
-                        }
-                    }
-                    sb.append('\n');
-                }
-                LOGGER.error(sb);
+                LOGGER.error(obtainThreadDump());
                 nextTick = 0;
                 curTime = 0;
             }

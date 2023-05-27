@@ -143,6 +143,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.dynamic_entity_renderers", false)
             .put("mixin.feature.integrated_server_watchdog", true)
             .put("mixin.perf.faster_item_rendering", false)
+            .put("mixin.feature.spam_thread_dump", false)
             .put("mixin.devenv", isDevEnv)
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)
             .build();

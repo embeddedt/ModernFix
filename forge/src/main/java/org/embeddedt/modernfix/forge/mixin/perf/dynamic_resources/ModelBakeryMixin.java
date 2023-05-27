@@ -322,6 +322,17 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 iunbakedmodel.getMaterials(this::getModel, new HashSet<>());
                 if(iunbakedmodel == missingModel && debugDynamicModelLoading)
                     LOGGER.warn("Model {} not present", arg);
+
+                if(iunbakedmodel != missingModel) {
+                    for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                        try {
+                            iunbakedmodel = integration.onUnbakedModelPreBake(arg, iunbakedmodel, (ModelBakery)(Object)this);
+                        } catch(RuntimeException e) {
+                            ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
+                        }
+                    }
+                }
+
                 BakedModel ibakedmodel = null;
                 if (iunbakedmodel instanceof BlockModel) {
                     BlockModel blockmodel = (BlockModel)iunbakedmodel;

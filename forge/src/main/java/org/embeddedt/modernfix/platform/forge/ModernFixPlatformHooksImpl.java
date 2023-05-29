@@ -22,7 +22,6 @@ import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.LoadingModList;
-import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.fml.network.PacketDistributor;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
@@ -76,7 +75,7 @@ public class ModernFixPlatformHooksImpl {
     }
 
     public static boolean isDevEnv() {
-        return !FMLLoader.isProduction() && FMLLoader.getLoadingModList().getModFileById("modernfix").getFile().getLocator() instanceof ExplodedDirectoryLocator;
+        return !FMLLoader.isProduction();
     }
 
     public static MinecraftServer getCurrentServer() {

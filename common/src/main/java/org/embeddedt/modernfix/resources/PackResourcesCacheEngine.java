@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackType;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.util.PackTypeHelper;
 
 import java.io.IOException;
@@ -163,6 +164,8 @@ public class PackResourcesCacheEngine {
     }
 
     public static void invalidate() {
+        if(!ModernFixPlatformHooks.isDevEnv())
+            return;
         synchronized (cachingPacks) {
             cachingPacks.keySet().forEach(pack -> {
                 if(pack != null)

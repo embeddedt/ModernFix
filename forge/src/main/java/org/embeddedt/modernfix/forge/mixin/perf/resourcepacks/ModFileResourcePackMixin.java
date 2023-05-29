@@ -78,7 +78,7 @@ public abstract class ModFileResourcePackMixin implements ICachingResourcePack {
     @Inject(method = "getResources", at = @At("HEAD"), cancellable = true)
     private void fastGetResources(PackType type, String resourceNamespace, String pathIn, Predicate<ResourceLocation> filter, CallbackInfoReturnable<Collection<ResourceLocation>> cir)
     {
-        if(!PackTypeHelper.isVanillaPackType(type) || this.cacheEngine == null)
+        if(!PackTypeHelper.isVanillaPackType(type))
             return;
         cir.setReturnValue(this.generateResourceCache().getResources(type, resourceNamespace, pathIn, Integer.MAX_VALUE, filter));
     }

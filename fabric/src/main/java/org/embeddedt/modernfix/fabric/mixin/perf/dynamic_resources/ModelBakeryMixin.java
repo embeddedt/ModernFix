@@ -110,11 +110,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
     }
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void stopIgnore(CallbackInfo ci) {
-        this.ignoreModelLoad = false;
-    }
-
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
         if(!debugDynamicModelLoading)
             return;
@@ -174,6 +169,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Inject(method = "bakeModels", at = @At("HEAD"))
     private void captureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
+        this.ignoreModelLoad = false;
         textureGetter = getter;
     }
 

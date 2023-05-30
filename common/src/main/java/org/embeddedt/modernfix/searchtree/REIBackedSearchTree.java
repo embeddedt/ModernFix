@@ -1,22 +1,28 @@
 package org.embeddedt.modernfix.searchtree;
 
+import com.google.common.base.Predicates;
 import me.shedaniel.rei.api.client.registry.entry.EntryRegistry;
 import me.shedaniel.rei.api.common.entry.EntryStack;
 import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
 import me.shedaniel.rei.impl.client.search.AsyncSearchManager;
+import me.shedaniel.rei.impl.common.entry.type.EntryRegistryImpl;
+import me.shedaniel.rei.impl.common.util.HashedEntryStackWrapper;
 import net.minecraft.client.searchtree.RefreshableSearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Supplier;
+import java.util.function.UnaryOperator;
 
 public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
-    private final AsyncSearchManager searchManager = new AsyncSearchManager(EntryRegistry.getInstance()::getPreFilteredList, () -> {
-        return stack -> true;
-    }, EntryStack::normalize);
+    private final AsyncSearchManager searchManager = createSearchManager();
 
     private final boolean filteringByTag;
     private String lastSearchText = "";
@@ -39,14 +45,23 @@ public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
         if(!pSearchText.equals(lastSearchText)) {
             listCache.clear();
             this.searchManager.updateFilter(pSearchText);
-            List<EntryStack<?>> stacks;
+            List stacks;
             try {
                 stacks = this.searchManager.getNow();
             } catch(RuntimeException e) {
                 ModernFix.LOGGER.error("Couldn't search for '" + pSearchText + "'", e);
                 stacks = Collections.emptyList();
             }
-            for(EntryStack<?> stack : stacks) {
+            for(Object o : stacks) {
+                EntryStack<?> stack;
+                if(o instanceof EntryStack<?>)
+                    stack = (EntryStack<?>)o;
+                else if(o instanceof HashedEntryStackWrapper) {
+                    stack = ((HashedEntryStackWrapper)o).unwrap();
+                } else {
+                    ModernFix.LOGGER.error("Don't know how to handle {}", o.getClass().getName());
+                    continue;
+                }
                 if(stack.getType() == VanillaEntryTypes.ITEM) {
                     listCache.add(stack.cheatsAs().getValue());
                 }
@@ -54,6 +69,50 @@ public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
             lastSearchText = pSearchText;
         }
         return listCache;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static AsyncSearchManager createSearchManager() {
+        Method m, normalizeMethod;
+        try {
+            try {
+                m = EntryRegistryImpl.class.getDeclaredMethod("getPreFilteredComplexList");
+                m.setAccessible(true);
+                normalizeMethod = HashedEntryStackWrapper.class.getDeclaredMethod("normalize");
+                normalizeMethod.setAccessible(true);
+            } catch(NoSuchMethodException e) {
+                m = EntryRegistryImpl.class.getDeclaredMethod("getPreFilteredList");
+                m.setAccessible(true);
+                normalizeMethod = EntryStack.class.getDeclaredMethod("normalize");
+                normalizeMethod.setAccessible(true);
+            }
+            final MethodHandle getListMethod = MethodHandles.publicLookup().unreflect(m);
+            final MethodHandle normalize = MethodHandles.publicLookup().unreflect(normalizeMethod);
+            final EntryRegistryImpl registry = (EntryRegistryImpl)EntryRegistry.getInstance();
+            Supplier stackListSupplier = () -> {
+                try {
+                    return (List)getListMethod.invokeExact(registry);
+                } catch(Throwable e) {
+                    if(e instanceof RuntimeException)
+                        throw (RuntimeException)e;
+                    throw new RuntimeException(e);
+                }
+            };
+            UnaryOperator normalizeOperator = o -> {
+                try {
+                    return normalize.invoke(o);
+                } catch(Throwable e) {
+                    if(e instanceof RuntimeException)
+                        throw (RuntimeException)e;
+                    throw new RuntimeException(e);
+                }
+            };
+            return new AsyncSearchManager(stackListSupplier, () -> {
+                return Predicates.alwaysTrue();
+            }, normalizeOperator);
+        } catch(ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public static final SearchTreeProviderRegistry.Provider PROVIDER = new SearchTreeProviderRegistry.Provider() {

@@ -95,6 +95,17 @@ public abstract class ModelBakerImplMixin {
             this.field_40571.topLevelModels.clear();
         } else
             cir.setReturnValue(this.field_40571.getModel(arg));
+        UnbakedModel toReplace = cir.getReturnValue();
+        if(!wasMissingModel) {
+            for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                try {
+                    toReplace = integration.onUnbakedModelPreBake(arg, toReplace, (ModelBakery)(Object)this);
+                } catch(RuntimeException e) {
+                    ModernFix.LOGGER.error("Exception firing model pre-bake event for {}", arg, e);
+                }
+            }
+        }
+        cir.setReturnValue(toReplace);
         if(cir.getReturnValue() == extendedBakery.mfix$getUnbakedMissingModel()) {
             if(arg != ModelBakery.MISSING_MODEL_LOCATION && debugDynamicModelLoading)
                 ModernFix.LOGGER.warn("Model {} not present", arg);

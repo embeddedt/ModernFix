@@ -143,6 +143,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.dynamic_entity_renderers", false)
             .put("mixin.feature.integrated_server_watchdog", true)
             .put("mixin.perf.faster_item_rendering", false)
+            .put("mixin.feature.spam_thread_dump", false)
             .put("mixin.devenv", isDevEnv)
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)
             .build();
@@ -185,7 +186,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.launch.class_search_cache", "optifine");
         disableIfModPresent("mixin.perf.faster_texture_stitching", "optifine");
         disableIfModPresent("mixin.perf.datapack_reload_exceptions", "cyanide");
-        disableIfModPresent("mixin.perf.faster_texture_loading", "stitch", "optifine");
+        disableIfModPresent("mixin.perf.faster_texture_loading", "stitch", "optifine", "changed");
     }
 
     private void disableIfModPresent(String configName, String... ids) {

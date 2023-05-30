@@ -48,6 +48,15 @@ public abstract class ModelBakerImplMixin {
                         ibakedmodel = ModelBakery.ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBaker)this, blockmodel, textureGetter, arg2, arg, false);
                     }
                 }
+                if(iunbakedmodel != extendedBakery.mfix$getUnbakedMissingModel()) {
+                    for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                        try {
+                            iunbakedmodel = integration.onUnbakedModelPreBake(arg, iunbakedmodel, (ModelBakery)(Object)this);
+                        } catch(RuntimeException e) {
+                            ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
+                        }
+                    }
+                }
                 if(ibakedmodel == null) {
                     if(iunbakedmodel == extendedBakery.mfix$getUnbakedMissingModel()) {
                         // use a shared baked missing model

@@ -35,6 +35,19 @@ public interface ModernFixClientIntegration {
     }
 
     /**
+     * Called to allow mods to observe the use of an unbaked model at bake time and either make changes to it or wrap it with their
+     * own instance.
+     * @param location the ResourceLocation of the model (this may be a ModelResourceLocation)
+     * @param originalModel the original model
+     * @param bakery the model bakery - do not touch internal fields as they probably don't behave the way you expect
+     * with dynamic resources on
+     * @return the model which should actually be loaded for this resource location
+     */
+    default UnbakedModel onUnbakedModelPreBake(ResourceLocation location, UnbakedModel originalModel, ModelBakery bakery) {
+        return originalModel;
+    }
+
+    /**
      * Called to allow mods to observe the loading of a baked model and either make changes to it or wrap it with their
      * own instance.
      * @param location the ResourceLocation of the model (this may be a ModelResourceLocation)

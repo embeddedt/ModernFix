@@ -63,7 +63,8 @@ public class CachingStructureManager {
             currentTag.putInt("DataVersion", 500);
         }
         int currentDataVersion = currentTag.getInt("DataVersion");
-        if(currentDataVersion < SharedConstants.getCurrentVersion().getDataVersion().getVersion()) {
+        int requiredMinimumDataVersion = SharedConstants.getCurrentVersion().getDataVersion().getVersion();
+        if(currentDataVersion < requiredMinimumDataVersion) {
             /* Needs upgrade, try looking up from cache */
             MessageDigest hasher = digestThreadLocal.get();
             hasher.reset();
@@ -71,13 +72,13 @@ public class CachingStructureManager {
             CompoundTag cachedUpgraded = getCachedUpgraded(location, truncateHash(hash));
             if(cachedUpgraded == null)
                 cachedUpgraded = getCachedUpgraded(location, hash); /* pick up old cache */
-            if(cachedUpgraded != null && cachedUpgraded.getInt("DataVersion") == SharedConstants.getCurrentVersion().getDataVersion().getVersion()) {
+            if(cachedUpgraded != null && cachedUpgraded.getInt("DataVersion") == requiredMinimumDataVersion) {
                 ModernFix.LOGGER.debug("Using cached upgraded version of {}", location);
                 currentTag = cachedUpgraded;
             } else {
                 synchronized (laggyStructureMods) {
                     if(laggyStructureMods.add(location.getNamespace())) {
-                        ModernFix.LOGGER.warn("Mod {} is shipping outdated structure files, which can cause worldgen lag; please report this to them.", location.getNamespace());
+                        ModernFix.LOGGER.warn("The namespace {} contains an outdated structure file, which can cause worldgen lag. Please view debug.log for the full filename, determine which mod provides the structure, and report to the mod/datapack author, including the debug log.", location.getNamespace());
                     }
                 }
                 ModernFix.LOGGER.debug("Structure {} is being run through DFU (hash {}), this will cause launch time delays", location, hash);

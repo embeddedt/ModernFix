@@ -191,6 +191,8 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");
         disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
+        // DimThread makes changes to the server chunk manager (understandably), C2ME probably does the same
+        disableIfModPresent("mixin.bugfix.chunk_deadlock", "c2me", "dimthread");
         disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
         disableIfModPresent("mixin.launch.class_search_cache", "optifine");
         disableIfModPresent("mixin.perf.faster_texture_stitching", "optifine");

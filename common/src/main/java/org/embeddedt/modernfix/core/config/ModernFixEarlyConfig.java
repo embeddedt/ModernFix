@@ -59,6 +59,8 @@ public class ModernFixEarlyConfig {
     private final Set<String> mixinOptions = new ObjectOpenHashSet<>();
     private final Map<String, String> mixinsMissingMods = new Object2ObjectOpenHashMap<>();
 
+    public static boolean isFabric = false;
+
     public Map<String, String> getPermanentlyDisabledMixins() {
         return mixinsMissingMods;
     }
@@ -71,6 +73,8 @@ public class ModernFixEarlyConfig {
             if(stream == null)
                 continue;
             try(Reader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
+                if(configFile.contains("fabric"))
+                    isFabric = true;
                 JsonObject configObject = (JsonObject)new JsonParser().parse(reader);
                 JsonArray mixinList = configObject.getAsJsonArray("mixins");
                 String packageName = configObject.get("package").getAsString().replace('.', '/');
@@ -192,6 +196,9 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.faster_texture_stitching", "optifine");
         disableIfModPresent("mixin.perf.datapack_reload_exceptions", "cyanide");
         disableIfModPresent("mixin.perf.faster_texture_loading", "stitch", "optifine", "changed");
+        if(isFabric) {
+            disableIfModPresent("mixin.bugfix.packet_leak", "memoryleakfix");
+        }
     }
 
     private void disableIfModPresent(String configName, String... ids) {

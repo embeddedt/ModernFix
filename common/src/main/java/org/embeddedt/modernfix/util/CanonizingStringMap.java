@@ -141,6 +141,7 @@ public class CanonizingStringMap<T> implements Map<String, T> {
     }
 
     public static <T> CanonizingStringMap<T> deepCopy(CanonizingStringMap<T> inputMap, Function<T, T> deepCopier) {
+        Objects.requireNonNull(deepCopier);
         Object2ObjectMap<String, T> copiedBackingMap;
         int size = inputMap.backingMap.size();
         if(size > GROWTH_THRESHOLD) {
@@ -148,7 +149,8 @@ public class CanonizingStringMap<T> implements Map<String, T> {
         } else
             copiedBackingMap = new Object2ObjectArrayMap<>(size);
         inputMap.backingMap.object2ObjectEntrySet().forEach(entry -> {
-            copiedBackingMap.put(entry.getKey(), deepCopier.apply(entry.getValue()));
+            if(entry.getKey() != null && entry.getValue() != null)
+                copiedBackingMap.put(entry.getKey(), deepCopier.apply(entry.getValue()));
         });
         return new CanonizingStringMap<>(copiedBackingMap);
     }

@@ -22,7 +22,8 @@ public class CompoundTagMixin {
     @ModifyArg(method = "<init>()V", at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/CompoundTag;<init>(Ljava/util/Map;)V"), index = 0)
     private static Map<String, Tag> useCanonizingStringMap(Map<String, Tag> incoming) {
         CanonizingStringMap<Tag> newMap = new CanonizingStringMap<>();
-        newMap.putAll(incoming);
+        if(incoming != null)
+            newMap.putAll(incoming);
         return newMap;
     }
 

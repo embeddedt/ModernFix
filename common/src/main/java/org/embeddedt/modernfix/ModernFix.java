@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix;
 
+import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -24,6 +25,8 @@ public class ModernFix {
 
     public static final String MODID = "modernfix";
 
+    public static String NAME = "ModernFix";
+
     public static ModernFix INSTANCE;
 
     // Used to skip computing the blockstate caches twice
@@ -46,6 +49,8 @@ public class ModernFix {
 
     public ModernFix() {
         INSTANCE = this;
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.snapshot_easter_egg.NameChange") && !SharedConstants.getCurrentVersion().isStable())
+            NAME = "PreemptiveFix";
         ModernFixPlatformHooks.onServerCommandRegister(ModernFixCommands::register);
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spam_thread_dump.ThreadDumper")) {
             Thread t = new Thread() {

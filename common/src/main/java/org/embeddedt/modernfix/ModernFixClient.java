@@ -41,7 +41,7 @@ public class ModernFixClient {
         // clear reserve as it's not needed
         Minecraft.reserve = new byte[0];
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
-            brandingString = "ModernFix " + ModernFixPlatformHooks.getVersionString();
+            brandingString = ModernFix.NAME + " " + ModernFixPlatformHooks.getVersionString();
         }
         for(String className : ModernFixPlatformHooks.getCustomModOptions().get(IntegrationConstants.CLIENT_INTEGRATION_CLASS)) {
             try {

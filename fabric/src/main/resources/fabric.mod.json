@@ -33,7 +33,7 @@
     "fabric-screen-api-v1": "*",
     "fabric-command-api-v1": "*",
     "fabric-models-v0": "*",
-    "minecraft": ">=1.16.5"
+    "minecraft": ">=1.16.2"
   },
   "breaks": {
     "dashloader": "*"

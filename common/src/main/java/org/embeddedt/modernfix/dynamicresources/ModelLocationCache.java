@@ -31,6 +31,8 @@ public class ModelLocationCache {
             });
 
     public static ModelResourceLocation get(BlockState state) {
+        if(state == null)
+            return null;
         try {
             return blockLocationCache.get(state);
         } catch(ExecutionException e) {
@@ -39,6 +41,8 @@ public class ModelLocationCache {
     }
 
     public static ModelResourceLocation get(Item item) {
+        if(item == null)
+            return null;
         try {
             return itemLocationCache.get(item);
         } catch(ExecutionException e) {

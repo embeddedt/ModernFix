@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
@@ -37,9 +38,14 @@ public class BlockModelShaperMixin {
     public void rebuildCache() {
     }
 
+    /**
+     * @author embeddedt
+     * @reason get the model from the dynamic model provider
+     */
     @Overwrite
     public BakedModel getBlockModel(BlockState state) {
-        BakedModel model = modelManager.getModel(ModelLocationCache.get(state));
+        ModelResourceLocation mrl = ModelLocationCache.get(state);
+        BakedModel model = mrl == null ? null : modelManager.getModel(mrl);
         if (model == null) {
             model = modelManager.getMissingModel();
         }

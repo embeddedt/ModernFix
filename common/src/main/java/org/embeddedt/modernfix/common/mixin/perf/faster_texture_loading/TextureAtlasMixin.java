@@ -96,7 +96,7 @@ public abstract class TextureAtlasMixin {
     }
 
     @Inject(method = "load(Lnet/minecraft/server/packs/resources/ResourceManager;Lnet/minecraft/client/renderer/texture/TextureAtlasSprite$Info;IIIII)Lnet/minecraft/client/renderer/texture/TextureAtlasSprite;",
-        at = @At("HEAD"), cancellable = true)
+        at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/texture/TextureAtlas;getResourceLocation(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/resources/ResourceLocation;"), cancellable = true)
     private void loadFromExisting(ResourceManager resourceManager, TextureAtlasSprite.Info spriteInfo, int storageX, int storageY, int mipLevel, int x, int y, CallbackInfoReturnable<TextureAtlasSprite> cir) {
         if(!usingFasterLoad)
             return;

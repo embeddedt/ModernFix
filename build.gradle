@@ -28,7 +28,18 @@ allprojects {
 	}
 
 	group = 'org.embeddedt'
-	version = gitVersion()
+    // extract base version from tag, generate other metadata ourselves
+    def details = versionDetails()
+    def plusIndex = details.lastTag.indexOf("+")
+    if(plusIndex == -1) {
+        plusIndex = details.lastTag.length()
+    }
+    def baseVersion = details.lastTag.substring(0, plusIndex)
+    def dirtyMarker = details.isCleanTag ? "" : ".dirty"
+    def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash) : ""
+    def preMarker = (details.commitDistance > 0 || !details.isCleanTag) ? ("-beta." + details.commitDistance) : ""
+    def versionString = "${baseVersion}${preMarker}+mc${minecraft_version}${commitHashMarker}${dirtyMarker}"
+    version = versionString
     archivesBaseName = rootProject.archives_base_name + '-' + project.name
 
     sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17

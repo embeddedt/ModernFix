@@ -307,7 +307,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         };
         // bake indigo models
         Stopwatch watch = Stopwatch.createStarted();
-        this.topLevelModels.forEach((key, value) -> {
+        new ArrayList<>(this.topLevelModels.keySet()).forEach(key -> {
             try {
                 this.bake(key, BlockModelRotation.X0_Y0);
             } catch(RuntimeException e) {

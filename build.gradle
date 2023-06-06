@@ -13,7 +13,7 @@ architectury {
     minecraft = rootProject.minecraft_version
 }
 
-ext.archives_base_name = 'modernfix-mc' + minecraft_version
+ext.archives_base_name = 'modernfix'
 
 allprojects {
     apply plugin: "java"

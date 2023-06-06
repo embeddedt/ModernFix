@@ -14,6 +14,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
@@ -26,6 +28,7 @@ import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -157,6 +160,18 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return unbakedCache.get(rl);
     }
 
+    @ModifyVariable(method = "cacheAndQueueDependencies", at = @At("HEAD"), argsOnly = true)
+    private UnbakedModel fireUnbakedEvent(UnbakedModel model, ResourceLocation location) {
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            try {
+                model = integration.onUnbakedModelLoad(location, model, (ModelBakery)(Object)this);
+            } catch(RuntimeException e) {
+                ModernFix.LOGGER.error("Exception firing model load event for {}", location, e);
+            }
+        }
+        return model;
+    }
+
     @Inject(method = "cacheAndQueueDependencies", at = @At("RETURN"))
     private void addToSmallLoadingCache(ResourceLocation location, UnbakedModel model, CallbackInfo ci) {
         smallLoadingCache.put(location, model);
@@ -229,10 +244,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     }
 
     @Override
-    public BakedModel bakeDefault(ResourceLocation modelLocation) {
+    public BakedModel bakeDefault(ResourceLocation modelLocation, ModelState state) {
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
-        return theBaker.bake(modelLocation, BlockModelRotation.X0_Y0);
+        return theBaker.bake(modelLocation, state);
     }
 
     @Override

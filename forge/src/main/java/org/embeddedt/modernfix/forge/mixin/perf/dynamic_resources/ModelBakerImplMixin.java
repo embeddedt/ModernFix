@@ -4,11 +4,11 @@ import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.MinecraftForge;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
-import org.embeddedt.modernfix.forge.dynamicresources.DynamicModelBakeEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -48,6 +48,15 @@ public abstract class ModelBakerImplMixin {
                         ibakedmodel = ModelBakery.ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBaker)this, blockmodel, textureGetter, arg2, arg, false);
                     }
                 }
+                if(iunbakedmodel != extendedBakery.mfix$getUnbakedMissingModel()) {
+                    for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                        try {
+                            iunbakedmodel = integration.onUnbakedModelPreBake(arg, iunbakedmodel, (ModelBakery)(Object)this);
+                        } catch(RuntimeException e) {
+                            ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
+                        }
+                    }
+                }
                 if(ibakedmodel == null) {
                     if(iunbakedmodel == extendedBakery.mfix$getUnbakedMissingModel()) {
                         // use a shared baked missing model
@@ -59,10 +68,11 @@ public abstract class ModelBakerImplMixin {
                     } else
                         ibakedmodel = iunbakedmodel.bake((ModelBaker)this, textureGetter, arg2, arg);
                 }
-                DynamicModelBakeEvent event = new DynamicModelBakeEvent(arg, iunbakedmodel, ibakedmodel, (ModelBaker)this, this.field_40571);
-                MinecraftForge.EVENT_BUS.post(event);
-                this.field_40571.bakedCache.put(key, event.getModel());
-                cir.setReturnValue(event.getModel());
+                for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                    ibakedmodel = integration.onBakedModelLoad(arg, iunbakedmodel, ibakedmodel, arg2, this.field_40571);
+                }
+                this.field_40571.bakedCache.put(key, ibakedmodel);
+                cir.setReturnValue(ibakedmodel);
             }
         }
     }

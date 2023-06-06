@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix;
 
+import net.minecraft.SharedConstants;
 import net.minecraft.Util;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -11,6 +12,7 @@ import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.resources.ReloadExecutor;
 import org.embeddedt.modernfix.util.ClassInfoManager;
+import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
 import java.lang.management.ManagementFactory;
 import java.util.concurrent.ExecutorService;
@@ -22,6 +24,8 @@ public class ModernFix {
     public static final Logger LOGGER = LogManager.getLogger("ModernFix");
 
     public static final String MODID = "modernfix";
+
+    public static String NAME = "ModernFix";
 
     public static ModernFix INSTANCE;
 
@@ -45,7 +49,22 @@ public class ModernFix {
 
     public ModernFix() {
         INSTANCE = this;
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.snapshot_easter_egg.NameChange") && !SharedConstants.getCurrentVersion().isStable())
+            NAME = "PreemptiveFix";
         ModernFixPlatformHooks.onServerCommandRegister(ModernFixCommands::register);
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spam_thread_dump.ThreadDumper")) {
+            Thread t = new Thread() {
+                public void run() {
+                    while(true) {
+                        LOGGER.error("------ DEBUG THREAD DUMP (occurs every 60 seconds) ------");
+                        LOGGER.error(IntegratedWatchdog.obtainThreadDump());
+                        try { Thread.sleep(60000); } catch(InterruptedException e) {}
+                    }
+                }
+            };
+            t.setDaemon(true);
+            t.start();
+        }
     }
 
     public void onServerStarted() {

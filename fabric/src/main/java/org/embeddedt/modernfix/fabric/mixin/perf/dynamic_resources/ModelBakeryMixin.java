@@ -14,7 +14,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
@@ -28,6 +30,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -107,11 +110,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
     }
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void stopIgnore(CallbackInfo ci) {
-        this.ignoreModelLoad = false;
-    }
-
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
         if(!debugDynamicModelLoading)
             return;
@@ -171,6 +169,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Inject(method = "bakeModels", at = @At("HEAD"))
     private void captureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
+        this.ignoreModelLoad = false;
         textureGetter = getter;
     }
 
@@ -189,6 +188,17 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return unbakedCache.get(rl);
     }
 
+    @ModifyVariable(method = "cacheAndQueueDependencies", at = @At("HEAD"), argsOnly = true)
+    private UnbakedModel fireUnbakedEvent(UnbakedModel model, ResourceLocation location) {
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            try {
+                model = integration.onUnbakedModelLoad(location, model, (ModelBakery)(Object)this);
+            } catch(RuntimeException e) {
+                ModernFix.LOGGER.error("Exception firing model load event for {}", location, e);
+            }
+        }
+        return model;
+    }
 
     /**
      * @author embeddedt
@@ -256,14 +266,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     }
 
     @Override
-    public BakedModel bakeDefault(ResourceLocation modelLocation) {
+    public BakedModel bakeDefault(ResourceLocation modelLocation, ModelState state) {
         ModelBakery.BakedCacheKey key = new ModelBakery.BakedCacheKey(modelLocation, BlockModelRotation.X0_Y0.getRotation(), BlockModelRotation.X0_Y0.isUvLocked());
         BakedModel m = loadedBakedModels.getIfPresent(key);
         if(m != null)
             return m;
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
-        m = theBaker.bake(modelLocation, BlockModelRotation.X0_Y0);
+        m = theBaker.bake(modelLocation, state);
         if(m != null)
             loadedBakedModels.put(key, m);
         return m;

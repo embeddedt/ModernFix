@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.blast_search_trees;
 
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.world.item.ItemStack;
@@ -8,6 +9,8 @@ import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
 import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.glfw.GLFWErrorCallback;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -36,6 +39,14 @@ public abstract class MinecraftMixin {
         this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, tagSupplier);
         this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new DummySearchTree<>());
         ModernFixPlatformHooks.registerCreativeSearchTrees(this.searchRegistry, nameSupplier, tagSupplier, this::populateSearchTree);
+        // grab components for all key mappings in order to prevent them from being loaded off-thread later
+        // this populates the LazyLoadedValues
+        // we also need to suppress GLFW errors to prevent crashes if a key is missing
+        GLFWErrorCallback oldCb = GLFW.glfwSetErrorCallback(null);
+        for(KeyMapping mapping : KeyMapping.ALL.values()) {
+            mapping.getTranslatedKeyMessage();
+        }
+        GLFW.glfwSetErrorCallback(oldCb);
         ci.cancel();
     }
 }

@@ -11,6 +11,8 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.MemoryReserve;
 import net.minecraft.world.entity.Entity;
+import org.embeddedt.modernfix.api.constants.IntegrationConstants;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -22,6 +24,7 @@ import org.embeddedt.modernfix.world.IntegratedWatchdog;
 import java.lang.management.ManagementFactory;
 import java.lang.reflect.Field;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ModernFixClient {
     public static long worldLoadStartTime;
@@ -33,14 +36,26 @@ public class ModernFixClient {
 
     public String brandingString = null;
 
+    /**
+     * The list of loaded client integrations.
+     */
+    public static List<ModernFixClientIntegration> CLIENT_INTEGRATIONS = new CopyOnWriteArrayList<>();
+
     public ModernFixClient() {
         // clear reserve as it's not needed
         MemoryReserve.release();
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
-            brandingString = "ModernFix " + ModernFixPlatformHooks.getVersionString();
+            brandingString = ModernFix.NAME + " " + ModernFixPlatformHooks.getVersionString();
         }
         SearchTreeProviderRegistry.register(JEIBackedSearchTree.PROVIDER);
         SearchTreeProviderRegistry.register(REIBackedSearchTree.PROVIDER);
+        for(String className : ModernFixPlatformHooks.getCustomModOptions().get(IntegrationConstants.CLIENT_INTEGRATION_CLASS)) {
+            try {
+                CLIENT_INTEGRATIONS.add((ModernFixClientIntegration)Class.forName(className).getDeclaredConstructor().newInstance());
+            } catch(ReflectiveOperationException | ClassCastException e) {
+                ModernFix.LOGGER.error("Could not instantiate integration {}", className, e);
+            }
+        }
     }
 
     public void resetWorldLoadStateMachine() {

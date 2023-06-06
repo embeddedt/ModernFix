@@ -25,6 +25,9 @@ dependencies {
     modCompileOnly("me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}") {
         transitive = false
     }
+
+    modCompileOnly("curse.maven:diagonal-fences-458048:${diagonal_fences_version}")
+
     // compile against the JEI API but do not include it at runtime
     modCompileOnly("mezz.jei:jei-${jei_minecraft_version}-common:${jei_version}")
     modCompileOnly("mezz.jei:jei-${jei_minecraft_version}-gui:${jei_version}")

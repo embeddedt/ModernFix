@@ -20,6 +20,8 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     public static ModernFixMixinPlugin instance;
 
     public ModernFixMixinPlugin() {
+        /* invoke early to ensure it gets read on one thread */
+        ModernFixPlatformHooks.getCustomModOptions();
         boolean firstConfig = instance == null;
         if(firstConfig) {
             instance = this;

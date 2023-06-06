@@ -45,7 +45,7 @@ public class ModernFixClient {
         // clear reserve as it's not needed
         MemoryReserve.release();
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
-            brandingString = "ModernFix " + ModernFixPlatformHooks.getVersionString();
+            brandingString = ModernFix.NAME + " " + ModernFixPlatformHooks.getVersionString();
         }
         SearchTreeProviderRegistry.register(JEIBackedSearchTree.PROVIDER);
         SearchTreeProviderRegistry.register(REIBackedSearchTree.PROVIDER);

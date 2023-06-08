@@ -48,11 +48,6 @@ public class ForgeRegistryMixin<V> {
         expectedNextBit = -1;
     }
 
-    @Inject(method = "createAndAddDummy", at = @At(value = "INVOKE", target = "Ljava/util/BitSet;clear(I)V"))
-    private void clearBitCache2(CallbackInfo ci) {
-        expectedNextBit = -1;
-    }
-
     @Redirect(method = "add(ILnet/minecraft/resources/ResourceLocation;Ljava/lang/Object;Ljava/lang/String;)I", at = @At(value = "INVOKE", target = "Lorg/apache/logging/log4j/Logger;trace(Lorg/apache/logging/log4j/Marker;Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)V"))
     private void skipTrace(Logger logger, Marker marker, String s, Object o, Object o1, Object o2, Object o3, Object o4) {
 

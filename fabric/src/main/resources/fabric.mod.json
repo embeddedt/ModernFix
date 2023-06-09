@@ -37,6 +37,6 @@
     "minecraft": ">=1.16.2"
   },
   "breaks": {
-    "dashloader": "*"
+    "dashloader": "<5.0.0-beta.1"
   }
 }

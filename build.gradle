@@ -4,6 +4,7 @@ plugins {
     id "maven-publish"
     id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
     id 'com.palantir.git-version' version '1.0.0'
+    id 'org.ajoberstar.grgit' version '5.2.0'
     id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '1.79.0'
     id "com.modrinth.minotaur" version "2.+" apply false
 	id("com.diffplug.spotless") version "6.18.0" apply false
@@ -35,7 +36,7 @@ allprojects {
         plusIndex = details.lastTag.length()
     }
     def baseVersion = details.lastTag.substring(0, plusIndex)
-    def dirtyMarker = details.isCleanTag ? "" : ".dirty"
+    def dirtyMarker = grgit.status().clean ? "" : ".dirty"
     def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash) : ""
     def preMarker = (details.commitDistance > 0 || !details.isCleanTag) ? ("-beta." + details.commitDistance) : ""
     def versionString = "${baseVersion}${preMarker}+mc${minecraft_version}${commitHashMarker}${dirtyMarker}"
@@ -174,5 +175,45 @@ tasks.register('checkCleanTag') {
         if (!details.isCleanTag || versionDetails().commitDistance != 0) {
             throw new GradleException('Not a clean tree.')
         }
+    }
+}
+
+configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
+    apply plugin: 'com.matthewprenger.cursegradle'
+    apply plugin: 'com.modrinth.minotaur'
+
+    def isBeta = project.version.toString().contains("beta")
+
+    curseforge {
+        if (System.getenv("CURSEFORGE_TOKEN") != null) {
+            apiKey = System.getenv("CURSEFORGE_TOKEN")
+            project {
+                id = "790626"
+                changelog = file('../CHANGELOG.md')
+                changelogType = "markdown"
+                releaseType = isBeta ? "beta" : "release"
+                addGameVersion project.name.capitalize()
+                gameVersionStrings.addAll(supported_minecraft_versions.tokenize(","))
+                mainArtifact remapJar
+            }
+        }
+    }
+
+    modrinth {
+        token = System.getenv("MODRINTH_TOKEN")
+        projectId = "modernfix" // This can be the project ID or the slug. Either will work!
+        versionType = isBeta ? "beta" : "release" // This is the default -- can also be `beta` or `alpha`
+        uploadFile = remapJar
+        gameVersions = supported_minecraft_versions.tokenize(",")
+        loaders = [project.name]
+        changelog.set(provider { file("CHANGELOG.md").getText('UTF-8') })
+    }
+
+    tasks.curseforge.dependsOn(rootProject.generateChangelog)
+    tasks.modrinth.dependsOn(rootProject.generateChangelog)
+
+    tasks.register('publishToModSites') {
+        publishToModSites.dependsOn(tasks.modrinth)
+        publishToModSites.dependsOn(tasks.curseforge)
     }
 }

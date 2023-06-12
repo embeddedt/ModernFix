@@ -19,7 +19,7 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x gradlew
       - name: Build and publish mod to CurseForge & Modrinth
-        run: ./gradlew forge:publishToModSites fabric:publishToModSites
+        run: ./gradlew forge:publishToModSites fabric:publishToModSites forge:copyJarToBin fabric:copyJarToBin
         env:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}

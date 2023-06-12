@@ -189,10 +189,10 @@ configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
             apiKey = System.getenv("CURSEFORGE_TOKEN")
             project {
                 id = "790626"
-                changelog = file('CHANGELOG.md')
+                changelog = file('../CHANGELOG.md')
                 changelogType = "markdown"
                 releaseType = isBeta ? "beta" : "release"
-                addGameVersion project.name
+                addGameVersion project.name.capitalize()
                 gameVersionStrings.addAll(supported_minecraft_versions.tokenize(","))
                 mainArtifact remapJar
             }

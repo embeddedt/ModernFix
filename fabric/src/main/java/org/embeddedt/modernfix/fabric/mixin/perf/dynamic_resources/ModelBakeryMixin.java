@@ -252,6 +252,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 "pipe",
                 "ropebridge",
                 "solid_block",
+                "spell_effect",
                 "spell_projectile"
         };
         for(String folder : extraFolders) {

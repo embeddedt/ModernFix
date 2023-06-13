@@ -13,6 +13,7 @@ import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFixFabric;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
@@ -101,6 +102,9 @@ public class ModernFixPlatformHooksImpl {
     }
 
     public static void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
-        /* no-op on Fabric */
+        CreativeModeTabs.searchTab().setSearchTreeBuilder((list) -> {
+            populator.accept(SearchRegistry.CREATIVE_NAMES, list);
+            populator.accept(SearchRegistry.CREATIVE_TAGS, list);
+        });
     }
 }

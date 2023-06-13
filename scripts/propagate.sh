@@ -10,6 +10,7 @@ function cleanup {
 }
 
 trap cleanup EXIT
+trap "exit" INT
 
 # clone ModernFix repo
 
@@ -32,12 +33,23 @@ for version in "${all_versions[@]}"; do
     if ! { echo "$version"; echo "$our_version"; } | sort --version-sort --check &>/dev/null; then
         echo -n "merging $our_version into ${version}... "
         git checkout -b propagations/$version origin/$version &>/dev/null
-        if git merge -m "Merge $our_version into $version" propagations/$our_version >/dev/null; then
-            echo "done"
+        if ! git merge --no-commit propagations/$our_version >/dev/null; then
+            merge_failed=yes
+            echo "failed, this merge must be done manually using the provided shell"
+        else
+            merge_failed=no
+            echo -n "done"
+        fi
+        if [ "x$merge_failed" == "xyes" ]; then
+            git status
+            bash
+            echo -e $'Press any key to commit or Ctrl+C to completely abort...\n'
+            read -rs -n1
+        fi
+        if (git add . && git commit -m "Merge $our_version into $version" &>/dev/null); then
             git push -u origin propagations/$version:$version &>/dev/null
         else
-            echo "failed, this merge must be done manually"
-            exit 1
+            echo -e "\b\b\b\bnothing to merge"
         fi
         our_version=$version
     fi

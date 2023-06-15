@@ -33,7 +33,7 @@ for version in "${all_versions[@]}"; do
     if ! { echo "$version"; echo "$our_version"; } | sort --version-sort --check &>/dev/null; then
         echo -n "merging $our_version into ${version}... "
         git checkout -b propagations/$version origin/$version &>/dev/null
-        if ! git merge --no-commit propagations/$our_version >/dev/null; then
+        if ! git merge --no-commit propagations/$our_version &>/dev/null; then
             merge_failed=yes
             echo "failed, this merge must be done manually using the provided shell"
         else

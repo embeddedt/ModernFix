@@ -144,10 +144,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private BiFunction<ResourceLocation, Material, TextureAtlasSprite> textureGetter;
 
-    @Inject(method = "bakeModels", at = @At("HEAD"), cancellable = true)
-    private void skipBake(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
+    @Inject(method = "bakeModels", at = @At("HEAD"))
+    private void storeTextureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
         textureGetter = getter;
-        ci.cancel();
+    }
+
+    @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;"))
+    private Set skipBakingModels(Map map) {
+        return Collections.emptySet();
     }
 
     /**

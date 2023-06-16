@@ -51,7 +51,7 @@ public abstract class ModelBakerImplMixin {
                 if(iunbakedmodel != extendedBakery.mfix$getUnbakedMissingModel()) {
                     for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
                         try {
-                            iunbakedmodel = integration.onUnbakedModelPreBake(arg, iunbakedmodel, (ModelBakery)(Object)this);
+                            iunbakedmodel = integration.onUnbakedModelPreBake(arg, iunbakedmodel, this.field_40571);
                         } catch(RuntimeException e) {
                             ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
                         }

@@ -209,7 +209,7 @@ public class ModernFixPlatformHooksImpl {
     }
 
     public static void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
-        if(mixinClassName.equals("org.embeddedt.modernfix.forge.valhesia.chunk_deadlock.bugfix.mixin.BlockStateBaseMixin")) {
+        if(mixinClassName.equals("org.embeddedt.modernfix.forge.mixin.bugfix.chunk_deadlock.valhesia.BlockStateBaseMixin")) {
             // We need to destroy Valhelsia's callback so it can never run getBlockState
             for(MethodNode m : targetClass.methods) {
                 if(m.name.contains("valhelsia_placeDousedTorch")) {

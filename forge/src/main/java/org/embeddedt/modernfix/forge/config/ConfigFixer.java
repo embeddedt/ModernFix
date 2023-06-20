@@ -2,8 +2,8 @@ package org.embeddedt.modernfix.forge.config;
 
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
-import net.minecraftforge.fml.config.ModConfig;
+import net.minecraftforge.fml.config.IConfigEvent;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 
@@ -22,7 +22,7 @@ public class ConfigFixer {
             return;
         ModList.get().forEachModContainer((id, container) -> {
             try {
-                Optional<Consumer<ModConfig.ModConfigEvent>> configOpt = ObfuscationReflectionHelper.getPrivateValue(ModContainer.class, container, "configHandler");
+                Optional<Consumer<IConfigEvent>> configOpt = ObfuscationReflectionHelper.getPrivateValue(ModContainer.class, container, "configHandler");
                 if(configOpt.isPresent()) {
                     ObfuscationReflectionHelper.setPrivateValue(ModContainer.class, container, Optional.of(new LockingConfigHandler(id, configOpt.get())), "configHandler");
                 }
@@ -32,17 +32,17 @@ public class ConfigFixer {
         });
     }
 
-    private static class LockingConfigHandler implements Consumer<ModConfig.ModConfigEvent> {
-        private final Consumer<ModConfig.ModConfigEvent> actualHandler;
+    private static class LockingConfigHandler implements Consumer<IConfigEvent> {
+        private final Consumer<IConfigEvent> actualHandler;
         private final String modId;
 
-        LockingConfigHandler(String id, Consumer<ModConfig.ModConfigEvent> actualHandler) {
+        LockingConfigHandler(String id, Consumer<IConfigEvent> actualHandler) {
             this.modId = id;
             this.actualHandler = actualHandler;
         }
 
         @Override
-        public void accept(ModConfig.ModConfigEvent modConfigEvent) {
+        public void accept(IConfigEvent modConfigEvent) {
             synchronized (this) {
                 this.actualHandler.accept(modConfigEvent);
             }

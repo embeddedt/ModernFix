@@ -5,6 +5,7 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.config.ModConfig;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 
 import java.util.Optional;
 import java.util.function.Consumer;
@@ -17,6 +18,8 @@ public class ConfigFixer {
      * Should have no noticeable performance impact as config handlers are virtually instant.
      */
     public static void replaceConfigHandlers() {
+        if(!ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.fix_config_crashes.ConfigFixerMixin"))
+            return;
         ModList.get().forEachModContainer((id, container) -> {
             try {
                 Optional<Consumer<ModConfig.ModConfigEvent>> configOpt = ObfuscationReflectionHelper.getPrivateValue(ModContainer.class, container, "configHandler");

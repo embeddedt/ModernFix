@@ -25,6 +25,7 @@ import org.embeddedt.modernfix.forge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
+import org.embeddedt.modernfix.forge.config.ConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.registry.ObjectHolderClearer;
 import org.embeddedt.modernfix.forge.util.KubeUtil;
@@ -48,6 +49,7 @@ public class ModernFixForge {
         PacketHandler.register();
         ModFileScanDataDeduplicator.deduplicate();
         ClassLoadHack.loadModClasses();
+        ConfigFixer.replaceConfigHandlers();
     }
 
     @SubscribeEvent

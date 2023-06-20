@@ -27,6 +27,8 @@ do_release() {
     echo "we think the current tag is $(git describe --tags --abbrev=0)"
     echo "the current commit head is $(git rev-parse HEAD)"
     read -p "new tag name: " tag_name
+    git tag -a $tag_name -m "$tag_name"
+    git push --tags
     gh release create $tag_name --target $1 --title "$tag_name" --notes ""
 }
 

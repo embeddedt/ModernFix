@@ -158,6 +158,9 @@ public class ModernFixEarlyConfig {
 
         this.scanForAndBuildMixinOptions();
         mixinOptions.addAll(DEFAULT_SETTING_OVERRIDES.keySet());
+        if(!isFabric) {
+            mixinOptions.add("mixin.bugfix.fix_config_crashes");
+        }
         for(String optionName : mixinOptions) {
             boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(optionName, true);
             this.options.putIfAbsent(optionName, new Option(optionName, defaultEnabled, false));

@@ -19,6 +19,7 @@ import net.minecraft.world.level.DataPackConfig;
 import net.minecraft.world.level.levelgen.WorldGenSettings;
 import net.minecraft.world.level.levelgen.presets.WorldPresets;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -30,6 +31,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 @Mixin(CreateWorldScreen.class)
+@ClientOnlyMixin
 public abstract class CreateWorldScreenMixin extends Screen {
     @Shadow protected static WorldLoader.InitConfig createDefaultLoadConfig(PackRepository arg, DataPackConfig arg2) {
         throw new AssertionError();

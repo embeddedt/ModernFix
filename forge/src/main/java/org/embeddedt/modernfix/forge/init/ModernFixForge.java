@@ -22,6 +22,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.forge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
@@ -44,6 +45,7 @@ public class ModernFixForge {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         PacketHandler.register();
         ModFileScanDataDeduplicator.deduplicate();
+        ClassLoadHack.loadModClasses();
     }
 
     @SubscribeEvent

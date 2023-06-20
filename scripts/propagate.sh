@@ -47,6 +47,7 @@ for version in "${all_versions[@]}"; do
             read -rs -n1
         fi
         if (git add . && git commit -m "Merge $our_version into $version" &>/dev/null); then
+            echo
             git push -u origin propagations/$version:$version &>/dev/null
         else
             echo -e "\b\b\b\bnothing to merge"

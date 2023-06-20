@@ -15,8 +15,6 @@ import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.loading.FMLConfig;
-import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.network.NetworkConstants;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
@@ -67,13 +65,7 @@ public class ModernFixForge {
     }
 
     private static boolean dfuModPresent() {
-        if(FMLConfig.isOptimizedDFUDisabled())
-            return true;
-        for(String modId : new String[] { "lazydfu", "datafixerslayer" }) {
-            if(ModList.get().isLoaded(modId))
-                return true;
-        }
-        return !FMLLoader.isProduction();
+        return true; /* new DFU isn't worth warning about */
     }
 
     @SubscribeEvent

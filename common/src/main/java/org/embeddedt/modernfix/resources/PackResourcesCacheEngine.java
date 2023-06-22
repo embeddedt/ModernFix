@@ -133,6 +133,11 @@ public class PackResourcesCacheEngine {
         return this.containedPaths.contains(new CachedResourcePath(path));
     }
 
+    public boolean hasResource(String[] paths) {
+        awaitLoad();
+        return this.containedPaths.contains(new CachedResourcePath(paths));
+    }
+
     public Collection<ResourceLocation> getResources(PackType type, String resourceNamespace, String pathIn, int maxDepth, Predicate<ResourceLocation> filter) {
         if(!PackTypeHelper.isVanillaPackType(type))
             throw new IllegalArgumentException("Only vanilla PackTypes are supported");

@@ -104,21 +104,21 @@ public class ModelBakeryHelpers {
             }
         }
         allPackResources.removeIf(pack -> {
-            if(isTrustedPack.test(pack)) {
-                for(String namespace : pack.getNamespaces(PackType.CLIENT_RESOURCES)) {
-                    Collection<ResourceLocation> allBlockstates = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "blockstates", p -> p.getPath().endsWith(".json"));
-                    for(ResourceLocation blockstate : allBlockstates) {
-                        allAvailableStates.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("blockstates/", "").replace(".json", "")));
-                    }
-                    Collection<ResourceLocation> allModels = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "models", p -> p.getPath().endsWith(".json"));
-                    for(ResourceLocation blockstate : allModels) {
-                        allAvailableModels.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("models/", "").replace(".json", "")));
-                    }
+            for(String namespace : pack.getNamespaces(PackType.CLIENT_RESOURCES)) {
+                Collection<ResourceLocation> allBlockstates = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "blockstates", p -> p.getPath().endsWith(".json"));
+                for(ResourceLocation blockstate : allBlockstates) {
+                    allAvailableStates.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("blockstates/", "").replace(".json", "")));
                 }
-                return true;
+                Collection<ResourceLocation> allModels = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "models", p -> p.getPath().endsWith(".json"));
+                for(ResourceLocation blockstate : allModels) {
+                    allAvailableModels.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("models/", "").replace(".json", "")));
+                }
             }
-            ModernFix.LOGGER.debug("Pack with class {} needs manual scan", pack.getClass().getName());
-            return false;
+            if(!isTrustedPack.test(pack)) {
+                ModernFix.LOGGER.debug("Pack with class {} needs manual scan", pack.getClass().getName());
+                return false;
+            }
+            return true;
         });
 
         gatherAdditionalViaManualScan(allPackResources, allAvailableStates, blockStateFiles, "blockstates/");
@@ -206,6 +206,7 @@ public class ModelBakeryHelpers {
         blockStateData = null;
         blockStateLoadedFiles.clear();
 
+        modelFiles.addAll(allAvailableModels);
         /* figure out which models we should actually load */
         gatherAdditionalViaManualScan(allPackResources, allAvailableModels, modelFiles, "models/");
         modelFiles.retainAll(allAvailableModels);

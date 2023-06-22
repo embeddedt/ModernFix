@@ -1,0 +1,95 @@
+package org.embeddedt.modernfix.forge.mixin.perf.resourcepacks;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackResources;
+import net.minecraft.server.packs.PackType;
+import net.minecraftforge.resource.PathPackResources;
+import org.embeddedt.modernfix.resources.ICachingResourcePack;
+import org.embeddedt.modernfix.resources.NewResourcePackAdapter;
+import org.embeddedt.modernfix.resources.PackResourcesCacheEngine;
+import org.embeddedt.modernfix.util.PackTypeHelper;
+import org.jetbrains.annotations.NotNull;
+import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.Path;
+import java.util.Collection;
+import java.util.Set;
+
+@Mixin(PathPackResources.class)
+public abstract class ForgePathPackResourcesMixin implements ICachingResourcePack {
+    @Shadow protected abstract Path resolve(String... paths);
+
+    @Shadow @NotNull
+    protected abstract Set<String> getNamespacesFromDisk(PackType type);
+
+    @Shadow private static String[] getPathFromLocation(PackType type, ResourceLocation location) {
+        throw new AssertionError();
+    }
+
+    private PackResourcesCacheEngine cacheEngine;
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void cacheResources(CallbackInfo ci) {
+        invalidateCache();
+        PackResourcesCacheEngine.track(this);
+    }
+
+    private PackResourcesCacheEngine generateResourceCache() {
+        synchronized (this) {
+            PackResourcesCacheEngine engine = this.cacheEngine;
+            if(engine != null)
+                return engine;
+            this.cacheEngine = engine = new PackResourcesCacheEngine(this::getNamespacesFromDisk, (type, namespace) -> this.resolve(type.getDirectory(), namespace));
+            return engine;
+        }
+    }
+
+    @Override
+    public void invalidateCache() {
+        this.cacheEngine = null;
+    }
+
+    @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
+    private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+        PackResourcesCacheEngine engine = cacheEngine;
+        if(engine != null) {
+            Set<String> namespaces = engine.getNamespaces(type);
+            if(namespaces != null)
+                cir.setReturnValue(namespaces);
+        }
+    }
+
+    @Redirect(method = "getRootResource", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;exists(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z"))
+    private boolean useCacheForExistence(Path path, LinkOption[] options, String[] originalPaths) {
+        // the cache only stores things with a namespace and pack type
+        if(originalPaths.length < 3)
+            return Files.exists(path, options);
+        else
+            return this.generateResourceCache().hasResource(originalPaths);
+    }
+
+    /**
+     * @author embeddedt
+     * @reason Use cached listing of mod resources
+     */
+    @Inject(method = "listResources", at = @At("HEAD"), cancellable = true)
+    private void fastGetResources(PackType type, String namespace, String path, PackResources.ResourceOutput resourceOutput, CallbackInfo ci)
+    {
+        if(!PackTypeHelper.isVanillaPackType(type))
+            return;
+        ci.cancel();
+        Collection<ResourceLocation> allPossibleResources = this.generateResourceCache().getResources(type, namespace, path, Integer.MAX_VALUE, p -> true);
+        NewResourcePackAdapter.sendToOutput(location -> {
+            Path target = resolve(getPathFromLocation(location.getPath().startsWith("lang/") ? PackType.CLIENT_RESOURCES : type, location));
+            return () -> Files.newInputStream(target);
+        }, resourceOutput, allPossibleResources);
+    }
+}

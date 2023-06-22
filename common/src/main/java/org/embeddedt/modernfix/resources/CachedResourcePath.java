@@ -57,6 +57,13 @@ public class CachedResourcePath {
         pathComponents = components;
     }
 
+    /**
+     * DOES NOT INTERN!
+     */
+    public CachedResourcePath(String[] pathComponents) {
+        this.pathComponents = pathComponents;
+    }
+
     @Override
     public int hashCode() {
         return Arrays.hashCode(pathComponents);

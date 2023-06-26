@@ -1,10 +1,11 @@
 package org.embeddedt.modernfix.common.mixin.bugfix.paper_chunk_patches;
 
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.thread.BlockableEventLoop;
 import org.embeddedt.modernfix.duck.IPaperChunkHolder;
-import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -23,12 +24,14 @@ import java.util.function.Function;
 public class ChunkMapMixin {
     @Shadow @Final private BlockableEventLoop<Runnable> mainThreadExecutor;
 
+    @Shadow @Final private ServerLevel level;
     private Executor mainInvokingExecutor;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void setup(CallbackInfo ci) {
+        MinecraftServer server = this.level.getServer();
         this.mainInvokingExecutor = (runnable) -> {
-            if(ModernFixPlatformHooks.getCurrentServer().isSameThread())
+            if(server.isSameThread())
                 runnable.run();
             else
                 this.mainThreadExecutor.execute(runnable);

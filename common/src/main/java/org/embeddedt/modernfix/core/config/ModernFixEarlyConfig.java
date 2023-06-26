@@ -17,6 +17,7 @@ import org.objectweb.asm.tree.ClassNode;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
@@ -141,7 +142,21 @@ public class ModernFixEarlyConfig {
         shouldReplaceSearchTrees = modPresent("jei");
     }
 
-    private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = ImmutableMap.<String, Boolean>builder()
+    private static class DefaultSettingMapBuilder extends ImmutableMap.Builder<String, Boolean> {
+        public DefaultSettingMapBuilder putConditionally(BooleanSupplier condition, String k, Boolean v) {
+            if(condition.getAsBoolean())
+                put(k, v);
+            return this;
+        }
+
+        @Override
+        public DefaultSettingMapBuilder put(String key, Boolean value) {
+            super.put(key, value);
+            return this;
+        }
+    }
+
+    private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
             .put("mixin.feature.direct_stack_trace", false)
             .put("mixin.perf.rewrite_registry", false)
@@ -157,6 +172,8 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.blast_search_trees", shouldReplaceSearchTrees)
             .put("mixin.devenv", isDevEnv)
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)
+            .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
+            .putConditionally(() -> isFabric, "mixin.perf.clear_fabric_mapping_tables", false)
             .build();
 
     private ModernFixEarlyConfig(File file) {
@@ -164,9 +181,6 @@ public class ModernFixEarlyConfig {
 
         this.scanForAndBuildMixinOptions();
         mixinOptions.addAll(DEFAULT_SETTING_OVERRIDES.keySet());
-        if(!isFabric) {
-            mixinOptions.add("mixin.bugfix.fix_config_crashes");
-        }
         for(String optionName : mixinOptions) {
             boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(optionName, true);
             this.options.putIfAbsent(optionName, new Option(optionName, defaultEnabled, false));

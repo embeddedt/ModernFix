@@ -17,6 +17,7 @@ import me.lucko.spark.common.sampler.node.MergeMode;
 import me.lucko.spark.common.util.MethodDisambiguator;
 import me.lucko.spark.lib.adventure.text.Component;
 import me.lucko.spark.proto.SparkSamplerProtos;
+import net.minecraft.SharedConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
@@ -91,7 +92,7 @@ public class SparkLaunchProfiler {
 
         @Override
         public String getName() {
-            return "ModernFix";
+            return ModernFixPlatformHooks.getPlatformName();
         }
 
         @Override
@@ -101,7 +102,7 @@ public class SparkLaunchProfiler {
 
         @Override
         public String getMinecraftVersion() {
-            return "unknown";
+            return SharedConstants.getCurrentVersion().getName();
         }
 
     }

@@ -22,6 +22,9 @@
     "client": [
       "org.embeddedt.modernfix.ModernFixClientFabric"
     ],
+    "preLaunch": [
+      "org.embeddedt.modernfix.ModernFixPreLaunchFabric"
+    ],
     "modmenu": [ "org.embeddedt.modernfix.fabric.modmenu.ModernFixModMenuApiImpl" ]
   },
   "mixins": [

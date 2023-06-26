@@ -91,7 +91,7 @@ public class SparkLaunchProfiler {
 
         @Override
         public String getName() {
-            return "ModernFix";
+            return "Fabric";
         }
 
         private static String versionOfModContainer(Optional<ModContainer> containerOpt) {

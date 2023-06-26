@@ -92,7 +92,7 @@ public class SparkLaunchProfiler {
 
         @Override
         public String getName() {
-            return "ModernFix";
+            return "Forge";
         }
 
         @Override

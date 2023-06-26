@@ -71,6 +71,7 @@ public class ModernFixClient {
         } else if (openingScreen instanceof TitleScreen && gameStartTimeSeconds < 0) {
             gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
+            ModernFixPlatformHooks.onLaunchComplete();
         }
     }
 

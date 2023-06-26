@@ -24,6 +24,8 @@ import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
+import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
+import org.embeddedt.modernfix.util.CommonModUtil;
 import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
@@ -91,6 +93,10 @@ public class ModernFixPlatformHooksImpl {
         } catch(RuntimeException | ReflectiveOperationException e) {
             ModernFixMixinPlugin.instance.logger.error("Failed to patch mixin memory leak", e);
         }
+
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnForge")) {
+            CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.start("launch"), "Failed to start profiler");
+        }
     }
 
     public static void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
@@ -138,5 +144,15 @@ public class ModernFixPlatformHooksImpl {
                 populator.accept(tagSearchKey, contents);
             });
         });
+    }
+
+    public static void onLaunchComplete() {
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnForge")) {
+            CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.stop("launch"), "Failed to stop profiler");
+        }
+    }
+
+    public static String getPlatformName() {
+        return "Forge";
     }
 }

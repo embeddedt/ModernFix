@@ -96,4 +96,9 @@ public class ModernFixPlatformHooks {
     public static void onLaunchComplete() {
 
     }
+
+    @ExpectPlatform
+    public static String getPlatformName() {
+        throw new AssertionError();
+    }
 }

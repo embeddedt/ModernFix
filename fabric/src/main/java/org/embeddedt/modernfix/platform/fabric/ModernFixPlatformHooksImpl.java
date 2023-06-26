@@ -53,7 +53,7 @@ public class ModernFixPlatformHooksImpl {
     }
 
     public static MinecraftServer getCurrentServer() {
-        return ModernFixFabric.theServer;
+        return ModernFixFabric.theServer.get();
     }
 
     public static boolean isLoadingNormally() {

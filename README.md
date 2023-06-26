@@ -10,6 +10,7 @@ is directly derived from Sodium and used under the terms of the LGPL-3.0 license
 - 1.18.2, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/1.18/Package.zip
 - 1.19.2, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/1.19.2/Package.zip
 - 1.19.4, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/1.19.4/Package.zip
+- 1.20.1, both modloaders: https://nightly.link/embeddedt/ModernFix/workflows/gradle/1.20/Package.zip
 
 ------------
 

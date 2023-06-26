@@ -85,4 +85,13 @@ public class ModernFixPlatformHooks {
     public static void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
         throw new AssertionError();
     }
+
+    public static void onLaunchComplete() {
+        throw new AssertionError();
+    }
+
+    @ExpectPlatform
+    public static String getPlatformName() {
+        throw new AssertionError();
+    }
 }

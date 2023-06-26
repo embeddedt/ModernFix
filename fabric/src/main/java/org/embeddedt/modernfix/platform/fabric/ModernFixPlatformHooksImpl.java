@@ -19,6 +19,9 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.embeddedt.modernfix.ModernFixFabric;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.fabric.spark.SparkLaunchProfiler;
+import org.embeddedt.modernfix.util.CommonModUtil;
 import org.objectweb.asm.tree.*;
 
 import java.nio.file.Path;
@@ -108,5 +111,11 @@ public class ModernFixPlatformHooksImpl {
             }
         }
         return modOptions;
+    }
+
+    public static void onLaunchComplete() {
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnFabric")) {
+            CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.stop("launch"), "Failed to stop profiler");
+        }
     }
 }

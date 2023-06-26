@@ -50,6 +50,7 @@ dependencies {
     modCompileOnly files("deps/starlight-1.2.jar")
     modCompileOnly("appeng:appliedenergistics2:8.4.7")
     modCompileOnly("vazkii.patchouli:Patchouli:1.16.4-53.3")
+    modImplementation "curse.maven:spark-361579:${rootProject.spark_forge_version}"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }

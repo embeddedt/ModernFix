@@ -153,6 +153,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.faster_item_rendering", false)
             .put("mixin.feature.spam_thread_dump", false)
             .put("mixin.feature.snapshot_easter_egg", true)
+            .put("mixin.feature.spark_profile_launch", false)
             .put("mixin.perf.blast_search_trees", shouldReplaceSearchTrees)
             .put("mixin.devenv", isDevEnv)
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)

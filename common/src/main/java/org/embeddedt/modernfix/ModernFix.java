@@ -71,6 +71,7 @@ public class ModernFix {
         if(ModernFixPlatformHooks.isDedicatedServer()) {
             float gameStartTime = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             ModernFix.LOGGER.warn("Dedicated server took " + gameStartTime + " seconds to load");
+            ModernFixPlatformHooks.onLaunchComplete();
         }
         ClassInfoManager.clear();
     }

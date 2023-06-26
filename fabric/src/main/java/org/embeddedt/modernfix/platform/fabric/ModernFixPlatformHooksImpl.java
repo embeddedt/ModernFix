@@ -118,4 +118,8 @@ public class ModernFixPlatformHooksImpl {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.stop("launch"), "Failed to stop profiler");
         }
     }
+
+    public static String getPlatformName() {
+        return "Fabric";
+    }
 }

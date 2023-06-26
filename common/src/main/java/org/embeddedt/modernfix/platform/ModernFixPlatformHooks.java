@@ -92,4 +92,14 @@ public class ModernFixPlatformHooks {
     public static Multimap<String, String> getCustomModOptions() {
         throw new AssertionError();
     }
+
+    @ExpectPlatform
+    public static void onLaunchComplete() {
+
+    }
+
+    @ExpectPlatform
+    public static String getPlatformName() {
+        throw new AssertionError();
+    }
 }

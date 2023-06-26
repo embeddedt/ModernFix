@@ -23,6 +23,9 @@
       "org.embeddedt.modernfix.ModernFixClientFabric"
     ],
     "modmenu": [ "org.embeddedt.modernfix.fabric.modmenu.ModernFixModMenuApiImpl" ],
+    "preLaunch": [
+      "org.embeddedt.modernfix.ModernFixPreLaunchFabric"
+    ],
     "jei_mod_plugin": [ "org.embeddedt.modernfix.searchtree.JEIRuntimeCapturer"]
   },
   "mixins": [

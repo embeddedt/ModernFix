@@ -86,6 +86,7 @@ public class ModernFixPlatformHooks {
         throw new AssertionError();
     }
 
+    @ExpectPlatform
     public static void onLaunchComplete() {
         throw new AssertionError();
     }

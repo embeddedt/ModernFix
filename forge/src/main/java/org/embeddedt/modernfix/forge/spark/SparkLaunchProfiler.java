@@ -72,7 +72,7 @@ public class SparkLaunchProfiler {
     private static void output(String key, Sampler sampler) {
         executor.execute(() -> {
             ModernFixMixinPlugin.instance.logger.warn("Stage [{}] profiler has stopped! Uploading results...", key);
-            SparkSamplerProtos.SamplerData output = sampler.toProto(platform, commandSender, ThreadNodeOrder.BY_TIME, "Stage: " + key, MergeMode.separateParentCalls(new MethodDisambiguator()), platform.createClassSourceLookup());
+            SparkSamplerProtos.SamplerData output = sampler.toProto(platform, commandSender, ThreadNodeOrder.BY_TIME, "Stage: " + key, MergeMode.sameMethod(new MethodDisambiguator()), platform.createClassSourceLookup());
             try {
                 String urlKey = platform.getBytebinClient().postContent(output, mediaType).key();
                 String url = "https://spark.lucko.me/" + urlKey;

@@ -11,7 +11,6 @@ import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLLoadCompleteEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -39,7 +38,6 @@ public class ModernFixForge {
         // Register ourselves for server and other game events we are interested in
         MinecraftForge.EVENT_BUS.register(this);
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onLoadComplete);
         FMLJavaModLoadingContext.get().getModEventBus().addGenericListener(Item.class, this::registerItems);
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> MinecraftForge.EVENT_BUS.register(new ModernFixClientForge()));
         ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST, () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (a, b) -> true));
@@ -90,10 +88,6 @@ public class ModernFixForge {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onServerDead(FMLServerStoppedEvent event) {
         commonMod.onServerDead(event.getServer());
-    }
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onLoadComplete(FMLLoadCompleteEvent event) {
-        commonMod.onLoadComplete();
     }
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onServerStarted(FMLServerStartedEvent event) {

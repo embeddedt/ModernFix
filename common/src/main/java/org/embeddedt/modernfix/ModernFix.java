@@ -76,10 +76,6 @@ public class ModernFix {
         ClassInfoManager.clear();
     }
 
-    public void onLoadComplete() {
-        ClassInfoManager.clear();
-    }
-
     public void onServerDead(MinecraftServer server) {
         /* Clear as much data from the integrated server as possible, in case a mod holds on to it */
         try {

@@ -60,7 +60,7 @@ public class ModernFixEarlyConfig {
     private final Set<String> mixinOptions = new ObjectOpenHashSet<>();
     private final Map<String, String> mixinsMissingMods = new Object2ObjectOpenHashMap<>();
 
-    public static boolean isFabric = false;
+    public static boolean isFabric = ModernFixEarlyConfig.class.getClassLoader().getResourceAsStream("modernfix-fabric.mixins.json") != null;
 
     public Map<String, String> getPermanentlyDisabledMixins() {
         return mixinsMissingMods;
@@ -74,8 +74,6 @@ public class ModernFixEarlyConfig {
             if(stream == null)
                 continue;
             try(Reader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
-                if(configFile.contains("fabric"))
-                    isFabric = true;
                 JsonObject configObject = (JsonObject)new JsonParser().parse(reader);
                 JsonArray mixinList = configObject.getAsJsonArray("mixins");
                 String packageName = configObject.get("package").getAsString().replace('.', '/');

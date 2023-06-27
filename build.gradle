@@ -190,6 +190,20 @@ configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
     apply plugin: 'com.matthewprenger.cursegradle'
     apply plugin: 'com.modrinth.minotaur'
 
+    def copyJarNameConsistent = tasks.register('copyJarNameConsistent', Copy) {
+        from remapJar // shortcut for createJar.outputs.files
+        into project.file("build/libs")
+        rename { name -> "modernfix-" + project.name + "-latest.jar" }
+    }
+
+    def copyJarToBin = tasks.register('copyJarToBin', Copy) {
+        from remapJar // shortcut for createJar.outputs.files
+        into rootProject.file("bin")
+        mustRunAfter "copyJarNameConsistent"
+    }
+
+    tasks.build.dependsOn(copyJarToBin, copyJarNameConsistent)
+
     def isBeta = project.version.toString().contains("beta")
 
     curseforge {

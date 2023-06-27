@@ -71,7 +71,7 @@ public class SparkLaunchProfiler {
             SparkSamplerProtos.SamplerData output = sampler.toProto(platform, new Sampler.ExportProps()
                     .creator(new CommandSender.Data(commandSender.getName(), commandSender.getUniqueId()))
                     .comment("Stage: " + key)
-                    .mergeMode(() -> MergeMode.separateParentCalls(new MethodDisambiguator()))
+                    .mergeMode(() -> MergeMode.sameMethod(new MethodDisambiguator()))
                     .classSourceLookup(platform::createClassSourceLookup));
             try {
                 String urlKey = platform.getBytebinClient().postContent(output, "application/x-spark-sampler").key();

@@ -19,6 +19,7 @@ import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.searchtree.JEIBackedSearchTree;
 import org.embeddedt.modernfix.searchtree.REIBackedSearchTree;
 import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
+import org.embeddedt.modernfix.util.ClassInfoManager;
 import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
 import java.lang.management.ManagementFactory;
@@ -72,6 +73,7 @@ public class ModernFixClient {
             gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
             ModernFixPlatformHooks.onLaunchComplete();
+            ClassInfoManager.clear();
         }
     }
 

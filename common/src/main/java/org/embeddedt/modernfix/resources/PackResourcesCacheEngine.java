@@ -66,7 +66,7 @@ public class PackResourcesCacheEngine {
                                         synchronized (this.containedPaths) {
                                             this.containedPaths.add(cachedPath);
                                         }
-                                        if(!cachedPath.getFileName().endsWith(".mcmeta"))
+                                        //if(!cachedPath.getFileName().endsWith(".mcmeta"))
                                             namespacedList.add(cachedPath);
                                     });
                         }

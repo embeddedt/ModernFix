@@ -21,12 +21,19 @@ cd mfix
 # gather version list
 readarray -t all_versions < <(git ls-remote --heads origin | awk '{print $2}' | sed 's:.*/::' | sort -V)
 
+last_released_version=""
 do_release() {
     echo "will now make release for $1"
     git checkout $1 &>/dev/null || git checkout -b $1 &>/dev/null
-    echo "we think the current tag is $(git describe --tags --abbrev=0)"
+    current_tag=$(git describe --tags --abbrev=0)
+    echo "we think the current tag is $current_tag"
     echo "the current commit head is $(git rev-parse HEAD)"
-    read -p "new tag name: " tag_name
+    old_version_specifier=$(echo $current_tag | awk -F+ '{print $2}')
+    read -e -p "new tag name (${old_version_specifier}): " -i "${last_released_version}" tag_name
+    if [[ $tag_name != *"+"* ]]; then
+        tag_name=${tag_name}+${old_version_specifier}
+    fi
+    last_released_version=$(echo $tag_name | awk -F+ '{print $1}')
     git tag -a $tag_name -m "$tag_name"
     git push --tags
     gh release create $tag_name --target $1 --title "$tag_name" --notes ""

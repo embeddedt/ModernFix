@@ -39,6 +39,11 @@ allprojects {
     def dirtyMarker = grgit.status().clean ? "" : ".dirty"
     def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash) : ""
     def preMarker = (details.commitDistance > 0 || !details.isCleanTag) ? ("-beta." + details.commitDistance) : ""
+    if(preMarker.length() > 0) {
+        // bump to next patch release
+        def versionParts = baseVersion.tokenize(".")
+        baseVersion = "${versionParts[0]}.${versionParts[1]}.${versionParts[2].toInteger() + 1}"
+    }
     def versionString = "${baseVersion}${preMarker}+mc${minecraft_version}${commitHashMarker}${dirtyMarker}"
     version = versionString
     archivesBaseName = rootProject.archives_base_name + '-' + project.name
@@ -239,3 +244,5 @@ configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
         publishToModSites.dependsOn(tasks.curseforge)
     }
 }
+
+println "ModernFix: " + version

@@ -43,6 +43,7 @@ dependencies {
 
     modCompileOnly("curse.maven:supermartijncore-454372:4455384")
     modCompileOnly("vazkii.patchouli:Patchouli:1.18.2-71.1")
+    modCompileOnly("curse.maven:twilightforest-227639:4337390")
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }

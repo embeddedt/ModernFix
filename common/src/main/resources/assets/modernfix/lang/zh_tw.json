@@ -1,0 +1,13 @@
+{
+    "key.modernfix": "ModernFix",
+    "key.modernfix.config": "開啟設定介面",
+    "modernfix.jei_load": "正在載入 JEI，這可能需要一點時間",
+    "modernfix.no_lazydfu": "沒有安裝 LazyDFU。如果 Minecraft 需要從舊版本更新遊戲資料，可能會出現明顯的延遲。",
+    "modernfix.config": "ModernFix 注入設定",
+    "modernfix.config.done_restart": "完成（需要重新啟動遊戲）",
+    "modernfix.option.on": "開啟",
+    "modernfix.option.off": "關閉",
+    "modernfix.config.not_default": "（已修改）",
+    "asynclocator.map.locating": "地圖（定位中...）",
+    "asynclocator.map.none": "地圖（未找到附近的特徵）"
+}

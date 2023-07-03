@@ -2,12 +2,15 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.diagonalfenc
 
 import fuzs.diagonalfences.api.world.level.block.DiagonalBlock;
 import fuzs.diagonalfences.client.model.MultipartAppender;
+import fuzs.diagonalfences.mixin.client.accessor.ModelBakeryAccessor;
 import net.minecraft.client.renderer.block.model.multipart.MultiPart;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.FenceBlock;
+import net.minecraft.world.level.block.IronBarsBlock;
+import org.apache.logging.log4j.util.BiConsumer;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
@@ -21,7 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @RequiresMod("diagonalfences")
 public abstract class MultipartAppenderMixin {
     @Shadow(remap = false)
-    public static void appendDiagonalSelectors(ModelBakery modelBakery, MultiPart multiPart) {
+    public static void appendDiagonalSelectors(BiConsumer<ResourceLocation, UnbakedModel> modelBakery, MultiPart multiPart, boolean rotateCenter) {
         throw new AssertionError();
     }
 
@@ -38,7 +41,7 @@ public abstract class MultipartAppenderMixin {
                 if(originalModel instanceof MultiPart multipart) {
                     Block block = multipart.definition.getOwner();
                     if(block instanceof FenceBlock && block instanceof DiagonalBlock diagonalBlock && diagonalBlock.hasProperties()) {
-                        appendDiagonalSelectors(bakery, multipart);
+                        appendDiagonalSelectors(((ModelBakeryAccessor)bakery)::diagonalfences$callCacheAndQueueDependencies, multipart, block instanceof IronBarsBlock);
                     }
                 }
                 return originalModel;

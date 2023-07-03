@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(LootTables.class)
 public class LootTableManagerMixin {
     @Redirect(method = "*(Lnet/minecraft/server/packs/resources/ResourceManager;Lcom/google/common/collect/ImmutableMap$Builder;Lnet/minecraft/resources/ResourceLocation;Lcom/google/gson/JsonElement;)V",
-            at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;error(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V", remap = false))
+            at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;error(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V", remap = false), require = 0)
     private void logWithoutStacktrace(Logger instance, String s, Object location, Object exc) {
         instance.error(s + ": {}", location, exc.toString());
     }

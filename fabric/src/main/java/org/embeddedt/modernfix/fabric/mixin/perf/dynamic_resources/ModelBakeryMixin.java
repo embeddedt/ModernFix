@@ -51,6 +51,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collector;
@@ -282,9 +283,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.topLevelModels.entrySet().removeIf(isVanillaModel);
     }
 
-    @Inject(method = "uploadTextures", at = @At(value = "FIELD", target = "Lnet/minecraft/client/resources/model/ModelBakery;topLevelModels:Ljava/util/Map;", ordinal = 0), cancellable = true)
-    private void skipBake(TextureManager resourceManager, ProfilerFiller profiler, CallbackInfoReturnable<AtlasSet> cir) {
-        profiler.pop();
+    @Redirect(method = "uploadTextures", at = @At(value = "INVOKE", target = "Ljava/util/Set;forEach(Ljava/util/function/Consumer;)V", ordinal = 0))
+    private void skipBake(Set instance, Consumer consumer, TextureManager resourceManager, ProfilerFiller profiler) {
         this.inTextureGatheringPass = false;
         this.injectedModels = null;
         // hand off to the dynamic model system
@@ -327,7 +327,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.topLevelModels.clear();
         this.topLevelModels.put(MISSING_MODEL_LOCATION, this.missingModel);
         this.smallLoadingCache.clear();
-        cir.setReturnValue(atlasSet);
     }
 
     /**

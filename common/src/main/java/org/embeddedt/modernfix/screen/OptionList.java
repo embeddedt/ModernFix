@@ -7,6 +7,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.events.GuiEventListener;
+import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.network.chat.TextComponent;
@@ -14,10 +15,13 @@ import net.minecraft.network.chat.TranslatableComponent;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.Option;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
@@ -25,6 +29,8 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
     private static final Component OPTION_ON = new TranslatableComponent("modernfix.option.on").withStyle(style -> style.withColor(ChatFormatting.GREEN));
     private static final Component OPTION_OFF = new TranslatableComponent("modernfix.option.off").withStyle(style -> style.withColor(ChatFormatting.RED));
+
+    private static final Set<String> OPTIONS_MISSING_HELP = new HashSet<>();
 
     private ModernFixConfigScreen mainScreen;
 
@@ -36,7 +42,14 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
         int maxW = 0;
         Map<String, Option> optionMap = ModernFixMixinPlugin.instance.config.getOptionMap();
-        List<String> sortedKeys = optionMap.keySet().stream().filter(key -> !key.equals("mixin.core")).sorted().collect(Collectors.toList());
+        List<String> sortedKeys = optionMap.keySet().stream().filter(key -> {
+            int dotCount = 0;
+            for(char c : key.toCharArray()) {
+                if(c == '.')
+                    dotCount++;
+            }
+            return dotCount >= 2;
+        }).sorted().collect(Collectors.toList());
         for(String key : sortedKeys) {
             Option option = optionMap.get(key);
             int w = this.minecraft.font.width(key);
@@ -58,12 +71,13 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         private final String name;
 
         private final Button toggleButton;
+        private final Button helpButton;
         private final Option option;
 
         public OptionEntry(String optionName, Option option) {
             this.name = optionName;
             this.option = option;
-            this.toggleButton = new Button(0, 0, 95, 20, new TextComponent(""), (arg) -> {
+            this.toggleButton = new Button(0, 0, 55, 20, new TextComponent(""), (arg) -> {
                 this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
                 try {
                     ModernFixMixinPlugin.instance.config.save();
@@ -76,6 +90,14 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     ModernFix.LOGGER.error("Unable to save config", e);
                 }
             });
+            this.helpButton = new Button(75, 0, 20, 20, new TextComponent("?"), (arg) -> {
+                Minecraft.getInstance().setScreen(new ModernFixOptionInfoScreen(mainScreen, optionName));
+            });
+            if(!I18n.exists("modernfix.option." + optionName)) {
+                this.helpButton.active = false;
+                if(ModernFixPlatformHooks.isDevEnv() && OPTIONS_MISSING_HELP.add(optionName))
+                    ModernFix.LOGGER.warn("Missing help for {}", optionName);
+            }
         }
 
         @Override
@@ -88,6 +110,9 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             this.toggleButton.y = top;
             this.toggleButton.setMessage(getOptionMessage(this.option));
             this.toggleButton.render(matrixStack, mouseX, mouseY, partialTicks);
+            this.helpButton.x = left + 175 + 55;
+            this.helpButton.y = top;
+            this.helpButton.render(matrixStack, mouseX, mouseY, partialTicks);
         }
 
         private Component getOptionMessage(Option option) {
@@ -96,15 +121,23 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
         @Override
         public List<? extends GuiEventListener> children() {
-            return ImmutableList.of(this.toggleButton);
+            return ImmutableList.of(this.toggleButton, this.helpButton);
         }
 
         public boolean mouseClicked(double mouseX, double mouseY, int button) {
-            return this.toggleButton.mouseClicked(mouseX, mouseY, button);
+            for(GuiEventListener listener : children()) {
+                if(listener.mouseClicked(mouseX, mouseY, button))
+                    return true;
+            }
+            return false;
         }
 
         public boolean mouseReleased(double mouseX, double mouseY, int button) {
-            return this.toggleButton.mouseReleased(mouseX, mouseY, button);
+            for(GuiEventListener listener : children()) {
+                if(listener.mouseReleased(mouseX, mouseY, button))
+                    return true;
+            }
+            return false;
         }
     }
 

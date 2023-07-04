@@ -25,8 +25,13 @@ public class ModernFixOptionInfoScreen extends Screen {
     protected void init() {
         super.init();
         this.addButton(new Button(this.width / 2 - 100, this.height - 29, 200, 20, CommonComponents.GUI_DONE, (button) -> {
-            this.minecraft.setScreen(lastScreen);
+            this.onClose();
         }));
+    }
+
+    @Override
+    public void onClose() {
+        this.minecraft.setScreen(lastScreen);
     }
 
     private void drawMultilineString(PoseStack mStack, Font fr, Component str, int x, int y) {

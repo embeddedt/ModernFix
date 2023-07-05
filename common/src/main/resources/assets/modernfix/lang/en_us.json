@@ -3,6 +3,8 @@
   "key.modernfix.config": "Open config screen",
   "modernfix.jei_load": "Loading JEI, this may take a while",
   "modernfix.no_lazydfu": "LazyDFU is not installed. If Minecraft needs to update game data from an older version, there may be noticeable lag.",
+  "modernfix.no_ferritecore": "FerriteCore is not installed. Memory usage will be very high.",
+  "modernfix.perf_mod_warning": "It is recommended to install the mods, but the warning(s) can be disabled in the ModernFix config.",
   "modernfix.config": "ModernFix mixin config",
   "modernfix.config.done_restart": "Done (restart required)",
   "modernfix.option.on": "on",

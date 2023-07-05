@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.forge.init;
 
+import com.google.common.collect.ImmutableList;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
@@ -19,6 +20,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
@@ -26,6 +28,8 @@ import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.registry.ObjectHolderClearer;
+
+import java.util.List;
 
 @Mod(ModernFix.MODID)
 public class ModernFixForge {
@@ -66,15 +70,24 @@ public class ModernFixForge {
         }
     }
 
-    private static boolean dfuModPresent() {
-        return true; /* new DFU isn't worth warning about */
-    }
+    private static final List<Pair<List<String>, String>> MOD_WARNINGS = ImmutableList.of(
+            Pair.of(ImmutableList.of("ferritecore"), "modernfix.no_ferritecore")
+    );
 
     @SubscribeEvent
     public void commonSetup(FMLCommonSetupEvent event) {
-        if(!dfuModPresent()) {
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.warn_missing_perf_mods.Warnings")) {
             event.enqueueWork(() -> {
-                ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, "modernfix.no_lazydfu"));
+                boolean atLeastOneWarning = false;
+                for(Pair<List<String>, String> warning : MOD_WARNINGS) {
+                    boolean isPresent = !FMLLoader.isProduction() || warning.getLeft().stream().anyMatch(name -> ModList.get().isLoaded(name));
+                    if(!isPresent) {
+                        atLeastOneWarning = true;
+                        ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, warning.getRight()));
+                    }
+                }
+                if(atLeastOneWarning)
+                    ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, "modernfix.perf_mod_warning"));
             });
         }
         ObjectHolderClearer.clearThrowables();

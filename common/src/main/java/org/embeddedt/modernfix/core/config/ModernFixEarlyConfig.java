@@ -1,8 +1,7 @@
 package org.embeddedt.modernfix.core.config;
 
 import com.google.common.base.Splitter;
-import com.google.common.collect.ImmutableList;
-import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.*;
 import com.google.gson.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -25,6 +24,7 @@ public class ModernFixEarlyConfig {
     private static final Logger LOGGER = LogManager.getLogger("ModernFixConfig");
 
     private final Map<String, Option> options = new HashMap<>();
+    private final Multimap<String, Option> optionsByCategory = HashMultimap.create();
 
     public static final boolean OPTIFINE_PRESENT;
 
@@ -171,12 +171,14 @@ public class ModernFixEarlyConfig {
 
     private ModernFixEarlyConfig(File file) {
         this.configFile = file;
-
+        OptionCategories.load();
         this.scanForAndBuildMixinOptions();
         mixinOptions.addAll(DEFAULT_SETTING_OVERRIDES.keySet());
         for(String optionName : mixinOptions) {
             boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(optionName, true);
-            this.options.putIfAbsent(optionName, new Option(optionName, defaultEnabled, false));
+            Option option = new Option(optionName, defaultEnabled, false);
+            this.options.putIfAbsent(optionName, option);
+            this.optionsByCategory.put(OptionCategories.getCategoryForOption(optionName), option);
         }
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
@@ -376,5 +378,9 @@ public class ModernFixEarlyConfig {
 
     public Map<String, Option> getOptionMap() {
         return Collections.unmodifiableMap(this.options);
+    }
+
+    public Multimap<String, Option> getOptionCategoryMap() {
+        return Multimaps.unmodifiableMultimap(this.optionsByCategory);
     }
 }

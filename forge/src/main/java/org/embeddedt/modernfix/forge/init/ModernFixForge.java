@@ -15,6 +15,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.config.ModConfig;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.network.NetworkConstants;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
@@ -82,8 +83,6 @@ public class ModernFixForge {
                 boolean atLeastOneWarning = false;
                 for(Pair<List<String>, String> warning : MOD_WARNINGS) {
                     boolean isPresent = !FMLLoader.isProduction() || warning.getLeft().stream().anyMatch(name -> ModList.get().isLoaded(name));
-                    if(!isPresent && warning.getRight().equals("modernfix.no_lazydfu") && FMLConfig.isOptimizedDFUDisabled())
-                        isPresent = true;
                     if(!isPresent) {
                         atLeastOneWarning = true;
                         ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, warning.getRight()));

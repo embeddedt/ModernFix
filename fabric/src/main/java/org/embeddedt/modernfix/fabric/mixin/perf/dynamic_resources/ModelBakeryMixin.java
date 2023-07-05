@@ -353,6 +353,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return model;
     }
 
+    private int mfix$nestedLoads = 0;
+
     /**
      * @author embeddedt
      * @reason synchronize
@@ -377,6 +379,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     while(!this.loadingStack.isEmpty()) {
                         ResourceLocation resourcelocation = this.loadingStack.iterator().next();
 
+                        mfix$nestedLoads++;
                         try {
                             existing = this.unbakedCache.get(resourcelocation);
                             if (existing == null) {
@@ -394,6 +397,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                             this.unbakedCache.put(resourcelocation, iunbakedmodel);
                             smallLoadingCache.put(resourcelocation, iunbakedmodel);
                         } finally {
+                            mfix$nestedLoads--;
                             this.loadingStack.remove(resourcelocation);
                         }
                     }
@@ -403,7 +407,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     // the model immediately
                     UnbakedModel result = smallLoadingCache.getOrDefault(modelLocation, iunbakedmodel);
                     // We are done with loading, so clear this cache to allow GC of any unneeded models
-                    smallLoadingCache.clear();
+                    if(mfix$nestedLoads == 0)
+                        smallLoadingCache.clear();
                     cir.setReturnValue(result);
                 }
             }
@@ -469,7 +474,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 if (iunbakedmodel instanceof BlockModel) {
                     BlockModel blockmodel = (BlockModel)iunbakedmodel;
                     if (blockmodel.getRootModel() == GENERATION_MARKER) {
-                        ibakedmodel = ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBakery)(Object)this, blockmodel, this.atlasSet::getSprite, arg2, arg, false);
+                        ibakedmodel = ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBakery)(Object)this, blockmodel, textureGetter, arg2, arg, false);
                     }
                 }
                 if(ibakedmodel == null) {

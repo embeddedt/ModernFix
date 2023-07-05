@@ -1,0 +1,14 @@
+{
+  "default": "expert_only",
+  "categories": {
+    "performance": [
+      "mixin.perf.async_jei",
+      "mixin.perf.dynamic_resources"
+    ],
+    "troubleshooting": [
+      "mixin.feature.spam_thread_dump",
+      "mixin.feature.spark_profile_launch"
+    ],
+    "expert_only": []
+  }
+}

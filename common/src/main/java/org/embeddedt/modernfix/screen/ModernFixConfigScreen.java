@@ -5,6 +5,8 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import org.jetbrains.annotations.Nullable;
 
 public class ModernFixConfigScreen extends Screen {
     private OptionList optionList;
@@ -22,9 +24,14 @@ public class ModernFixConfigScreen extends Screen {
         this.optionList = new OptionList(this, this.minecraft);
         this.addWidget(this.optionList);
         this.doneButton = new Button(this.width / 2 - 100, this.height - 29, 200, 20, CommonComponents.GUI_DONE, (arg) -> {
-            this.minecraft.setScreen(lastScreen);
+            this.onClose();
         });
         this.addRenderableWidget(this.doneButton);
+    }
+
+    @Override
+    public void onClose() {
+        this.minecraft.setScreen(lastScreen);
     }
 
     @Override
@@ -34,5 +41,10 @@ public class ModernFixConfigScreen extends Screen {
         drawCenteredString(poseStack, this.font, this.title, this.width / 2, 8, 16777215);
         this.doneButton.setMessage(madeChanges ? Component.translatable("modernfix.config.done_restart") : CommonComponents.GUI_DONE);
         super.render(poseStack, mouseX, mouseY, partialTicks);
+    }
+
+    @Override
+    public void renderComponentHoverEffect(PoseStack matrixStack, @Nullable Style style, int mouseX, int mouseY) {
+        super.renderComponentHoverEffect(matrixStack, style, mouseX, mouseY);
     }
 }

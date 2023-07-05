@@ -32,8 +32,11 @@ public class ChunkMapMixin {
      * <br>
      * A different patch is necessary for 1.17+, if the issue can be reproduced there, as entity loading
      * works differently.
+     * <br>
+     * Because of the method arguments being appended to this redirect handler, it will only target the lambda inside
+     * protoChunkToFullChunk.
      */
-    @Redirect(method = "*(Lnet/minecraft/server/level/ChunkHolder;Lnet/minecraft/world/level/chunk/ChunkAccess;)Lnet/minecraft/world/level/chunk/ChunkAccess;", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/LevelChunk;getEntitySections()[Lnet/minecraft/util/ClassInstanceMultiMap;"))
+    @Redirect(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/LevelChunk;getEntitySections()[Lnet/minecraft/util/ClassInstanceMultiMap;"))
     private ClassInstanceMultiMap<?>[] getEntitySections(LevelChunk chunk, ChunkHolder holder, ChunkAccess access) {
         ((ILevelChunk)chunk).setEntityLoadHook(() -> {
             List<Entity> list = null;

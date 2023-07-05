@@ -22,10 +22,10 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
+import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.forge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
-import org.embeddedt.modernfix.forge.ModernFixConfig;
-import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.registry.ObjectHolderClearer;
@@ -82,6 +82,8 @@ public class ModernFixForge {
                 boolean atLeastOneWarning = false;
                 for(Pair<List<String>, String> warning : MOD_WARNINGS) {
                     boolean isPresent = !FMLLoader.isProduction() || warning.getLeft().stream().anyMatch(name -> ModList.get().isLoaded(name));
+                    if(!isPresent && warning.getRight().equals("modernfix.no_lazydfu") && FMLConfig.isOptimizedDFUDisabled())
+                        isPresent = true;
                     if(!isPresent) {
                         atLeastOneWarning = true;
                         ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, warning.getRight()));

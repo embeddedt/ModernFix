@@ -93,7 +93,7 @@ allprojects {
     }
 }
 
-subprojects {
+configure(subprojects.findAll {it.name == "common" || it.name == "forge" || it.name == "fabric"}) {
     apply plugin: "dev.architectury.loom"
 
     loom {

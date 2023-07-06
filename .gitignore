@@ -4,6 +4,7 @@ libs
 media
 classes/
 .architectury-transformer/
+fabric/fabricloader.log
 
 # Changelog
 CHANGELOG.md

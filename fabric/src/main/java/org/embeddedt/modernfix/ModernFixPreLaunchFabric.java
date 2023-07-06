@@ -9,6 +9,10 @@ import org.embeddedt.modernfix.util.CommonModUtil;
 public class ModernFixPreLaunchFabric implements PreLaunchEntrypoint {
     @Override
     public void onPreLaunch() {
+        if(ModernFixMixinPlugin.instance == null) {
+            System.err.println("Mixin plugin not loaded yet");
+            return;
+        }
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnFabric")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.start("launch"), "Failed to start profiler");
         }

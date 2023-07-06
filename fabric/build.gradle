@@ -1,5 +1,6 @@
 plugins {
     id "com.github.johnrengelman.shadow" version "7.1.2"
+    id 'com.adarshr.test-logger' version '3.2.0'
 }
 
 architectury {
@@ -44,8 +45,8 @@ dependencies {
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury-fabric:${rootProject.architectury_version}"
 
-    testImplementation(common(project(path: ":common", configuration: "namedElements"))) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+    common(project(path: ":common", configuration: "namedElements")) { transitive false }
+    testImplementation(shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))) { transitive false }
 
     testImplementation(platform("org.junit:junit-bom:${project.junit_version}"))
     testImplementation("org.junit.jupiter:junit-jupiter-api")
@@ -66,6 +67,7 @@ test {
         runDir.mkdir()
     }
     workingDir = runDir
+    systemProperty 'modernfix.ignoreConfigForTesting', 'true'
 
     // inject our custom agent to fix #817
     FileCollection agentFile = configurations.getByName("testAgent")

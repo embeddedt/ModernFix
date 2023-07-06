@@ -7,6 +7,9 @@ import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.Extension;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+/**
+ * Simple extension to run vanilla bootstrap, inspired by AE2.
+ */
 public class BootstrapMinecraftExtension implements Extension, BeforeAllCallback, AfterAllCallback {
     @Override
     public void beforeAll(ExtensionContext context) throws Exception {

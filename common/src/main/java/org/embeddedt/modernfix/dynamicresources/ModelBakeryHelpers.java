@@ -9,10 +9,7 @@ import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.renderer.block.model.BlockModel;
-import net.minecraft.client.resources.model.Material;
-import net.minecraft.client.resources.model.ModelBakery;
-import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
@@ -24,6 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -32,6 +30,8 @@ import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -341,5 +341,14 @@ public class ModelBakeryHelpers {
             finalList = newPermutations;
         }
         return ImmutableList.copyOf(finalList);
+    }
+
+    public static ModernFixClientIntegration bakedModelWrapper(BiFunction<ResourceLocation, Pair<UnbakedModel, BakedModel>, BakedModel> consumer) {
+        return new ModernFixClientIntegration() {
+            @Override
+            public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState state, ModelBakery bakery) {
+                return consumer.apply(location, Pair.of(baseModel, originalModel));
+            }
+        };
     }
 }

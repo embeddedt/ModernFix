@@ -22,7 +22,7 @@ public class ForgeHooksClientMixin {
     /**
      * Generate a more realistic keySet that contains every item and block model location, to help with mod compat.
      */
-    @Redirect(method = "onModelBake", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/ModLoader;postEvent(Lnet/minecraftforge/eventbus/api/Event;)V"))
+    @Redirect(method = "onModelBake", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/ModLoader;postEvent(Lnet/minecraftforge/eventbus/api/Event;)V"), remap = false)
     private static void postNamespacedKeySetEvent(ModLoader loader, Event event) {
         if(!ModLoader.isLoadingStateValid())
             return;

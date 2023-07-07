@@ -11,7 +11,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.RequiresMod;
-import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
+import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -30,13 +30,9 @@ public class RegistrationMixin {
     @Inject(method = "registerClientEvents", at = @At("TAIL"), remap = false)
     private void doRegisterDynBake(CallbackInfo ci) {
         customizerField = ObfuscationReflectionHelper.findField(ModelOverrideComponent.class, "customizer");
-        ModernFixClient.CLIENT_INTEGRATIONS.add(new ModernFixClientIntegration() {
-            @Override
-            public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState state, ModelBakery bakery) {
+        ModernFixClient.CLIENT_INTEGRATIONS.add(ModelBakeryHelpers.bakedModelWrapper((location, pair) -> {
+                BakedModel originalModel = pair.getSecond();
                 if(location.getNamespace().equals(AppEng.MOD_ID)) {
-                    BakedModel m = bakery.bake(ModelBakery.MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0);
-                    if(originalModel == m)
-                        return originalModel;
                     Iterator<IModelBakeComponent> components = Api.INSTANCE.definitions().getRegistry().getBootstrapComponents(IModelBakeComponent.class);
                     while(components.hasNext()) {
                         IModelBakeComponent c = components.next();
@@ -55,7 +51,6 @@ public class RegistrationMixin {
                     }
                 }
                 return originalModel;
-            }
-        });
+        }));
     }
 }

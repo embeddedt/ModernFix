@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.forge.dynresources;
 
 import com.google.common.collect.ForwardingMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
@@ -26,6 +27,8 @@ import java.util.Set;
  * of the model registry that emulates vanilla keySet behavior.
  */
 public class ModelBakeEventHelper {
+    // TODO: make into config option
+    private static final Set<String> INCOMPATIBLE_MODS = ImmutableSet.of("industrialforegoing");
     private final Map<ResourceLocation, BakedModel> modelRegistry;
     private final Set<ResourceLocation> topLevelModelLocations;
     private final MutableGraph<String> dependencyGraph;
@@ -43,6 +46,9 @@ public class ModelBakeEventHelper {
         this.dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {
             this.dependencyGraph.addNode(id);
+            for(IModInfo.ModVersion version : mc.getModInfo().getDependencies()) {
+                this.dependencyGraph.addNode(version.getModId());
+            }
         });
         for(String id : this.dependencyGraph.nodes()) {
             Optional<? extends ModContainer> mContainer = ModList.get().getModContainerById(id);
@@ -61,6 +67,8 @@ public class ModelBakeEventHelper {
             modIdsToInclude.addAll(this.dependencyGraph.adjacentNodes(modId));
         } catch(IllegalArgumentException ignored) { /* sanity check */ }
         modIdsToInclude.remove("minecraft");
+        if(modIdsToInclude.stream().noneMatch(INCOMPATIBLE_MODS::contains))
+            return this.modelRegistry;
         Set<ResourceLocation> ourModelLocations = Sets.filter(this.topLevelModelLocations, loc -> modIdsToInclude.contains(loc.getNamespace()));
         return new ForwardingMap<ResourceLocation, BakedModel>() {
             @Override

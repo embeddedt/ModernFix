@@ -311,19 +311,21 @@ public class ModernFixEarlyConfig {
     public static ModernFixEarlyConfig load(File file) {
         ModernFixEarlyConfig config = new ModernFixEarlyConfig(file);
         Properties props = new Properties();
-        if(file.exists()) {
-            try (FileInputStream fin = new FileInputStream(file)){
-                props.load(fin);
-            } catch (IOException e) {
-                throw new RuntimeException("Could not load config file", e);
+        if(!Boolean.getBoolean("modernfix.ignoreConfigForTesting")) {
+            if(file.exists()) {
+                try (FileInputStream fin = new FileInputStream(file)){
+                    props.load(fin);
+                } catch (IOException e) {
+                    throw new RuntimeException("Could not load config file", e);
+                }
+                config.readProperties(props);
             }
-            config.readProperties(props);
-        }
 
-        try {
-            config.save();
-        } catch (IOException e) {
-            LOGGER.warn("Could not write configuration file", e);
+            try {
+                config.save();
+            } catch (IOException e) {
+                LOGGER.warn("Could not write configuration file", e);
+            }
         }
 
         return config;

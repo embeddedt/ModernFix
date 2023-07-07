@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import team.chisel.ctm.CTM;
 import team.chisel.ctm.client.model.AbstractCTMBakedModel;
@@ -35,9 +34,9 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
         ModernFixClient.CLIENT_INTEGRATIONS.add(this);
     }
 
-    @Redirect(method = "onModelBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/BakedModel;isCustomRenderer()Z"))
-    private boolean checkModelValid(BakedModel model) {
-        return model == null || model.isCustomRenderer();
+    @Inject(method = "onModelBake", at = @At("HEAD"), cancellable = true, remap = false)
+    private void noIteration(CallbackInfo ci) {
+        ci.cancel();
     }
 
     @Override

@@ -1,5 +1,6 @@
 plugins {
     id "com.github.johnrengelman.shadow" version "7.1.2"
+    id 'com.adarshr.test-logger' version '3.2.0'
 }
 
 architectury {
@@ -22,10 +23,16 @@ configurations {
 
     include.extendsFrom modIncludeImplementation
     modImplementation.extendsFrom modIncludeImplementation
+
+    testAgent {
+        canBeConsumed = false
+    }
 }
 
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    testImplementation "net.fabricmc:fabric-loader-junit:${rootProject.fabric_loader_version}"
+
     modIncludeImplementation(fabricApi.module("fabric-api-base", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modIncludeImplementation(fabricApi.module("fabric-lifecycle-events-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modIncludeImplementation(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
@@ -40,7 +47,33 @@ dependencies {
     // modApi "me.shedaniel:architectury-fabric:${rootProject.architectury_version}"
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
-    shadowCommon(project(path: ":common", configuration: "transformProductionFabric")) { transitive false }
+    testImplementation(shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))) { transitive false }
+
+    testImplementation(platform("org.junit:junit-bom:${project.junit_version}"))
+    testImplementation("org.junit.jupiter:junit-jupiter-api")
+    testImplementation("org.junit.jupiter:junit-jupiter-params")
+    testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
+    testImplementation("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.assertj:assertj-core:3.19.0")
+    testImplementation("com.google.guava:guava-testlib:21.0")
+    testImplementation("org.mockito:mockito-junit-jupiter:5.3.1")
+
+    testAgent(project("path": ":test_agent", "configuration": "agentJar"))
+}
+
+test {
+    useJUnitPlatform()
+    def runDir = file('test_run')
+    doFirst() {
+        runDir.mkdir()
+    }
+    workingDir = runDir
+    systemProperty 'modernfix.ignoreConfigForTesting', 'true'
+
+    // inject our custom agent to fix #817
+    FileCollection agentFile = configurations.getByName("testAgent")
+    jvmArgs "-javaagent:${agentFile.singleFile.absolutePath}"
+    dependsOn(agentFile)
 }
 
 processResources {
@@ -55,18 +88,18 @@ shadowJar {
     exclude "architectury.common.json"
 
     configurations = [project.configurations.shadowCommon]
-    classifier "dev-shadow"
+    archiveClassifier.set("dev-shadow")
 }
 
 remapJar {
     injectAccessWidener = true
     input.set shadowJar.archiveFile
     dependsOn shadowJar
-    classifier null
+    archiveClassifier.set(null)
 }
 
 jar {
-    classifier "dev"
+    archiveClassifier.set("dev")
 }
 
 components.java {

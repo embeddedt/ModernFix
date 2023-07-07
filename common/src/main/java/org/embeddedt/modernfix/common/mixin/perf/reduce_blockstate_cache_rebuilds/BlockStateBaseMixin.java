@@ -25,6 +25,11 @@ public abstract class BlockStateBaseMixin implements IBlockState {
         cacheInvalid = true;
     }
 
+    @Override
+    public boolean isCacheInvalid() {
+        return cacheInvalid;
+    }
+
     private BlockBehaviour.BlockStateBase.Cache generateCache(BlockBehaviour.BlockStateBase base) {
         if(cacheInvalid) {
             // Ensure that only one block's cache is built at a time

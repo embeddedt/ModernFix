@@ -49,6 +49,8 @@ public class ClassInfoManager {
                 if(entry.getKey().equals("java/lang/Object"))
                     return false;
                 ClassInfo mixinClz = entry.getValue();
+                if(mixinClz == null)
+                    return true;
                 try {
                     if(mixinClz.isMixin()) {
                         // clear classNode in MixinInfo.State

@@ -7,6 +7,7 @@ pluginManagement {
     }
 }
 
+include("test_agent")
 include("common")
 include("fabric")
 include("forge")

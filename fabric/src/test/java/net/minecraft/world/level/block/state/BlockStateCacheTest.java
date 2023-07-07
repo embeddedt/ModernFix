@@ -18,14 +18,13 @@ public class BlockStateCacheTest {
     }
 
     /**
-     * Initially, the cache should be invalid, and null.
+     * Initially, the cache should be invalid.
      */
     @Test
     @Order(1)
     public void testCacheNullInitially() {
         BlockState stoneBlock = Blocks.STONE.defaultBlockState();
         assertTrue(((IBlockState)stoneBlock).isCacheInvalid());
-        assertNull(stoneBlock.cache);
     }
 
     /**

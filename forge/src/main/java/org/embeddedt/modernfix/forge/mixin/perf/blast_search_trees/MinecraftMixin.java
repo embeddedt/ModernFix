@@ -21,7 +21,7 @@ public class MinecraftMixin {
     @Inject(method = "createSearchTrees", at = @At("HEAD"), cancellable = true)
     private void replaceSearchTrees(CallbackInfo ci) {
         ci.cancel();
-        if(ModList.get().getModFileById("jei") != null) {
+        if(ModList.get().getModFileById("jei") != null && ModList.get().getModFileById("roughlyenoughitems") == null) {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
         } else {

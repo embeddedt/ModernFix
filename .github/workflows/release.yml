@@ -28,3 +28,10 @@ jobs:
         with:
           files: 'bin/*'
           repo-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Add changelog to release
+        uses: irongut/EditRelease@v1.2.0
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          id: ${{ github.event.release.id }}
+          replacebody: true
+          files: "CHANGELOG.md"

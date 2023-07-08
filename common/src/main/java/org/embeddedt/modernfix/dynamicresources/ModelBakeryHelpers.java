@@ -66,7 +66,7 @@ public class ModelBakeryHelpers {
                 ResourceLocation fileLocation = new ResourceLocation(blockstate.getNamespace(), filePrefix + blockstate.getPath() + ".json");
                 try (Resource resource = frm.getResource(fileLocation)) {
                     knownLocations.add(blockstate);
-                } catch (IOException ignored) {
+                } catch (IOException | RuntimeException ignored) {
                 }
             }
         }

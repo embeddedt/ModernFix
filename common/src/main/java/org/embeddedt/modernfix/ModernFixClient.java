@@ -71,7 +71,8 @@ public class ModernFixClient {
             worldLoadStartTime = System.nanoTime();
         } else if (openingScreen instanceof TitleScreen && gameStartTimeSeconds < 0) {
             gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
-            ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
+            if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.measure_time.GameLoad"))
+                ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
             ModernFixPlatformHooks.onLaunchComplete();
             ClassInfoManager.clear();
         }
@@ -92,8 +93,10 @@ public class ModernFixClient {
                 && Minecraft.getInstance().player != null
                 && numRenderTicks++ >= 10) {
             float timeSpentLoading = ((float)(System.nanoTime() - worldLoadStartTime) / 1000000000f);
-            ModernFix.LOGGER.warn("Time from main menu to in-game was " + timeSpentLoading + " seconds");
-            ModernFix.LOGGER.warn("Total time to load game and open world was " + (timeSpentLoading + gameStartTimeSeconds) + " seconds");
+            if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.measure_time.WorldLoad")) {
+                ModernFix.LOGGER.warn("Time from main menu to in-game was " + timeSpentLoading + " seconds");
+                ModernFix.LOGGER.warn("Total time to load game and open world was " + (timeSpentLoading + gameStartTimeSeconds) + " seconds");
+            }
             resetWorldLoadStateMachine();
         }
     }

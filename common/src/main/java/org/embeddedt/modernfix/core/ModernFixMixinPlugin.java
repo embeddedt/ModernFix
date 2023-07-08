@@ -34,6 +34,21 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             this.logger.info("Loaded configuration file for ModernFix: {} options available, {} override(s) found",
                     config.getOptionCount(), config.getOptionOverrideCount());
 
+            config.getOptionMap().values().forEach(option -> {
+                if (option.isOverridden()) {
+                    String source = "[unknown]";
+
+                    if (option.isUserDefined()) {
+                        source = "user configuration";
+                    } else if (option.isModDefined()) {
+                        source = "mods [" + String.join(", ", option.getDefiningMods()) + "]";
+                    }
+                    this.logger.warn("Option '{}' overriden (by {}) to '{}'", option.getName(),
+                           source, option.isEnabled());
+                }
+            });
+
+
             if(ModernFixEarlyConfig.OPTIFINE_PRESENT)
                 this.logger.fatal("OptiFine detected. Use of ModernFix with OptiFine is not supported due to its impact on launch time and breakage of Forge features.");
 
@@ -85,24 +100,6 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             this.logger.error("No rules matched mixin '{}', treating as foreign and disabling!", mixin);
 
             return false;
-        }
-
-        if (option.isOverridden()) {
-            String source = "[unknown]";
-
-            if (option.isUserDefined()) {
-                source = "user configuration";
-            } else if (option.isModDefined()) {
-                source = "mods [" + String.join(", ", option.getDefiningMods()) + "]";
-            }
-
-            if (option.isEnabled()) {
-                this.logger.warn("Force-enabling mixin '{}' as rule '{}' (added by {}) enables it", mixin,
-                        option.getName(), source);
-            } else {
-                this.logger.warn("Force-disabling mixin '{}' as rule '{}' (added by {}) disables it and children", mixin,
-                        option.getName(), source);
-            }
         }
 
         return option.isEnabled();

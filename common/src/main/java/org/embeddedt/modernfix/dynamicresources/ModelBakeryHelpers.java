@@ -8,12 +8,15 @@ import com.google.gson.*;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ReferenceSet;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.resources.FallbackResourceManager;
+import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.block.Block;
@@ -82,6 +85,23 @@ public class ModelBakeryHelpers {
             ModernFix.LOGGER.error("Error reading {} {}: {}", type, location, e);
     }
 
+    /**
+     * Some mods (cough, EBE) inject their custom resource pack into the namespaced resource managers, but not into the
+     * main list contained inside the parent resource manager, so we need to scan each of the namespaced managers as
+     * well.
+     */
+    private static void checkFallbacks(MultiPackResourceManager manager, List<PackResources> resourcePackList) {
+        ReferenceSet<PackResources> knownPacks = new ReferenceOpenHashSet<>(resourcePackList);
+        Map<String, FallbackResourceManager> namespacedMap = manager.namespacedManagers;
+        namespacedMap.values().stream().flatMap(FallbackResourceManager::listPacks).forEach(pack -> {
+            if(knownPacks.add(pack)) {
+                /* the pack was not previously known, add to our list */
+                ModernFix.LOGGER.debug("Injecting unlisted pack '{}': {}", pack.getName(), pack.getClass().getName());
+                resourcePackList.add(pack);
+            }
+        });
+    }
+
     public static void gatherModelMaterials(ResourceManager manager, Predicate<PackResources> isTrustedPack,
                                             Set<Material> materialSet, Set<ResourceLocation> blockStateFiles,
                                             Set<ResourceLocation> modelFiles, UnbakedModel missingModel,
@@ -94,6 +114,9 @@ public class ModelBakeryHelpers {
          * scanning most packs a lot.
          */
         List<PackResources> allPackResources = new ArrayList<>(manager.listPacks().collect(Collectors.toList()));
+        if(manager instanceof MultiPackResourceManager) {
+            checkFallbacks((MultiPackResourceManager)manager, allPackResources);
+        }
         Collections.reverse(allPackResources);
         ObjectOpenHashSet<ResourceLocation> allAvailableModels = new ObjectOpenHashSet<>(), allAvailableStates = new ObjectOpenHashSet<>();
         /* try to fix CME in some runtime packs by forcing generation */

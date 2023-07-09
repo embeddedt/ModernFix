@@ -71,7 +71,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     public DynamicBakedModelProvider(ModelBakery bakery, Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> cache) {
         this.bakery = bakery;
         this.bakedCache = cache;
-        this.permanentOverrides = new Object2ObjectOpenHashMap<>();
+        this.permanentOverrides = Collections.synchronizedMap(new Object2ObjectOpenHashMap<>());
     }
 
     public void setMissingModel(BakedModel model) {
@@ -165,6 +165,18 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     @Override
     public Set<Entry<ResourceLocation, BakedModel>> entrySet() {
         return bakedCache.entrySet().stream().map(entry -> new AbstractMap.SimpleImmutableEntry<>(entry.getKey().getLeft(), entry.getValue())).collect(Collectors.toSet());
+    }
+
+    @Nullable
+    @Override
+    public BakedModel replace(ResourceLocation key, BakedModel value) {
+        BakedModel existingOverride = permanentOverrides.get(key);
+        // as long as no valid override was put in (null can mean unable to load model, so we treat as invalid), replace
+        // the model
+        if(existingOverride == null)
+            return this.put(key, value);
+        else
+            return existingOverride;
     }
 
     @Override

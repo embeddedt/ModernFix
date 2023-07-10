@@ -63,6 +63,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final @Mutable private BlockColors blockColors;
     @Shadow @Final private static Logger LOGGER;
+
+    @Shadow public abstract UnbakedModel getModel(ResourceLocation resourceLocation);
+
     private Cache<ModelBakery.BakedCacheKey, BakedModel> loadedBakedModels;
 
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
@@ -236,7 +239,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     UnbakedModel result = smallLoadingCache.getOrDefault(modelLocation, iunbakedmodel);
                     try {
                         // required as some mods (e.g. EBE) call bake directly on the returned model, without resolving parents themselves
-                        result.getMaterials(this::getModel, new HashSet<>());
+                        result.resolveParents(this::getModel);
                     } catch(RuntimeException ignored) {}
                     // We are done with loading, so clear this cache to allow GC of any unneeded models
                     if(mfix$nestedLoads == 0)

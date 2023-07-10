@@ -13,8 +13,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
+import java.util.Collections;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 @Mixin(value = ItemProperties.class, priority = 700)
 @ClientOnlyMixin
@@ -24,7 +24,7 @@ public class ItemPropertiesMixin {
 
     @Inject(method = "<clinit>", at = @At("RETURN"))
     private static void useConcurrentMaps(CallbackInfo ci) {
-        GENERIC_PROPERTIES = new ConcurrentHashMap<>(GENERIC_PROPERTIES);
-        PROPERTIES = new ConcurrentHashMap<>(PROPERTIES);
+        GENERIC_PROPERTIES = Collections.synchronizedMap(GENERIC_PROPERTIES);
+        PROPERTIES = Collections.synchronizedMap(PROPERTIES);
     }
 }

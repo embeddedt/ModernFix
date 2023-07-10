@@ -234,6 +234,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     // As in pathological cases (e.g. Pedestals on 1.19) unbakedCache can lose
                     // the model immediately
                     UnbakedModel result = smallLoadingCache.getOrDefault(modelLocation, iunbakedmodel);
+                    // required as some mods (e.g. EBE) call bake directly on the returned model, without resolving parents themselves
+                    result.getMaterials(this::getModel, new HashSet<>());
                     // We are done with loading, so clear this cache to allow GC of any unneeded models
                     if(mfix$nestedLoads == 0)
                         smallLoadingCache.clear();

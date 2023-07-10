@@ -37,6 +37,8 @@ do_release() {
     git tag -a $tag_name -m "$tag_name"
     git push --tags
     gh release create $tag_name --target $1 --title "$tag_name" --notes ""
+    # now delete local tag to prevent messing up the detected tag for the next version
+    git tag -d $tag_name &>/dev/null
 }
 
 for version in "${all_versions[@]}"; do

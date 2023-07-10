@@ -31,6 +31,7 @@ public class ModernFixClientFabric implements ClientModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             commonMod.onServerStarted(server);
         });
+        org.embeddedt.modernfix.fabric.modfixs.DecorativeBlocksFix.fix();
         if(FabricLoader.getInstance().isModLoaded("fabric-data-generation-api-v1")) {
             RuntimeDatagen.init();
         }

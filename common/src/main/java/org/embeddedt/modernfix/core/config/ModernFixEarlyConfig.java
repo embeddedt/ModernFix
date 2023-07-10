@@ -128,10 +128,17 @@ public class ModernFixEarlyConfig {
                     List<String> mixinOptionNames = dotSplitter.splitToList(mixinClassName);
                     StringBuilder optionBuilder = new StringBuilder(mixinClassName.length());
                     optionBuilder.append("mixin");
+                    // mixin.core, mixin.safety can be top-level, everything else must have a subcategory
+                    boolean allowTopLevel;
+                    if(mixinOptionNames.size() > 0)
+                        allowTopLevel = mixinOptionNames.get(0).equals("core") || mixinOptionNames.get(0).equals("safety");
+                    else
+                        allowTopLevel = false;
                     for(int i = 0; i < mixinOptionNames.size() - 1; i++) {
                         optionBuilder.append('.');
                         optionBuilder.append(mixinOptionNames.get(i));
-                        mixinOptions.add(optionBuilder.toString());
+                        if(i > 0 || allowTopLevel)
+                            mixinOptions.add(optionBuilder.toString());
                     }
                 }
             } catch(IOException e) {

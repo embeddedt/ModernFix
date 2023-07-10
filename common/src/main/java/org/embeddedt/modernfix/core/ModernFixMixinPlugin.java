@@ -97,7 +97,11 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         Option option = instance.config.getEffectiveOptionForMixin(mixin);
 
         if (option == null) {
-            this.logger.error("No rules matched mixin '{}', treating as foreign and disabling!", mixin);
+            String msg = "No rules matched mixin '{}', treating as foreign and disabling!";
+            if(ModernFixPlatformHooks.isDevEnv())
+                this.logger.error(msg, mixin);
+            else
+                this.logger.debug(msg, mixin);
 
             return false;
         }

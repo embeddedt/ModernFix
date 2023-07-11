@@ -91,15 +91,13 @@ public abstract class ChunkMapMixin {
             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = holder.getOrScheduleFuture(requiredStatus.getParent(), (ChunkMap)(Object)this);
             cir.setReturnValue(future.thenComposeAsync((either) -> {
                 Optional<ChunkAccess> optional = either.left();
-                if(!optional.isPresent())
-                    return CompletableFuture.completedFuture(either);
 
                 if (requiredStatus == ChunkStatus.LIGHT) {
                     this.distanceManager.addTicket(TicketType.LIGHT, chunkpos, 33 + ChunkStatus.getDistance(ChunkStatus.LIGHT), chunkpos);
                 }
 
                 // from original method
-                if (optional.get().getStatus().isOrAfter(requiredStatus)) {
+                if (optional.isPresent() && optional.get().getStatus().isOrAfter(requiredStatus)) {
                     CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> completablefuture = requiredStatus.load(this.level, this.structureManager, this.lightEngine, (arg2) -> {
                         return this.protoChunkToFullChunk(holder);
                     }, (ChunkAccess)optional.get());

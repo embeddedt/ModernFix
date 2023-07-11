@@ -168,6 +168,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.direct_stack_trace", false)
             .putConditionally(ModernFixPlatformHooks::isDevEnv, "mixin.perf.rewrite_registry", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
+            .put("mixin.perf.deduplicate_climate_parameters", false)
             .put("mixin.bugfix.packet_leak", false)
             .put("mixin.perf.deduplicate_location", false)
             .put("mixin.perf.dynamic_entity_renderers", false)

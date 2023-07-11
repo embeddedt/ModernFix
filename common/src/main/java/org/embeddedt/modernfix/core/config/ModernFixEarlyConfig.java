@@ -8,10 +8,14 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.IgnoreOutsideDev;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
+import org.spongepowered.asm.mixin.Mixin;
 
 import java.io.*;
 import java.nio.charset.StandardCharsets;
@@ -47,9 +51,10 @@ public class ModernFixEarlyConfig {
             return ModernFixPlatformHooks.modPresent(modId);
     }
 
-    private static final String MIXIN_DESC = "Lorg/spongepowered/asm/mixin/Mixin;";
-    private static final String MIXIN_CLIENT_ONLY_DESC = "Lorg/embeddedt/modernfix/annotation/ClientOnlyMixin;";
-    private static final String MIXIN_REQUIRES_MOD_DESC = "Lorg/embeddedt/modernfix/annotation/RequiresMod;";
+    private static final String MIXIN_DESC = Mixin.class.descriptorString();
+    private static final String MIXIN_CLIENT_ONLY_DESC = ClientOnlyMixin.class.descriptorString();
+    private static final String MIXIN_REQUIRES_MOD_DESC = RequiresMod.class.descriptorString();
+    private static final String MIXIN_DEV_ONLY_DESC = IgnoreOutsideDev.class.descriptorString();
 
     private static final Pattern PLATFORM_PREFIX = Pattern.compile("(forge|fabric|common)\\.");
 
@@ -92,7 +97,7 @@ public class ModernFixEarlyConfig {
                 reader.accept(node,  ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
                 if(node.invisibleAnnotations == null)
                     return;
-                boolean isMixin = false, isClientOnly = false, requiredModPresent = true;
+                boolean isMixin = false, isClientOnly = false, requiredModPresent = true, isDevOnly = false;
                 String requiredModId = "";
                 for(AnnotationNode annotation : node.invisibleAnnotations) {
                     if(Objects.equals(annotation.desc, MIXIN_DESC)) {
@@ -110,9 +115,11 @@ public class ModernFixEarlyConfig {
                                 break;
                             }
                         }
+                    } else if(Objects.equals(annotation.desc, MIXIN_DEV_ONLY_DESC)) {
+                        isDevOnly = true;
                     }
                 }
-                if(isMixin) {
+                if(isMixin && (!isDevOnly || ModernFixPlatformHooks.isDevEnv())) {
                     String mixinClassName = sanitize(node.name.replace('/', '.')).replace("org.embeddedt.modernfix.mixin.", "");
                     if(!requiredModPresent)
                         mixinsMissingMods.put(mixinClassName, requiredModId);
@@ -121,10 +128,17 @@ public class ModernFixEarlyConfig {
                     List<String> mixinOptionNames = dotSplitter.splitToList(mixinClassName);
                     StringBuilder optionBuilder = new StringBuilder(mixinClassName.length());
                     optionBuilder.append("mixin");
+                    // mixin.core, mixin.safety can be top-level, everything else must have a subcategory
+                    boolean allowTopLevel;
+                    if(mixinOptionNames.size() > 0)
+                        allowTopLevel = mixinOptionNames.get(0).equals("core") || mixinOptionNames.get(0).equals("safety");
+                    else
+                        allowTopLevel = false;
                     for(int i = 0; i < mixinOptionNames.size() - 1; i++) {
                         optionBuilder.append('.');
                         optionBuilder.append(mixinOptionNames.get(i));
-                        mixinOptions.add(optionBuilder.toString());
+                        if(i > 0 || allowTopLevel)
+                            mixinOptions.add(optionBuilder.toString());
                     }
                 }
             } catch(IOException e) {
@@ -152,9 +166,8 @@ public class ModernFixEarlyConfig {
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
             .put("mixin.feature.direct_stack_trace", false)
-            .put("mixin.perf.rewrite_registry", false)
+            .putConditionally(ModernFixPlatformHooks::isDevEnv, "mixin.perf.rewrite_registry", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
-            .put("mixin.perf.compress_blockstate", false)
             .put("mixin.bugfix.packet_leak", false)
             .put("mixin.perf.deduplicate_location", false)
             .put("mixin.perf.dynamic_entity_renderers", false)

@@ -40,7 +40,7 @@ dependencies {
     modIncludeImplementation(fabricApi.module("fabric-models-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modImplementation(fabricApi.module("fabric-data-generation-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modCompileOnly("com.terraformersmc:modmenu:${rootProject.modmenu_version}") { transitive false }
+    modImplementation("com.terraformersmc:modmenu:${rootProject.modmenu_version}") { transitive false }
     modImplementation "curse.maven:spark-361579:${rootProject.spark_version}"
     modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}") { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     // Remove the next line if you don't want to depend on the API

@@ -8,6 +8,7 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.ContainerObjectSelectionList;
+import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
 import net.minecraft.client.resources.language.I18n;
@@ -128,6 +129,12 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         public OptionEntry(String optionName, Option option) {
             this.name = optionName;
             this.option = option;
+            Tooltip toggleTooltip = null;
+            if(this.option.isModDefined()) {
+                String disablingMods = String.join(", ", this.option.getDefiningMods());
+                toggleTooltip = Tooltip.create(Component.translatable("modernfix.option." + (this.option.isEnabled() ? "enabled" : "disabled"))
+                        .append(Component.translatable("modernfix.option.mod_override", disablingMods)));
+            }
             this.toggleButton = new Button.Builder(Component.literal(""), (arg) -> {
                 this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
                 try {
@@ -140,7 +147,9 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
                     ModernFix.LOGGER.error("Unable to save config", e);
                 }
-            }).pos(0, 0).size(55, 20).build();
+            }).tooltip(toggleTooltip).pos(0, 0).size(55, 20).build();
+            if(this.option.isModDefined())
+                this.toggleButton.active = false;
             this.helpButton = new Button.Builder(Component.literal("?"), (arg) -> {
                 Minecraft.getInstance().setScreen(new ModernFixOptionInfoScreen(mainScreen, optionName));
             }).pos(75, 0).size(20, 20).build();

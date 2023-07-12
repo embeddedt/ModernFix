@@ -1,4 +1,4 @@
-name: update-wiki
+name: Update wiki using WikiGen
 
 on:
   push:
@@ -7,13 +7,18 @@ on:
 
 jobs:
   wikigen:
+    if: github.repository_owner == 'embeddedt'
     runs-on: ubuntu-latest
-    concurrency: wiki-generation
+    concurrency:
+      group: wiki-generation
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout Repository
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - run: python3 scripts/gen-markdown-patchlist.py
+      - name: Generate Markdown Patch-List
+        run: python3 scripts/gen-markdown-patchlist.py
       - name: Upload generated file to wiki
         uses: SwiftDocOrg/github-wiki-publish-action@v1
         with:

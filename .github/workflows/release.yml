@@ -1,4 +1,4 @@
-name: release-artifacts
+name: Release ModernFix Artifacts
 
 on:
   release:

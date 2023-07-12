@@ -1,4 +1,4 @@
-name: update-wiki
+name: Update wiki using WikiGen
 
 on:
   push:

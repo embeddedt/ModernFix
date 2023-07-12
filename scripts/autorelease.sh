@@ -19,7 +19,7 @@ git clone https://github.com/embeddedt/ModernFix mfix &>/dev/null
 cd mfix
 
 # gather version list
-readarray -t all_versions < <(git ls-remote --heads origin | awk '{print $2}' | sed 's:.*/::' | sort -V)
+readarray -t all_versions < <(scripts/branchlist.sh)
 
 last_released_version=""
 do_release() {

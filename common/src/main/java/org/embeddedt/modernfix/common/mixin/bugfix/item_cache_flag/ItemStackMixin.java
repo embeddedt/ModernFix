@@ -26,6 +26,15 @@ public class ItemStackMixin {
         return this.item;
     }
 
+    /**
+     * @author embeddedt, Mojang
+     * @reason avoid getItem()
+     */
+    @Redirect(method = "isEmpty", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/ItemStack;is(Lnet/minecraft/world/item/Item;)Z"))
+    private boolean checkIsDirect(ItemStack stack, Item item) {
+        return this.item == item;
+    }
+
     @Redirect(method = "*", at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lnet/minecraft/world/item/ItemStack;emptyCacheFlag:Z"))
     private boolean checkEmptyDirect(ItemStack stack) {
         return stack.isEmpty();

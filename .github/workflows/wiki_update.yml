@@ -17,7 +17,7 @@ jobs:
       - name: Generate Markdown Patch-List
         run: python3 scripts/gen-markdown-patchlist.py
       - name: Very legitimate hack for wiki push race condition
-        run: sleep $((1 + (RANDOM % 3))
+        run: sleep $((1 + (RANDOM % 30)))
         shell: bash
       - name: Upload generated file to wiki
         uses: SwiftDocOrg/github-wiki-publish-action@v1

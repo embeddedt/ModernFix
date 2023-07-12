@@ -29,5 +29,5 @@ jobs:
       - name: Upload Artifacts to GitHub
         uses: actions/upload-artifact@v3
         with:
-          name: ModernFix-Artifacts
+          name: Package
           path: bin

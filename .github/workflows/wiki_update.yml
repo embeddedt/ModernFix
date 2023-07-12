@@ -12,7 +12,8 @@ jobs:
       group: wiki-generation
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v2
+      - name: Checkout Repository and run Markdown Patch-List
+        uses: actions/checkout@v3
         with:
           fetch-depth: 0
       - run: python3 scripts/gen-markdown-patchlist.py

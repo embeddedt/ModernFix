@@ -86,7 +86,7 @@ public abstract class ChunkMapMixin {
      */
     @Inject(method = "schedule", at = @At("HEAD"), cancellable = true)
     private void useLegacySchedulingLogic(ChunkHolder holder, ChunkStatus requiredStatus, CallbackInfoReturnable<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> cir) {
-        if(requiredStatus != ChunkStatus.EMPTY) {
+        if(requiredStatus != ChunkStatus.EMPTY && !requiredStatus.hasLoadDependencies()) {
             ChunkPos chunkpos = holder.getPos();
             CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = holder.getOrScheduleFuture(requiredStatus.getParent(), (ChunkMap)(Object)this);
             cir.setReturnValue(future.thenComposeAsync((either) -> {

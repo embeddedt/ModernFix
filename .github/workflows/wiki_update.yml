@@ -8,7 +8,9 @@ on:
 jobs:
   wikigen:
     runs-on: ubuntu-latest
-    concurrency: wiki-generation
+    concurrency:
+      group: wiki-generation
+      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v2
         with:

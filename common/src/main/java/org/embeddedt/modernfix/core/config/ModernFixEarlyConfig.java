@@ -285,7 +285,10 @@ public class ModernFixEarlyConfig {
                 continue;
             }
 
-            option.setEnabled(enabled, true);
+            if(!option.isModDefined())
+                option.setEnabled(enabled, true);
+            else
+                LOGGER.warn("Option '{}' already disabled by a mod. Ignoring user configuration", key);
         }
     }
 

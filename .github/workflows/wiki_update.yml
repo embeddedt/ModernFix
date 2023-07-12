@@ -9,9 +9,6 @@ jobs:
   wikigen:
     if: github.repository_owner == 'embeddedt'
     runs-on: ubuntu-latest
-    concurrency:
-      group: wiki-generation
-      cancel-in-progress: false
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v3
@@ -19,6 +16,9 @@ jobs:
           fetch-depth: 0
       - name: Generate Markdown Patch-List
         run: python3 scripts/gen-markdown-patchlist.py
+      - name: Very legitimate hack for wiki push race condition
+        run: sleep $((1 + (RANDOM % 3))
+        shell: bash
       - name: Upload generated file to wiki
         uses: SwiftDocOrg/github-wiki-publish-action@v1
         with:

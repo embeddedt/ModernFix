@@ -134,7 +134,20 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
                     ModernFix.LOGGER.error("Unable to save config", e);
                 }
+            }, (btn, gfx, x, y) -> {
+                if(this.option.isModDefined()) {
+                    String disablingMods = String.join(", ", this.option.getDefiningMods());
+                    OptionList.this.mainScreen.renderTooltip(
+                            gfx,
+                            new TranslatableComponent("modernfix.option." + (this.option.isEnabled() ? "enabled" : "disabled"))
+                                    .append(new TranslatableComponent("modernfix.option.mod_override", disablingMods)),
+                            x,
+                            y
+                    );
+                }
             });
+            if(this.option.isModDefined())
+                this.toggleButton.active = false;
             this.helpButton = new Button(75, 0, 20, 20, new TextComponent("?"), (arg) -> {
                 Minecraft.getInstance().setScreen(new ModernFixOptionInfoScreen(mainScreen, optionName));
             });

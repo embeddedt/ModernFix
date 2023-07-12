@@ -6,7 +6,8 @@ on:
       - published
 
 jobs:
-  build:
+  release:
+    if: github.repository_owner == 'embeddedt'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Repository

@@ -20,7 +20,6 @@ import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
-import org.embeddedt.modernfix.util.CommonModUtil;
 import org.objectweb.asm.Opcodes;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -35,7 +34,6 @@ import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.lang.reflect.Field;
 import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
@@ -78,15 +76,15 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private boolean ignoreModelLoad;
 
+    // disable fabric recursion
+    @SuppressWarnings("unused")
+    private boolean fabric_enableGetOrLoadModelGuard;
+
 
     @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/resources/model/ModelBakery;blockColors:Lnet/minecraft/client/color/block/BlockColors;"))
     private void replaceTopLevelBakedModels(ModelBakery bakery, BlockColors val) {
-        // TODO remove terrible reflection hack
-        CommonModUtil.runWithoutCrash(() -> {
-            Field f = ModelBakery.class.getDeclaredField("fabric_guardGetOrLoadModel");
-            f.setAccessible(true);
-            f.setInt((Object)this, -1000);
-        }, "reflection hack to remove recursion exception");
+        // we can handle recursion in getModel without issues
+        fabric_enableGetOrLoadModelGuard = false;
         this.blockColors = val;
         this.ignoreModelLoad = true;
         this.loadedBakedModels = CacheBuilder.newBuilder()

@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
+import org.embeddedt.modernfix.world.ThreadDumper;
 import org.objectweb.asm.tree.*;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
@@ -62,6 +63,20 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
             /* We abuse the constructor of a mixin plugin as a safe location to start modifying the classloader */
             ModernFixPlatformHooks.injectPlatformSpecificHacks();
+
+            if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spam_thread_dump.ThreadDumper")) {
+                Thread t = new Thread() {
+                    public void run() {
+                        while(true) {
+                            logger.error("------ DEBUG THREAD DUMP (occurs every 60 seconds) ------");
+                            logger.error(ThreadDumper.obtainThreadDump());
+                            try { Thread.sleep(60000); } catch(InterruptedException e) {}
+                        }
+                    }
+                };
+                t.setDaemon(true);
+                t.start();
+            }
         }
     }
 

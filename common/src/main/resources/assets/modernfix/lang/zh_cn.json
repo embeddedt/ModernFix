@@ -2,7 +2,7 @@
   "key.modernfix": "现代化修复",
   "key.modernfix.config": "打开配置屏幕",
   "modernfix.jei_load": "正在加载 JEI，这可能会花费一段时间。",
-  "modernfix.no_lazydfu": "未安装 DFU 载入优化。如果Minecraft需要从旧版本 Minecraft 更新游戏数据，可能会出现极大的延迟。",
+  "modernfix.no_lazydfu": "未安装 DFU 载入优化。如果 Minecraft 需要从旧版本更新游戏数据，可能会出现极大的延迟。",
   "modernfix.no_ferritecore": "未安装铁氧体磁芯。内存占用将会非常高。",
   "modernfix.perf_mod_warning": "推荐安装这些模组，但你也可以在现代化修复的配置中禁用此警告。",
   "modernfix.config": "现代化修复Mixin配置",

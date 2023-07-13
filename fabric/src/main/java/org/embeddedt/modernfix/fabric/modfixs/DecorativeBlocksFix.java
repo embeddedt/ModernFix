@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.fabric.modfixs;
 
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.KeyMapping;
 import org.embeddedt.modernfix.util.CommonModUtil;
 
@@ -8,6 +9,8 @@ import java.lang.reflect.Method;
 
 public class DecorativeBlocksFix {
     public static void fix() {
+        if(!FabricLoader.getInstance().isModLoaded("decorative_blocks"))
+            return;
         CommonModUtil.runWithoutCrash(() -> {
             Class<?> decorativeBlocksSetup = Class.forName("lilypuree.decorative_blocks.client.ClientSetup");
             Field keybindField = decorativeBlocksSetup.getDeclaredField("switchItemState");

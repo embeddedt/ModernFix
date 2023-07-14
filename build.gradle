@@ -113,7 +113,12 @@ configure(subprojects.findAll {it.name == "common" || it.name == "forge" || it.n
 
     dependencies {
         minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        mappings loom.officialMojangMappings()
+        mappings loom.layered() {
+            officialMojangMappings()
+            if(rootProject.hasProperty("parchment_version")) {
+                parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
+            }
+        }
     }
 
     processResources {

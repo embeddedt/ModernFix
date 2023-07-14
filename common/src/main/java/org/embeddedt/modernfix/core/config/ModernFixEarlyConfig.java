@@ -13,6 +13,7 @@ import org.embeddedt.modernfix.annotation.IgnoreOutsideDev;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.Mixin;
@@ -51,10 +52,10 @@ public class ModernFixEarlyConfig {
             return ModernFixPlatformHooks.modPresent(modId);
     }
 
-    private static final String MIXIN_DESC = Mixin.class.descriptorString();
-    private static final String MIXIN_CLIENT_ONLY_DESC = ClientOnlyMixin.class.descriptorString();
-    private static final String MIXIN_REQUIRES_MOD_DESC = RequiresMod.class.descriptorString();
-    private static final String MIXIN_DEV_ONLY_DESC = IgnoreOutsideDev.class.descriptorString();
+    private static final String MIXIN_DESC = Type.getDescriptor(Mixin.class);
+    private static final String MIXIN_CLIENT_ONLY_DESC = Type.getDescriptor(ClientOnlyMixin.class);
+    private static final String MIXIN_REQUIRES_MOD_DESC = Type.getDescriptor(RequiresMod.class);
+    private static final String MIXIN_DEV_ONLY_DESC = Type.getDescriptor(IgnoreOutsideDev.class);
 
     private static final Pattern PLATFORM_PREFIX = Pattern.compile("(forge|fabric|common)\\.");
 

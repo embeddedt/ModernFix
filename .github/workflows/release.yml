@@ -19,6 +19,8 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
+      - name: Remove tags for release on other versions
+        run: ./scripts/tagcleaner.sh
       - name: Build and publish mod to CurseForge & Modrinth
         run: |
           chmod +x gradlew

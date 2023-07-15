@@ -5,6 +5,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Sets;
 import com.google.gson.*;
+import com.google.gson.stream.JsonReader;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -54,6 +55,13 @@ public class ModelBakeryHelpers {
      * The time in seconds after which a model becomes eligible for eviction if not used.
      */
     public static final int MAX_MODEL_LIFETIME_SECS = 300;
+
+    private static JsonElement parseStream(InputStream stream) {
+        JsonParser parser = new JsonParser();
+        JsonReader jsonReader = new JsonReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+        jsonReader.setLenient(true);
+        return parser.parse(jsonReader);
+    }
 
     private static void gatherAdditionalViaManualScan(List<PackResources> untrustedPacks, Set<ResourceLocation> knownLocations,
                                                Collection<ResourceLocation> uncertainLocations, String filePrefix) {
@@ -161,7 +169,7 @@ public class ModelBakeryHelpers {
                     for(Resource resource : resources) {
                         JsonParser parser = new JsonParser();
                         try(InputStream stream = resource.open()) {
-                            blockStateLoadedFiles.add(Pair.of(blockstate, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8))));
+                            blockStateLoadedFiles.add(Pair.of(blockstate, parseStream(stream)));
                         } catch(JsonParseException e) {
                             logOrSuppressError(blockstateErrors, "blockstate", blockstate, e);
                         }
@@ -249,8 +257,7 @@ public class ModelBakeryHelpers {
                 modelBytes.add(CompletableFuture.supplyAsync(() -> {
                     Optional<Resource> resource = manager.getResource(fileLocation);
                     try(InputStream stream = resource.orElseThrow().open()) {
-                        JsonParser parser = new JsonParser();
-                        return Pair.of(model, parser.parse(new InputStreamReader(stream, StandardCharsets.UTF_8)));
+                        return Pair.of(model, parseStream(stream));
                     } catch(IOException | NoSuchElementException | JsonParseException e) {
                         logOrSuppressError(blockstateErrors, "model", fileLocation, e);
                         return Pair.of(fileLocation, null);

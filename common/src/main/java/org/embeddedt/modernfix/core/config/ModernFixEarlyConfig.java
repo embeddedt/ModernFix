@@ -223,6 +223,8 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");
         disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
         disableIfModPresent("mixin.perf.cache_strongholds", "littletiles");
+        // content overlap
+        disableIfModPresent("mixin.perf.deduplicate_wall_shapes", "dashloader");
         disableIfModPresent("mixin.perf.nbt_memory_usage", "c2me");
         disableIfModPresent("mixin.bugfix.item_cache_flag", "lithium", "canary", "radium");
         // DimThread makes changes to the server chunk manager (understandably), C2ME probably does the same

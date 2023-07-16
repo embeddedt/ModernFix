@@ -38,7 +38,7 @@ dependencies {
     modIncludeImplementation(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modIncludeImplementation(fabricApi.module("fabric-command-api-v2", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modIncludeImplementation(fabricApi.module("fabric-models-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modIncludeImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modImplementation(fabricApi.module("fabric-data-generation-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modImplementation("com.terraformersmc:modmenu:${rootProject.modmenu_version}") { transitive false }
     modImplementation "curse.maven:spark-361579:${rootProject.spark_version}"

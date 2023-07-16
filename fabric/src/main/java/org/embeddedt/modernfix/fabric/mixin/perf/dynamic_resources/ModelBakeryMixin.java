@@ -98,6 +98,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
+    private Map<ResourceLocation, UnbakedModel> vanillaUnbakedStorage;
 
     private boolean inTextureGatheringPass;
 
@@ -121,11 +122,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 .softValues()
                 .build();
         // temporarily replace this map to capture models into the small loading cache
-        Map<ResourceLocation, UnbakedModel> oldMap = this.unbakedCache;
+        vanillaUnbakedStorage = this.unbakedCache;
         this.unbakedCache = new ForwardingMap<ResourceLocation, UnbakedModel>() {
             @Override
             protected Map<ResourceLocation, UnbakedModel> delegate() {
-                return oldMap;
+                return vanillaUnbakedStorage;
             }
 
             @Override
@@ -313,6 +314,31 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         ModernFix.LOGGER.info("Early model bake took {}", watch);
         ModernFix.LOGGER.info("{} unbaked models, {} baked models loaded permanently", this.unbakedCache.size(), this.bakedCache.size());
         this.unbakedCache = new LayeredForwardingMap<>(new Map[] { this.unbakedCache, mutableBackingMap });
+        // prevent writes from hitting the vanilla map, which prevents GC of models
+        Map<ResourceLocation, UnbakedModel> oldVanillaStorage = vanillaUnbakedStorage;
+        vanillaUnbakedStorage = new ForwardingMap<ResourceLocation, UnbakedModel>() {
+            @Override
+            protected Map<ResourceLocation, UnbakedModel> delegate() {
+                return oldVanillaStorage;
+            }
+
+            @Override
+            public UnbakedModel put(ResourceLocation key, UnbakedModel value) {
+                UnbakedModel old = get(key);
+                if(old != null)
+                    remove(key);
+                return old;
+            }
+
+            @Override
+            public void putAll(Map<? extends ResourceLocation, ? extends UnbakedModel> map) {
+
+            }
+
+            @Override
+            public void clear() {
+            }
+        };
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
         if(this.bakedMissingModel != null)
             ((DynamicBakedModelProvider)this.bakedTopLevelModels).setMissingModel(this.bakedMissingModel);

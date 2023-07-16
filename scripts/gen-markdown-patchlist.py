@@ -15,12 +15,11 @@ with open('doc/generated/' + branch_name + '-Summary-of-Patches.md', 'w') as out
                 if key.startswith("modernfix.option.mixin."):
                     option_names.append(key.replace("modernfix.option.", ""))
             option_names.sort()
-            print("# Summary of Patches - " + branch_name)
             print()
             for option in option_names:
                 option_description = lang_obj.get("modernfix.option." + option)
                 option_friendly_name = lang_obj.get("modernfix.option.name." + option)
-                print(f"# `{option}`")
+                print(f"### `{option}`")
                 print()
                 if option_description is not None:
                     print(option_description)

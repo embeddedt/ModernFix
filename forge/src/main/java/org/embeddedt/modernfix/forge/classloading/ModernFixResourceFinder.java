@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.forge.classloading;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.*;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.LoadingModList;
@@ -22,7 +23,7 @@ import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class ModernFixResourceFinder {
-    private static Map<String, List<Pair<String, String>>> urlsForClass = null;
+    private static Multimap<String, String> urlsForClass = null;
     private static final Class<? extends IModLocator> MINECRAFT_LOCATOR;
     private static Field explodedDirModsField = null;
     private static final Logger LOGGER = LogManager.getLogger("ModernFixResourceFinder");
@@ -35,8 +36,10 @@ public class ModernFixResourceFinder {
         }
     }
 
+    private static final Joiner SLASH_JOINER = Joiner.on('/');
+
     public static synchronized void init() throws ReflectiveOperationException {
-        urlsForClass = new HashMap<>();
+        ImmutableMultimap.Builder<String, String> urlBuilder = ImmutableMultimap.builder();
         Interner<String> pathInterner = Interners.newStrongInterner();
         //LOGGER.info("Start building list of class locations...");
         for(ModFileInfo fileInfo : LoadingModList.get().getModFiles()) {
@@ -50,33 +53,15 @@ public class ModernFixResourceFinder {
                     stream
                             .map(root::relativize)
                             .forEach(path -> {
-                                String strPath = path.toString();
-                                Pair<String, String> pathPair = Pair.of(fileInfo.getMods().get(0).getModId(), pathInterner.intern(strPath));
-                                List<Pair<String, String>> urlList = urlsForClass.get(strPath);
-                                if(urlList != null) {
-                                    if(urlList.size() > 1)
-                                        urlList.add(pathPair);
-                                    else {
-                                        /* Convert singleton to real list */
-                                        ArrayList<Pair<String, String>> newList = new ArrayList<>(urlList);
-                                        newList.add(pathPair);
-                                        urlsForClass.put(strPath, newList);
-                                    }
-                                } else {
-                                    /* Use a singleton list initially to keep memory usage down */
-                                    urlsForClass.put(strPath, Collections.singletonList(pathPair));
-                                }
+                                String strPath = pathInterner.intern(SLASH_JOINER.join(path));
+                                urlBuilder.put(strPath, fileInfo.getMods().get(0).getModId());
                             });
                 } catch(IOException e) {
                     throw new RuntimeException(e);
                 }
             }
         }
-        for(List<Pair<String, String>> list : urlsForClass.values()) {
-            if(list instanceof ArrayList)
-                ((ArrayList<Pair<String, String>>)list).trimToSize();
-        }
-        urlsForClass = ImmutableMap.copyOf(urlsForClass);
+        urlsForClass = urlBuilder.build();
         //LOGGER.info("Finish building");
     }
 
@@ -105,12 +90,12 @@ public class ModernFixResourceFinder {
     private static final Pattern SLASH_REPLACER = Pattern.compile("/+");
 
     public static Enumeration<URL> findAllURLsForResource(String input) {
-        input = SLASH_REPLACER.matcher(input).replaceAll("/");
-        List<Pair<String, String>> urlList = urlsForClass.get(input);
-        if(urlList != null) {
-            return Iterators.asEnumeration(urlList.stream().map(pair -> {
+        String pathInput = SLASH_REPLACER.matcher(input).replaceAll("/");
+        Collection<String> urlList = urlsForClass.get(pathInput);
+        if(!urlList.isEmpty()) {
+            return Iterators.asEnumeration(urlList.stream().map(modId -> {
                 try {
-                    return new URL("modjar://" + pair.getLeft() + "/" + pair.getRight());
+                    return new URL("modjar://" + modId + "/" + pathInput);
                 } catch(MalformedURLException e) {
                     throw new RuntimeException(e);
                 }

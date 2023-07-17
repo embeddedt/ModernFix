@@ -14,7 +14,7 @@ public class CachedResourcePath {
 
     public static final Interner<String> PATH_COMPONENT_INTERNER = Interners.newStrongInterner();
     private static final Splitter SLASH_SPLITTER = Splitter.on('/');
-    private static final String[] NO_PREFIX = new String[0];
+    public static final String[] NO_PREFIX = new String[0];
 
     public CachedResourcePath(String[] prefix, Path path) {
         this(prefix, path, path.getNameCount(), true);

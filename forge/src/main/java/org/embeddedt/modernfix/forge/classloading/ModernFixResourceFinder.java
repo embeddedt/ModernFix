@@ -1,15 +1,21 @@
 package org.embeddedt.modernfix.forge.classloading;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.*;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Iterators;
+import com.google.common.collect.Multimap;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.LoadingModList;
-import net.minecraftforge.fml.loading.moddiscovery.*;
+import net.minecraftforge.fml.loading.moddiscovery.AbstractJarFileLocator;
+import net.minecraftforge.fml.loading.moddiscovery.ExplodedDirectoryLocator;
+import net.minecraftforge.fml.loading.moddiscovery.ModFile;
+import net.minecraftforge.fml.loading.moddiscovery.ModFileInfo;
 import net.minecraftforge.forgespi.locating.IModFile;
 import net.minecraftforge.forgespi.locating.IModLocator;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.resources.CachedResourcePath;
+import org.embeddedt.modernfix.util.FileUtil;
 
 import java.io.IOException;
 import java.lang.reflect.Field;
@@ -19,11 +25,10 @@ import java.nio.file.FileSystem;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
-import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 public class ModernFixResourceFinder {
-    private static Multimap<String, String> urlsForClass = null;
+    private static Multimap<CachedResourcePath, String> urlsForClass = null;
     private static final Class<? extends IModLocator> MINECRAFT_LOCATOR;
     private static Field explodedDirModsField = null;
     private static final Logger LOGGER = LogManager.getLogger("ModernFixResourceFinder");
@@ -36,11 +41,10 @@ public class ModernFixResourceFinder {
         }
     }
 
-    private static final Joiner SLASH_JOINER = Joiner.on('/');
-
     public static synchronized void init() throws ReflectiveOperationException {
-        ImmutableMultimap.Builder<String, String> urlBuilder = ImmutableMultimap.builder();
-        Interner<String> pathInterner = Interners.newStrongInterner();
+        // Make sure FileUtil is classloaded now to avoid issues
+        FileUtil.normalize("");
+        ImmutableMultimap.Builder<CachedResourcePath, String> urlBuilder = ImmutableMultimap.builder();
         //LOGGER.info("Start building list of class locations...");
         for(ModFileInfo fileInfo : LoadingModList.get().getModFiles()) {
             ModFile file = fileInfo.getFile();
@@ -53,8 +57,8 @@ public class ModernFixResourceFinder {
                     stream
                             .map(root::relativize)
                             .forEach(path -> {
-                                String strPath = pathInterner.intern(SLASH_JOINER.join(path));
-                                urlBuilder.put(strPath, fileInfo.getMods().get(0).getModId());
+                                CachedResourcePath p = new CachedResourcePath(CachedResourcePath.NO_PREFIX, path);
+                                urlBuilder.put(p, fileInfo.getMods().get(0).getModId());
                             });
                 } catch(IOException e) {
                     throw new RuntimeException(e);
@@ -87,12 +91,11 @@ public class ModernFixResourceFinder {
             throw new UnsupportedOperationException("Unknown ModLocator type: " + locator.getClass().getName());
     }
 
-    private static final Pattern SLASH_REPLACER = Pattern.compile("/+");
-
     public static Enumeration<URL> findAllURLsForResource(String input) {
-        String pathInput = SLASH_REPLACER.matcher(input).replaceAll("/");
-        Collection<String> urlList = urlsForClass.get(pathInput);
+        // CachedResourcePath normalizes already
+        Collection<String> urlList = urlsForClass.get(new CachedResourcePath(input));
         if(!urlList.isEmpty()) {
+            String pathInput = FileUtil.normalize(input);
             return Iterators.asEnumeration(urlList.stream().map(modId -> {
                 try {
                     return new URL("modjar://" + modId + "/" + pathInput);

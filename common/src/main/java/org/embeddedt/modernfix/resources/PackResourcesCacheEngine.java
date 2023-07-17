@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.resources;
 
+import com.google.common.base.Joiner;
 import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
@@ -28,6 +29,8 @@ import java.util.stream.Stream;
  * drop.
  */
 public class PackResourcesCacheEngine {
+    private static final Joiner SLASH_JOINER = Joiner.on('/');
+
     private final Map<PackType, Set<String>> namespacesByType;
     private final Set<CachedResourcePath> containedPaths;
     private final EnumMap<PackType, Map<String, List<CachedResourcePath>>> resourceListings;
@@ -88,7 +91,7 @@ public class PackResourcesCacheEngine {
         if(path.getFileName() == null || path.getNameCount() == 0) {
             return false;
         }
-        String str = path.toString();
+        String str = SLASH_JOINER.join(path);
         if(str.length() == 0)
             return false;
         for(int i = 0; i < str.length(); i++) {

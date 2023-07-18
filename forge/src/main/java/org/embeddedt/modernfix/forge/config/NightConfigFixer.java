@@ -1,0 +1,119 @@
+package org.embeddedt.modernfix.forge.config;
+
+import com.electronwill.nightconfig.core.file.CommentedFileConfig;
+import com.electronwill.nightconfig.core.file.FileConfig;
+import com.electronwill.nightconfig.core.file.FileWatcher;
+import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
+import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.util.CommonModUtil;
+
+import java.lang.reflect.Field;
+import java.nio.file.Path;
+import java.util.Collections;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.function.Function;
+
+/**
+ * Relatively simple patch to wait for config saving to finish, made complex by Night Config classes being package-private,
+ * and Forge not allowing mixins into libraries.
+ */
+public class NightConfigFixer {
+    public static void monitorFileWatcher() {
+        CommonModUtil.runWithoutCrash(() -> {
+            FileWatcher watcher = FileWatcher.defaultInstance();
+            Field field = FileWatcher.class.getDeclaredField("watchedFiles");
+            field.setAccessible(true);
+            ConcurrentHashMap<Path, ?> theMap = (ConcurrentHashMap<Path, ?>)field.get(watcher);
+            // replace the backing map of watched files with one we control
+            field.set(watcher, new MonitoringMap(theMap));
+            ModernFixMixinPlugin.instance.logger.info("Applied Forge config corruption patch");
+        }, "replacing Night Config watchedFiles map");
+    }
+
+    private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
+    private static final Class<?> CONFIG_WATCHER = LamdbaExceptionUtils.uncheck(() -> Class.forName("net.minecraftforge.fml.config.ConfigFileTypeHandler$ConfigWatcher"));
+    private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
+
+    private static final Field COMMENTED_FILE_CONFIG = ObfuscationReflectionHelper.findField(CONFIG_WATCHER, "commentedFileConfig");
+
+    private static final Class<?> WRITE_SYNC_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.WriteSyncFileConfig"));
+    private static final Class<?> AUTOSAVE_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.AutosaveCommentedFileConfig"));
+    private static final Field AUTOSAVE_FILECONFIG = ObfuscationReflectionHelper.findField(AUTOSAVE_CONFIG, "fileConfig");
+
+    private static final Field CURRENTLY_WRITING = ObfuscationReflectionHelper.findField(WRITE_SYNC_CONFIG, "currentlyWriting");
+
+    static class MonitoringMap extends ConcurrentHashMap<Path, Object> {
+        public MonitoringMap(ConcurrentHashMap<Path, ?> oldMap) {
+            super(oldMap);
+        }
+
+        @Override
+        public Object computeIfAbsent(Path key, Function<? super Path, ?> mappingFunction) {
+            return super.computeIfAbsent(key, path -> {
+                Object watchedFile = mappingFunction.apply(path);
+                try {
+                    Runnable changeHandler = (Runnable)CHANGE_HANDLER.get(watchedFile);
+                    // replace Forge's config tracker with our own
+                    if(CONFIG_WATCHER.isAssignableFrom(changeHandler.getClass()))
+                        CHANGE_HANDLER.set(watchedFile, new MonitoringConfigTracker(changeHandler));
+                    else
+                        ModernFixMixinPlugin.instance.logger.warn("Unexpected Forge config tracker class: {}", changeHandler.getClass().getName());
+                } catch(ReflectiveOperationException e) {
+                    e.printStackTrace();
+                }
+                return watchedFile;
+            });
+        }
+    }
+
+    static class MonitoringConfigTracker implements Runnable {
+        private final Runnable configTracker;
+
+        MonitoringConfigTracker(Runnable r) {
+            this.configTracker = r;
+        }
+
+        private static final Set<Class<?>> UNKNOWN_FILE_CONFIG_CLASSES = Collections.synchronizedSet(new ReferenceOpenHashSet<>());
+
+        private boolean isSaving(FileConfig config) throws ReflectiveOperationException {
+            if(WRITE_SYNC_CONFIG.isAssignableFrom(config.getClass())) {
+                return CURRENTLY_WRITING.getBoolean(config);
+            } else if(AUTOSAVE_CONFIG.isAssignableFrom(config.getClass())) {
+                FileConfig fc = (FileConfig)AUTOSAVE_FILECONFIG.get(config);
+                return isSaving(fc);
+            } else {
+                if(UNKNOWN_FILE_CONFIG_CLASSES.add(config.getClass()))
+                    ModernFixMixinPlugin.instance.logger.warn("Unexpected FileConfig class: {}", config.getClass().getName());
+                return false;
+            }
+        }
+
+        /**
+         * This entrypoint runs when the file watcher has detected a change on the config file. Before passing
+         * this through to Forge, use reflection hacks to confirm the config system is not still writing to the file.
+         * If it is, spin until writing finishes. Immediately returning might result in the event never being observed.
+         */
+        @Override
+        public void run() {
+            try {
+                CommentedFileConfig cfg = (CommentedFileConfig)COMMENTED_FILE_CONFIG.get(this.configTracker);
+                while(isSaving(cfg)) {
+                    // block until the config is no longer marked as saving
+                    // Forge shouldn't save the config twice in a row under normal conditions so this should fix the
+                    // original bug
+                    try {
+                        Thread.sleep(500);
+                    } catch (InterruptedException e) {
+                        return;
+                    }
+                }
+            } catch(ReflectiveOperationException e) {
+                e.printStackTrace();
+            }
+            configTracker.run();
+        }
+    }
+}

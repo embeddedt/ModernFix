@@ -29,6 +29,7 @@ import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.classloading.ModernFixResourceFinder;
+import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
@@ -180,6 +181,8 @@ public class ModernFixPlatformHooksImpl {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnForge")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.start("launch"), "Failed to start profiler");
         }
+
+        NightConfigFixer.monitorFileWatcher();
     }
 
     private Method defineClassMethod = null;

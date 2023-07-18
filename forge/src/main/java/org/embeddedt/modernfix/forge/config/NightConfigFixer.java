@@ -12,6 +12,8 @@ import org.embeddedt.modernfix.util.CommonModUtil;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -34,16 +36,31 @@ public class NightConfigFixer {
     }
 
     private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
-    private static final Class<?> CONFIG_WATCHER = LamdbaExceptionUtils.uncheck(() -> Class.forName("net.minecraftforge.fml.config.ConfigFileTypeHandler$ConfigWatcher"));
     private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
-
-    private static final Field COMMENTED_FILE_CONFIG = ObfuscationReflectionHelper.findField(CONFIG_WATCHER, "commentedFileConfig");
 
     private static final Class<?> WRITE_SYNC_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.WriteSyncFileConfig"));
     private static final Class<?> AUTOSAVE_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.AutosaveCommentedFileConfig"));
     private static final Field AUTOSAVE_FILECONFIG = ObfuscationReflectionHelper.findField(AUTOSAVE_CONFIG, "fileConfig");
 
     private static final Field CURRENTLY_WRITING = ObfuscationReflectionHelper.findField(WRITE_SYNC_CONFIG, "currentlyWriting");
+
+    private static final Map<Class<?>, Field> CONFIG_WATCHER_TO_CONFIG_FIELD = Collections.synchronizedMap(new HashMap<>());
+
+    private static Field getCurrentlyWritingFieldOnWatcher(Object watcher) {
+        return CONFIG_WATCHER_TO_CONFIG_FIELD.computeIfAbsent(watcher.getClass(), clz -> {
+            while(clz != null && clz != Object.class) {
+                for(Field f : clz.getDeclaredFields()) {
+                    if(CommentedFileConfig.class.isAssignableFrom(f.getType())) {
+                        f.setAccessible(true);
+                        ModernFixMixinPlugin.instance.logger.debug("Found CommentedFileConfig: field '{}' on {}", f.getName(), clz.getName());
+                        return f;
+                    }
+                }
+                clz = clz.getSuperclass();
+            }
+            return null;
+        });
+    }
 
     static class MonitoringMap extends ConcurrentHashMap<Path, Object> {
         public MonitoringMap(ConcurrentHashMap<Path, ?> oldMap) {
@@ -56,11 +73,7 @@ public class NightConfigFixer {
                 Object watchedFile = mappingFunction.apply(path);
                 try {
                     Runnable changeHandler = (Runnable)CHANGE_HANDLER.get(watchedFile);
-                    // replace Forge's config tracker with our own
-                    if(CONFIG_WATCHER.isAssignableFrom(changeHandler.getClass()))
-                        CHANGE_HANDLER.set(watchedFile, new MonitoringConfigTracker(changeHandler));
-                    else
-                        ModernFixMixinPlugin.instance.logger.warn("Unexpected Forge config tracker class: {}", changeHandler.getClass().getName());
+                    CHANGE_HANDLER.set(watchedFile, new MonitoringConfigTracker(changeHandler));
                 } catch(ReflectiveOperationException e) {
                     e.printStackTrace();
                 }
@@ -99,15 +112,18 @@ public class NightConfigFixer {
         @Override
         public void run() {
             try {
-                CommentedFileConfig cfg = (CommentedFileConfig)COMMENTED_FILE_CONFIG.get(this.configTracker);
-                while(isSaving(cfg)) {
-                    // block until the config is no longer marked as saving
-                    // Forge shouldn't save the config twice in a row under normal conditions so this should fix the
-                    // original bug
-                    try {
-                        Thread.sleep(500);
-                    } catch (InterruptedException e) {
-                        return;
+                Field theField = getCurrentlyWritingFieldOnWatcher(this.configTracker);
+                if(theField != null) {
+                    CommentedFileConfig cfg = (CommentedFileConfig)theField.get(this.configTracker);
+                    while(isSaving(cfg)) {
+                        // block until the config is no longer marked as saving
+                        // Forge shouldn't save the config twice in a row under normal conditions so this should fix the
+                        // original bug
+                        try {
+                            Thread.sleep(500);
+                        } catch (InterruptedException e) {
+                            return;
+                        }
                     }
                 }
             } catch(ReflectiveOperationException e) {

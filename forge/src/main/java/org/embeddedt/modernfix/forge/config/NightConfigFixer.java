@@ -5,7 +5,7 @@ import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.util.CommonModUtil;
 

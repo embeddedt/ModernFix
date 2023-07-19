@@ -74,7 +74,8 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         this.bakery = bakery;
         this.bakedCache = cache;
         this.permanentOverrides = Collections.synchronizedMap(new Object2ObjectOpenHashMap<>());
-        currentInstance = this;
+        if(currentInstance == null)
+            currentInstance = this;
     }
 
     public void setMissingModel(BakedModel model) {

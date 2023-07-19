@@ -22,6 +22,7 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedModel> {
+    public static DynamicBakedModelProvider currentInstance = null;
     private final ModelBakery bakery;
     private final Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> bakedCache;
     private final Map<ResourceLocation, BakedModel> permanentOverrides;
@@ -72,6 +73,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         this.bakery = bakery;
         this.bakedCache = cache;
         this.permanentOverrides = Collections.synchronizedMap(new Object2ObjectOpenHashMap<>());
+        currentInstance = this;
     }
 
     public void setMissingModel(BakedModel model) {

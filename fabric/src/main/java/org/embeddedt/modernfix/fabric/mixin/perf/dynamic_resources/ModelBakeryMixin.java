@@ -357,6 +357,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.topLevelModels.clear();
         this.topLevelModels.put(MISSING_MODEL_LOCATION, this.missingModel);
         this.smallLoadingCache.clear();
+        DynamicBakedModelProvider.currentInstance = (DynamicBakedModelProvider)this.bakedTopLevelModels;
     }
 
     /**

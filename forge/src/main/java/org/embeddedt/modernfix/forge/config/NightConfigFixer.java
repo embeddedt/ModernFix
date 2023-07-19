@@ -91,16 +91,32 @@ public class NightConfigFixer {
 
         private static final Set<Class<?>> UNKNOWN_FILE_CONFIG_CLASSES = Collections.synchronizedSet(new ReferenceOpenHashSet<>());
 
-        private boolean isSaving(FileConfig config) throws ReflectiveOperationException {
+        private void protectFromSaving(FileConfig config, Runnable runnable) throws ReflectiveOperationException {
             if(WRITE_SYNC_CONFIG.isAssignableFrom(config.getClass())) {
-                return CURRENTLY_WRITING.getBoolean(config);
+                // keep trying to write, releasing the config lock each time in case something else needs to lock it
+                // for any reason
+                while(true) {
+                    // acquiring synchronized block here should in theory prevent any other concurrent loads/saves, based
+                    // off WriteSyncFileConfig implementation
+                    synchronized (config) {
+                        if(CURRENTLY_WRITING.getBoolean(config)) {
+                            ModernFixMixinPlugin.instance.logger.fatal("Config being written during load!!!");
+                            try { Thread.sleep(500); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
+                            continue;
+                        }
+                        // at this point, currentlyWriting is false, and we acquired synchronized lock, should be good to
+                        // go
+                        runnable.run();
+                        break;
+                    }
+                }
             } else if(AUTOSAVE_CONFIG.isAssignableFrom(config.getClass())) {
                 FileConfig fc = (FileConfig)AUTOSAVE_FILECONFIG.get(config);
-                return isSaving(fc);
+                protectFromSaving(fc, runnable);
             } else {
                 if(UNKNOWN_FILE_CONFIG_CLASSES.add(config.getClass()))
                     ModernFixMixinPlugin.instance.logger.warn("Unexpected FileConfig class: {}", config.getClass().getName());
-                return false;
+                runnable.run();
             }
         }
 
@@ -115,21 +131,12 @@ public class NightConfigFixer {
                 Field theField = getCurrentlyWritingFieldOnWatcher(this.configTracker);
                 if(theField != null) {
                     CommentedFileConfig cfg = (CommentedFileConfig)theField.get(this.configTracker);
-                    while(isSaving(cfg)) {
-                        // block until the config is no longer marked as saving
-                        // Forge shouldn't save the config twice in a row under normal conditions so this should fix the
-                        // original bug
-                        try {
-                            Thread.sleep(500);
-                        } catch (InterruptedException e) {
-                            return;
-                        }
-                    }
+                    // will synchronize and check saving flag
+                    protectFromSaving(cfg, configTracker);
                 }
             } catch(ReflectiveOperationException e) {
                 e.printStackTrace();
             }
-            configTracker.run();
         }
     }
 }

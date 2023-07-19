@@ -203,6 +203,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         profiler.pop();
         // ensure missing model is a permanent override
         this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, this.getBakedModel(MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0, this.atlasSet::getSprite));
+        DynamicBakedModelProvider.currentInstance = (DynamicBakedModelProvider)this.bakedTopLevelModels;
         cir.setReturnValue(atlasSet);
     }
 

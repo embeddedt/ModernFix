@@ -150,6 +150,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Inject(method = "bakeModels", at = @At("HEAD"))
     private void storeTextureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
         textureGetter = getter;
+        DynamicBakedModelProvider.currentInstance = (DynamicBakedModelProvider)this.bakedTopLevelModels;
     }
 
     @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;"))

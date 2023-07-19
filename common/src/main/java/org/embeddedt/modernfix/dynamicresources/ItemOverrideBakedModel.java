@@ -1,6 +1,5 @@
 package org.embeddedt.modernfix.dynamicresources;
 
-import com.google.common.collect.ImmutableList;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -37,41 +36,41 @@ public class ItemOverrideBakedModel implements BakedModel {
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction direction, RandomSource random) {
-        return ImmutableList.of();
+        return getRealModel().getQuads(state, direction, random);
     }
 
     @Override
     public boolean useAmbientOcclusion() {
-        return false;
+        return getRealModel().useAmbientOcclusion();
     }
 
     @Override
     public boolean isGui3d() {
-        return false;
+        return getRealModel().isGui3d();
     }
 
     @Override
     public boolean usesBlockLight() {
-        return false;
+        return getRealModel().usesBlockLight();
     }
 
     @Override
     public boolean isCustomRenderer() {
-        return false;
+        return getRealModel().isCustomRenderer();
     }
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        return null;
+        return getRealModel().getParticleIcon();
     }
 
     @Override
     public ItemTransforms getTransforms() {
-        return ItemTransforms.NO_TRANSFORMS;
+        return getRealModel().getTransforms();
     }
 
     @Override
     public ItemOverrides getOverrides() {
-        return null;
+        return getRealModel().getOverrides();
     }
 }

@@ -179,6 +179,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private void captureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
         this.ignoreModelLoad = false;
         textureGetter = getter;
+        DynamicBakedModelProvider.currentInstance = (DynamicBakedModelProvider)this.bakedTopLevelModels;
     }
 
     @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;"))

@@ -32,3 +32,5 @@ accessible method net/minecraft/client/gui/screens/Screen addRenderableWidget (L
 accessible field net/minecraft/client/KeyMapping ALL Ljava/util/Map;
 accessible field net/minecraft/server/packs/resources/MultiPackResourceManager namespacedManagers Ljava/util/Map;
 accessible field net/minecraft/resources/RegistryOps registryAccess Lnet/minecraft/core/RegistryAccess;
+accessible field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
+mutable field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;

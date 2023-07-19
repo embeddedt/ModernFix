@@ -286,7 +286,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             return m;
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
-        m = theBaker.bake(modelLocation, state);
+        synchronized(this) { m = theBaker.bake(modelLocation, state); }
         if(m != null)
             loadedBakedModels.put(key, m);
         return m;

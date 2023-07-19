@@ -40,13 +40,19 @@ public abstract class WallBlockMixin extends Block {
             return;
         ImmutableMap.Builder<BlockState, VoxelShape> builder = ImmutableMap.builder();
         for(BlockState state : this.stateDefinition.getPossibleStates()) {
-            builder.put(state, cache.getFirst().get(state.getValues()));
+            VoxelShape shape = cache.getFirst().get(state.getValues());
+            if(shape == null)
+                return; // fallback to vanilla logic
+            builder.put(state, shape);
         }
         cir.setReturnValue(builder.build());
     }
 
     @Inject(method = "makeShapes", at = @At("RETURN"))
     private synchronized void storeCachedShapesByProperty(float f1, float f2, float f3, float f4, float f5, float f6, CallbackInfoReturnable<Map<BlockState, VoxelShape>> cir) {
+        // never populate cache as a non-vanilla block
+        if((Class<?>)this.getClass() != WallBlock.class)
+            return;
         ImmutableList<Float> key = ImmutableList.of(f1, f2, f3, f4, f5, f6);
         if(!CACHE_BY_SHAPE_VALS.containsKey(key)) {
             Map<ImmutableMap<Property<?>, Comparable<?>>, VoxelShape> cacheByProperties = new HashMap<>();

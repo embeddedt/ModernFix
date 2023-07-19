@@ -31,6 +31,8 @@ public class ModernFixEarlyConfig {
     private final Map<String, Option> options = new HashMap<>();
     private final Multimap<String, Option> optionsByCategory = HashMultimap.create();
 
+    private static final boolean ALLOW_OVERRIDE_OVERRIDES = Boolean.getBoolean("modernfix.unsupported.allowOverriding");
+
     public static final boolean OPTIFINE_PRESENT;
 
     private File configFile;
@@ -266,6 +268,9 @@ public class ModernFixEarlyConfig {
     }
 
     private void readProperties(Properties props) {
+        if(ALLOW_OVERRIDE_OVERRIDES)
+            LOGGER.fatal("JVM argument given to override mod overrides. Issues opened with this option present will be ignored unless they can be reproduced without.");
+
         for (Map.Entry<Object, Object> entry : props.entrySet()) {
             String key = (String) entry.getKey();
             String value = (String) entry.getValue();
@@ -288,7 +293,7 @@ public class ModernFixEarlyConfig {
                 continue;
             }
 
-            if(!option.isModDefined())
+            if(ALLOW_OVERRIDE_OVERRIDES || !option.isModDefined())
                 option.setEnabled(enabled, true);
             else
                 LOGGER.warn("Option '{}' already disabled by a mod. Ignoring user configuration", key);

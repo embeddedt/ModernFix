@@ -76,9 +76,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private boolean ignoreModelLoad;
 
+    // disable fabric recursion
+    @SuppressWarnings("unused")
+    private boolean fabric_enableGetOrLoadModelGuard;
 
     @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/resources/model/ModelBakery;blockColors:Lnet/minecraft/client/color/block/BlockColors;"))
     private void replaceTopLevelBakedModels(ModelBakery bakery, BlockColors val) {
+        fabric_enableGetOrLoadModelGuard = false;
         this.blockColors = val;
         this.ignoreModelLoad = true;
         this.loadedBakedModels = CacheBuilder.newBuilder()

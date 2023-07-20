@@ -30,8 +30,9 @@ public abstract class MultipartAppenderMixin {
 
     private static boolean handlerInjected = false;
 
-    @Inject(method = "onPrepareModelBaking", at = @At("RETURN"))
+    @Inject(method = "onPrepareModelBaking", at = @At("HEAD"), cancellable = true)
     private static void setupHelper(CallbackInfo ci) {
+        ci.cancel();
         if(handlerInjected)
             return;
         handlerInjected = true;
@@ -40,8 +41,12 @@ public abstract class MultipartAppenderMixin {
             public UnbakedModel onUnbakedModelLoad(ResourceLocation location, UnbakedModel originalModel, ModelBakery bakery) {
                 if(originalModel instanceof MultiPart multipart) {
                     Block block = multipart.definition.getOwner();
-                    if(block instanceof FenceBlock && block instanceof DiagonalBlock diagonalBlock && diagonalBlock.hasProperties()) {
-                        appendDiagonalSelectors(((ModelBakeryAccessor)bakery)::diagonalfences$callCacheAndQueueDependencies, multipart, block instanceof IronBarsBlock);
+                    if((block instanceof FenceBlock || block instanceof IronBarsBlock) && block instanceof DiagonalBlock diagonalBlock && diagonalBlock.hasProperties()) {
+                        try {
+                            appendDiagonalSelectors(((ModelBakeryAccessor)bakery)::diagonalfences$callCacheAndQueueDependencies, multipart, block instanceof IronBarsBlock);
+                        } catch(RuntimeException e) {
+                            e.printStackTrace();
+                        }
                     }
                 }
                 return originalModel;

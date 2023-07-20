@@ -12,7 +12,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @RequiresMod("fabric-models-v0")
 @ClientOnlyMixin
 public class LoaderInstanceMixin {
-    @Redirect(method = "finish", at = @At(value = "FIELD", target = "Lnet/fabricmc/fabric/impl/client/model/ModelLoadingRegistryImpl$LoaderInstance;loader:Lnet/minecraft/client/resources/model/ModelBakery;"))
+    @Redirect(method = "finish", at = @At(value = "FIELD", target = "Lnet/fabricmc/fabric/impl/client/model/ModelLoadingRegistryImpl$LoaderInstance;loader:Lnet/minecraft/client/resources/model/ModelBakery;"), require = 0)
     private void keepLoader(ModelLoadingRegistryImpl.LoaderInstance instance, ModelBakery value) {
         /* allow loading models to happen later */
     }

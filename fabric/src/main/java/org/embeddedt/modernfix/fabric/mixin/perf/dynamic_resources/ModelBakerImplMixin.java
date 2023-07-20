@@ -102,7 +102,7 @@ public abstract class ModelBakerImplMixin {
         if(!wasMissingModel) {
             for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
                 try {
-                    toReplace = integration.onUnbakedModelPreBake(arg, toReplace, (ModelBakery)(Object)this);
+                    toReplace = integration.onUnbakedModelPreBake(arg, toReplace, this.field_40571);
                 } catch(RuntimeException e) {
                     ModernFix.LOGGER.error("Exception firing model pre-bake event for {}", arg, e);
                 }

@@ -38,7 +38,7 @@ public class NightConfigFixer {
     private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
     private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
 
-    private static final Class<?> WRITE_SYNC_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.WriteSyncFileConfig"));
+    public static final Class<?> WRITE_SYNC_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.WriteSyncFileConfig"));
     private static final Class<?> AUTOSAVE_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.AutosaveCommentedFileConfig"));
     private static final Field AUTOSAVE_FILECONFIG = ObfuscationReflectionHelper.findField(AUTOSAVE_CONFIG, "fileConfig");
 
@@ -82,6 +82,25 @@ public class NightConfigFixer {
         }
     }
 
+    private static final Set<Class<?>> UNKNOWN_FILE_CONFIG_CLASSES = Collections.synchronizedSet(new ReferenceOpenHashSet<>());
+
+    public static Object toWriteSyncConfig(Object config) {
+        try {
+            if(WRITE_SYNC_CONFIG.isAssignableFrom(config.getClass())) {
+                return config;
+            } else if(AUTOSAVE_CONFIG.isAssignableFrom(config.getClass())) {
+                FileConfig fc = (FileConfig)AUTOSAVE_FILECONFIG.get(config);
+                return toWriteSyncConfig(fc);
+            } else {
+                if (UNKNOWN_FILE_CONFIG_CLASSES.add(config.getClass()))
+                    ModernFixMixinPlugin.instance.logger.warn("Unexpected FileConfig class: {}", config.getClass().getName());
+                return null;
+            }
+        } catch(ReflectiveOperationException e) {
+            return null;
+        }
+    }
+
     static class MonitoringConfigTracker implements Runnable {
         private final Runnable configTracker;
 
@@ -89,17 +108,16 @@ public class NightConfigFixer {
             this.configTracker = r;
         }
 
-        private static final Set<Class<?>> UNKNOWN_FILE_CONFIG_CLASSES = Collections.synchronizedSet(new ReferenceOpenHashSet<>());
-
         private void protectFromSaving(FileConfig config, Runnable runnable) throws ReflectiveOperationException {
-            if(WRITE_SYNC_CONFIG.isAssignableFrom(config.getClass())) {
+            Object writeSyncConfig = toWriteSyncConfig(config);
+            if(writeSyncConfig != null) {
                 // keep trying to write, releasing the config lock each time in case something else needs to lock it
                 // for any reason
                 while(true) {
                     // acquiring synchronized block here should in theory prevent any other concurrent loads/saves, based
                     // off WriteSyncFileConfig implementation
-                    synchronized (config) {
-                        if(CURRENTLY_WRITING.getBoolean(config)) {
+                    synchronized (writeSyncConfig) {
+                        if(CURRENTLY_WRITING.getBoolean(writeSyncConfig)) {
                             ModernFixMixinPlugin.instance.logger.fatal("Config being written during load!!!");
                             try { Thread.sleep(500); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
                             continue;
@@ -110,12 +128,7 @@ public class NightConfigFixer {
                         break;
                     }
                 }
-            } else if(AUTOSAVE_CONFIG.isAssignableFrom(config.getClass())) {
-                FileConfig fc = (FileConfig)AUTOSAVE_FILECONFIG.get(config);
-                protectFromSaving(fc, runnable);
             } else {
-                if(UNKNOWN_FILE_CONFIG_CLASSES.add(config.getClass()))
-                    ModernFixMixinPlugin.instance.logger.warn("Unexpected FileConfig class: {}", config.getClass().getName());
                 runnable.run();
             }
         }

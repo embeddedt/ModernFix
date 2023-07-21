@@ -43,7 +43,14 @@ public class ConfigFixer {
 
         @Override
         public void accept(IConfigEvent modConfigEvent) {
-            synchronized (this) {
+            Object cfgObj = NightConfigFixer.toWriteSyncConfig(modConfigEvent.getConfig().getConfigData());
+            if(cfgObj != null) {
+                // don't synchronize on 'this' as it produces a deadlock when used alongside NightConfigFixer
+                synchronized (cfgObj) {
+                    this.actualHandler.accept(modConfigEvent);
+                }
+            } else {
+                ModernFix.LOGGER.warn("Unable to sync on a {} config object", modConfigEvent.getConfig().getConfigData().getClass().getName());
                 this.actualHandler.accept(modConfigEvent);
             }
         }

@@ -65,12 +65,16 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             ModernFixPlatformHooks.injectPlatformSpecificHacks();
 
             if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spam_thread_dump.ThreadDumper")) {
+                // run once to trigger classloading
+                ThreadDumper.obtainThreadDump();
                 Thread t = new Thread() {
                     public void run() {
                         while(true) {
-                            logger.error("------ DEBUG THREAD DUMP (occurs every 60 seconds) ------");
-                            logger.error(ThreadDumper.obtainThreadDump());
-                            try { Thread.sleep(60000); } catch(InterruptedException e) {}
+                            try {
+                                Thread.sleep(60000);
+                                logger.error("------ DEBUG THREAD DUMP (occurs every 60 seconds) ------");
+                                logger.error(ThreadDumper.obtainThreadDump());
+                            } catch(InterruptedException | RuntimeException e) {}
                         }
                     }
                 };

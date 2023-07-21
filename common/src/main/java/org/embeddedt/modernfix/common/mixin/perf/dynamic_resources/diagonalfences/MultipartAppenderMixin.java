@@ -27,8 +27,9 @@ public abstract class MultipartAppenderMixin {
 
     private static boolean handlerInjected = false;
 
-    @Inject(method = "onPrepareModelBaking", at = @At("RETURN"))
+    @Inject(method = "onPrepareModelBaking", at = @At("HEAD"), cancellable = true)
     private static void setupHelper(CallbackInfo ci) {
+        ci.cancel();
         if(handlerInjected)
             return;
         handlerInjected = true;

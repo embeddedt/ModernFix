@@ -17,10 +17,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 
 /**
  * Stores a list of all known default block/item models in the game, and provides a namespaced version
@@ -54,7 +51,9 @@ public class ModelBakeEventHelper {
             Optional<? extends ModContainer> mContainer = ModList.get().getModContainerById(id);
             if(mContainer.isPresent()) {
                 for(IModInfo.ModVersion version : mContainer.get().getModInfo().getDependencies()) {
-                    this.dependencyGraph.putEdge(id, version.getModId());
+                    // avoid self-loops
+                    if(!Objects.equals(id, version.getModId()))
+                        this.dependencyGraph.putEdge(id, version.getModId());
                 }
             }
         }

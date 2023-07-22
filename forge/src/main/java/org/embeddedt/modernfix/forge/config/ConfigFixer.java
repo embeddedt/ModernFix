@@ -50,7 +50,8 @@ public class ConfigFixer {
                     this.actualHandler.accept(modConfigEvent);
                 }
             } else {
-                ModernFix.LOGGER.warn("Unable to sync on a {} config object", modConfigEvent.getConfig().getConfigData().getClass().getName());
+                if(modConfigEvent.getConfig().getConfigData() != null)
+                    ModernFix.LOGGER.warn("Unable to sync on a {} config object", modConfigEvent.getConfig().getConfigData().getClass().getName());
                 this.actualHandler.accept(modConfigEvent);
             }
         }

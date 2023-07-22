@@ -85,6 +85,8 @@ public class NightConfigFixer {
     private static final Set<Class<?>> UNKNOWN_FILE_CONFIG_CLASSES = Collections.synchronizedSet(new ReferenceOpenHashSet<>());
 
     public static Object toWriteSyncConfig(Object config) {
+        if(config == null)
+            return null;
         try {
             if(WRITE_SYNC_CONFIG.isAssignableFrom(config.getClass())) {
                 return config;

@@ -41,6 +41,8 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
                     if (option.isUserDefined()) {
                         source = "user configuration";
+                    } else if (!ModernFixPlatformHooks.isLoadingNormally()) {
+                        source = "load error";
                     } else if (option.isModDefined()) {
                         source = "mods [" + String.join(", ", option.getDefiningMods()) + "]";
                     }

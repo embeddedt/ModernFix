@@ -26,6 +26,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -116,6 +117,8 @@ public class ModelBakeryHelpers {
                                             Set<ResourceLocation> modelFiles, UnbakedModel missingModel,
                                             Function<JsonElement, BlockModel> modelDeserializer,
                                             Function<ResourceLocation, UnbakedModel> bakeryModelGetter) {
+        if(!ModernFixPlatformHooks.isLoadingNormally())
+            return;
         Stopwatch stopwatch = Stopwatch.createStarted();
         final Object2IntOpenHashMap<String> blockstateErrors = new Object2IntOpenHashMap<>();
         /*

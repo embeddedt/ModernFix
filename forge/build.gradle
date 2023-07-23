@@ -44,6 +44,8 @@ dependencies {
     modCompileOnly("curse.maven:supermartijncore-454372:4455391")
     modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
 
+    modCompileOnly("curse.maven:blueprint-382216:3991478")
+
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
 }

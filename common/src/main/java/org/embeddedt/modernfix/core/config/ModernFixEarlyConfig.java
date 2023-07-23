@@ -242,7 +242,7 @@ public class ModernFixEarlyConfig {
 
     private void disableIfModPresent(String configName, String... ids) {
         for(String id : ids) {
-            if(!ModernFixPlatformHooks.isLoadingNormally() || modPresent(id)) {
+            if(!ModernFixPlatformHooks.isEarlyLoadingNormally() || modPresent(id)) {
                 Option option = this.options.get(configName);
                 if(option != null)
                     option.addModOverride(false, id);

@@ -72,10 +72,12 @@ public class ModernFixPlatformHooksImpl {
         return ServerLifecycleHooks.getCurrentServer();
     }
 
+    public static boolean isEarlyLoadingNormally() {
+        return LoadingModList.get().getErrors().isEmpty();
+    }
+
     public static boolean isLoadingNormally() {
-        if(!LoadingModList.get().getErrors().isEmpty())
-            return false;
-        return ModLoader.isLoadingStateValid();
+        return isEarlyLoadingNormally() && ModLoader.isLoadingStateValid();
     }
 
 

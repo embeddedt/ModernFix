@@ -69,6 +69,8 @@ public class ModernFixPlatformHooksImpl {
     }
 
     public static boolean isLoadingNormally() {
+        if(!LoadingModList.get().getErrors().isEmpty())
+            return false;
         return ModLoader.isLoadingStateValid();
     }
 

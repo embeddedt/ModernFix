@@ -57,6 +57,11 @@ public class ModernFixPlatformHooks {
     }
 
     @ExpectPlatform
+    public static boolean isEarlyLoadingNormally() {
+        throw new AssertionError();
+    }
+
+    @ExpectPlatform
     public static boolean isLoadingNormally() {
         throw new AssertionError();
     }

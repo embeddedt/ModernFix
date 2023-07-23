@@ -59,6 +59,10 @@ public class ModernFixPlatformHooksImpl {
         return ModernFixFabric.theServer.get();
     }
 
+    public static boolean isEarlyLoadingNormally() {
+        return true;
+    }
+
     public static boolean isLoadingNormally() {
         return true;
     }

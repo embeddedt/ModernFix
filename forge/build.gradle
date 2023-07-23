@@ -45,6 +45,8 @@ dependencies {
     modCompileOnly("vazkii.patchouli:Patchouli:1.18.2-71.1")
     modCompileOnly("curse.maven:twilightforest-227639:4337390")
 
+    modCompileOnly("curse.maven:blueprint-382216:3991478")
+
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
 }

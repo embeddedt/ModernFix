@@ -51,6 +51,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -68,7 +69,12 @@ public class ModernFixPlatformHooksImpl {
 
     public static String getVersionString() {
         if(verString == null) {
-            verString = LoadingModList.get().getModFileById("modernfix").getMods().get(0).getVersion().toString();
+            try {
+                verString = ModernFixMixinPlugin.class.getPackage().getImplementationVersion();
+                Objects.requireNonNull(verString);
+            } catch(Throwable e) {
+                verString = "[unknown]";
+            }
         }
         return verString;
     }

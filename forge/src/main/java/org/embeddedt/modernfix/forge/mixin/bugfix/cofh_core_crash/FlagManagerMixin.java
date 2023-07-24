@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-import java.util.function.BooleanSupplier;
+import java.util.function.Supplier;
 
 /**
  * Fix getOrCreateFlag accessing the FLAGS map without synchronization by wrapping all calls to it
@@ -18,15 +18,15 @@ import java.util.function.BooleanSupplier;
 @RequiresMod("cofh_core")
 public class FlagManagerMixin {
     @Shadow @Final
-    private static Object2ObjectOpenHashMap<String, BooleanSupplier> FLAGS;
+    private static Object2ObjectOpenHashMap<String, Supplier<Boolean>> FLAGS;
 
     @Shadow
-    private BooleanSupplier getOrCreateFlag(String flag) {
+    private Supplier<Boolean> getOrCreateFlag(String flag) {
         throw new AssertionError();
     }
 
     @Redirect(method = "*", at = @At(value = "INVOKE", target = "getOrCreateFlag"), require = 0)
-    private BooleanSupplier getFlag(@Coerce Object flagHandler, String flag) {
+    private Supplier<Boolean> getFlag(@Coerce Object flagHandler, String flag) {
         if(flagHandler != this)
             throw new AssertionError("Redirect targeted bad getOrCreateFlag invocation");
         synchronized (FLAGS) {

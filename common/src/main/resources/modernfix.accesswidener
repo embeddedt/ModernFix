@@ -30,3 +30,4 @@ accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/s
 accessible field net/minecraft/client/renderer/RenderStateShard name Ljava/lang/String;
 accessible method net/minecraft/client/gui/screens/Screen addButton (Lnet/minecraft/client/gui/components/AbstractWidget;)Lnet/minecraft/client/gui/components/AbstractWidget;
 accessible field net/minecraft/server/packs/resources/SimpleReloadableResourceManager namespacedPacks Ljava/util/Map;
+accessible field net/minecraft/client/renderer/entity/EnderDragonRenderer$DragonModel entity Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;

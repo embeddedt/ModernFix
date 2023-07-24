@@ -39,3 +39,4 @@ accessible field net/minecraft/client/KeyMapping ALL Ljava/util/Map;
 accessible field net/minecraft/client/renderer/block/model/multipart/MultiPart definition Lnet/minecraft/world/level/block/state/StateDefinition;
 accessible field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
 mutable field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
+accessible field net/minecraft/client/renderer/entity/EnderDragonRenderer$DragonModel entity Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;

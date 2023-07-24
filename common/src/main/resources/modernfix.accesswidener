@@ -34,3 +34,4 @@ accessible field net/minecraft/server/packs/resources/MultiPackResourceManager n
 accessible field net/minecraft/resources/RegistryOps registryAccess Lnet/minecraft/core/RegistryAccess;
 accessible field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
 mutable field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
+accessible field net/minecraft/client/renderer/entity/EnderDragonRenderer$DragonModel entity Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;

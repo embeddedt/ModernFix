@@ -32,8 +32,8 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 throw new RuntimeException("Could not load configuration file for ModernFix", e);
             }
 
-            this.logger.info("Loaded configuration file for ModernFix: {} options available, {} override(s) found",
-                    config.getOptionCount(), config.getOptionOverrideCount());
+            this.logger.info("Loaded configuration file for ModernFix {}: {} options available, {} override(s) found",
+                    ModernFixPlatformHooks.getVersionString(), config.getOptionCount(), config.getOptionOverrideCount());
 
             config.getOptionMap().values().forEach(option -> {
                 if (option.isOverridden()) {

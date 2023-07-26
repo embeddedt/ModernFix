@@ -381,8 +381,19 @@ public class ModernFixEarlyConfig {
                     .sorted()
                     .collect(Collectors.toList());
             for(String line : keys) {
-                if(!line.equals("mixin.core"))
+                if(!line.equals("mixin.core")) {
+                    Option option = this.options.get(line);
+                    String extraContext = "";
+                    if(option != null) {
+                        if(option.isModDefined())
+                            extraContext = " # (overridden for mod compat)";
+                        else {
+                            boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(line, true);
+                            extraContext = " # (default: " + defaultEnabled + ")";
+                        }
+                    }
                     writer.write("#  " + line + "\n");
+                }
             }
 
             for (String key : keys) {

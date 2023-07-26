@@ -370,17 +370,39 @@ public class ModernFixEarlyConfig {
 
         try (Writer writer = new FileWriter(configFile)) {
             writer.write("# This is the configuration file for ModernFix.\n");
+            writer.write("# In general, prefer using the config screen to editing this file. It can be accessed\n");
+            writer.write("# via the standard mod menu on your respective mod loader. Changes will, however,\n");
+            writer.write("# require restarting the game to take effect.\n");
             writer.write("#\n");
             writer.write("# The following options can be enabled or disabled if there is a compatibility issue.\n");
-            writer.write("# Add a line mixin.example_name=true/false without the # sign to enable/disable a rule.\n");
+            writer.write("# Add a line with your option name and =true or =false at the bottom of the file to enable\n");
+            writer.write("# or disable a rule. For example:\n");
+            writer.write("#   mixin.perf.dynamic_resources=true\n");
+            writer.write("# Do not include the #. You may reset to defaults by deleting this file.\n");
+            writer.write("#\n");
+            writer.write("# Available options:\n");
             List<String> keys = this.options.keySet().stream()
                     .filter(key -> !key.equals("mixin.core"))
                     .sorted()
                     .collect(Collectors.toList());
             for(String line : keys) {
-                if(!line.equals("mixin.core"))
-                    writer.write("#  " + line + "\n");
+                if(!line.equals("mixin.core")) {
+                    Option option = this.options.get(line);
+                    String extraContext = "";
+                    if(option != null) {
+                        if(!option.isUserDefined())
+                            extraContext = "=" + option.isEnabled() + " # " + (option.isModDefined() ? "(overridden for mod compat)" : "(default)");
+                        else {
+                            boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(line, true);
+                            extraContext = "=" + defaultEnabled + " # (default)";
+                        }
+                    }
+                    writer.write("#  " + line + extraContext + "\n");
+                }
             }
+
+            writer.write("#\n");
+            writer.write("# User overrides go here.\n");
 
             for (String key : keys) {
                 Option option = this.options.get(key);

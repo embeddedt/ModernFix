@@ -59,7 +59,6 @@ public abstract class ModelBakerImplMixin {
         }
     }
 
-    private boolean wasMissingModel = false;
     private ResourceLocation capturedLocation;
     private UnbakedModel capturedModel;
     private ModelState capturedState;
@@ -99,7 +98,7 @@ public abstract class ModelBakerImplMixin {
         } else
             cir.setReturnValue(this.field_40571.getModel(arg));
         UnbakedModel toReplace = cir.getReturnValue();
-        if(!wasMissingModel) {
+        if(true) {
             for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
                 try {
                     toReplace = integration.onUnbakedModelPreBake(arg, toReplace, this.field_40571);
@@ -114,27 +113,11 @@ public abstract class ModelBakerImplMixin {
         if(cir.getReturnValue() == extendedBakery.mfix$getUnbakedMissingModel()) {
             if(arg != ModelBakery.MISSING_MODEL_LOCATION && debugDynamicModelLoading)
                 ModernFix.LOGGER.warn("Model {} not present", arg);
-            wasMissingModel = true;
-        } else
-            wasMissingModel = false; /* sometimes this runs more than once e.g. for recursive model baking */
+        }
     }
 
     @ModifyVariable(method = "bake", at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
     private BakedModel unifyMissingBakedModel(BakedModel model) {
-        if(wasMissingModel) {
-            // use a shared baked missing model
-            IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
-            BakedModel missing;
-            synchronized (this.field_40571) {
-                if(extendedBakery.getBakedMissingModel() == null) {
-                    extendedBakery.setBakedMissingModel(model);
-                    missing = model;
-                } else {
-                    missing = extendedBakery.getBakedMissingModel();
-                }
-            }
-            return missing;
-        }
         for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
             model = integration.onBakedModelLoad(capturedLocation, capturedModel, model, capturedState, this.field_40571);
         }

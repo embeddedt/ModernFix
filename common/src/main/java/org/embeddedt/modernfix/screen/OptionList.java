@@ -152,7 +152,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             }).pos(75, 0).size(20, 20).build();
             if(!I18n.exists("modernfix.option." + optionName)) {
                 this.helpButton.active = false;
-                if(ModernFixPlatformHooks.isDevEnv() && OPTIONS_MISSING_HELP.add(optionName))
+                if(ModernFixPlatformHooks.INSTANCE.isDevEnv() && OPTIONS_MISSING_HELP.add(optionName))
                     ModernFix.LOGGER.warn("Missing help for {}", optionName);
             }
         }

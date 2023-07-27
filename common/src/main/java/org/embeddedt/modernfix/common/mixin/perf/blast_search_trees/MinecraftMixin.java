@@ -38,7 +38,7 @@ public abstract class MinecraftMixin {
         this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, nameSupplier);
         this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, tagSupplier);
         this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new DummySearchTree<>());
-        ModernFixPlatformHooks.registerCreativeSearchTrees(this.searchRegistry, nameSupplier, tagSupplier, this::populateSearchTree);
+        ModernFixPlatformHooks.INSTANCE.registerCreativeSearchTrees(this.searchRegistry, nameSupplier, tagSupplier, this::populateSearchTree);
         // grab components for all key mappings in order to prevent them from being loaded off-thread later
         // this populates the LazyLoadedValues
         // we also need to suppress GLFW errors to prevent crashes if a key is missing

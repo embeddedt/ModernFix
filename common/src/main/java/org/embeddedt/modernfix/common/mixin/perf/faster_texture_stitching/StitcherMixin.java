@@ -35,7 +35,7 @@ public class StitcherMixin<T extends Stitcher.Entry> {
      */
     @Inject(method = "stitch", at = @At("HEAD"), cancellable = true)
     private void stitchFast(CallbackInfo ci) {
-        if(!ModernFixPlatformHooks.isLoadingNormally()) {
+        if(!ModernFixPlatformHooks.INSTANCE.isLoadingNormally()) {
             ModernFix.LOGGER.error("Using vanilla stitcher implementation due to invalid loading state");
             return;
         }
@@ -56,7 +56,7 @@ public class StitcherMixin<T extends Stitcher.Entry> {
      */
     @Inject(method = "gatherSprites", at = @At("HEAD"), cancellable = true)
     private void gatherSpritesFast(Stitcher.SpriteLoader<T> spriteLoader, CallbackInfo ci) {
-        if(!ModernFixPlatformHooks.isLoadingNormally())
+        if(!ModernFixPlatformHooks.INSTANCE.isLoadingNormally())
             return;
         ci.cancel();
         for(StbStitcher.LoadableSpriteInfo<T> info : loadableSpriteInfos) {

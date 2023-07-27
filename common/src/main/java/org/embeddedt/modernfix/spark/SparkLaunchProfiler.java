@@ -87,17 +87,17 @@ public class SparkLaunchProfiler {
 
         @Override
         public Type getType() {
-            return ModernFixPlatformHooks.isClient() ? Type.CLIENT : Type.SERVER;
+            return ModernFixPlatformHooks.INSTANCE.isClient() ? Type.CLIENT : Type.SERVER;
         }
 
         @Override
         public String getName() {
-            return ModernFixPlatformHooks.getPlatformName();
+            return ModernFixPlatformHooks.INSTANCE.getPlatformName();
         }
 
         @Override
         public String getVersion() {
-            return ModernFixPlatformHooks.getVersionString();
+            return ModernFixPlatformHooks.INSTANCE.getVersionString();
         }
 
         @Override
@@ -146,7 +146,7 @@ public class SparkLaunchProfiler {
 
         @Override
         public Path getPluginDirectory() {
-            return ModernFixPlatformHooks.getGameDirectory().resolve("spark-modernfix");
+            return ModernFixPlatformHooks.INSTANCE.getGameDirectory().resolve("spark-modernfix");
         }
 
         @Override

@@ -123,7 +123,7 @@ public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
 
         @Override
         public boolean canUse() {
-            return ModernFixPlatformHooks.modPresent("roughlyenoughitems");
+            return ModernFixPlatformHooks.INSTANCE.modPresent("roughlyenoughitems");
         }
 
         @Override

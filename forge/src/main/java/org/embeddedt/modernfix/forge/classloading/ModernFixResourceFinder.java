@@ -92,20 +92,12 @@ public class ModernFixResourceFinder {
     }
 
     public static Enumeration<URL> findAllURLsForResource(String input) {
-        // CachedResourcePath normalizes already but we need to strip trailing slash if any
-        // TODO move logic to FileUtil.normalize()
-        int lastIndex = input.length();
-        boolean strip = false;
-        while(lastIndex > 1) {
-            char c = input.charAt(lastIndex - 1);
-            if (c == '/' || c == '\\') {
-                lastIndex--;
-                strip = true;
-            } else
-                break;
+        // fallback to Forge impl for any paths ending in a slash
+        char endChar = input.length() > 0 ? input.charAt(input.length() - 1) : '/';
+        if(endChar == '/' || endChar == '\\') {
+            return LoadingModList.get().findAllURLsForResource(input);
         }
-        if(strip)
-            input = input.substring(0, lastIndex);
+        // CachedResourcePath normalizes already
         Collection<String> urlList = urlsForClass.get(new CachedResourcePath(input));
         if(!urlList.isEmpty()) {
             String pathInput = FileUtil.normalize(input);

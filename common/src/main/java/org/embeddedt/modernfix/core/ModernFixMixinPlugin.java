@@ -22,7 +22,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     public ModernFixMixinPlugin() {
         /* invoke early to ensure it gets read on one thread */
-        ModernFixPlatformHooks.getCustomModOptions();
+        ModernFixPlatformHooks.INSTANCE.getCustomModOptions();
         boolean firstConfig = instance == null;
         if(firstConfig) {
             instance = this;
@@ -33,7 +33,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             }
 
             this.logger.info("Loaded configuration file for ModernFix {}: {} options available, {} override(s) found",
-                    ModernFixPlatformHooks.getVersionString(), config.getOptionCount(), config.getOptionOverrideCount());
+                    ModernFixPlatformHooks.INSTANCE.getVersionString(), config.getOptionCount(), config.getOptionOverrideCount());
 
             config.getOptionMap().values().forEach(option -> {
                 if (option.isOverridden()) {
@@ -41,7 +41,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
                     if (option.isUserDefined()) {
                         source = "user configuration";
-                    } else if (!ModernFixPlatformHooks.isEarlyLoadingNormally()) {
+                    } else if (!ModernFixPlatformHooks.INSTANCE.isEarlyLoadingNormally()) {
                         source = "load error";
                     } else if (option.isModDefined()) {
                         source = "mods [" + String.join(", ", option.getDefiningMods()) + "]";
@@ -64,7 +64,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             }
 
             /* We abuse the constructor of a mixin plugin as a safe location to start modifying the classloader */
-            ModernFixPlatformHooks.injectPlatformSpecificHacks();
+            ModernFixPlatformHooks.INSTANCE.injectPlatformSpecificHacks();
 
             if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spam_thread_dump.ThreadDumper")) {
                 // run once to trigger classloading
@@ -119,7 +119,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
         if (option == null) {
             String msg = "No rules matched mixin '{}', treating as foreign and disabling!";
-            if(ModernFixPlatformHooks.isDevEnv())
+            if(ModernFixPlatformHooks.INSTANCE.isDevEnv())
                 this.logger.error(msg, mixin);
             else
                 this.logger.debug(msg, mixin);
@@ -146,6 +146,6 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
-        ModernFixPlatformHooks.applyASMTransformers(mixinClassName, targetClass);
+        ModernFixPlatformHooks.INSTANCE.applyASMTransformers(mixinClassName, targetClass);
     }
 }

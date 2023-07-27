@@ -117,7 +117,7 @@ public class ModelBakeryHelpers {
                                             Set<ResourceLocation> modelFiles, UnbakedModel missingModel,
                                             Function<JsonElement, BlockModel> modelDeserializer,
                                             Function<ResourceLocation, UnbakedModel> bakeryModelGetter) {
-        if(!ModernFixPlatformHooks.isLoadingNormally())
+        if(!ModernFixPlatformHooks.INSTANCE.isLoadingNormally())
             return;
         Stopwatch stopwatch = Stopwatch.createStarted();
         final Object2IntOpenHashMap<String> blockstateErrors = new Object2IntOpenHashMap<>();

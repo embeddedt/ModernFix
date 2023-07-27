@@ -42,9 +42,9 @@ public class ModernFixClient {
         // clear reserve as it's not needed
         Minecraft.reserve = new byte[0];
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
-            brandingString = ModernFix.NAME + " " + ModernFixPlatformHooks.getVersionString();
+            brandingString = ModernFix.NAME + " " + ModernFixPlatformHooks.INSTANCE.getVersionString();
         }
-        for(String className : ModernFixPlatformHooks.getCustomModOptions().get(IntegrationConstants.CLIENT_INTEGRATION_CLASS)) {
+        for(String className : ModernFixPlatformHooks.INSTANCE.getCustomModOptions().get(IntegrationConstants.CLIENT_INTEGRATION_CLASS)) {
             try {
                 CLIENT_INTEGRATIONS.add((ModernFixClientIntegration)Class.forName(className).getDeclaredConstructor().newInstance());
             } catch(ReflectiveOperationException | ClassCastException e) {
@@ -67,7 +67,7 @@ public class ModernFixClient {
             gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.measure_time.GameLoad"))
                 ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
-            ModernFixPlatformHooks.onLaunchComplete();
+            ModernFixPlatformHooks.INSTANCE.onLaunchComplete();
             ClassInfoManager.clear();
         }
     }

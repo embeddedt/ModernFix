@@ -38,7 +38,7 @@ public class ChunkGeneratorMixin {
     }
 
     private ServerLevel searchLevel() {
-        MinecraftServer server = ModernFixPlatformHooks.getCurrentServer();
+        MinecraftServer server = ModernFixPlatformHooks.INSTANCE.getCurrentServer();
         if(server != null) {
             ServerLevel ourLevel = null;
             for (ServerLevel level : server.getAllLevels()) {

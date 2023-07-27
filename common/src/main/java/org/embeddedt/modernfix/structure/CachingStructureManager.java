@@ -26,7 +26,7 @@ public class CachingStructureManager {
             throw new RuntimeException(e);
         }
     });
-    private static final File STRUCTURE_CACHE_FOLDER = FileUtil.childFile(ModernFixPlatformHooks.getGameDirectory().resolve("modernfix").resolve("structureCacheV1").toFile());
+    private static final File STRUCTURE_CACHE_FOLDER = FileUtil.childFile(ModernFixPlatformHooks.INSTANCE.getGameDirectory().resolve("modernfix").resolve("structureCacheV1").toFile());
 
     static {
         STRUCTURE_CACHE_FOLDER.mkdirs();

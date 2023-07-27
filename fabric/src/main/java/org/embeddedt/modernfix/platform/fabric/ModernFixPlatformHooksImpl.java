@@ -20,6 +20,7 @@ import net.minecraft.server.packs.resources.ResourceManager;
 import org.embeddedt.modernfix.ModernFixFabric;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
 import org.objectweb.asm.tree.*;
@@ -28,18 +29,18 @@ import java.nio.file.Path;
 import java.util.*;
 import java.util.function.Consumer;
 
-public class ModernFixPlatformHooksImpl {
-    public static boolean isClient() {
+public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
+    public boolean isClient() {
         return FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT;
     }
 
-    public static boolean isDedicatedServer() {
+    public boolean isDedicatedServer() {
         return FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
     }
 
     private static String verString;
 
-    public static String getVersionString() {
+    public String getVersionString() {
         if(verString == null) {
             ModContainer mfModContainer = FabricLoader.getInstance().getModContainer("modernfix").get();
             verString = mfModContainer.getMetadata().getVersion().getFriendlyString();
@@ -47,27 +48,27 @@ public class ModernFixPlatformHooksImpl {
         return verString;
     }
 
-    public static boolean modPresent(String modId) {
+    public boolean modPresent(String modId) {
         return FabricLoader.getInstance().getModContainer(modId).isPresent();
     }
 
-    public static boolean isDevEnv() {
+    public boolean isDevEnv() {
         return FabricLoader.getInstance().isDevelopmentEnvironment();
     }
 
-    public static MinecraftServer getCurrentServer() {
+    public MinecraftServer getCurrentServer() {
         return ModernFixFabric.theServer.get();
     }
 
-    public static boolean isEarlyLoadingNormally() {
+    public boolean isEarlyLoadingNormally() {
         return true;
     }
 
-    public static boolean isLoadingNormally() {
+    public boolean isLoadingNormally() {
         return true;
     }
 
-    public static TextureAtlasSprite loadTextureAtlasSprite(TextureAtlas atlasTexture,
+    public TextureAtlasSprite loadTextureAtlasSprite(TextureAtlas atlasTexture,
                                                             ResourceManager resourceManager, TextureAtlasSprite.Info textureInfo,
                                                             Resource resource,
                                                             int atlasWidth, int atlasHeight,
@@ -76,27 +77,27 @@ public class ModernFixPlatformHooksImpl {
         return new TextureAtlasSprite(atlasTexture, textureInfo, mipmapLevel, atlasWidth, atlasHeight, spriteX, spriteY, image);
     }
 
-    public static Path getGameDirectory() {
+    public Path getGameDirectory() {
         return FabricLoader.getInstance().getGameDir();
     }
 
-    public static void sendPacket(ServerPlayer player, Object packet) {
+    public void sendPacket(ServerPlayer player, Object packet) {
         //PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 
-    public static void injectPlatformSpecificHacks() {
+    public void injectPlatformSpecificHacks() {
     }
 
-    public static void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
+    public void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
 
     }
 
-    public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
+    public void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
         CommandRegistrationCallback.EVENT.register((dispatcher, arg) -> handler.accept(dispatcher));
     }
 
     private static Multimap<String, String> modOptions;
-    public static Multimap<String, String> getCustomModOptions() {
+    public Multimap<String, String> getCustomModOptions() {
         if(modOptions == null) {
             modOptions = ArrayListMultimap.create();
             for (ModContainer container : FabricLoader.getInstance().getAllMods()) {
@@ -117,13 +118,13 @@ public class ModernFixPlatformHooksImpl {
         return modOptions;
     }
 
-    public static void onLaunchComplete() {
+    public void onLaunchComplete() {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnFabric")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.stop("launch"), "Failed to stop profiler");
         }
     }
 
-    public static String getPlatformName() {
+    public String getPlatformName() {
         return "Fabric";
     }
 }

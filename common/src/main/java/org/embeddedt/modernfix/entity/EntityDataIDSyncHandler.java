@@ -51,7 +51,7 @@ public class EntityDataIDSyncHandler {
             }
             EntityIDSyncPacket packet = new EntityIDSyncPacket(fieldsToSyncMap);
             ModernFix.LOGGER.debug("Sending ID correction packet to client with " + fieldsToSyncMap.size() + " classes");
-            ModernFixPlatformHooks.sendPacket(targetPlayer, packet);
+            ModernFixPlatformHooks.INSTANCE.sendPacket(targetPlayer, packet);
         }
     }
 }

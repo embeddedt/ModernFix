@@ -51,7 +51,7 @@ public class ModernFixEarlyConfig {
         if(modId.equals("optifine"))
             return OPTIFINE_PRESENT;
         else
-            return ModernFixPlatformHooks.modPresent(modId);
+            return ModernFixPlatformHooks.INSTANCE.modPresent(modId);
     }
 
     private static final String MIXIN_DESC = Type.getDescriptor(Mixin.class);
@@ -122,11 +122,11 @@ public class ModernFixEarlyConfig {
                         isDevOnly = true;
                     }
                 }
-                if(isMixin && (!isDevOnly || ModernFixPlatformHooks.isDevEnv())) {
+                if(isMixin && (!isDevOnly || ModernFixPlatformHooks.INSTANCE.isDevEnv())) {
                     String mixinClassName = sanitize(node.name.replace('/', '.')).replace("org.embeddedt.modernfix.mixin.", "");
                     if(!requiredModPresent)
                         mixinsMissingMods.put(mixinClassName, requiredModId);
-                    else if(isClientOnly && !ModernFixPlatformHooks.isClient())
+                    else if(isClientOnly && !ModernFixPlatformHooks.INSTANCE.isClient())
                         mixinsMissingMods.put(mixinClassName, "[not client]");
                     List<String> mixinOptionNames = dotSplitter.splitToList(mixinClassName);
                     StringBuilder optionBuilder = new StringBuilder(mixinClassName.length());
@@ -150,7 +150,7 @@ public class ModernFixEarlyConfig {
         }
     }
 
-    private static final boolean isDevEnv = ModernFixPlatformHooks.isDevEnv();
+    private static final boolean isDevEnv = ModernFixPlatformHooks.INSTANCE.isDevEnv();
 
     private static class DefaultSettingMapBuilder extends ImmutableMap.Builder<String, Boolean> {
         public DefaultSettingMapBuilder putConditionally(BooleanSupplier condition, String k, Boolean v) {
@@ -169,7 +169,7 @@ public class ModernFixEarlyConfig {
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
             .put("mixin.feature.direct_stack_trace", false)
-            .putConditionally(ModernFixPlatformHooks::isDevEnv, "mixin.perf.rewrite_registry", false)
+            .putConditionally(ModernFixPlatformHooks.INSTANCE::isDevEnv, "mixin.perf.rewrite_registry", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.deduplicate_climate_parameters", false)
             .put("mixin.bugfix.packet_leak", false)
@@ -242,7 +242,7 @@ public class ModernFixEarlyConfig {
 
     private void disableIfModPresent(String configName, String... ids) {
         for(String id : ids) {
-            if(!ModernFixPlatformHooks.isEarlyLoadingNormally() || modPresent(id)) {
+            if(!ModernFixPlatformHooks.INSTANCE.isEarlyLoadingNormally() || modPresent(id)) {
                 Option option = this.options.get(configName);
                 if(option != null)
                     option.addModOverride(false, id);

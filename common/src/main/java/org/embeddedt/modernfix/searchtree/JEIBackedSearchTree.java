@@ -98,7 +98,7 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
 
         @Override
         public boolean canUse() {
-            return ModernFixPlatformHooks.modPresent("jei") && !ModernFixPlatformHooks.modPresent("emi") && getIngredientListUncached != null && filterField != null;
+            return ModernFixPlatformHooks.INSTANCE.modPresent("jei") && !ModernFixPlatformHooks.INSTANCE.modPresent("emi") && getIngredientListUncached != null && filterField != null;
         }
 
         @Override

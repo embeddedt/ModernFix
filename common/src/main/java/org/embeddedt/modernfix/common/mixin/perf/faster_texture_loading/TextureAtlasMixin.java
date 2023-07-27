@@ -43,7 +43,7 @@ public abstract class TextureAtlasMixin {
      */
     @Inject(method = "getBasicSpriteInfos", at = @At("HEAD"))
     private void loadImages(ResourceManager manager, Set<ResourceLocation> imageLocations, CallbackInfoReturnable<Collection<TextureAtlasSprite.Info>> cir) {
-        usingFasterLoad = ModernFixPlatformHooks.isLoadingNormally();
+        usingFasterLoad = ModernFixPlatformHooks.INSTANCE.isLoadingNormally();
     }
 
     @Redirect(method = "getBasicSpriteInfos", at = @At(value = "INVOKE", target = "Ljava/util/Set;iterator()Ljava/util/Iterator;", ordinal = 0))
@@ -117,7 +117,7 @@ public abstract class TextureAtlasMixin {
         } else {
             TextureAtlasSprite sprite = null;
             try {
-                sprite = ModernFixPlatformHooks.loadTextureAtlasSprite((TextureAtlas)(Object)this, resourceManager, spriteInfo, pair.getFirst(), storageX, storageY, x, y, mipLevel, pair.getSecond());
+                sprite = ModernFixPlatformHooks.INSTANCE.loadTextureAtlasSprite((TextureAtlas)(Object)this, resourceManager, spriteInfo, pair.getFirst(), storageX, storageY, x, y, mipLevel, pair.getSecond());
             } catch(RuntimeException | IOException e) {
                 ModernFix.LOGGER.error("Error loading texture {}: {}", spriteInfo.name(), e);
             }

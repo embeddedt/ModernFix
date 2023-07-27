@@ -172,7 +172,7 @@ public class PackResourcesCacheEngine {
     }
 
     public static void invalidate() {
-        if(!ModernFixPlatformHooks.isDevEnv())
+        if(!ModernFixPlatformHooks.INSTANCE.isDevEnv())
             return;
         synchronized (cachingPacks) {
             cachingPacks.keySet().forEach(pack -> {

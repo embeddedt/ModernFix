@@ -28,6 +28,10 @@ allprojects {
 		}
 	}
 
+    architectury {
+        compileOnly()
+    }
+
 	group = 'org.embeddedt'
     // extract base version from tag, generate other metadata ourselves
     def details = versionDetails()
@@ -188,6 +192,15 @@ tasks.register('checkCleanTag') {
 configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
     apply plugin: 'com.matthewprenger.cursegradle'
     apply plugin: 'com.modrinth.minotaur'
+
+    loom {
+        mods {
+            main { // to match the default mod generated for Forge
+                sourceSet project.sourceSets.main
+                sourceSet project(':common').sourceSets.main
+            }
+        }
+    }
 
     def copyJarNameConsistent = tasks.register('copyJarNameConsistent', Copy) {
         from remapJar // shortcut for createJar.outputs.files

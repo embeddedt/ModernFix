@@ -25,6 +25,7 @@ import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
 import org.embeddedt.modernfix.util.DummyList;
@@ -39,18 +40,18 @@ import java.util.Objects;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
-public class ModernFixPlatformHooksImpl {
-    public static boolean isClient() {
+public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
+    public boolean isClient() {
         return FMLLoader.getDist() == Dist.CLIENT;
     }
 
-    public static boolean isDedicatedServer() {
+    public boolean isDedicatedServer() {
         return FMLLoader.getDist().isDedicatedServer();
     }
 
     private static String verString;
 
-    public static String getVersionString() {
+    public String getVersionString() {
         if(verString == null) {
             try {
                 verString = ModernFixMixinPlugin.class.getPackage().getImplementationVersion();
@@ -62,35 +63,35 @@ public class ModernFixPlatformHooksImpl {
         return verString;
     }
 
-    public static boolean modPresent(String modId) {
+    public boolean modPresent(String modId) {
         return FMLLoader.getLoadingModList().getModFileById(modId) != null;
     }
 
-    public static boolean isDevEnv() {
+    public boolean isDevEnv() {
         return !FMLLoader.isProduction();
     }
 
-    public static MinecraftServer getCurrentServer() {
+    public MinecraftServer getCurrentServer() {
         return ServerLifecycleHooks.getCurrentServer();
     }
 
-    public static boolean isEarlyLoadingNormally() {
+    public boolean isEarlyLoadingNormally() {
         return LoadingModList.get().getErrors().isEmpty();
     }
 
-    public static boolean isLoadingNormally() {
+    public boolean isLoadingNormally() {
         return isEarlyLoadingNormally() && ModLoader.isLoadingStateValid();
     }
 
-    public static Path getGameDirectory() {
+    public Path getGameDirectory() {
         return FMLPaths.GAMEDIR.get();
     }
 
-    public static void sendPacket(ServerPlayer player, Object packet) {
+    public void sendPacket(ServerPlayer player, Object packet) {
         PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 
-    public static void injectPlatformSpecificHacks() {
+    public void injectPlatformSpecificHacks() {
         FastAccessTransformerList.attemptReplace();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */
@@ -112,18 +113,18 @@ public class ModernFixPlatformHooksImpl {
         NightConfigFixer.monitorFileWatcher();
     }
 
-    public static void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
+    public void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
 
     }
 
-    public static void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
+    public void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
         MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
             handler.accept(event.getDispatcher());
         });
     }
 
     private static Multimap<String, String> modOptions;
-    public static Multimap<String, String> getCustomModOptions() {
+    public Multimap<String, String> getCustomModOptions() {
         if(modOptions == null) {
             modOptions = ArrayListMultimap.create();
             for (ModInfo meta : LoadingModList.get().getMods()) {
@@ -142,7 +143,7 @@ public class ModernFixPlatformHooksImpl {
         return modOptions;
     }
 
-    public static void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
+    public void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
         for (SearchRegistry.Key<ItemStack> nameKey : CreativeModeTabSearchRegistry.getNameSearchKeys().values()) {
             registry.register(nameKey, nameSupplier);
         }
@@ -159,13 +160,13 @@ public class ModernFixPlatformHooksImpl {
         });
     }
 
-    public static void onLaunchComplete() {
+    public void onLaunchComplete() {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnForge")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.stop("launch"), "Failed to stop profiler");
         }
     }
 
-    public static String getPlatformName() {
+    public String getPlatformName() {
         return "Forge";
     }
 }

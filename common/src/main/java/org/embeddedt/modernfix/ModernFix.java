@@ -50,15 +50,15 @@ public class ModernFix {
         INSTANCE = this;
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.snapshot_easter_egg.NameChange") && !SharedConstants.getCurrentVersion().isStable())
             NAME = "PreemptiveFix";
-        ModernFixPlatformHooks.onServerCommandRegister(ModernFixCommands::register);
+        ModernFixPlatformHooks.INSTANCE.onServerCommandRegister(ModernFixCommands::register);
     }
 
     public void onServerStarted() {
-        if(ModernFixPlatformHooks.isDedicatedServer()) {
+        if(ModernFixPlatformHooks.INSTANCE.isDedicatedServer()) {
             float gameStartTime = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
             if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.measure_time.ServerLoad"))
                 ModernFix.LOGGER.warn("Dedicated server took " + gameStartTime + " seconds to load");
-            ModernFixPlatformHooks.onLaunchComplete();
+            ModernFixPlatformHooks.INSTANCE.onLaunchComplete();
         }
         ClassInfoManager.clear();
     }

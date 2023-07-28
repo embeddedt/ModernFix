@@ -62,6 +62,11 @@ public abstract class BlockStateBaseMixin implements IBlockState {
         return generateCache(base);
     }
 
+    @Inject(method = { "getFluidState", "isRandomlyTicking" }, at = @At("HEAD"))
+    private void generateCacheFluidStateTicking(CallbackInfoReturnable<?> cir) {
+        generateCache((BlockBehaviour.BlockStateBase)(Object)this);
+    }
+
     @Dynamic
     @Inject(method = "getPathNodeType", at = @At("HEAD"), require = 0, remap = false)
     private void generateCacheLithium(CallbackInfoReturnable<?> cir) {

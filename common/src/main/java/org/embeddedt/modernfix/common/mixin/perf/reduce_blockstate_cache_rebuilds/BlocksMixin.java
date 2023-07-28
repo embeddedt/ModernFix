@@ -18,7 +18,8 @@ public class BlocksMixin {
         return o -> {};
     }
 
-    @Redirect(method = "<clinit>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;initCache()V"))
+    // require = 0 due to Forge removing the BLOCK_STATE_REGISTRY init here
+    @Redirect(method = "<clinit>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;initCache()V"), require = 0)
     private static void skipCacheInit(BlockState state) {
         /* no-op, our dynamic logic handles everything properly (including the 1.19.4+ fluidState, etc. caching) */
     }

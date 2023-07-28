@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.perf.reduce_blockstate_cache_rebuilds;
 
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.material.FluidState;
 import org.embeddedt.modernfix.duck.IBlockState;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Dynamic;
@@ -17,6 +18,8 @@ public abstract class BlockStateBaseMixin implements IBlockState {
     @Shadow public abstract void initCache();
 
     @Shadow private BlockBehaviour.BlockStateBase.Cache cache;
+    @Shadow private FluidState fluidState;
+    @Shadow private boolean isRandomlyTicking;
 
     private volatile boolean cacheInvalid = false;
     private static boolean buildingCache = false;
@@ -62,9 +65,26 @@ public abstract class BlockStateBaseMixin implements IBlockState {
         return generateCache(base);
     }
 
-    @Inject(method = { "getFluidState", "isRandomlyTicking" }, at = @At("HEAD"))
-    private void generateCacheFluidStateTicking(CallbackInfoReturnable<?> cir) {
-        generateCache((BlockBehaviour.BlockStateBase)(Object)this);
+    @Redirect(method = "*", at = @At(
+            value = "FIELD",
+            opcode = Opcodes.GETFIELD,
+            target = "Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase;fluidState:Lnet/minecraft/world/level/material/FluidState;",
+            ordinal = 0
+    ))
+    private FluidState genCacheBeforeGettingFluid(BlockBehaviour.BlockStateBase base) {
+        generateCache(base);
+        return this.fluidState;
+    }
+
+    @Redirect(method = "*", at = @At(
+            value = "FIELD",
+            opcode = Opcodes.GETFIELD,
+            target = "Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase;isRandomlyTicking:Z",
+            ordinal = 0
+    ))
+    private boolean genCacheBeforeGettingTicking(BlockBehaviour.BlockStateBase base) {
+        generateCache(base);
+        return this.isRandomlyTicking;
     }
 
     @Dynamic

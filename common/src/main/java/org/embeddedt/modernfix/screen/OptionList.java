@@ -20,10 +20,11 @@ import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
 import java.io.IOException;
 import java.util.*;
-import java.util.stream.Collectors;
 
 public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
-    private final int maxNameWidth;
+    private int maxNameWidth = 0;
+
+    private static final int DEPTH_OFFSET = 20;
 
     private static final Component OPTION_ON = new TranslatableComponent("modernfix.option.on").withStyle(ChatFormatting.GREEN);
     private static final Component OPTION_OFF = new TranslatableComponent("modernfix.option.off").withStyle(ChatFormatting.RED);
@@ -32,22 +33,42 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
     private ModernFixConfigScreen mainScreen;
 
-    private static MutableComponent getOptionComponent(String optionName) {
-        String friendlyKey = "modernfix.option.name." + optionName;
-        TextComponent baseComponent = new TextComponent(optionName);
+    private static MutableComponent getOptionComponent(Option option) {
+        String friendlyKey = "modernfix.option.name." + option.getName();
+        TextComponent baseComponent = new TextComponent(option.getSelfName());
         if(I18n.exists(friendlyKey))
             return new TranslatableComponent(friendlyKey).withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, baseComponent)));
         else
             return baseComponent;
     }
 
+    public void updateOptionEntryStatuses() {
+        for(Entry e : this.children()) {
+            if(e instanceof OptionEntry) {
+                ((OptionEntry)e).updateStatus();
+            }
+        }
+    }
+
+    private final Set<Option> addedOptions = new HashSet<>();
+
+    private void addOption(Option option) {
+        if(addedOptions.add(option)) {
+            int w = this.minecraft.font.width(getOptionComponent(option)) + DEPTH_OFFSET * option.getDepth();
+            this.maxNameWidth = Math.max(w, this.maxNameWidth);
+            this.addEntry(new OptionEntry(option.getName(), option));
+            ModernFixMixinPlugin.instance.config.getOptionMap().values().stream()
+                    .filter(subOption -> subOption.getParent() == option)
+                    .sorted(Comparator.comparing(Option::getName))
+                    .forEach(this::addOption);
+        }
+    }
 
     public OptionList(ModernFixConfigScreen arg, Minecraft arg2) {
         super(arg2,arg.width + 45, arg.height, 43, arg.height - 32, 20);
 
         this.mainScreen = arg;
 
-        int maxW = 0;
         Multimap<String, Option> optionsByCategory = ModernFixMixinPlugin.instance.config.getOptionCategoryMap();
         List<String> theCategories = OptionCategories.getCategoriesInOrder();
         for(String category : theCategories) {
@@ -55,21 +76,15 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             this.addEntry(new CategoryEntry(new TranslatableComponent(categoryTranslationKey)
                     .withStyle(Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, new TranslatableComponent(categoryTranslationKey + ".description"))))
             ));
-            List<Option> sortedKeys = optionsByCategory.get(category).stream().filter(key -> {
+            optionsByCategory.get(category).stream().filter(key -> {
                 int dotCount = 0;
                 for(char c : key.getName().toCharArray()) {
                     if(c == '.')
                         dotCount++;
                 }
                 return dotCount >= 2;
-            }).sorted(Comparator.comparing(Option::getName)).collect(Collectors.toList());
-            for(Option option : sortedKeys) {
-                int w = this.minecraft.font.width(getOptionComponent(option.getName()));
-                maxW = Math.max(w, maxW);
-                this.addEntry(new OptionEntry(option.getName(), option));
-            }
+            }).sorted(Comparator.comparing(Option::getName)).forEach(this::addOption);
         }
-        this.maxNameWidth = maxW;
     }
 
     protected int getScrollbarPosition() {
@@ -134,6 +149,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
                     ModernFix.LOGGER.error("Unable to save config", e);
                 }
+                OptionList.this.updateOptionEntryStatuses();
             }, (btn, gfx, x, y) -> {
                 if(this.option.isModDefined()) {
                     String disablingMods = String.join(", ", this.option.getDefiningMods());
@@ -146,8 +162,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     );
                 }
             });
-            if(this.option.isModDefined())
-                this.toggleButton.active = false;
+            updateStatus();
             this.helpButton = new Button(75, 0, 20, 20, new TextComponent("?"), (arg) -> {
                 Minecraft.getInstance().setScreen(new ModernFixOptionInfoScreen(mainScreen, optionName));
             });
@@ -158,12 +173,16 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             }
         }
 
+        void updateStatus() {
+            this.toggleButton.active = !(this.option.isModDefined() || this.option.isEffectivelyDisabledByParent());
+        }
+
         @Override
         public void render(PoseStack matrixStack, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
-            MutableComponent nameComponent = getOptionComponent(this.name);
+            MutableComponent nameComponent = getOptionComponent(option);
             if(this.option.isUserDefined())
                 nameComponent = nameComponent.withStyle(style -> style.withItalic(true)).append(new TranslatableComponent("modernfix.config.not_default"));
-            float textX = (float)(left + 160 - OptionList.this.maxNameWidth);
+            float textX = (float)(left + DEPTH_OFFSET * option.getDepth() + 160 - OptionList.this.maxNameWidth);
             float textY = (float)(top + height / 2 - 4);
             OptionList.this.minecraft.font.draw(matrixStack, nameComponent, textX, textY, 16777215);
             this.toggleButton.x = left + 175;

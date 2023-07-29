@@ -128,21 +128,8 @@ public class ModernFixEarlyConfig {
                         mixinsMissingMods.put(mixinClassName, requiredModId);
                     else if(isClientOnly && !ModernFixPlatformHooks.INSTANCE.isClient())
                         mixinsMissingMods.put(mixinClassName, "[not client]");
-                    List<String> mixinOptionNames = dotSplitter.splitToList(mixinClassName);
-                    StringBuilder optionBuilder = new StringBuilder(mixinClassName.length());
-                    optionBuilder.append("mixin");
-                    // mixin.core, mixin.safety can be top-level, everything else must have a subcategory
-                    boolean allowTopLevel;
-                    if(mixinOptionNames.size() > 0)
-                        allowTopLevel = mixinOptionNames.get(0).equals("core") || mixinOptionNames.get(0).equals("safety");
-                    else
-                        allowTopLevel = false;
-                    for(int i = 0; i < mixinOptionNames.size() - 1; i++) {
-                        optionBuilder.append('.');
-                        optionBuilder.append(mixinOptionNames.get(i));
-                        if(i > 0 || allowTopLevel)
-                            mixinOptions.add(optionBuilder.toString());
-                    }
+                    String mixinCategoryName = "mixin." + mixinClassName.substring(0, mixinClassName.lastIndexOf('.'));
+                    mixinOptions.add(mixinCategoryName);
                 }
             } catch(IOException e) {
                 ModernFix.LOGGER.error("Error scanning file " + mixinPath, e);
@@ -198,6 +185,17 @@ public class ModernFixEarlyConfig {
             Option option = new Option(optionName, defaultEnabled, false);
             this.options.putIfAbsent(optionName, option);
             this.optionsByCategory.put(OptionCategories.getCategoryForOption(optionName), option);
+        }
+        for(Map.Entry<String, Option> entry : this.options.entrySet()) {
+            int idx = entry.getKey().lastIndexOf('.');
+            if(idx <= 0)
+                continue;
+            String potentialParentKey = entry.getKey().substring(0, idx);
+            Option potentialParent = this.options.get(potentialParentKey);
+            if(potentialParent != null) {
+                System.out.println(potentialParentKey + " -> " + entry.getKey());
+                entry.getValue().setParent(potentialParent);
+            }
         }
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.

@@ -46,6 +46,13 @@ public class Option {
         return this.parent;
     }
 
+    public int getDepth() {
+        if(this.parent == null)
+            return 0;
+        else
+            return this.parent.getDepth() + 1;
+    }
+
     public boolean isEnabled() {
         return this.enabled;
     }
@@ -72,6 +79,13 @@ public class Option {
 
     public String getName() {
         return this.name;
+    }
+
+    public String getSelfName() {
+        if(this.parent == null)
+            return this.name;
+        else
+            return this.name.substring(this.parent.getName().length() + 1);
     }
 
     public void clearModsDefiningValue() {

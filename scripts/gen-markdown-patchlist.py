@@ -1,11 +1,16 @@
 #!/usr/bin/python3
 
-import json, os, subprocess, sys
+import argparse, json, os, subprocess, sys
 # to import other scripts in same folder
 sys.path.append(os.path.dirname(os.path.realpath(__file__)))
 
 from contextlib import redirect_stdout
 from modernfixlib import get_valid_mixin_options
+
+parser = argparse.ArgumentParser(description='Generate ModernFix patch summary Markdown file.')
+parser.add_argument('-p', '--langpath', default='common/src/main/resources/assets/modernfix/lang/en_us.json')
+
+args = parser.parse_args()
 
 branch_name = subprocess.check_output(['git', 'branch', '--show-current']).decode("utf-8").strip()
 
@@ -13,7 +18,7 @@ with open('doc/generated/' + branch_name + '-Summary-of-Patches.md', 'w') as out
     all_current_mixin_options = get_valid_mixin_options()
     options_missing_descriptions = set()
     with redirect_stdout(output_file):
-        with open('common/src/main/resources/assets/modernfix/lang/en_us.json') as lang_json:
+        with open(args.langpath) as lang_json:
             lang_obj = json.loads(lang_json.read())
             option_names = set()
             for key, value in lang_obj.items():

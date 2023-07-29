@@ -2,6 +2,8 @@ eclipse
 run
 libs
 media
+__pycache__
+*.pyc
 classes/
 .architectury-transformer/
 fabric/fabricloader.log

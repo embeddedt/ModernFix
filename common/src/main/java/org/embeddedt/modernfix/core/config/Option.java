@@ -11,6 +11,7 @@ public class Option {
     private Set<String> modDefined = null;
     private boolean enabled;
     private boolean userDefined;
+    private Option parent = null;
 
     public Option(String name, boolean enabled, boolean userDefined) {
         this.name = name;
@@ -37,8 +38,24 @@ public class Option {
         this.modDefined.add(modId);
     }
 
+    public void setParent(Option option) {
+        this.parent = option;
+    }
+
+    public Option getParent() {
+        return this.parent;
+    }
+
     public boolean isEnabled() {
         return this.enabled;
+    }
+
+    /**
+     * Checks if this option will effectively be disabled (regardless of its own status)
+     * by the parent rule being disabled.
+     */
+    public boolean isEffectivelyDisabledByParent() {
+        return this.parent != null && (!this.parent.enabled || this.parent.isEffectivelyDisabledByParent());
     }
 
     public boolean isOverridden() {

@@ -40,6 +40,13 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             return baseComponent;
     }
 
+    public void updateOptionEntryStatuses() {
+        for(Entry e : this.children()) {
+            if(e instanceof OptionEntry) {
+                ((OptionEntry)e).updateStatus();
+            }
+        }
+    }
 
     public OptionList(ModernFixConfigScreen arg, Minecraft arg2) {
         super(arg2,arg.width + 45, arg.height, 43, arg.height - 32, 20);
@@ -128,6 +135,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
                     ModernFix.LOGGER.error("Unable to save config", e);
                 }
+                OptionList.this.updateOptionEntryStatuses();
             }, (btn, gfx, x, y) -> {
                 if(this.option.isModDefined()) {
                     String disablingMods = String.join(", ", this.option.getDefiningMods());
@@ -140,8 +148,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     );
                 }
             });
-            if(this.option.isModDefined())
-                this.toggleButton.active = false;
+            updateStatus();
             this.helpButton = new Button(75, 0, 20, 20, new TextComponent("?"), (arg) -> {
                 Minecraft.getInstance().setScreen(new ModernFixOptionInfoScreen(mainScreen, optionName));
             });
@@ -150,6 +157,10 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                 if(ModernFixPlatformHooks.INSTANCE.isDevEnv() && OPTIONS_MISSING_HELP.add(optionName))
                     ModernFix.LOGGER.warn("Missing help for {}", optionName);
             }
+        }
+
+        void updateStatus() {
+            this.toggleButton.active = !(this.option.isModDefined() || this.option.isEffectivelyDisabledByParent());
         }
 
         @Override

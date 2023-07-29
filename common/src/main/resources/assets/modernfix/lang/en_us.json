@@ -97,9 +97,19 @@
   "modernfix.option.mixin.perf.dynamic_resources.ctm": "CTM compatibility patch for dynamic resources",
   "modernfix.option.mixin.perf.dynamic_resources.rs": "Refined Storage compatibility patch for dynamic resources",
   "modernfix.option.mixin.perf.dynamic_resources.supermartijncore": "SuperMartijn642CoreLib compatibility patch for dynamic resources",
+  "modernfix.option.mixin.perf.dynamic_resources.diagonalfences": "Diagonal Fences compatibility patch for dynamic resources",
   "modernfix.option.mixin.perf.faster_advancements": "Rewrites the advancement checking logic to be faster and not cause StackOverflowError in large packs. Port of Advancements Debug from Fabric.",
   "modernfix.option.mixin.perf.patchouli_deduplicate_books": "Fix Patchouli books storing many empty items with NBT tags, reducing memory usage.",
   "modernfix.option.mixin.perf.remove_spawn_chunks": "Completely removes spawn chunks from the game. They are no longer loaded at all, unlike Ksyxis.",
   "modernfix.option.mixin.perf.use_integrated_resources.jepb": "",
-  "modernfix.option.mixin.perf.use_integrated_resources.jeresources": ""
+  "modernfix.option.mixin.perf.use_integrated_resources.jeresources": "",
+  "modernfix.option.mixin.bugfix.blueprint_modif_memory_leak": "Fixes Blueprint's ObjectModificationManager leaking vanilla resources, reducing memory usage. Despite the fix being contributed in PR #195 a release was not yet made.",
+  "modernfix.option.mixin.bugfix.removed_dimensions": "Fixes the game failing to load worlds if dimension mods are removed. Backport of Forge PR #8959.",
+  "modernfix.option.mixin.perf.compact_bit_storage": "Fixes memory waste caused by some legacy servers (e.g. Hypixel) sending empty chunks as if they contain blocks. Reduces memory usage significantly on these servers.",
+  "modernfix.option.mixin.perf.deduplicate_climate_parameters": "Deduplicates climate parameter objects used by the new biome system, can save ~2MB but also slows down datapack reload somewhat.",
+  "modernfix.option.mixin.perf.dynamic_entity_renderers": "Constructs entity models the first time they are seen instead of during launch. Some mods are not compatible with this option and will cause EntityRenderer crashes.",
+  "modernfix.option.mixin.perf.twilightforest.structure_spawn_fix": "Fixes lag caused by Twilight Forest worldgen checking structures very inefficiently",
+  "modernfix.option.mixin.perf.fast_forge_dummies": "Speeds up Forge registry freezing during launch by using a faster code path",
+  "modernfix.option.mixin.perf.tag_id_caching": "Speeds up uses of tag entries by caching the location object instead of recreating it every time",
+  "modernfix.option.mixin.feature.disable_unihex_font": "Remove the Unicode font, saves 10MB but causes special characters to no longer render"
 }

@@ -193,7 +193,6 @@ public class ModernFixEarlyConfig {
             String potentialParentKey = entry.getKey().substring(0, idx);
             Option potentialParent = this.options.get(potentialParentKey);
             if(potentialParent != null) {
-                System.out.println(potentialParentKey + " -> " + entry.getKey());
                 entry.getValue().setParent(potentialParent);
             }
         }

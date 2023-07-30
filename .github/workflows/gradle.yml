@@ -21,11 +21,12 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
-          cache: 'gradle'
       - name: Build ModernFix using Gradle
-        run: |
-          chmod +x gradlew
-          ./gradlew --no-daemon build
+        uses: gradle/gradle-build-action@v2
+        with:
+          cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
+          gradle-home-cache-cleanup: true
+          arguments: build
       - name: Upload Artifacts to GitHub
         uses: actions/upload-artifact@v3
         with:

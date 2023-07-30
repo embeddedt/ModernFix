@@ -9,6 +9,7 @@ import com.google.common.collect.ImmutableList;
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.fabricmc.fabric.impl.client.model.ModelLoadingRegistryImpl;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.BlockModelDefinition;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
@@ -450,7 +451,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))
     private ImmutableList<BlockState> loadOnlyRelevantBlockState(StateDefinition<Block, BlockState> stateDefinition, ResourceLocation location) {
-        if(this.inTextureGatheringPass || !(location instanceof ModelResourceLocation))
+        if(this.inTextureGatheringPass || !(location instanceof ModelResourceLocation) || Minecraft.getInstance().level == null)
             return stateDefinition.getPossibleStates();
         else
             return ModelBakeryHelpers.getBlockStatesForMRL(stateDefinition, (ModelResourceLocation)location);

@@ -199,19 +199,6 @@ public class ModernFixEarlyConfig {
         // Defines the default rules which can be configured by the user or other mods.
         // You must manually add a rule for any new mixins not covered by an existing package rule.
         this.addMixinRule("launch.class_search_cache", true);
-        /*
-        this.addMixinRule("perf.use_integrated_resources.jepb", modPresent("jepb"));
-        this.addMixinRule("perf.use_integrated_resources.jeresources", modPresent("jeresources"));
-        this.addMixinRule("perf.jeresources_startup", modPresent("jeresources"));
-        this.addMixinRule("perf.state_definition_construct", modPresent("ferritecore"));
-        this.addMixinRule("bugfix.starlight_emptiness", modPresent("starlight"));
-        this.addMixinRule("bugfix.chunk_deadlock.valhesia", modPresent("valhelsia_structures"));
-        this.addMixinRule("bugfix.tf_cme_on_load", modPresent("twilightforest"));
-        this.addMixinRule("bugfix.refinedstorage", modPresent("refinedstorage"));
-        this.addMixinRule("perf.async_jei", modPresent("jei"));
-        this.addMixinRule("perf.patchouli_deduplicate_books", modPresent("patchouli"));
-        this.addMixinRule("perf.kubejs", modPresent("kubejs"));
-         */
 
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot", "threadtweak");

@@ -7,6 +7,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.blockstate.FakeStateMap;
 import org.embeddedt.modernfix.blockstate.FerriteCorePostProcess;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -33,6 +34,8 @@ public class StateDefinitionMixin<O, S extends StateHolder<O, S>> {
 
     @Inject(method = "<init>", at = @At("TAIL"))
     private void postProcess(CallbackInfo ci) {
-        FerriteCorePostProcess.postProcess((StateDefinition<O, S>)(Object)this);
+        // keep in dev only until upstream FC releases
+        if(ModernFixPlatformHooks.INSTANCE.isDevEnv())
+            FerriteCorePostProcess.postProcess((StateDefinition<O, S>)(Object)this);
     }
 }

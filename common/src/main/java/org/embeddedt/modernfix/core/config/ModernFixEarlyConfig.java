@@ -160,6 +160,7 @@ public class ModernFixEarlyConfig {
 
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
+            .put("mixin.perf.reuse_datapacks", false)
             .put("mixin.feature.direct_stack_trace", false)
             .putConditionally(ModernFixPlatformHooks.INSTANCE::isDevEnv, "mixin.perf.rewrite_registry", false)
             .put("mixin.perf.clear_mixin_classinfo", false)

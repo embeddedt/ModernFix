@@ -14,7 +14,7 @@ public class MappedRegistryMixin {
      * The original behavior causes O(n) time complexity for registration.
      */
     @Redirect(
-            method = "registerMapping(ILnet/minecraft/resources/ResourceKey;Ljava/lang/Object;Lcom/mojang/serialization/Lifecycle;Z)Ljava/lang/Object;",
+            method = "registerMapping(ILnet/minecraft/resources/ResourceKey;Ljava/lang/Object;Lcom/mojang/serialization/Lifecycle;Z)Lnet/minecraft/core/Holder;",
             at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/objects/ObjectList;size(I)V")
     )
     private void setSizeSmart(ObjectList<?> list, int size) {

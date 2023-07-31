@@ -6,11 +6,14 @@ import net.minecraft.world.level.block.state.StateHolder;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.blockstate.FakeStateMap;
+import org.embeddedt.modernfix.blockstate.FerriteCorePostProcess;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
 
@@ -26,5 +29,10 @@ public class StateDefinitionMixin<O, S extends StateHolder<O, S>> {
             numStates *= prop.getPossibleValues().size();
         }
         return new FakeStateMap<>(numStates);
+    }
+
+    @Inject(method = "<init>", at = @At("TAIL"))
+    private void postProcess(CallbackInfo ci) {
+        FerriteCorePostProcess.postProcess((StateDefinition<O, S>)(Object)this);
     }
 }

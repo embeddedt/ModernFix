@@ -7,7 +7,6 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.Decoder;
 import com.mojang.serialization.Encoder;
 import com.mojang.serialization.MapCodec;
-import net.minecraft.core.Registry;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -28,7 +27,6 @@ public class StateHolderMixin {
             .build(new CacheLoader<Block, MapCodec<BlockState>>() {
                 @Override
                 public MapCodec<BlockState> load(Block block) throws Exception {
-                    System.out.println("Generating codec for " + Registry.BLOCK.getKey(block));
                     Supplier<BlockState> stateSupplier = block::defaultBlockState;
                     MapCodec<BlockState> mapCodec = MapCodec.of(Encoder.empty(), Decoder.unit(stateSupplier));
                     for(Property<?> property : block.getStateDefinition().getProperties()) {

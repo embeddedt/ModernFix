@@ -200,6 +200,12 @@ configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
                 sourceSet project(':common').sourceSets.main
             }
         }
+        runs {
+            client {
+                vmArgs "-Xmx512m"
+                vmArgs "-Xms512m"
+            }
+        }
     }
 
     def copyJarNameConsistent = tasks.register('copyJarNameConsistent', Copy) {

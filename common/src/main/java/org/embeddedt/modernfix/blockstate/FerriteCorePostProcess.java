@@ -35,7 +35,13 @@ public class FerriteCorePostProcess {
         toKeyIndex = keyIndex;
     }
 
-    private static final Object2IntMap<?> EMPTY_MAP = Object2IntMaps.unmodifiable(new Object2IntArrayMap<>());
+    private static final Object2IntMap<?> EMPTY_MAP;
+
+    static {
+        Object2IntArrayMap<?> map = new Object2IntArrayMap<>();
+        map.defaultReturnValue(-1);
+        EMPTY_MAP = Object2IntMaps.unmodifiable(map);
+    }
 
     public static <O, S extends StateHolder<O, S>> void postProcess(StateDefinition<O, S> state) {
         if(!willPostProcess)

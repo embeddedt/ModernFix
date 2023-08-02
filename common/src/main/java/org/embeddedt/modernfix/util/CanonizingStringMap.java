@@ -29,6 +29,8 @@ public class CanonizingStringMap<T> extends HashMap<String, T> {
 
     @Override
     public void putAll(Map<? extends String, ? extends T> m) {
+        if(m.isEmpty())
+            return;
         HashMap<String, T> tmp = new HashMap<>();
         m.forEach((k, v) -> tmp.put(intern(k), v));
         super.putAll(tmp);

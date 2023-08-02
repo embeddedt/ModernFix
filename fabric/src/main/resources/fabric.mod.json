@@ -33,8 +33,6 @@
     "modernfix-common.mixins.json"
   ],
   "depends": {
-    "fabric-lifecycle-events-v1": "*",
-    "fabric-command-api-v2": "*",
     "minecraft": ">=1.16.2"
   },
   "breaks": {

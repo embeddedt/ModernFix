@@ -8,7 +8,6 @@ import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.ConfigGuiHandler;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
-import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.gui.ForgeIngameGui;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TagsUpdatedEvent;
@@ -87,12 +86,5 @@ public class ModernFixClientForge {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onTags(TagsUpdatedEvent e) {
         commonMod.onTagsUpdated();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onScreen(ScreenEvent.InitScreenEvent.Pre event) {
-        if(event.isCanceled())
-            return;
-        commonMod.onScreenOpening(event.getScreen());
     }
 }

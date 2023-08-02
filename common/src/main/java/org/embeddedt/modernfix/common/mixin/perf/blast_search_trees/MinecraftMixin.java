@@ -33,6 +33,7 @@ public abstract class MinecraftMixin {
         if(provider == null)
             return;
         ModernFix.LOGGER.info("Replacing search trees with '{}' provider", provider.getName());
+        mfix$runItemFillingQuirk();
         SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier = list -> provider.getSearchTree(false);
         SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier = list -> provider.getSearchTree(true);
         this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, nameSupplier);
@@ -48,5 +49,9 @@ public abstract class MinecraftMixin {
         }
         GLFW.glfwSetErrorCallback(oldCb);
         ci.cancel();
+    }
+
+    private void mfix$runItemFillingQuirk() {
+        // currently unimplemented on 1.19.4+
     }
 }

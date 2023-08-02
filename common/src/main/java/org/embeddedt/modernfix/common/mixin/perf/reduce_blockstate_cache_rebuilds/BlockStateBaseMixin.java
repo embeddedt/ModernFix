@@ -70,7 +70,7 @@ public abstract class BlockStateBaseMixin implements IBlockState {
             opcode = Opcodes.GETFIELD,
             target = "Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase;fluidState:Lnet/minecraft/world/level/material/FluidState;",
             ordinal = 0
-    ))
+    ), require = 0)
     private FluidState genCacheBeforeGettingFluid(BlockBehaviour.BlockStateBase base) {
         generateCache(base);
         return this.fluidState;

@@ -41,7 +41,7 @@ public class ModernFixOptionInfoScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        this.renderBackground(guiGraphics);
+        this.renderBackground(guiGraphics, mouseX, mouseY, partialTicks);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 16777215);
         this.drawMultilineString(guiGraphics, this.minecraft.font, description, 10, 50);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);

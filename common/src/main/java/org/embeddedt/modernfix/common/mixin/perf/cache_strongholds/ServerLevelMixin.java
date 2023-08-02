@@ -48,8 +48,8 @@ public abstract class ServerLevelMixin extends Level implements IServerLevel {
      */
     @Inject(method = "<init>", at = @At("TAIL"))
     private void ensureGeneration(CallbackInfo ci) {
-        mfix$strongholdCache = this.getDataStorage().computeIfAbsent(StrongholdLocationCache::load,
-                StrongholdLocationCache::new,
+        mfix$strongholdCache = this.getDataStorage().computeIfAbsent(
+                StrongholdLocationCache.factory((ServerLevel)(Object)this),
                 StrongholdLocationCache.getFileId(this.dimensionTypeRegistration()));
         this.chunkSource.getGeneratorState().ensureStructuresGenerated();
     }

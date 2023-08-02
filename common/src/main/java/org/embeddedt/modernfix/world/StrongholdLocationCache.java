@@ -3,6 +3,8 @@ package org.embeddedt.modernfix.world;
 import net.minecraft.core.Holder;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.saveddata.SavedData;
@@ -15,6 +17,11 @@ public class StrongholdLocationCache extends SavedData {
     public StrongholdLocationCache() {
         super();
         chunkPosList = new ArrayList<>();
+    }
+
+    public static SavedData.Factory<StrongholdLocationCache> factory(ServerLevel serverLevel) {
+        // FIXME datafixer will probably throw on update
+        return new SavedData.Factory<>(StrongholdLocationCache::new, StrongholdLocationCache::load, DataFixTypes.SAVED_DATA_FORCED_CHUNKS);
     }
 
     public List<ChunkPos> getChunkPosList() {

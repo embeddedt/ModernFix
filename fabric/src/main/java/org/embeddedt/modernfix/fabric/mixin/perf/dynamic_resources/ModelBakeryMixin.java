@@ -8,7 +8,7 @@ import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.fabricmc.fabric.impl.client.model.ModelLoadingRegistryImpl;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.BlockModelDefinition;
@@ -39,6 +39,7 @@ import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
+import org.embeddedt.modernfix.fabric.bridge.ModelV0Bridge;
 import org.embeddedt.modernfix.util.LayeredForwardingMap;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.*;
@@ -138,9 +139,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         };
         filler.push(s);
         this.injectedModels = new ObjectOpenHashSet<>();
-        ModelLoadingRegistryImpl.LoaderInstance instance = ModelLoadingRegistryImpl.begin((ModelBakery)(Object)this, this.resourceManager);
-        instance.onModelPopulation(this.injectedModels::add);
-        instance.finish();
+        if(FabricLoader.getInstance().isModLoaded("fabric-models-v0")) {
+            ModelV0Bridge.populate(this.injectedModels::add, (ModelBakery)(Object)this, this.resourceManager);
+        }
     }
 
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {

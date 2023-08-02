@@ -9,7 +9,9 @@ pluginManagement {
 
 include("test_agent")
 include("common")
-include("fabric")
-include("forge")
+
+getProperty("enabled_platforms").tokenize(',').each { it ->
+    include(it.trim())
+}
 
 rootProject.name = 'modernfix'

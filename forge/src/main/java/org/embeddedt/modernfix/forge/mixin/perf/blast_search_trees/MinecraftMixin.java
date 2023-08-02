@@ -2,6 +2,11 @@ package org.embeddedt.modernfix.forge.mixin.perf.blast_search_trees;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.searchtree.SearchRegistry;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.Registry;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.ModList;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
@@ -21,6 +26,7 @@ public class MinecraftMixin {
     @Inject(method = "createSearchTrees", at = @At("HEAD"), cancellable = true)
     private void replaceSearchTrees(CallbackInfo ci) {
         ci.cancel();
+        mfix$runItemFillingQuirk();
         if(ModList.get().getModFileById("jei") != null && ModList.get().getModFileById("roughlyenoughitems") == null) {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
@@ -29,5 +35,16 @@ public class MinecraftMixin {
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new DummySearchTree<>());
         }
         this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new DummySearchTree<>());
+    }
+
+
+    private void mfix$runItemFillingQuirk() {
+        // quirk: call fillItemCategory on all items in the registry in case they do classloading inside it
+        // see https://github.com/Shadows-of-Fire/GatewaysToEternity/issues/29 for an example of this
+        NonNullList<ItemStack> stacks = NonNullList.create();
+        for(Item item : Registry.ITEM) {
+            stacks.clear();
+            item.fillItemCategory(CreativeModeTab.TAB_SEARCH, stacks);
+        }
     }
 }

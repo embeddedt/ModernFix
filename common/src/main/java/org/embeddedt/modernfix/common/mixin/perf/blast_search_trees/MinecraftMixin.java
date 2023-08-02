@@ -3,6 +3,11 @@ package org.embeddedt.modernfix.common.mixin.perf.blast_search_trees;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.searchtree.SearchRegistry;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.Registry;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
@@ -27,6 +32,7 @@ public class MinecraftMixin {
         if(provider == null)
             return;
         ModernFix.LOGGER.info("Replacing search trees with '{}' provider", provider.getName());
+        mfix$runItemFillingQuirk();
         this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> provider.getSearchTree(false));
         this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> provider.getSearchTree(true));
         this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new DummySearchTree<>());
@@ -39,5 +45,15 @@ public class MinecraftMixin {
         }
         GLFW.glfwSetErrorCallback(oldCb);
         ci.cancel();
+    }
+
+    private void mfix$runItemFillingQuirk() {
+        // quirk: call fillItemCategory on all items in the registry in case they do classloading inside it
+        // see https://github.com/Shadows-of-Fire/GatewaysToEternity/issues/29 for an example of this
+        NonNullList<ItemStack> stacks = NonNullList.create();
+        for(Item item : Registry.ITEM) {
+            stacks.clear();
+            item.fillItemCategory(CreativeModeTab.TAB_SEARCH, stacks);
+        }
     }
 }

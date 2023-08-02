@@ -4,7 +4,6 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
-import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.gui.ForgeIngameGui;
@@ -88,12 +87,5 @@ public class ModernFixClientForge {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onTags(TagsUpdatedEvent e) {
         commonMod.onTagsUpdated();
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onScreen(GuiScreenEvent.InitGuiEvent.Pre event) {
-        if(event.isCanceled())
-            return;
-        commonMod.onScreenOpening(event.getGui());
     }
 }

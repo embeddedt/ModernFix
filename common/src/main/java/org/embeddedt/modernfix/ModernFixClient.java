@@ -3,9 +3,6 @@ package org.embeddedt.modernfix;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.ConnectScreen;
-import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.MinecraftServer;
@@ -24,6 +21,7 @@ import java.util.*;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ModernFixClient {
+    public static ModernFixClient INSTANCE;
     public static long worldLoadStartTime;
     private static int numRenderTicks;
 
@@ -39,6 +37,7 @@ public class ModernFixClient {
     public static List<ModernFixClientIntegration> CLIENT_INTEGRATIONS = new CopyOnWriteArrayList<>();
 
     public ModernFixClient() {
+        INSTANCE = this;
         // clear reserve as it's not needed
         Minecraft.reserve = new byte[0];
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
@@ -60,16 +59,14 @@ public class ModernFixClient {
         tagsUpdated = false;
     }
 
-    public void onScreenOpening(Screen openingScreen) {
-        if(openingScreen instanceof ConnectScreen) {
-            worldLoadStartTime = System.nanoTime();
-        } else if (openingScreen instanceof TitleScreen && gameStartTimeSeconds < 0) {
-            gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
-            if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.measure_time.GameLoad"))
-                ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
-            ModernFixPlatformHooks.INSTANCE.onLaunchComplete();
-            ClassInfoManager.clear();
-        }
+    public void onGameLaunchFinish() {
+        if(gameStartTimeSeconds >= 0)
+            return;
+        gameStartTimeSeconds = ManagementFactory.getRuntimeMXBean().getUptime() / 1000f;
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.measure_time.GameLoad"))
+            ModernFix.LOGGER.warn("Game took " + gameStartTimeSeconds + " seconds to start");
+        ModernFixPlatformHooks.INSTANCE.onLaunchComplete();
+        ClassInfoManager.clear();
     }
 
     public void onRecipesUpdated() {

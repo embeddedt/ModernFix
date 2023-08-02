@@ -93,7 +93,8 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
-        CommandRegistrationCallback.EVENT.register((dispatcher, arg, env) -> handler.accept(dispatcher));
+        if(FabricLoader.getInstance().isModLoaded("fabric-command-api-v2"))
+            CommandRegistrationCallback.EVENT.register((dispatcher, arg, env) -> handler.accept(dispatcher));
     }
 
     private static Multimap<String, String> modOptions;

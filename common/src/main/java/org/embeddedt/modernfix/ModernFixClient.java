@@ -26,7 +26,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public class ModernFixClient {
     public static ModernFixClient INSTANCE;
-    public static long worldLoadStartTime;
+    public static long worldLoadStartTime = -1;
     private static int numRenderTicks;
 
     public static float gameStartTimeSeconds = -1;

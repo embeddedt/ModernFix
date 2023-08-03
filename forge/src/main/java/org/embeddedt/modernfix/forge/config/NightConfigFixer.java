@@ -46,7 +46,6 @@ public class NightConfigFixer {
             runnablesToRun = new ArrayList<>(configsToReload);
             configsToReload.clear();
         }
-        ModernFix.LOGGER.info("Processing {} config reloads", runnablesToRun.size());
         for(Runnable r : runnablesToRun) {
             try {
                 r.run();
@@ -54,6 +53,7 @@ public class NightConfigFixer {
                 e.printStackTrace();
             }
         }
+        ModernFix.LOGGER.info("Processed {} config reloads", runnablesToRun.size());
     }
 
     private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));

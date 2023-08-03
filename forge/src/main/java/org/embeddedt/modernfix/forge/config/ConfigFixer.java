@@ -8,6 +8,9 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
 
 public class ConfigFixer {
@@ -35,6 +38,7 @@ public class ConfigFixer {
     private static class LockingConfigHandler implements Consumer<ModConfig.ModConfigEvent> {
         private final Consumer<ModConfig.ModConfigEvent> actualHandler;
         private final String modId;
+        private final Lock lock = new ReentrantLock();
 
         LockingConfigHandler(String id, Consumer<ModConfig.ModConfigEvent> actualHandler) {
             this.modId = id;
@@ -43,14 +47,17 @@ public class ConfigFixer {
 
         @Override
         public void accept(ModConfig.ModConfigEvent modConfigEvent) {
-            Object cfgObj = NightConfigFixer.toWriteSyncConfig(modConfigEvent.getConfig().getConfigData());
-            if(cfgObj != null) {
-                // don't synchronize on 'this' as it produces a deadlock when used alongside NightConfigFixer
-                synchronized (cfgObj) {
-                    this.actualHandler.accept(modConfigEvent);
-                }
-            } else {
-                this.actualHandler.accept(modConfigEvent);
+            try {
+                if(lock.tryLock(2, TimeUnit.SECONDS)) {
+                    try {
+                        this.actualHandler.accept(modConfigEvent);
+                    } finally {
+                        lock.unlock();
+                    }
+                } else
+                    ModernFix.LOGGER.error("Failed to post config event for {}, someone else is holding the lock", modId);
+            } catch(InterruptedException e) {
+                Thread.currentThread().interrupt();
             }
         }
 

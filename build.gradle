@@ -177,17 +177,19 @@ tasks.withType(JavaCompile) {
 
 task generateChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
     def details = versionDetails();
+    def theVersionRef
     if(details.commitDistance > 0) {
-        fromRef = details.lastTag;
+        theVersionRef = details.lastTag;
     } else {
         def secondLastTagCmd = "git describe --abbrev=0 " + details.lastTag + "^"
         def secondLastTag = secondLastTagCmd.execute().text.trim()
-        fromRef = secondLastTag;
+        theVersionRef = secondLastTag;
     }
 
+    fromRef = theVersionRef
+
     file = new File("CHANGELOG.md");
-    def otherTemplateContent = new File('gradle/changelog.mustache').getText('UTF-8');
-    templateContent = "## Changes since " + fromRef + "\n" + otherTemplateContent;
+    templateContent = new File('gradle/changelog.mustache').getText('UTF-8').replace("[[modernFixVersionRef]]", theVersionRef);
     toCommit = "HEAD";
 }
 

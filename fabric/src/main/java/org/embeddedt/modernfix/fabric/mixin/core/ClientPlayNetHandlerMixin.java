@@ -13,9 +13,4 @@ public class ClientPlayNetHandlerMixin {
     private void signalRecipes(CallbackInfo ci) {
         ModernFixClientFabric.commonMod.onRecipesUpdated();
     }
-
-    @Inject(method = "handleUpdateTags", at = @At("RETURN"))
-    private void signalTags(CallbackInfo ci) {
-        ModernFixClientFabric.commonMod.onTagsUpdated();
-    }
 }

@@ -23,6 +23,9 @@ import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class ModernFixClientForge {
     private static ModernFixClient commonMod;
 
@@ -50,11 +53,27 @@ public class ModernFixClientForge {
         }
     }
 
+    private static final List<String> brandingList = new ArrayList<>();
+
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderOverlay(RenderGameOverlayEvent.Text event) {
         if(commonMod.brandingString != null && Minecraft.getInstance().options.renderDebug) {
-            event.getLeft().add("");
-            event.getLeft().add(commonMod.brandingString);
+            if(brandingList.size() == 0) {
+                brandingList.add("");
+                brandingList.add(commonMod.brandingString);
+            }
+            int targetIdx = 0, numSeenBlanks = 0;
+            List<String> right = event.getRight();
+            while(targetIdx < right.size()) {
+                String s = right.get(targetIdx);
+                if(s == null || s.length() == 0) {
+                    numSeenBlanks++;
+                }
+                if(numSeenBlanks == 3)
+                    break;
+                targetIdx++;
+            }
+            right.addAll(targetIdx, brandingList);
         }
     }
 

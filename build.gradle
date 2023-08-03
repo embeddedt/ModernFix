@@ -41,7 +41,7 @@ allprojects {
     }
     def baseVersion = details.lastTag.substring(0, plusIndex)
     def dirtyMarker = grgit.status().clean ? "" : ".dirty"
-    def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash) : ""
+    def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash.substring(0, Math.min(4, details.gitHash.length()))) : ""
     def preMarker = (details.commitDistance > 0 || !details.isCleanTag) ? ("-beta." + details.commitDistance) : ""
     if(preMarker.length() > 0) {
         // bump to next patch release

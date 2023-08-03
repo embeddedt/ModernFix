@@ -4,6 +4,7 @@ import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.gui.ForgeIngameGui;
@@ -20,7 +21,9 @@ import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 
 import java.util.ArrayList;
@@ -50,6 +53,9 @@ public class ModernFixClientForge {
     public void onConfigKey(TickEvent.ClientTickEvent event) {
         if(event.phase == TickEvent.Phase.START && configKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new ModernFixConfigScreen(Minecraft.getInstance().screen));
+        }
+        if(FMLEnvironment.dist == Dist.CLIENT && event.phase == TickEvent.Phase.START && ModernFixForge.launchDone) {
+            NightConfigFixer.runReloads();
         }
     }
 

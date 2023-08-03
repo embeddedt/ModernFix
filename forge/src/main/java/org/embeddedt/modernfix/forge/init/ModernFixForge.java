@@ -6,6 +6,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.event.RegistryEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.*;
@@ -15,6 +16,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.network.FMLNetworkConstants;
 import net.minecraftforge.fml.server.ServerLifecycleHooks;
@@ -27,6 +29,7 @@ import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
+import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.registry.ObjectHolderClearer;
 import org.embeddedt.modernfix.forge.util.KubeUtil;
@@ -36,6 +39,7 @@ import java.util.List;
 @Mod(ModernFix.MODID)
 public class ModernFixForge {
     private static ModernFix commonMod;
+    public static boolean launchDone = false;
 
     public ModernFixForge() {
         commonMod = new ModernFix();
@@ -52,6 +56,13 @@ public class ModernFixForge {
         ModFileScanDataDeduplicator.deduplicate();
         ClassLoadHack.loadModClasses();
         ConfigFixer.replaceConfigHandlers();
+    }
+
+    @SubscribeEvent
+    public void onServerTick(TickEvent.ServerTickEvent event) {
+        if(FMLEnvironment.dist == Dist.DEDICATED_SERVER && event.phase == TickEvent.Phase.END && ModernFixForge.launchDone) {
+            NightConfigFixer.runReloads();
+        }
     }
 
     @SubscribeEvent

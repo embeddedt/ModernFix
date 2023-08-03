@@ -3,17 +3,21 @@ package org.embeddedt.modernfix.forge.config;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.util.CommonModUtil;
 
 import java.lang.reflect.Field;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 public class NightConfigFixer {
     public static final LinkedHashSet<Runnable> configsToReload = new LinkedHashSet<>();
+    private static int tickCounter = 0;
     public static void monitorFileWatcher() {
         if(!ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.fix_config_crashes.NightConfigFixerMixin"))
             return;
@@ -26,6 +30,30 @@ public class NightConfigFixer {
             field.set(watcher, new MonitoringMap(theMap));
             ModernFixMixinPlugin.instance.logger.info("Applied Forge config corruption patch");
         }, "replacing Night Config watchedFiles map");
+    }
+
+    /**
+     * Called by the render thread on the client, and the server thread on the server. Processes all the accumulated
+     * file watch events.
+     */
+    public static void runReloads() {
+        if((tickCounter++ % 20) != 0)
+            return;
+        List<Runnable> runnablesToRun;
+        synchronized (configsToReload) {
+            if(configsToReload.isEmpty())
+                return;
+            runnablesToRun = new ArrayList<>(configsToReload);
+            configsToReload.clear();
+        }
+        ModernFix.LOGGER.info("Processing {} config reloads", runnablesToRun.size());
+        for(Runnable r : runnablesToRun) {
+            try {
+                r.run();
+            } catch(RuntimeException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
@@ -59,17 +87,12 @@ public class NightConfigFixer {
         }
 
         /**
-         * Add the config
+         * Add the config runnable to the list to be processed by the main thread.
          */
         @Override
         public void run() {
             synchronized(configsToReload) {
-                int oldSize = configsToReload.size();
                 configsToReload.add(configTracker);
-                if(oldSize == 0) {
-                    ModernFixMixinPlugin.instance.logger.info("Config file change detected on disk. The Forge feature to watch config files for changes is currently disabled due to random corruption issues.");
-                    ModernFixMixinPlugin.instance.logger.info("This functionality will be restored in a future ModernFix update.");
-                }
             }
         }
     }

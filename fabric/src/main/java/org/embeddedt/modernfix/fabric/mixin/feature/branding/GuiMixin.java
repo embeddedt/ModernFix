@@ -4,15 +4,16 @@ import net.minecraft.client.gui.components.DebugScreenOverlay;
 import org.embeddedt.modernfix.ModernFixClientFabric;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import java.util.List;
 
 @Mixin(DebugScreenOverlay.class)
 public class GuiMixin {
-    @Inject(method = "getGameInformation", at = @At("RETURN"))
-    private void addModernFix(CallbackInfoReturnable<List<String>> cir) {
-        cir.getReturnValue().add(ModernFixClientFabric.commonMod.brandingString);
+    @ModifyVariable(method = "getSystemInformation", at = @At("STORE"), ordinal = 0, require = 0)
+    private List<String> addModernFix(List<String> list) {
+        list.add("");
+        list.add(ModernFixClientFabric.commonMod.brandingString);
+        return list;
     }
 }

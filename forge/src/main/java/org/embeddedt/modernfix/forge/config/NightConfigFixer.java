@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.forge.config;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.loading.FMLLoader;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.util.CommonModUtil;
@@ -17,7 +18,6 @@ import java.util.function.Function;
 
 public class NightConfigFixer {
     public static final LinkedHashSet<Runnable> configsToReload = new LinkedHashSet<>();
-    private static int tickCounter = 0;
     public static void monitorFileWatcher() {
         if(!ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.fix_config_crashes.NightConfigFixerMixin"))
             return;
@@ -32,17 +32,9 @@ public class NightConfigFixer {
         }, "replacing Night Config watchedFiles map");
     }
 
-    /**
-     * Called by the render thread on the client, and the server thread on the server. Processes all the accumulated
-     * file watch events.
-     */
     public static void runReloads() {
-        if((tickCounter++ % 20) != 0)
-            return;
         List<Runnable> runnablesToRun;
         synchronized (configsToReload) {
-            if(configsToReload.isEmpty())
-                return;
             runnablesToRun = new ArrayList<>(configsToReload);
             configsToReload.clear();
         }
@@ -92,6 +84,8 @@ public class NightConfigFixer {
         @Override
         public void run() {
             synchronized(configsToReload) {
+                if(configsToReload.size() == 0)
+                    ModernFixMixinPlugin.instance.logger.info("Please use /{} to reload any changed mod config files", FMLLoader.getDist().isDedicatedServer() ? "mfsrc" : "mfrc");
                 configsToReload.add(configTracker);
             }
         }

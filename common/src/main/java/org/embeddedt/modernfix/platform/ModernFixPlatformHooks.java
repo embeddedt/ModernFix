@@ -19,92 +19,42 @@ import java.util.function.Consumer;
 public interface ModernFixPlatformHooks {
     ModernFixPlatformHooks INSTANCE = PlatformHookLoader.findInstance();
     
-    default boolean isClient() {
-        throw new AssertionError();
-    }
-
+    boolean isClient();
     
-    default boolean isDedicatedServer() {
-        throw new AssertionError();
-    }
-
+    boolean isDedicatedServer();
     
-    default String getVersionString() {
-        throw new AssertionError();
-    }
+    String getVersionString();
 
+    boolean modPresent(String modId);
     
-    default boolean modPresent(String modId) {
-        throw new AssertionError();
-    }
+    boolean isDevEnv();
 
-    
-    default boolean isDevEnv() {
-        throw new AssertionError();
-    }
+    void injectPlatformSpecificHacks();
 
-    
-    default void injectPlatformSpecificHacks() {
-        throw new AssertionError();
-    }
+    void applyASMTransformers(String mixinClassName, ClassNode targetClass);
 
-    
-    default void applyASMTransformers(String mixinClassName, ClassNode targetClass) {
-        throw new AssertionError();
-    }
+    MinecraftServer getCurrentServer();
 
-    
-    default MinecraftServer getCurrentServer() {
-        throw new AssertionError();
-    }
+    boolean isEarlyLoadingNormally();
 
-    
-    default boolean isEarlyLoadingNormally() {
-        throw new AssertionError();
-    }
+    boolean isLoadingNormally();
 
-    
-    default boolean isLoadingNormally() {
-        throw new AssertionError();
-    }
-
-    
-    default TextureAtlasSprite loadTextureAtlasSprite(TextureAtlas atlasTexture,
+    TextureAtlasSprite loadTextureAtlasSprite(TextureAtlas atlasTexture,
                                                             ResourceManager resourceManager, TextureAtlasSprite.Info textureInfo,
                                                             Resource resource,
                                                             int atlasWidth, int atlasHeight,
                                                             int spriteX, int spriteY, int mipmapLevel,
-                                                            NativeImage image) throws IOException {
-        throw new AssertionError();
-    }
+                                                            NativeImage image) throws IOException;
 
+    Path getGameDirectory();
+
+    void sendPacket(ServerPlayer player, Object packet);
     
-    default Path getGameDirectory() {
-        throw new AssertionError();
-    }
+    void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler);
 
-    
-    default void sendPacket(ServerPlayer player, Object packet) {
-        throw new AssertionError();
-    }
+    Multimap<String, String> getCustomModOptions();
 
-    
-    default void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
-        throw new AssertionError();
-    }
+    void onLaunchComplete();
 
-    
-    default Multimap<String, String> getCustomModOptions() {
-        throw new AssertionError();
-    }
-
-    
-    default void onLaunchComplete() {
-
-    }
-
-    
-    default String getPlatformName() {
-        throw new AssertionError();
-    }
+    String getPlatformName();
 }

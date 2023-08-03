@@ -24,6 +24,7 @@ import net.minecraftforge.server.ServerLifecycleHooks;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
+import org.embeddedt.modernfix.forge.classloading.ATInjector;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
@@ -138,6 +139,9 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public void injectPlatformSpecificHacks() {
+        if(!isEarlyLoadingNormally() && ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.forge_at_inject_error.ATInjector")) {
+            ATInjector.injectModATs();
+        }
         FastAccessTransformerList.attemptReplace();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */

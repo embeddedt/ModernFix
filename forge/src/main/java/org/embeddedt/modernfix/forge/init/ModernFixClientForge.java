@@ -6,6 +6,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
 import net.minecraftforge.client.ClientRegistry;
 import net.minecraftforge.client.ConfigGuiHandler;
+import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.minecraftforge.client.event.RenderGameOverlayEvent;
 import net.minecraftforge.client.gui.ForgeIngameGui;
@@ -21,6 +22,7 @@ import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 
 import java.util.ArrayList;
@@ -49,6 +51,16 @@ public class ModernFixClientForge {
     public void onConfigKey(TickEvent.ClientTickEvent event) {
         if(event.phase == TickEvent.Phase.START && configKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new ModernFixConfigScreen(Minecraft.getInstance().screen));
+        }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onClientChat(ClientChatEvent event) {
+        if(event.getMessage() != null && event.getMessage().trim().equals("/mfrc")) {
+            NightConfigFixer.runReloads();
+            event.setCanceled(true);
+            // add it to chat history
+            Minecraft.getInstance().gui.getChat().addRecentChat(event.getMessage());
         }
     }
 

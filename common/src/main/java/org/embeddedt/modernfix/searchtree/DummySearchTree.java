@@ -1,6 +1,10 @@
 package org.embeddedt.modernfix.searchtree;
 
 import net.minecraft.client.searchtree.RefreshableSearchTree;
+import net.minecraft.core.NonNullList;
+import net.minecraft.core.Registry;
+import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Collections;
@@ -16,7 +20,13 @@ public class DummySearchTree<T> implements RefreshableSearchTree<T> {
 
     @Override
     public void refresh() {
-
+        // quirk: call fillItemCategory on all items in the registry in case they do classloading inside it
+        // see https://github.com/Shadows-of-Fire/GatewaysToEternity/issues/29 for an example of this
+        NonNullList<ItemStack> stacks = NonNullList.create();
+        for(Item item : Registry.ITEM) {
+            stacks.clear();
+            item.fillItemCategory(CreativeModeTab.TAB_SEARCH, stacks);
+        }
     }
 
     @Override

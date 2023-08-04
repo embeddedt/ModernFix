@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
@@ -14,6 +15,7 @@ import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModInfo;
 import net.minecraftforge.registries.ForgeRegistries;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.jetbrains.annotations.Nullable;
 
@@ -69,10 +71,21 @@ public class ModelBakeEventHelper {
         if(modIdsToInclude.stream().noneMatch(INCOMPATIBLE_MODS::contains))
             return this.modelRegistry;
         Set<ResourceLocation> ourModelLocations = Sets.filter(this.topLevelModelLocations, loc -> modIdsToInclude.contains(loc.getNamespace()));
+        BakedModel missingModel = modelRegistry.get(ModelBakery.MISSING_MODEL_LOCATION);
         return new ForwardingMap<ResourceLocation, BakedModel>() {
             @Override
             protected Map<ResourceLocation, BakedModel> delegate() {
                 return modelRegistry;
+            }
+
+            @Override
+            public BakedModel get(@Nullable Object key) {
+                BakedModel model = super.get(key);
+                if(model == null && key != null && modIdsToInclude.contains(((ResourceLocation)key).getNamespace())) {
+                    ModernFix.LOGGER.warn("Model {} is missing, but was requested in model bake event. Returning missing model", key);
+                    return missingModel;
+                }
+                return model;
             }
 
             @Override

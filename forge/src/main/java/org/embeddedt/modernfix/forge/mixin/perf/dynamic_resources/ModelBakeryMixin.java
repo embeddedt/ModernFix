@@ -54,6 +54,7 @@ import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 /* high priority so that our injectors are added before other mods' */
 @Mixin(value = ModelBakery.class, priority = 600)
@@ -160,6 +161,15 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         } else {
             blockStateFiles.add(new ResourceLocation(location.getNamespace(), location.getPath()));
         }
+    }
+
+    /**
+     * Make a copy of the top-level model list and stream that to avoid CMEs if the getMaterials call triggers a model
+     * load.
+     */
+    @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Ljava/util/Collection;stream()Ljava/util/stream/Stream;", ordinal = 0), remap = false)
+    private Stream<?> getModelStream(Collection<?> modelCollection) {
+        return new ArrayList<>(modelCollection).stream();
     }
 
     @Redirect(method = "processLoading", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/ForgeHooksClient;gatherFluidTextures(Ljava/util/Set;)V", remap = false), remap = false)

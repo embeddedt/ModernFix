@@ -233,6 +233,15 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 pack instanceof FilePackResources;
     }
 
+    /**
+     * Make a copy of the top-level model list and stream that to avoid CMEs if the getMaterials call triggers a model
+     * load.
+     */
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Collection;stream()Ljava/util/stream/Stream;", ordinal = 0))
+    private Stream<?> getModelStream(Collection<?> modelCollection) {
+        return new ArrayList<>(modelCollection).stream();
+    }
+
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/stream/Stream;collect(Ljava/util/stream/Collector;)Ljava/lang/Object;", ordinal = 0))
     private Object collectExtraTextures(Stream<Material> instance, Collector<?, ?, ?> arCollector) {
         Set<Material> materialsSet = new ObjectOpenHashSet<>(instance.collect(Collectors.toSet()));

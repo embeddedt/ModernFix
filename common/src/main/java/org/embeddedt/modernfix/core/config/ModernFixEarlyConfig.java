@@ -141,7 +141,7 @@ public class ModernFixEarlyConfig {
     private static final boolean isDevEnv = ModernFixPlatformHooks.INSTANCE.isDevEnv();
 
     static {
-        shouldReplaceSearchTrees = modPresent("jei");
+        shouldReplaceSearchTrees = modPresent("jei") && !modPresent("roughlyenoughitems");
     }
 
     private static class DefaultSettingMapBuilder extends ImmutableMap.Builder<String, Boolean> {

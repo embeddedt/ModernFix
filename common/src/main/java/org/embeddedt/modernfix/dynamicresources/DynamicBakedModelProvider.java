@@ -124,6 +124,8 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
                 // can occur if the MRL is not valid for that blockstate, ignore
             }
         }
+        if(location.getNamespace().equals("minecraft") && location.getPath().equals("builtin/missing"))
+            return true;
         return false;
     }
 

@@ -274,7 +274,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     public BakedModel bakeDefault(ResourceLocation modelLocation, ModelState state) {
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
-        return theBaker.bake(modelLocation, state);
+        return theBaker.bake(modelLocation, state, theBaker.getModelTextureGetter());
     }
 
     @Override

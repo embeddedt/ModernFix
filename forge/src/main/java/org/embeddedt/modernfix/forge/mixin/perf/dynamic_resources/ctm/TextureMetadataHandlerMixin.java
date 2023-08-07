@@ -11,6 +11,7 @@ import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
+import org.embeddedt.modernfix.forge.dynresources.IModelBakerImpl;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -113,6 +114,8 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
                     ModelBakery.ModelBakerImpl baker = ModelBakerImplAccessor.createImpl(bakery, ($, m) -> {
                         return spriteGetter.apply(m);
                     }, key);
+                    // bypass bakedCache so that dependent models get re-baked and thus retrieve their sprites again
+                    ((IModelBakerImpl)baker).mfix$ignoreCache();
                     ctmModel.bake(baker, spriteGetter, BlockModelRotation.X0_Y0, key);
                 }
             }

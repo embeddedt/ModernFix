@@ -58,8 +58,7 @@ public class ModernFixForge {
 
     @SubscribeEvent
     public void onCommandRegister(RegisterCommandsEvent event) {
-        // Register separate commands since redirecting doesn't work without arguments
-        for(String name : new String[] { "mfrc", "mfsrc"}) {
+        for(String name : new String[] { "mfsrc"}) {
             event.getDispatcher().register(LiteralArgumentBuilder.<CommandSourceStack>literal(name)
                     .requires(source -> source.hasPermission(3))
                     .executes(context -> {

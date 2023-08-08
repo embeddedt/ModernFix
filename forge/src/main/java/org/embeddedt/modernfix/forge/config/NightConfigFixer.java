@@ -3,7 +3,7 @@ package org.embeddedt.modernfix.forge.config;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
@@ -81,7 +81,7 @@ public class NightConfigFixer {
             lastConfigTrigger = System.nanoTime();
             Minecraft.getInstance().execute(() -> {
                 if(Minecraft.getInstance().level != null) {
-                    Minecraft.getInstance().gui.getChat().addMessage(new TranslatableComponent("modernfix.message.reload_config"));
+                    Minecraft.getInstance().gui.getChat().addMessage(Component.translatable("modernfix.message.reload_config"));
                 }
             });
         }

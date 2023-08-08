@@ -1,13 +1,15 @@
 package org.embeddedt.modernfix.forge.init;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraftforge.client.ConfigScreenHandler;
-import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.settings.KeyConflictContext;
@@ -54,13 +56,12 @@ public class ModernFixClientForge {
     }
 
     @SubscribeEvent(priority = EventPriority.LOW)
-    public void onClientChat(ClientChatEvent event) {
-        if(event.getMessage() != null && event.getMessage().trim().equals("/mfrc")) {
-            NightConfigFixer.runReloads();
-            event.setCanceled(true);
-            // add it to chat history
-            Minecraft.getInstance().gui.getChat().addRecentChat(event.getMessage());
-        }
+    public void onClientChat(RegisterClientCommandsEvent event) {
+        event.getDispatcher().register(LiteralArgumentBuilder.<CommandSourceStack>literal("mfrc")
+                .executes(context -> {
+                    NightConfigFixer.runReloads();
+                    return 1;
+                }));
     }
 
     private static final List<String> brandingList = new ArrayList<>();

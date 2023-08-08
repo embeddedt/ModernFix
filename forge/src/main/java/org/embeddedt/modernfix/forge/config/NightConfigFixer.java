@@ -2,6 +2,8 @@ package org.embeddedt.modernfix.forge.config;
 
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
@@ -14,6 +16,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class NightConfigFixer {
@@ -48,10 +51,10 @@ public class NightConfigFixer {
         ModernFix.LOGGER.info("Processed {} config reloads", runnablesToRun.size());
     }
 
-    private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
-    private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
-
     static class MonitoringMap extends ConcurrentHashMap<Path, Object> {
+        private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
+        private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
+
         public MonitoringMap(ConcurrentHashMap<Path, ?> oldMap) {
             super(oldMap);
         }
@@ -71,6 +74,19 @@ public class NightConfigFixer {
         }
     }
 
+    private static long lastConfigTrigger = System.nanoTime();
+
+    private static void triggerConfigMessage() {
+        if((System.nanoTime() - lastConfigTrigger) >= TimeUnit.SECONDS.toNanos(5)) {
+            lastConfigTrigger = System.nanoTime();
+            Minecraft.getInstance().execute(() -> {
+                if(Minecraft.getInstance().level != null) {
+                    Minecraft.getInstance().gui.getChat().addMessage(new TranslatableComponent("modernfix.message.reload_config"));
+                }
+            });
+        }
+    }
+
     static class MonitoringConfigTracker implements Runnable {
         private final Runnable configTracker;
 
@@ -84,6 +100,8 @@ public class NightConfigFixer {
         @Override
         public void run() {
             synchronized(configsToReload) {
+                if(FMLLoader.getDist().isClient())
+                    triggerConfigMessage();
                 if(configsToReload.size() == 0)
                     ModernFixMixinPlugin.instance.logger.info("Please use /{} to reload any changed mod config files", FMLLoader.getDist().isDedicatedServer() ? "mfsrc" : "mfrc");
                 configsToReload.add(configTracker);

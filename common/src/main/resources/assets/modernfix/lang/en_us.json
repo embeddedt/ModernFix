@@ -7,6 +7,7 @@
   "modernfix.perf_mod_warning": "It is recommended to install the mods, but the warning(s) can be disabled in the ModernFix config.",
   "modernfix.config": "ModernFix mixin config",
   "modernfix.config.done_restart": "Done (restart required)",
+  "modernfix.message.reload_config": "Run /mfrc after changing configs on disk for them to take effect.",
   "modernfix.option.on": "on",
   "modernfix.option.off": "off",
   "modernfix.option.disabled": "disabled",

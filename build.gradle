@@ -204,8 +204,8 @@ configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
         }
         runs {
             client {
-                vmArgs "-Xmx512m"
-                vmArgs "-Xms512m"
+                vmArgs "-Xmx1G"
+                vmArgs "-Xms1G"
             }
         }
     }

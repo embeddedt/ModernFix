@@ -1,29 +1,29 @@
 package org.embeddedt.modernfix.forge.config;
 
-import com.electronwill.nightconfig.core.file.CommentedFileConfig;
-import com.electronwill.nightconfig.core.file.FileConfig;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
-import it.unimi.dsi.fastutil.objects.ReferenceOpenHashSet;
+import net.minecraft.client.Minecraft;
+import net.minecraft.network.chat.Component;
+import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.util.CommonModUtil;
 
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
-/**
- * Relatively simple patch to wait for config saving to finish, made complex by Night Config classes being package-private,
- * and Forge not allowing mixins into libraries.
- */
 public class NightConfigFixer {
+    public static final LinkedHashSet<Runnable> configsToReload = new LinkedHashSet<>();
     public static void monitorFileWatcher() {
+        if(!ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.fix_config_crashes.NightConfigFixerMixin"))
+            return;
         CommonModUtil.runWithoutCrash(() -> {
             FileWatcher watcher = FileWatcher.defaultInstance();
             Field field = FileWatcher.class.getDeclaredField("watchedFiles");
@@ -35,34 +35,26 @@ public class NightConfigFixer {
         }, "replacing Night Config watchedFiles map");
     }
 
-    private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
-    private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
-
-    public static final Class<?> WRITE_SYNC_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.WriteSyncFileConfig"));
-    private static final Class<?> AUTOSAVE_CONFIG = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.AutosaveCommentedFileConfig"));
-    private static final Field AUTOSAVE_FILECONFIG = ObfuscationReflectionHelper.findField(AUTOSAVE_CONFIG, "fileConfig");
-
-    private static final Field CURRENTLY_WRITING = ObfuscationReflectionHelper.findField(WRITE_SYNC_CONFIG, "currentlyWriting");
-
-    private static final Map<Class<?>, Field> CONFIG_WATCHER_TO_CONFIG_FIELD = Collections.synchronizedMap(new HashMap<>());
-
-    private static Field getCurrentlyWritingFieldOnWatcher(Object watcher) {
-        return CONFIG_WATCHER_TO_CONFIG_FIELD.computeIfAbsent(watcher.getClass(), clz -> {
-            while(clz != null && clz != Object.class) {
-                for(Field f : clz.getDeclaredFields()) {
-                    if(CommentedFileConfig.class.isAssignableFrom(f.getType())) {
-                        f.setAccessible(true);
-                        ModernFixMixinPlugin.instance.logger.debug("Found CommentedFileConfig: field '{}' on {}", f.getName(), clz.getName());
-                        return f;
-                    }
-                }
-                clz = clz.getSuperclass();
+    public static void runReloads() {
+        List<Runnable> runnablesToRun;
+        synchronized (configsToReload) {
+            runnablesToRun = new ArrayList<>(configsToReload);
+            configsToReload.clear();
+        }
+        for(Runnable r : runnablesToRun) {
+            try {
+                r.run();
+            } catch(RuntimeException e) {
+                e.printStackTrace();
             }
-            return null;
-        });
+        }
+        ModernFix.LOGGER.info("Processed {} config reloads", runnablesToRun.size());
     }
 
     static class MonitoringMap extends ConcurrentHashMap<Path, Object> {
+        private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
+        private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
+
         public MonitoringMap(ConcurrentHashMap<Path, ?> oldMap) {
             super(oldMap);
         }
@@ -82,24 +74,16 @@ public class NightConfigFixer {
         }
     }
 
-    private static final Set<Class<?>> UNKNOWN_FILE_CONFIG_CLASSES = Collections.synchronizedSet(new ReferenceOpenHashSet<>());
+    private static long lastConfigTrigger = System.nanoTime();
 
-    public static Object toWriteSyncConfig(Object config) {
-        if(config == null)
-            return null;
-        try {
-            if(WRITE_SYNC_CONFIG.isAssignableFrom(config.getClass())) {
-                return config;
-            } else if(AUTOSAVE_CONFIG.isAssignableFrom(config.getClass())) {
-                FileConfig fc = (FileConfig)AUTOSAVE_FILECONFIG.get(config);
-                return toWriteSyncConfig(fc);
-            } else {
-                if (UNKNOWN_FILE_CONFIG_CLASSES.add(config.getClass()))
-                    ModernFixMixinPlugin.instance.logger.warn("Unexpected FileConfig class: {}", config.getClass().getName());
-                return null;
-            }
-        } catch(ReflectiveOperationException e) {
-            return null;
+    private static void triggerConfigMessage() {
+        if((System.nanoTime() - lastConfigTrigger) >= TimeUnit.SECONDS.toNanos(5)) {
+            lastConfigTrigger = System.nanoTime();
+            Minecraft.getInstance().execute(() -> {
+                if(Minecraft.getInstance().level != null) {
+                    Minecraft.getInstance().gui.getChat().addMessage(Component.translatable("modernfix.message.reload_config"));
+                }
+            });
         }
     }
 
@@ -110,47 +94,17 @@ public class NightConfigFixer {
             this.configTracker = r;
         }
 
-        private void protectFromSaving(FileConfig config, Runnable runnable) throws ReflectiveOperationException {
-            Object writeSyncConfig = toWriteSyncConfig(config);
-            if(writeSyncConfig != null) {
-                // keep trying to write, releasing the config lock each time in case something else needs to lock it
-                // for any reason
-                while(true) {
-                    // acquiring synchronized block here should in theory prevent any other concurrent loads/saves, based
-                    // off WriteSyncFileConfig implementation
-                    synchronized (writeSyncConfig) {
-                        if(CURRENTLY_WRITING.getBoolean(writeSyncConfig)) {
-                            ModernFixMixinPlugin.instance.logger.fatal("Config being written during load!!!");
-                            try { Thread.sleep(500); } catch(InterruptedException e) { Thread.currentThread().interrupt(); }
-                            continue;
-                        }
-                        // at this point, currentlyWriting is false, and we acquired synchronized lock, should be good to
-                        // go
-                        runnable.run();
-                        break;
-                    }
-                }
-            } else {
-                runnable.run();
-            }
-        }
-
         /**
-         * This entrypoint runs when the file watcher has detected a change on the config file. Before passing
-         * this through to Forge, use reflection hacks to confirm the config system is not still writing to the file.
-         * If it is, spin until writing finishes. Immediately returning might result in the event never being observed.
+         * Add the config runnable to the list to be processed by the main thread.
          */
         @Override
         public void run() {
-            try {
-                Field theField = getCurrentlyWritingFieldOnWatcher(this.configTracker);
-                if(theField != null) {
-                    CommentedFileConfig cfg = (CommentedFileConfig)theField.get(this.configTracker);
-                    // will synchronize and check saving flag
-                    protectFromSaving(cfg, configTracker);
-                }
-            } catch(ReflectiveOperationException e) {
-                e.printStackTrace();
+            synchronized(configsToReload) {
+                if(FMLLoader.getDist().isClient())
+                    triggerConfigMessage();
+                if(configsToReload.size() == 0)
+                    ModernFixMixinPlugin.instance.logger.info("Please use /{} to reload any changed mod config files", FMLLoader.getDist().isDedicatedServer() ? "mfsrc" : "mfrc");
+                configsToReload.add(configTracker);
             }
         }
     }

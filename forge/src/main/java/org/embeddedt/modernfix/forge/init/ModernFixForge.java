@@ -1,11 +1,14 @@
 package org.embeddedt.modernfix.forge.init;
 
 import com.google.common.collect.ImmutableList;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.OnDatapackSyncEvent;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -28,6 +31,7 @@ import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.forge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
+import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.registry.ObjectHolderClearer;
 
@@ -36,6 +40,7 @@ import java.util.List;
 @Mod(ModernFix.MODID)
 public class ModernFixForge {
     private static ModernFix commonMod;
+    public static boolean launchDone = false;
 
     public ModernFixForge() {
         commonMod = new ModernFix();
@@ -50,6 +55,18 @@ public class ModernFixForge {
         ModFileScanDataDeduplicator.deduplicate();
         ClassLoadHack.loadModClasses();
         ConfigFixer.replaceConfigHandlers();
+    }
+
+    @SubscribeEvent
+    public void onCommandRegister(RegisterCommandsEvent event) {
+        for(String name : new String[] { "mfsrc"}) {
+            event.getDispatcher().register(LiteralArgumentBuilder.<CommandSourceStack>literal(name)
+                    .requires(source -> source.hasPermission(3))
+                    .executes(context -> {
+                        NightConfigFixer.runReloads();
+                        return 1;
+                    }));
+        }
     }
 
     @SubscribeEvent

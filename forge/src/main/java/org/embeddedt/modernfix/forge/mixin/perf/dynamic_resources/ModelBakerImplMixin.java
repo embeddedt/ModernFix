@@ -9,6 +9,7 @@ import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
+import org.embeddedt.modernfix.forge.dynresources.IModelBakerImpl;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -19,16 +20,23 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.function.Function;
 
 @Mixin(ModelBakery.ModelBakerImpl.class)
-public abstract class ModelBakerImplMixin {
+public abstract class ModelBakerImplMixin implements IModelBakerImpl {
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
     @Shadow @Final private ModelBakery field_40571;
 
     @Shadow public abstract UnbakedModel getModel(ResourceLocation arg);
 
+    private boolean mfix$ignoreCache = false;
+
+    @Override
+    public void mfix$ignoreCache() {
+        mfix$ignoreCache = true;
+    }
+
     @Inject(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At("HEAD"), cancellable = true, remap = false)
     public void getOrLoadBakedModelDynamic(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter, CallbackInfoReturnable<BakedModel> cir) {
         ModelBakery.BakedCacheKey key = new ModelBakery.BakedCacheKey(arg, arg2.getRotation(), arg2.isUvLocked());
-        BakedModel existing = this.field_40571.bakedCache.get(key);
+        BakedModel existing = mfix$ignoreCache ? null : this.field_40571.bakedCache.get(key);
         if (existing != null) {
             cir.setReturnValue(existing);
         } else {

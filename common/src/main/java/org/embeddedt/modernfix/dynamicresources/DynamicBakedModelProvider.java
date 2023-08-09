@@ -9,9 +9,12 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.BlockModelRotation;
 import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
@@ -106,6 +109,27 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     public boolean containsValue(Object o) {
         return permanentOverrides.containsValue(o) || bakedCache.containsValue(o);
     }
+    
+    private static boolean isVanillaTopLevelModel(ResourceLocation location) {
+        if(location instanceof ModelResourceLocation) {
+            try {
+                ModelResourceLocation mrl = (ModelResourceLocation)location;
+                ResourceLocation registryKey = new ResourceLocation(mrl.getNamespace(), mrl.getPath());
+                // check for standard inventory model
+                if(mrl.getVariant().equals("inventory") && BuiltInRegistries.ITEM.containsKey(registryKey))
+                    return true;
+                Optional<Block> blockOpt = BuiltInRegistries.BLOCK.getOptional(registryKey);
+                if(blockOpt.isPresent()) {
+                    return ModelBakeryHelpers.getBlockStatesForMRL(blockOpt.get().getStateDefinition(), mrl).size() > 0;
+                }
+            } catch(RuntimeException ignored) {
+                // can occur if the MRL is not valid for that blockstate, ignore
+            }
+        }
+        if(location.getNamespace().equals("minecraft") && location.getPath().equals("builtin/missing"))
+            return true;
+        return false;
+    }
 
     @Override
     public BakedModel get(Object o) {
@@ -120,11 +144,11 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
                 model = missingModel;
             }
             if(model == missingModel) {
-                // to correctly emulate the original map, we return null for missing models
-                permanentOverrides.put((ResourceLocation) o, null);
-                return null;
-            } else
-                return model;
+                // to correctly emulate the original map, we return null for missing models, unless they are top-level
+                model = isVanillaTopLevelModel((ResourceLocation)o) ? model : null;
+                permanentOverrides.put((ResourceLocation) o, model);
+            }
+            return model;
         }
     }
 

@@ -1,12 +1,15 @@
 package org.embeddedt.modernfix.forge.init;
 
 import com.mojang.blaze3d.platform.InputConstants;
+import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
+import net.minecraft.commands.CommandSourceStack;
 import net.minecraftforge.client.ConfigScreenHandler;
 import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
+import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.settings.KeyConflictContext;
@@ -20,6 +23,7 @@ import net.minecraftforge.fml.ModLoadingContext;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 
 import java.util.ArrayList;
@@ -49,6 +53,15 @@ public class ModernFixClientForge {
         if(event.phase == TickEvent.Phase.START && configKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new ModernFixConfigScreen(Minecraft.getInstance().screen));
         }
+    }
+
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onClientChat(RegisterClientCommandsEvent event) {
+        event.getDispatcher().register(LiteralArgumentBuilder.<CommandSourceStack>literal("mfrc")
+                .executes(context -> {
+                    NightConfigFixer.runReloads();
+                    return 1;
+                }));
     }
 
     private static final List<String> brandingList = new ArrayList<>();

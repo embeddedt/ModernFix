@@ -20,7 +20,7 @@ public class MinecraftMixin {
 
     @Inject(method = "tick", at = @At("HEAD"))
     private void onClientTick(CallbackInfo ci) {
-        if(this.overlay == null) {
+        if(this.overlay == null && ModernFixClient.INSTANCE != null) {
             ModernFixClient.INSTANCE.onGameLaunchFinish();
         }
     }

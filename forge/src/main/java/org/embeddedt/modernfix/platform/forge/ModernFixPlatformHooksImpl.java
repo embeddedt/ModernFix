@@ -22,8 +22,10 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.forge.classloading.ATInjector;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
+import org.embeddedt.modernfix.forge.init.ModernFixForge;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
@@ -92,6 +94,9 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public void injectPlatformSpecificHacks() {
+        if(!isEarlyLoadingNormally() && ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.forge_at_inject_error.ATInjector")) {
+            ATInjector.injectModATs();
+        }
         FastAccessTransformerList.attemptReplace();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */
@@ -164,6 +169,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnForge")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.stop("launch"), "Failed to stop profiler");
         }
+        ModernFixForge.launchDone = true;
     }
 
     public String getPlatformName() {

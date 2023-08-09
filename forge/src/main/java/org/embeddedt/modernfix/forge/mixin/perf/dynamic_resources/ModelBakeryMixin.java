@@ -146,6 +146,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return ImmutableList.of();
     }
 
+    /**
+     * Make a copy of the top-level model list to avoid CME if more models get loaded here.
+     */
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;values()Ljava/util/Collection;", ordinal = 0))
+    private Collection<?> copyTopLevelModelList(Map<?, ?> map) {
+        return new ArrayList<>(map.values());
+    }
+
     private BiFunction<ResourceLocation, Material, TextureAtlasSprite> textureGetter;
 
     @Inject(method = "bakeModels", at = @At("HEAD"))
@@ -266,7 +274,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     public BakedModel bakeDefault(ResourceLocation modelLocation, ModelState state) {
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
-        return theBaker.bake(modelLocation, state);
+        return theBaker.bake(modelLocation, state, theBaker.getModelTextureGetter());
     }
 
     @Override

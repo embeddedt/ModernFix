@@ -33,6 +33,9 @@ dependencies {
     // modApi "me.shedaniel:architectury:${rootProject.architectury_version}"
 }
 
+// don't need remapped common jar
+tasks.named('remapJar') { enabled = false }
+
 publishing {
     publications {
         mavenCommon(MavenPublication) {

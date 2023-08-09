@@ -112,7 +112,7 @@ public class ModernFixEarlyConfig {
                             if(annotation.values.get(i).equals("value")) {
                                 String modId = (String)annotation.values.get(i + 1);
                                 if(modId != null) {
-                                    requiredModPresent = modPresent(modId);
+                                    requiredModPresent = modId.startsWith("!") ? !modPresent(modId.substring(1)) : modPresent(modId);
                                     requiredModId = modId;
                                 }
                                 break;

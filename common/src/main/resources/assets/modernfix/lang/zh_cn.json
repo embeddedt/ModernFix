@@ -7,6 +7,7 @@
   "modernfix.perf_mod_warning": "推荐安装这些模组，但你也可以在现代化修复的配置中禁用此警告。",
   "modernfix.config": "现代化修复Mixin配置",
   "modernfix.config.done_restart": "完成（生效需重启）",
+  "modernfix.message.reload_config": "在游戏外编辑完配置文件后，使用§b/mfrc§r命令使其生效。",
   "modernfix.option.on": "开启",
   "modernfix.option.off": "关闭",
   "modernfix.option.disabled": "已禁用",

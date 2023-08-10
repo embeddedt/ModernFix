@@ -11,7 +11,7 @@ dependencies {
     // Do NOT use other classes from fabric loader
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
 
-    modApi("dev.latvian.mods:kubejs:${kubejs_version}") {
+    modCompileOnly("dev.latvian.mods:kubejs:${kubejs_version}") {
         transitive = false
     }
     modApi("dev.latvian.mods:rhino:${rhino_version}") {

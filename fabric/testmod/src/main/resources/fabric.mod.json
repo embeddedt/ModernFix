@@ -1,0 +1,26 @@
+{
+  "schemaVersion": 1,
+  "id": "mfix_testmod",
+  "version": "${version}",
+  "name": "ModernFix test mod",
+  "description": "Test mod used to validate features and behaviors of ModernFix, the essential Minecraft performance mod",
+  "authors": [
+    "embeddedt"
+  ],
+  "contact": {
+    "sources": "https://github.com/embeddedt/ModernFix",
+    "homepage": "https://modrinth.com/mod/modernfix",
+    "issues": "https://github.com/embeddedt/ModernFix/issues"
+  },
+  "license": "LGPL-3.0",
+  "environment": "*",
+  "mixins": [ "testmod.mixins.json" ],
+  "entrypoints": {
+    "main": [
+      "org.embeddedt.modernfix.testmod.TestMod"
+    ],
+    "client": [
+      "org.embeddedt.modernfix.testmod.client.TestModClient"
+    ]
+  }
+}

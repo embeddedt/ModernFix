@@ -1,0 +1,26 @@
+apply plugin: "dev.architectury.loom"
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+        if(rootProject.hasProperty("parchment_version")) {
+            parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
+        }
+    }
+
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+
+    implementation project(path: ":common", configuration: "namedElements")
+    implementation project(path: ":fabric", configuration: "namedElements")
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+

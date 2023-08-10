@@ -16,6 +16,7 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     modImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modImplementation(fabricApi.module("fabric-models-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modImplementation(fabricApi.module("fabric-registry-sync-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modImplementation(fabricApi.module("fabric-renderer-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modRuntimeOnly(fabricApi.module("fabric-renderer-indigo", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
 

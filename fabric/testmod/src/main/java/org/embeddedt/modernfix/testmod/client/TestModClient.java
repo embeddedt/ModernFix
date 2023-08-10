@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.testmod.client;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.model.ModelLoadingRegistry;
+import net.minecraft.client.Minecraft;
 import org.embeddedt.modernfix.testmod.TestMod;
 
 import java.util.regex.Matcher;
@@ -23,5 +24,7 @@ public class TestModClient implements ClientModInitializer {
             }
             return null;
         });
+        // needed to make debug level rendering work correctly
+        Minecraft.getInstance().smartCull = false;
     }
 }

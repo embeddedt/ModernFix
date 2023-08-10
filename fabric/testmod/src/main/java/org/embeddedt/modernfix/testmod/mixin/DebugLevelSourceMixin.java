@@ -3,7 +3,7 @@ package org.embeddedt.modernfix.testmod.mixin;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.SectionPos;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.StructureFeatureManager;
+import net.minecraft.world.level.StructureManager;
 import net.minecraft.world.level.WorldGenLevel;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -17,7 +17,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(DebugLevelSource.class)
 public class DebugLevelSourceMixin {
     @Inject(method = "applyBiomeDecoration", at = @At("HEAD"), cancellable = true)
-    private void showColorCube(WorldGenLevel level, ChunkAccess chunk, StructureFeatureManager structureFeatureManager, CallbackInfo ci) {
+    private void showColorCube(WorldGenLevel level, ChunkAccess chunk, StructureManager structureFeatureManager, CallbackInfo ci) {
         ci.cancel();
         BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
         ChunkPos chunkPos = chunk.getPos();

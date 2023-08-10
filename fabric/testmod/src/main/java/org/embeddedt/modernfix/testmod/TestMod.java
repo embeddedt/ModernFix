@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.testmod;
 import com.google.common.base.Stopwatch;
 import net.fabricmc.api.ModInitializer;
 import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
@@ -32,9 +33,9 @@ public class TestMod implements ModInitializer {
             for(int g = 0; g < NUM_COLORS; g++) {
                 for(int b = 0; b < NUM_COLORS; b++) {
                     ResourceLocation name = new ResourceLocation(ID, "wool_" + r + "_" + g + "_" + b);
-                    TestBlock block = Registry.register(Registry.BLOCK, name, new TestBlock());
+                    TestBlock block = Registry.register(BuiltInRegistries.BLOCK, name, new TestBlock());
                     WOOL_STATES.add(block.defaultBlockState());
-                    Registry.register(Registry.ITEM, name, new TestBlockItem(block));
+                    Registry.register(BuiltInRegistries.ITEM, name, new TestBlockItem(block));
                     numRegistered++;
                     if((numRegistered % progressReport) == 0) {
                         LOGGER.info(String.format("Registering... %.02f%%", ((float)numRegistered)/totalToRegister * 100));

@@ -17,6 +17,9 @@
   "entrypoints": {
     "main": [
       "org.embeddedt.modernfix.testmod.TestMod"
+    ],
+    "client": [
+      "org.embeddedt.modernfix.testmod.client.TestModClient"
     ]
   }
 }

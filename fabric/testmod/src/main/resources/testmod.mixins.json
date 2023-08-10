@@ -1,0 +1,13 @@
+{
+  "required": true,
+  "package": "org.embeddedt.modernfix.testmod.mixin",
+  "compatibilityLevel": "JAVA_8",
+  "minVersion": "0.8",
+  "mixins": [
+    "ChunkMixin",
+    "DebugLevelSourceMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  }
+}

@@ -27,6 +27,22 @@ configurations {
     runtimeClasspath.extendsFrom common
 }
 
+def extraModsDir = "extra-mods"
+
+repositories {
+    exclusiveContent {
+        forRepository {
+            flatDir {
+                name "extra-mods"
+                dir file(extraModsDir)
+            }
+        }
+        filter {
+            includeGroup "extra-mods"
+        }
+    }
+}
+
 dependencies {
     forge "net.minecraftforge:forge:${rootProject.forge_version}"
     // Remove the next line if you don't want to depend on the API
@@ -50,6 +66,16 @@ dependencies {
     modCompileOnly("appeng:appliedenergistics2:8.4.7")
     modCompileOnly("vazkii.patchouli:Patchouli:1.16.4-53.3")
     modImplementation "curse.maven:spark-361579:${rootProject.spark_forge_version}"
+
+    // runtime remapping at home
+    for (extraModJar in fileTree(dir: extraModsDir, include: '*.jar')) {
+        def basename = extraModJar.name.substring(0, extraModJar.name.length() - ".jar".length())
+        def versionSep = basename.lastIndexOf('-')
+        assert versionSep != -1
+        def artifactId = basename.substring(0, versionSep)
+        def version = basename.substring(versionSep + 1)
+        modRuntimeOnly("extra-mods:$artifactId:$version")
+    }
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }

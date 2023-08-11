@@ -17,7 +17,7 @@ public class TestMod implements ModInitializer {
     public static final String ID = "mfix_testmod";
     public static final Logger LOGGER = LogManager.getLogger("ModernFix TestMod");
 
-    public static final int NUM_COLORS = 100;
+    public static final int NUM_COLORS = 32;
     public static final int MAX_COLOR = NUM_COLORS - 1;
 
     public static final List<BlockState> WOOL_STATES = new ArrayList<>();
@@ -35,7 +35,7 @@ public class TestMod implements ModInitializer {
                     ResourceLocation name = new ResourceLocation(ID, "wool_" + r + "_" + g + "_" + b);
                     TestBlock block = Registry.register(BuiltInRegistries.BLOCK, name, new TestBlock());
                     WOOL_STATES.add(block.defaultBlockState());
-                    Registry.register(BuiltInRegistries.ITEM, name, new TestBlockItem(block));
+                    //Registry.register(BuiltInRegistries.ITEM, name, new TestBlockItem(block));
                     numRegistered++;
                     if((numRegistered % progressReport) == 0) {
                         LOGGER.info(String.format("Registering... %.02f%%", ((float)numRegistered)/totalToRegister * 100));
@@ -50,11 +50,14 @@ public class TestMod implements ModInitializer {
     private static final BlockState AIR = Blocks.AIR.defaultBlockState();
 
     public static BlockState getColorCubeStateFor(int chunkX, int chunkY, int chunkZ) {
-        BlockState blockState = AIR;
-        if (chunkX >= 0 && chunkY >= 0 && chunkZ >= 0 && chunkX % 2 == 0 && chunkY % 2 == 0 && chunkZ % 2 == 0) {
+        BlockState blockState = null;
+        if (chunkX >= 0 && chunkY >= 0 && chunkZ >= 0) { // && chunkX % 2 == 0 && chunkY % 2 == 0 && chunkZ % 2 == 0) {
+            /*
             chunkX /= 2;
             chunkY /= 2;
             chunkZ /= 2;
+
+             */
             if(chunkX <= TestMod.MAX_COLOR && chunkY <= TestMod.MAX_COLOR && chunkZ <= TestMod.MAX_COLOR) {
                 blockState = TestMod.WOOL_STATES.get((chunkX * TestMod.NUM_COLORS * TestMod.NUM_COLORS) + (chunkY * TestMod.NUM_COLORS) + chunkZ);
             }

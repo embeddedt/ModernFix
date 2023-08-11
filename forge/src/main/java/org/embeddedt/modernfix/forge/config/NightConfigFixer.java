@@ -7,6 +7,7 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.util.CommonModUtil;
 
@@ -16,11 +17,11 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 
 public class NightConfigFixer {
     public static final LinkedHashSet<Runnable> configsToReload = new LinkedHashSet<>();
+
     public static void monitorFileWatcher() {
         if(!ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.fix_config_crashes.NightConfigFixerMixin"))
             return;
@@ -49,6 +50,7 @@ public class NightConfigFixer {
             }
         }
         ModernFix.LOGGER.info("Processed {} config reloads", runnablesToRun.size());
+        couldShowMessage = true;
     }
 
     static class MonitoringMap extends ConcurrentHashMap<Path, Object> {
@@ -74,13 +76,13 @@ public class NightConfigFixer {
         }
     }
 
-    private static long lastConfigTrigger = System.nanoTime();
+    private static boolean couldShowMessage = true;
 
     private static void triggerConfigMessage() {
-        if((System.nanoTime() - lastConfigTrigger) >= TimeUnit.SECONDS.toNanos(5)) {
-            lastConfigTrigger = System.nanoTime();
+        if(couldShowMessage && Minecraft.getInstance().level != null && ModernFixClient.recipesUpdated && ModernFixClient.tagsUpdated) {
             Minecraft.getInstance().execute(() -> {
                 if(Minecraft.getInstance().level != null) {
+                    couldShowMessage = false;
                     Minecraft.getInstance().gui.getChat().addMessage(new TranslatableComponent("modernfix.message.reload_config"));
                 }
             });
@@ -102,8 +104,9 @@ public class NightConfigFixer {
             synchronized(configsToReload) {
                 if(FMLLoader.getDist().isClient())
                     triggerConfigMessage();
-                if(configsToReload.size() == 0)
+                if(configsToReload.size() == 0) {
                     ModernFixMixinPlugin.instance.logger.info("Please use /{} to reload any changed mod config files", FMLLoader.getDist().isDedicatedServer() ? "mfsrc" : "mfrc");
+                }
                 configsToReload.add(configTracker);
             }
         }

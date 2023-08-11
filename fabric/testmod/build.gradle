@@ -2,6 +2,13 @@ apply plugin: "dev.architectury.loom"
 
 loom {
     accessWidenerPath = project(":common").loom.accessWidenerPath
+    runs {
+        client {
+            property("modernfix.config.mixin.perf.blast_search_trees", "true")
+            property("modernfix.config.mixin.perf.dynamic_resources", "true")
+            property("modernfix.config.mixin.perf.dynamic_block_codecs", "true")
+        }
+    }
 }
 
 dependencies {

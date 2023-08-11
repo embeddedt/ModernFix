@@ -3,19 +3,22 @@ package org.embeddedt.modernfix.testmod.mixin;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.WorldGenRegion;
 import net.minecraft.world.level.StructureFeatureManager;
+import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.DebugLevelSource;
+import net.minecraft.world.level.chunk.ChunkGenerator;
+import net.minecraft.world.level.levelgen.FlatLevelSource;
+import net.minecraft.world.level.levelgen.StructureSettings;
 import org.embeddedt.modernfix.testmod.TestMod;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-@Mixin(DebugLevelSource.class)
-public class DebugLevelSourceMixin {
-    @Inject(method = "applyBiomeDecoration", at = @At("HEAD"), cancellable = true)
-    private void showColorCube(WorldGenRegion region, StructureFeatureManager structureManager, CallbackInfo ci) {
-        ci.cancel();
+@Mixin(FlatLevelSource.class)
+public abstract class DebugLevelSourceMixin extends ChunkGenerator {
+    public DebugLevelSourceMixin(BiomeSource biomeSource, StructureSettings structureSettings) {
+        super(biomeSource, structureSettings);
+    }
+
+    @Override
+    public void applyBiomeDecoration(WorldGenRegion region, StructureFeatureManager structureManager) {
         BlockPos.MutableBlockPos mutableBlockPos = new BlockPos.MutableBlockPos();
         int i = region.getCenterX();
         int j = region.getCenterZ();

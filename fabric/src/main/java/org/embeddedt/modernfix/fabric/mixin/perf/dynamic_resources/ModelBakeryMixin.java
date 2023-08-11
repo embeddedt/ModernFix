@@ -39,6 +39,7 @@ import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
+import org.embeddedt.modernfix.fabric.api.dynresources.ModelScanController;
 import org.embeddedt.modernfix.fabric.bridge.ModelV0Bridge;
 import org.embeddedt.modernfix.util.LayeredForwardingMap;
 import org.jetbrains.annotations.Nullable;
@@ -173,6 +174,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private Set<ResourceLocation> modelFiles = new ObjectOpenHashSet<>();
 
     private boolean forceLoadModel = false;
+
+    @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
+    private void ignoreRejectedModel(ModelResourceLocation location, CallbackInfo ci) {
+        if(this.inTextureGatheringPass && !this.forceLoadModel && !ModelScanController.shouldScanAndTestWrapping(location)) {
+            ci.cancel();
+        }
+    }
 
     @Inject(method = "loadModel", at = @At(value = "HEAD"), cancellable = true)
     private void ignoreNonFabricModel(ResourceLocation modelLocation, CallbackInfo ci) throws Exception {

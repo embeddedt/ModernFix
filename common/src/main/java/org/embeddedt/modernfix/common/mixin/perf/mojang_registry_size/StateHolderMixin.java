@@ -1,5 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.perf.mojang_registry_size;
 
+import com.google.common.collect.ArrayTable;
+import com.google.common.collect.HashBasedTable;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Table;
 import net.minecraft.world.level.block.state.StateHolder;
@@ -23,7 +25,7 @@ public class StateHolderMixin {
     /* optimize the case where block has no properties */
     @Inject(method = "populateNeighbours", at = @At("RETURN"), require = 0)
     private void replaceEmptyTable(CallbackInfo ci) {
-        if(this.neighbours.isEmpty())
+        if((this.neighbours instanceof ArrayTable || this.neighbours instanceof HashBasedTable) && this.neighbours.isEmpty())
             this.neighbours = ImmutableTable.of();
     }
 }

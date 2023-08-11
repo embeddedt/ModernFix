@@ -3,8 +3,6 @@ package org.embeddedt.modernfix.common.mixin.perf.compact_mojang_registries;
 import com.google.common.collect.ImmutableSet;
 import com.mojang.serialization.Lifecycle;
 import net.minecraft.core.MappedRegistry;
-import net.minecraft.core.Registry;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import org.embeddedt.modernfix.annotation.IgnoreOutsideDev;
 import org.embeddedt.modernfix.registry.LifecycleMap;
@@ -20,7 +18,7 @@ import java.util.Map;
 
 @Mixin(MappedRegistry.class)
 @IgnoreOutsideDev
-public abstract class MappedRegistryMixin<T> extends Registry<T> {
+public abstract class MappedRegistryMixin<T> {
     @Shadow
     @Final
     @Mutable
@@ -28,11 +26,7 @@ public abstract class MappedRegistryMixin<T> extends Registry<T> {
 
     private static final ImmutableSet<ResourceLocation> MFIX$NEW_STORAGE_KEYS = ImmutableSet.of(new ResourceLocation("block"), new ResourceLocation("item"));
 
-    protected MappedRegistryMixin(ResourceKey<? extends Registry<T>> resourceKey, Lifecycle lifecycle) {
-        super(resourceKey, lifecycle);
-    }
-
-    @Inject(method = "<init>", at = @At("RETURN"))
+    @Inject(method = "<init>(Lnet/minecraft/resources/ResourceKey;Lcom/mojang/serialization/Lifecycle;Z)V", at = @At("RETURN"))
     private void replaceStorage(CallbackInfo ci) {
         this.lifecycles = new LifecycleMap<>();
         /*

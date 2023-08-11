@@ -11,6 +11,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.IgnoreOutsideDev;
 import org.embeddedt.modernfix.annotation.RequiresMod;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
@@ -250,6 +251,17 @@ public class ModernFixEarlyConfig {
         }
     }
 
+    private void readJVMProperties() {
+        for(String optionKey : this.options.keySet()) {
+            String value = System.getProperty("modernfix.config." + optionKey);
+            if(value == null || value.length() == 0)
+                continue;
+            boolean isEnabled = Boolean.valueOf(value);
+            ModernFixMixinPlugin.instance.logger.info("Configured {} to '{}' via JVM property.", optionKey, isEnabled);
+            this.options.get(optionKey).setEnabled(isEnabled, true);
+        }
+    }
+
     private void readProperties(Properties props) {
         if(ALLOW_OVERRIDE_OVERRIDES)
             LOGGER.fatal("JVM argument given to override mod overrides. Issues opened with this option present will be ignored unless they can be reproduced without.");
@@ -338,6 +350,8 @@ public class ModernFixEarlyConfig {
             } catch (IOException e) {
                 LOGGER.warn("Could not write configuration file", e);
             }
+
+            config.readJVMProperties();
         }
 
         return config;

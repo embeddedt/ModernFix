@@ -27,7 +27,7 @@ public class ModernFixClient {
 
     public static float gameStartTimeSeconds = -1;
 
-    private static boolean recipesUpdated, tagsUpdated = false;
+    public static boolean recipesUpdated, tagsUpdated = false;
 
     public String brandingString = null;
 

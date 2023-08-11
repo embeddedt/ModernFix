@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.dynamicresources;
 
+import com.google.common.collect.ImmutableSet;
 import com.mojang.math.Transformation;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -27,6 +28,15 @@ import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedModel> {
+    /**
+     * The list of blacklisted resource locations that are never baked as top-level models.
+     *
+     * This is a hack to get around the fact that we don't really know exactly what models were supposed to end up
+     * in the baked registry ahead of time.
+     */
+    private static final ImmutableSet<ResourceLocation> BAKE_SKIPPED_TOPLEVEL = ImmutableSet.<ResourceLocation>builder()
+            .add(new ResourceLocation("custommachinery", "block/custom_machine_block"))
+            .build();
     public static DynamicBakedModelProvider currentInstance = null;
     private final ModelBakery bakery;
     private final Map<ModelBakery.BakedCacheKey, BakedModel> bakedCache;
@@ -138,7 +148,10 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
             return model;
         else {
             try {
-                model = ((IExtendedModelBakery)bakery).bakeDefault((ResourceLocation)o, BlockModelRotation.X0_Y0);
+                if(BAKE_SKIPPED_TOPLEVEL.contains((ResourceLocation)o))
+                    model = missingModel;
+                else
+                    model = ((IExtendedModelBakery)bakery).bakeDefault((ResourceLocation)o, BlockModelRotation.X0_Y0);
             } catch(RuntimeException e) {
                 ModernFix.LOGGER.error("Exception baking {}: {}", o, e);
                 model = missingModel;

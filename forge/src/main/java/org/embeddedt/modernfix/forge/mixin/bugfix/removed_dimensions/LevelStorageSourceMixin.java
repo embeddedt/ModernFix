@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(LevelStorageSource.class)
 public class LevelStorageSourceMixin {
-    @Inject(method = "readWorldGenSettings", at = @At(value = "INVOKE", target = "Lcom/mojang/serialization/Codec;parse(Lcom/mojang/serialization/Dynamic;)Lcom/mojang/serialization/DataResult;"))
+    @Inject(method = "readWorldGenSettings", at = @At(value = "INVOKE", target = "Lcom/mojang/serialization/Codec;parse(Lcom/mojang/serialization/Dynamic;)Lcom/mojang/serialization/DataResult;", remap = false))
     private static <T> void freezeRegistriesBeforeParsing(Dynamic<T> nbt, DataFixer fixer, int version, CallbackInfoReturnable<Pair<WorldGenSettings, Lifecycle>> cir) {
         DynamicOps<T> var10 = nbt.getOps();
         if (var10 instanceof RegistryOps<T> ops) {

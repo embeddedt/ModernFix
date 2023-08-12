@@ -25,8 +25,8 @@ import java.util.Set;
 public abstract class ModNioResourcePackMixin implements ICachingResourcePack {
     @Shadow public abstract Set<String> getNamespaces(PackType type);
 
-    @Shadow @Final private List<Path> basePaths;
-    @Shadow @Final private ModMetadata modInfo;
+    @Shadow(remap = false) @Final private List<Path> basePaths;
+    @Shadow(remap = false) @Final private ModMetadata modInfo;
     private PackResourcesCacheEngine cacheEngine;
 
     @Inject(method = "<init>", at = @At("RETURN"))

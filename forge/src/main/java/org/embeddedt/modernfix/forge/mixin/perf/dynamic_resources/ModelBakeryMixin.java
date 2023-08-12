@@ -86,7 +86,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow public abstract UnbakedModel getModel(ResourceLocation modelLocation);
 
-    @Shadow @Nullable public abstract BakedModel bake(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> sprites);
+    @Shadow(remap = false) @Nullable public abstract BakedModel bake(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> sprites);
 
     @Shadow @Final private static Logger LOGGER;
     @Shadow @org.jetbrains.annotations.Nullable public abstract BakedModel bake(ResourceLocation location, ModelState transform);

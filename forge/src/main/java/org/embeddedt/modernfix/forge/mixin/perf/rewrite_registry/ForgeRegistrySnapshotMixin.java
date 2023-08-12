@@ -19,9 +19,9 @@ import java.util.Set;
 @Mixin(ForgeRegistry.Snapshot.class)
 @IgnoreOutsideDev
 public class ForgeRegistrySnapshotMixin {
-    @Shadow @Final @Mutable public Map<ResourceLocation, Integer> ids;
+    @Shadow(remap = false) @Final @Mutable public Map<ResourceLocation, Integer> ids;
 
-    @Shadow @Final @Mutable public Set<ResourceLocation> dummied;
+    @Shadow(remap = false) @Final @Mutable public Set<ResourceLocation> dummied;
 
     /**
      * The only good reason to use tree maps here is to keep the order the same. But we are tracking IDs

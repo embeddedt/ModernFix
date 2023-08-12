@@ -24,7 +24,7 @@ import java.util.function.Function;
 @RequiresMod("ae2")
 @ClientOnlyMixin
 public class RegistrationMixin {
-    @Shadow @Final private static Map<String, Function<BakedModel, BakedModel>> CUSTOMIZERS;
+    @Shadow(remap = false) @Final private static Map<String, Function<BakedModel, BakedModel>> CUSTOMIZERS;
 
     @Inject(method = "init", at = @At("TAIL"), remap = false)
     private static void doRegisterDynBake(CallbackInfo ci) {

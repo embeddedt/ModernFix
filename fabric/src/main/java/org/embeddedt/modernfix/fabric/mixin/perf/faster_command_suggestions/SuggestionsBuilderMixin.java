@@ -17,7 +17,7 @@ public class SuggestionsBuilderMixin {
     @Unique
     private static final int MAX_SUGGESTIONS = 10000;
 
-    @Shadow @Final @Mutable
+    @Shadow(remap = false) @Final @Mutable
     private List<Suggestion> result;
 
     @Redirect(method = "*", at = @At(value = "INVOKE", target = "Ljava/util/List;add(Ljava/lang/Object;)Z"), require = 0)

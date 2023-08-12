@@ -1,7 +1,6 @@
 package org.embeddedt.modernfix.forge.mixin.perf.rewrite_registry;
 
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.registries.ForgeRegistry;
 import org.embeddedt.modernfix.annotation.IgnoreOutsideDev;
@@ -14,14 +13,11 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
-import java.util.Set;
 
 @Mixin(ForgeRegistry.Snapshot.class)
 @IgnoreOutsideDev
 public class ForgeRegistrySnapshotMixin {
     @Shadow(remap = false) @Final @Mutable public Map<ResourceLocation, Integer> ids;
-
-    @Shadow(remap = false) @Final @Mutable public Set<ResourceLocation> dummied;
 
     /**
      * The only good reason to use tree maps here is to keep the order the same. But we are tracking IDs
@@ -30,6 +26,5 @@ public class ForgeRegistrySnapshotMixin {
     @Inject(method = "<init>", at = @At("RETURN"))
     private void replaceSnapshotMaps(CallbackInfo ci) {
         this.ids = new Object2ObjectOpenHashMap<>();
-        this.dummied = new ObjectOpenHashSet<>();
     }
 }

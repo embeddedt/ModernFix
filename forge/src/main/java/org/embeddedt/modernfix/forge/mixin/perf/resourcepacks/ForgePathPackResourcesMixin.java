@@ -28,12 +28,12 @@ import java.util.Set;
 
 @Mixin(PathPackResources.class)
 public abstract class ForgePathPackResourcesMixin implements ICachingResourcePack {
-    @Shadow protected abstract Path resolve(String... paths);
+    @Shadow(remap = false) protected abstract Path resolve(String... paths);
 
-    @Shadow @NotNull
+    @Shadow(remap = false) @NotNull
     protected abstract Set<String> getNamespacesFromDisk(PackType type);
 
-    @Shadow private static String[] getPathFromLocation(PackType type, ResourceLocation location) {
+    @Shadow(remap = false) private static String[] getPathFromLocation(PackType type, ResourceLocation location) {
         throw new AssertionError();
     }
 

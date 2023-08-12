@@ -19,10 +19,12 @@ import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.*;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 
@@ -35,6 +37,7 @@ public class ModernFixClientForge {
     public ModernFixClientForge() {
         commonMod = new ModernFixClient();
         FMLJavaModLoadingContext.get().getModEventBus().addListener(this::keyBindRegister);
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
         ModLoadingContext.get().registerExtensionPoint(
                 ConfigScreenHandler.ConfigScreenFactory.class,
                 () ->  new ConfigScreenHandler.ConfigScreenFactory((mc, screen) -> new ModernFixConfigScreen(screen))
@@ -46,6 +49,15 @@ public class ModernFixClientForge {
     private void keyBindRegister(RegisterKeyMappingsEvent event) {
         configKey = new KeyMapping("key.modernfix.config", KeyConflictContext.UNIVERSAL, InputConstants.UNKNOWN, "key.modernfix");
         event.register(configKey);
+    }
+
+    private void onClientSetup(FMLClientSetupEvent event) {
+        if(false && ModernFixMixinPlugin.instance.isOptionEnabled("perf.dynamic_resources.ConnectednessCheck")
+                && ModList.get().isLoaded("connectedness")) {
+            event.enqueueWork(() -> {
+                ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.SIDED_SETUP, "modernfix.connectedness_dynresoruces"));
+            });
+        }
     }
 
     @SubscribeEvent

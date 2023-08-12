@@ -10,7 +10,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(GameData.class)
 public class GameDataMixin {
 
-    @Redirect(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/registries/ForgeRegistry;dump(Lnet/minecraft/resources/ResourceLocation;)V"))
+    @Redirect(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/registries/ForgeRegistry;dump(Lnet/minecraft/resources/ResourceLocation;)V", remap = false))
     private static void noDump(ForgeRegistry<?> reg, ResourceLocation id) {
     }
 }

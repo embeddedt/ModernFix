@@ -27,7 +27,7 @@ import java.util.*;
 @ClientOnlyMixin
 public abstract class TextureMetadataHandlerMixin implements ModernFixClientIntegration {
 
-    @Shadow @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelBakery loader) throws IOException;
+    @Shadow(remap = false) @Nonnull protected abstract BakedModel wrap(ResourceLocation loc, UnbakedModel model, BakedModel object, ModelBakery loader) throws IOException;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void subscribeDynamic(CallbackInfo ci) {

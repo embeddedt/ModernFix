@@ -16,7 +16,7 @@ import java.lang.reflect.Type;
 public class BlockElementFaceDeserializerMixin {
 
     @Redirect(method = "deserialize(Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;Lcom/google/gson/JsonDeserializationContext;)Lnet/minecraft/client/renderer/block/model/BlockElementFace;",
-            at = @At(value = "INVOKE", target = "Lcom/google/gson/JsonDeserializationContext;deserialize(Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;)Ljava/lang/Object;", ordinal = 0))
+            at = @At(value = "INVOKE", target = "Lcom/google/gson/JsonDeserializationContext;deserialize(Lcom/google/gson/JsonElement;Ljava/lang/reflect/Type;)Ljava/lang/Object;", ordinal = 0, remap = false))
     private Object skipUvsForInitialLoad(JsonDeserializationContext context, JsonElement element, Type type) {
         return UVController.useDummyUv.get() ? UVController.dummyUv : context.deserialize(element, type);
     }

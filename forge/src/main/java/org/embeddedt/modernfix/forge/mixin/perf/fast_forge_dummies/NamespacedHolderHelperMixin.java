@@ -17,13 +17,13 @@ import java.util.function.Function;
 
 @Mixin(targets = { "net/minecraftforge/registries/NamespacedHolderHelper" })
 public class NamespacedHolderHelperMixin<T> {
-    @Shadow private Map<ResourceLocation, Holder.Reference<T>> holdersByName;
+    @Shadow(remap = false) private Map<ResourceLocation, Holder.Reference<T>> holdersByName;
 
-    @Shadow @Final private @Nullable Function<T, Holder.Reference<T>> holderLookup;
+    @Shadow(remap = false) @Final private @Nullable Function<T, Holder.Reference<T>> holderLookup;
 
-    @Shadow private Map<T, Holder.Reference<T>> holders;
+    @Shadow(remap = false) private Map<T, Holder.Reference<T>> holders;
 
-    @Shadow @Final private Registry<T> self;
+    @Shadow(remap = false) @Final private Registry<T> self;
 
     @Inject(method = "freeze", at = @At(value = "FIELD", opcode = Opcodes.GETFIELD, target = "Lnet/minecraftforge/registries/NamespacedHolderHelper;holdersByName:Ljava/util/Map;"), cancellable = true, remap = false)
     private void fastDummyCheck(CallbackInfoReturnable<Registry<T>> cir) {

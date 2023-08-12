@@ -11,6 +11,10 @@ import org.spongepowered.asm.mixin.Overwrite;
 @Mixin(Minecraft.class)
 @ClientOnlyMixin
 public class MinecraftMixin {
+    /**
+     * @author embeddedt
+     * @reason avoid exception stacktrace being printed in dev
+     */
     @Overwrite
     private UserApiService createUserApiService(YggdrasilAuthenticationService yggdrasilAuthenticationService, GameConfig arg) {
         return UserApiService.OFFLINE;

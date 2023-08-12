@@ -29,9 +29,9 @@ import java.util.function.Predicate;
  */
 @Mixin(PathPackResources.class)
 public abstract class ModFileResourcePackMixin implements ICachingResourcePack {
-    @Shadow protected abstract Path resolve(String... paths);
+    @Shadow(remap = false) protected abstract Path resolve(String... paths);
 
-    @Shadow @NotNull
+    @Shadow(remap = false) @NotNull
     protected abstract Set<String> getNamespacesFromDisk(PackType type);
 
     private PackResourcesCacheEngine cacheEngine;

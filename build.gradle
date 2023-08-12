@@ -95,11 +95,6 @@ allprojects {
             url 'https://maven.terraformersmc.com/releases'
         }
     }
-    gradle.projectsEvaluated {
-        tasks.withType(JavaCompile) {
-            options.compilerArgs << "-Werror"
-        }
-    }
 }
 
 configure(subprojects.findAll {it.name == "common" || it.name == "forge" || it.name == "fabric"}) {

@@ -15,7 +15,7 @@ public class MappedRegistryMixin {
      */
     @Redirect(
             method = "registerMapping(ILnet/minecraft/resources/ResourceKey;Ljava/lang/Object;Lcom/mojang/serialization/Lifecycle;)Lnet/minecraft/core/Holder$Reference;",
-            at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/objects/ObjectList;size(I)V")
+            at = @At(value = "INVOKE", target = "Lit/unimi/dsi/fastutil/objects/ObjectList;size(I)V", remap = false)
     )
     private void setSizeSmart(ObjectList<?> list, int size) {
         if(list instanceof ObjectArrayList && size > list.size()) {

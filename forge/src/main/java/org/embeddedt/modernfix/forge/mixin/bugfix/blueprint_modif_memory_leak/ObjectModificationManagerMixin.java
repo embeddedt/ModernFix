@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(ObjectModificationManager.class)
 @RequiresMod("blueprint")
 public abstract class ObjectModificationManagerMixin extends SimpleJsonResourceReloadListener {
-    @Shadow protected SelectionSpace selectionSpace;
+    @Shadow(remap = false) protected SelectionSpace selectionSpace;
 
     public ObjectModificationManagerMixin(Gson gson, String string) {
         super(gson, string);

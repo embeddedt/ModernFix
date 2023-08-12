@@ -63,6 +63,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Shadow @Final @Mutable private Map<ModelBakery.BakedCacheKey, BakedModel> bakedCache;
 
     @Shadow @Final @Mutable private BlockColors blockColors;
+
     @Shadow @Final private static Logger LOGGER;
 
     @Shadow public abstract UnbakedModel getModel(ResourceLocation resourceLocation);

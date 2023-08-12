@@ -19,7 +19,7 @@ public class TagEntryMixin {
      * @reason use cached location, overwrite rather than inject to avoid allocs
      */
     @Overwrite
-    public ExtraCodecs.TagOrElementLocation elementOrTag() {
+    private ExtraCodecs.TagOrElementLocation elementOrTag() {
         ExtraCodecs.TagOrElementLocation loc = cachedLoc;
         if(loc == null) {
             loc = new ExtraCodecs.TagOrElementLocation(this.id, this.tag);

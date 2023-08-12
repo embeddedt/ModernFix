@@ -18,7 +18,7 @@ public abstract class BiomeMixin {
      * @return
      */
     @Overwrite
-    public final float getTemperature(BlockPos pos) {
+    private float getTemperature(BlockPos pos) {
         return this.getHeightAdjustedTemperature(pos);
     }
 }

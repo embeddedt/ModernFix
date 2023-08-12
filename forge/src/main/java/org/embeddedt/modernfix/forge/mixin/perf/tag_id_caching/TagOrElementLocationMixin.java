@@ -18,7 +18,7 @@ public class TagOrElementLocationMixin {
      * @reason use cached ID, overwrite rather than inject to avoid allocs
      */
     @Overwrite
-    public String decoratedId() {
+    private String decoratedId() {
         String id = cachedDecoratedId;
         if(id == null) {
             id = this.tag ? "#" + this.id : this.id.toString();

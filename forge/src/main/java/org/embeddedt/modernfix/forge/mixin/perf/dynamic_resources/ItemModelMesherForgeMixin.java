@@ -20,7 +20,7 @@ import java.util.Map;
 @Mixin(net.minecraftforge.client.ItemModelMesherForge.class)
 @ClientOnlyMixin
 public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
-    @Shadow @Final @Mutable private Map<IRegistryDelegate<Item>, ModelResourceLocation> locations;
+    @Shadow(remap = false) @Final @Mutable private Map<IRegistryDelegate<Item>, ModelResourceLocation> locations;
 
     private Map<IRegistryDelegate<Item>, ModelResourceLocation> overrideLocations;
 
@@ -48,6 +48,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     }
 
     /**
+     * @author embeddedt
      * @reason Get the stored location for that item and meta, and get the model
      * from that location from the model manager.
      **/
@@ -59,6 +60,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     }
 
     /**
+     * @author embeddedt
      * @reason Don't get all models during init (with dynamic loading, that would
      * generate them all). Just store location instead.
      **/
@@ -69,6 +71,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     }
 
     /**
+     * @author embeddedt
      * @reason Disable cache rebuilding (with dynamic loading, that would generate
      * all models).
      **/

@@ -23,10 +23,10 @@ import java.util.Set;
 public abstract class ModNioResourcePackMixin implements ICachingResourcePack {
     @Shadow public abstract Set<String> getNamespaces(PackType type);
 
-    @Shadow @Final private Path basePath;
+    @Shadow(remap = false) @Final private Path basePath;
     private PackResourcesCacheEngine cacheEngine;
 
-    @Inject(method = "<init>", at = @At("RETURN"))
+    @Inject(method = "<init>", at = @At("RETURN"), remap = false)
     private void cacheResources(CallbackInfo ci) {
         invalidateCache();
         PackResourcesCacheEngine.track(this);

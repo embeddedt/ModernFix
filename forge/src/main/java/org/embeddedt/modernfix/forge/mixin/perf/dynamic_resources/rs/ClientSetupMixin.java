@@ -20,7 +20,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @RequiresMod("refinedstorage")
 @ClientOnlyMixin
 public class ClientSetupMixin {
-    @Shadow @Final private BakedModelOverrideRegistry bakedModelOverrideRegistry;
+    @Shadow(remap = false) @Final private BakedModelOverrideRegistry bakedModelOverrideRegistry;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void addDynamicListener(CallbackInfo ci) {

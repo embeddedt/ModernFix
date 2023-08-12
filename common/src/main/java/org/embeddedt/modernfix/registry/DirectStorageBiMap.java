@@ -9,6 +9,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@SuppressWarnings("unchecked")
 public class DirectStorageBiMap<K, V> implements BiMap<K, V> {
     private final Function<V, K> keyGetter;
     private final BiConsumer<V, K> keySetter;

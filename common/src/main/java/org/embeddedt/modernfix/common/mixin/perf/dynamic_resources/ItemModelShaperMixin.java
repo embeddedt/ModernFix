@@ -48,6 +48,7 @@ public abstract class ItemModelShaperMixin {
     }
 
     /**
+     * @author embeddedt
      * @reason Get the stored location for that item and meta, and get the model
      * from that location from the model manager.
      **/
@@ -58,6 +59,7 @@ public abstract class ItemModelShaperMixin {
     }
 
     /**
+     * @author embeddedt
      * @reason Don't get all models during init (with dynamic loading, that would
      * generate them all). Just store location instead.
      **/
@@ -67,6 +69,7 @@ public abstract class ItemModelShaperMixin {
     }
 
     /**
+     * @author embeddedt
      * @reason Disable cache rebuilding (with dynamic loading, that would generate
      * all models).
      **/

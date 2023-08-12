@@ -35,7 +35,7 @@ import java.util.function.Predicate;
 @ClientOnlyMixin
 public abstract class CTMPackReloadListenerMixin implements ModernFixClientIntegration {
     /* caches the original render checks */
-    @Shadow @Final private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> blockRenderChecks;
+    @Shadow(remap = false) @Final private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> blockRenderChecks;
 
     private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> renderCheckOverrides = new ConcurrentHashMap<>();
 
@@ -50,6 +50,10 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
         ModernFixClient.CLIENT_INTEGRATIONS.add(this);
     }
 
+    /**
+     * @author embeddedt
+     * @reason handle layer changes dynamically
+     */
     @Overwrite(remap = false)
     private void refreshLayerHacks() {
         renderCheckOverrides.clear();

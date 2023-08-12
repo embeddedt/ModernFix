@@ -60,7 +60,7 @@ public class WindowMixin {
      * Grab the original width/height from the window and inject them into our state variables.
      */
     @SuppressWarnings("unchecked")
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/loading/progress/EarlyProgressVisualization;handOffWindow(Ljava/util/function/IntSupplier;Ljava/util/function/IntSupplier;Ljava/util/function/Supplier;Ljava/util/function/LongSupplier;)J"), require = 0)
+    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/loading/progress/EarlyProgressVisualization;handOffWindow(Ljava/util/function/IntSupplier;Ljava/util/function/IntSupplier;Ljava/util/function/Supplier;Ljava/util/function/LongSupplier;)J", remap = false), require = 0)
     private long performHandoff(EarlyProgressVisualization instance, IntSupplier width, IntSupplier height, Supplier<String> title, LongSupplier monitor, WindowEventHandler arg, ScreenManager arg2, DisplayData arg3) {
         Object visualizer = getEarlyProgressVisualizer();
         if(visualizer != null && defaultDisplayData(arg3)) {

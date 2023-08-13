@@ -45,6 +45,8 @@ repositories {
 
 dependencies {
     forge "net.minecraftforge:forge:${rootProject.forge_version}"
+    shadow(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-common:${rootProject.mixinextras_version}"))
+    runtimeOnly("com.github.llamalad7.mixinextras:mixinextras-common:${rootProject.mixinextras_version}")
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury-forge:${rootProject.architectury_version}"
 
@@ -93,8 +95,10 @@ shadowJar {
     exclude "fabric.mod.json"
     exclude "architectury.common.json"
 
-    configurations = [project.configurations.shadowCommon]
+    configurations = [project.configurations.shadowCommon, project.configurations.shadow]
+    relocate("com.llamalad7.mixinextras", "org.embeddedt.modernfix.forge.shadow.mixinextras")
     archiveClassifier.set("dev-shadow")
+    mergeServiceFiles()
 }
 
 remapJar {

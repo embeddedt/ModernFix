@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.platform.forge;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.google.common.io.Resources;
+import com.llamalad7.mixinextras.MixinExtrasBootstrap;
 import com.mojang.blaze3d.platform.NativeImage;
 import com.mojang.brigadier.CommandDispatcher;
 import cpw.mods.modlauncher.*;
@@ -195,6 +196,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         }
 
         NightConfigFixer.monitorFileWatcher();
+        MixinExtrasBootstrap.init();
     }
 
     private Method defineClassMethod = null;

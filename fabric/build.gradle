@@ -43,6 +43,7 @@ repositories {
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     testImplementation "net.fabricmc:fabric-loader-junit:${rootProject.fabric_loader_version}"
+    include(implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-fabric:${rootProject.mixinextras_version}")))
 
     modCompileOnly(fabricApi.module("fabric-api-base", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modCompileOnly(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }

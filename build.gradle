@@ -94,6 +94,7 @@ allprojects {
         maven {
             url 'https://maven.terraformersmc.com/releases'
         }
+        maven { url = "https://jitpack.io" }
     }
 }
 
@@ -206,6 +207,7 @@ configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
             client {
                 vmArgs "-Xmx1G"
                 vmArgs "-Xms1G"
+                property("mixin.debug.export", "true")
             }
         }
     }

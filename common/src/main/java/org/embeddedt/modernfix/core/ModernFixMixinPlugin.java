@@ -1,14 +1,18 @@
 package org.embeddedt.modernfix.core;
 
+import com.google.common.collect.ImmutableSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.world.ThreadDumper;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.spongepowered.asm.mixin.extensibility.IMixinConfigPlugin;
 import org.spongepowered.asm.mixin.extensibility.IMixinInfo;
+import org.spongepowered.asm.mixin.transformer.meta.MixinMerged;
 
 import java.io.File;
 import java.util.*;
@@ -146,6 +150,111 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void postApply(String targetClassName, ClassNode targetClass, String mixinClassName, IMixinInfo mixinInfo) {
+        if(mixinClassName.equals("org.embeddedt.modernfix.common.mixin.perf.reduce_blockstate_cache_rebuilds.BlockStateBaseMixin")) {
+            try {
+                applyBlockStateCacheScan(targetClass);
+            } catch(RuntimeException e) {
+                ModernFixMixinPlugin.instance.logger.error("Applying blockstate cache ASM patch failed", e);
+            }
+        }
         ModernFixPlatformHooks.INSTANCE.applyASMTransformers(mixinClassName, targetClass);
+    }
+
+    private void applyBlockStateCacheScan(ClassNode targetClass) {
+        Set<String> initCacheMethodNames = ImmutableSet.of("m_60611_", "func_215692_c", "method_26200", "initCache");
+        Set<String> whitelistedInjections = ImmutableSet.of(
+                "getFluidState", "method_26227", "m_60819_", "func_204520_s"
+        );
+        Map<String, MethodNode> injectorMethodNames = new HashMap<>();
+        Map<String, String> injectorMixinSource = new HashMap<>();
+        String descriptor = Type.getDescriptor(MixinMerged.class);
+        for(MethodNode m : targetClass.methods) {
+            if((m.access & Opcodes.ACC_STATIC) != 0)
+                continue;
+            Set<AnnotationNode> seenNodes = new HashSet<>();
+            if(m.invisibleAnnotations != null) {
+                for(AnnotationNode ann : m.invisibleAnnotations) {
+                    if(ann.desc.equals(descriptor)) {
+                        seenNodes.add(ann);
+                    }
+                }
+            }
+            if(m.visibleAnnotations != null) {
+                for(AnnotationNode ann : m.visibleAnnotations) {
+                    if(ann.desc.equals(descriptor)) {
+                        seenNodes.add(ann);
+                    }
+                }
+            }
+            if(seenNodes.size() > 0) {
+                injectorMethodNames.put(m.name, m);
+                for(AnnotationNode node : seenNodes) {
+                    for(int i = 0; i < node.values.size(); i += 2) {
+                        if(Objects.equals(node.values.get(i), "mixin")) {
+                            injectorMixinSource.put(m.name, (String)node.values.get(i + 1));
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        Set<String> cacheCalledInjectors = new HashSet<>();
+        // Search for initCache in the class
+        for(MethodNode m : targetClass.methods) {
+            if((m.access & Opcodes.ACC_STATIC) != 0)
+                continue;
+            if(initCacheMethodNames.contains(m.name)) {
+                // This is it. Check for any injectors it calls
+                for(AbstractInsnNode n : m.instructions) {
+                    if(n instanceof MethodInsnNode) {
+                        MethodInsnNode invoke = (MethodInsnNode)n;
+                        if(((MethodInsnNode)n).owner.equals(targetClass.name) && injectorMethodNames.containsKey(((MethodInsnNode)n).name)) {
+                            cacheCalledInjectors.add(invoke.name);
+                        }
+                    }
+                }
+                break;
+            }
+        }
+        Set<String> accessedFieldNames = new HashSet<>();
+        // We now know all methods that have been injected into initCache. See what fields they write to
+        injectorMethodNames.forEach((name, method) -> {
+            if(cacheCalledInjectors.contains(name)) {
+                for(AbstractInsnNode n : method.instructions) {
+                    if(n instanceof FieldInsnNode) {
+                        FieldInsnNode fieldAcc = (FieldInsnNode)n;
+                        if(fieldAcc.getOpcode() == Opcodes.PUTFIELD && fieldAcc.owner.equals(targetClass.name)) {
+                            accessedFieldNames.add(fieldAcc.name);
+                        }
+                    }
+                }
+            }
+        });
+        // Lastly, scan all injected methods and see if they retrieve from the field. If so, inject a generateCache
+        // call at the start.
+        injectorMethodNames.forEach((name, method) -> {
+            // skip whitelisted injectors, and injectors called by initCache itself (to prevent recursion)
+            if(whitelistedInjections.contains(name) || cacheCalledInjectors.contains(name))
+                return;
+            boolean needInjection = false;
+            for(AbstractInsnNode n : method.instructions) {
+                if(n instanceof FieldInsnNode) {
+                    FieldInsnNode fieldAcc = (FieldInsnNode)n;
+                    if(fieldAcc.getOpcode() == Opcodes.GETFIELD && accessedFieldNames.contains(fieldAcc.name)) {
+                        needInjection = true;
+                        break;
+                    }
+                }
+            }
+            if(needInjection) {
+                ModernFixMixinPlugin.instance.logger.info("Injecting BlockStateBase cache population hook into {} from {}",
+                        name, injectorMixinSource.getOrDefault(name, "[unknown mixin]"));
+                // inject this.mfix$generateCache() at method head
+                InsnList injection = new InsnList();
+                injection.add(new VarInsnNode(Opcodes.ALOAD, 0));
+                injection.add(new MethodInsnNode(Opcodes.INVOKEVIRTUAL, targetClass.name, "mfix$generateCache", "()V"));
+                method.instructions.insert(injection);
+            }
+        });
     }
 }

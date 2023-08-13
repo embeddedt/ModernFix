@@ -47,6 +47,16 @@ public class SafeBlockGetter implements BlockGetter {
         return this.wrapped.getMaxLightLevel();
     }
 
+    @Override
+    public int getMinBuildHeight() {
+        return this.wrapped.getMinBuildHeight();
+    }
+
+    @Override
+    public int getHeight() {
+        return this.wrapped.getHeight();
+    }
+
     @Nullable
     @Override
     public BlockEntity getBlockEntity(BlockPos pos) {

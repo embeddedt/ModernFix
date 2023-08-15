@@ -32,7 +32,7 @@ public class MinecraftMixin {
                 }
                 this.level.getChunkSource().lightEngine = new LevelLightEngine(this.level.getChunkSource(), false, false);
                 // clear BE list otherwise they will hold chunks
-                this.level.blockEntityList.clear();
+                this.level.blockEntityTickers.clear();
             } catch(RuntimeException e) {
                 ModernFix.LOGGER.error("Exception clearing level data", e);
             }

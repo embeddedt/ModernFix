@@ -1,5 +1,11 @@
 accessWidener   v2  named
 
+accessible field net/minecraft/client/multiplayer/ClientChunkCache storage Lnet/minecraft/client/multiplayer/ClientChunkCache$Storage;
+accessible field net/minecraft/client/multiplayer/ClientChunkCache lightEngine Lnet/minecraft/world/level/lighting/LevelLightEngine;
+mutable field net/minecraft/client/multiplayer/ClientChunkCache lightEngine Lnet/minecraft/world/level/lighting/LevelLightEngine;
+accessible class net/minecraft/client/multiplayer/ClientChunkCache$Storage
+accessible field net/minecraft/client/multiplayer/ClientChunkCache$Storage chunks Ljava/util/concurrent/atomic/AtomicReferenceArray;
+
 accessible class net/minecraft/client/renderer/RenderType$CompositeRenderType
 accessible method net/minecraft/nbt/CompoundTag <init> (Ljava/util/Map;)V
 

@@ -12,7 +12,7 @@ import java.util.Map;
  * Replacement backing map for CompoundTags that interns keys.
  */
 public class CanonizingStringMap<T> extends HashMap<String, T> {
-    private static final Interner<String> KEY_INTERNER = Interners.newStrongInterner();
+    private static final Interner<String> KEY_INTERNER = Interners.newWeakInterner();
 
     private static String intern(String key) {
         return key != null ? KEY_INTERNER.intern(key) : null;

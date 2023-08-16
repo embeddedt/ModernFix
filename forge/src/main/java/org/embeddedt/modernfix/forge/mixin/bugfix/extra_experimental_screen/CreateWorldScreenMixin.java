@@ -14,7 +14,7 @@ public class CreateWorldScreenMixin {
      * Fix experimental world dialog still being shown the first time you reopen a world that was created
      * as experimental.
      */
-    @ModifyArg(method = "createNewWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/worldselection/WorldOpenFlows;createLevelFromExistingSettings(Lnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;Lnet/minecraft/server/ReloadableServerResources;Lnet/minecraft/core/RegistryAccess$Frozen;Lnet/minecraft/world/level/storage/WorldData;)V"), index = 3)
+    @ModifyArg(method = "createNewWorld", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/gui/screens/worldselection/WorldOpenFlows;createLevelFromExistingSettings(Lnet/minecraft/world/level/storage/LevelStorageSource$LevelStorageAccess;Lnet/minecraft/server/ReloadableServerResources;Lnet/minecraft/core/LayeredRegistryAccess;Lnet/minecraft/world/level/storage/WorldData;)V"), index = 3)
     private WorldData setExperimentalFlag(WorldData data) {
         if(data instanceof PrimaryLevelData pld && data.worldGenSettingsLifecycle() != Lifecycle.stable()) {
             pld.withConfirmedWarning(true);

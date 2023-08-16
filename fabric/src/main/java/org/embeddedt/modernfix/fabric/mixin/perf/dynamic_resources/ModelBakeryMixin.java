@@ -254,25 +254,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 blockStateFiles, modelFiles, this.missingModel, json -> BlockModel.GSON.fromJson(json, BlockModel.class),
                 this::getModel);
         /* take every texture from these folders (1.19.3+ emulation) */
-        String[] extraFolders = new String[] {
-                "attachment",
-                "bettergrass",
-                "block",
-                "blocks",
-                "cape",
-                "entity/bed",
-                "entity/chest",
-                "item",
-                "items",
-                "model",
-                "models",
-                "part",
-                "pipe",
-                "ropebridge",
-                "solid_block",
-                "spell_effect",
-                "spell_projectile"
-        };
+        String[] extraFolders = ModelBakeryHelpers.getExtraTextureFolders();
         for(String folder : extraFolders) {
             Collection<ResourceLocation> textureLocations = this.resourceManager.listResources("textures/" + folder, p -> p.endsWith(".png"));
             for(ResourceLocation rl : textureLocations) {

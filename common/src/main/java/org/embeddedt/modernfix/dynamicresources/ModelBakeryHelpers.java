@@ -57,6 +57,32 @@ public class ModelBakeryHelpers {
      */
     public static final int MAX_MODEL_LIFETIME_SECS = 300;
 
+    /**
+     * These folders will have all textures stitched onto the atlas when dynamic resources is enabled.
+     */
+    public static String[] getExtraTextureFolders() {
+        return new String[] {
+                "attachment",
+                "bettergrass",
+                "block",
+                "blocks",
+                "cape",
+                "entity/bed",
+                "entity/chest",
+                "item",
+                "items",
+                "model",
+                "models",
+                "part",
+                "pipe",
+                "ropebridge",
+                "runes",
+                "solid_block",
+                "spell_effect",
+                "spell_projectile"
+        };
+    }
+
     private static JsonElement parseStream(InputStream stream) {
         JsonParser parser = new JsonParser();
         JsonReader jsonReader = new JsonReader(new InputStreamReader(stream, StandardCharsets.UTF_8));

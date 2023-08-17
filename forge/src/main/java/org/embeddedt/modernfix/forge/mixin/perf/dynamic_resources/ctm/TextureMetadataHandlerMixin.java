@@ -37,9 +37,9 @@ import java.util.function.Function;
 @ClientOnlyMixin
 public abstract class TextureMetadataHandlerMixin implements ModernFixClientIntegration {
 
-    @Shadow @Nonnull protected abstract BakedModel wrap(UnbakedModel model, BakedModel object) throws IOException;
+    @Shadow(remap = false) @Nonnull protected abstract BakedModel wrap(UnbakedModel model, BakedModel object) throws IOException;
 
-    @Shadow @Final public static Multimap<ResourceLocation, Material> TEXTURES_SCRAPED;
+    @Shadow(remap = false) @Final public static Multimap<ResourceLocation, Material> TEXTURES_SCRAPED;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void subscribeDynamic(CallbackInfo ci) {

@@ -1,0 +1,44 @@
+apply plugin: "dev.architectury.loom"
+
+loom {
+    accessWidenerPath = project(":common").loom.accessWidenerPath
+    runs {
+        client {
+            vmArgs "-Xmx8G"
+            property("modernfix.config.mixin.perf.blast_search_trees", "true")
+            property("modernfix.config.mixin.perf.dynamic_resources", "true")
+            property("modernfix.config.mixin.perf.dynamic_block_codecs", "true")
+        }
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+        if(rootProject.hasProperty("parchment_version")) {
+            parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
+        }
+    }
+
+    modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    modImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modImplementation(fabricApi.module("fabric-models-v0", "0.84.0+1.20.1")) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modImplementation(fabricApi.module("fabric-registry-sync-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modImplementation(fabricApi.module("fabric-renderer-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modImplementation(fabricApi.module("fabric-rendering-data-attachment-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modImplementation(fabricApi.module("fabric-rendering-fluids-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modRuntimeOnly(fabricApi.module("fabric-renderer-indigo", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+
+    implementation project(path: ":common", configuration: "namedElements")
+    implementation project(path: ":fabric", configuration: "namedElements")
+}
+
+processResources {
+    inputs.property "version", project.version
+
+    filesMatching("fabric.mod.json") {
+        expand "version": project.version
+    }
+}
+

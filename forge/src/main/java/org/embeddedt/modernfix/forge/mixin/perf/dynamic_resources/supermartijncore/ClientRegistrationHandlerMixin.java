@@ -31,7 +31,7 @@ import java.util.stream.Stream;
 @RequiresMod("supermartijn642corelib")
 @ClientOnlyMixin
 public class ClientRegistrationHandlerMixin {
-    @Shadow @Final private List<Pair<Supplier<Stream<ResourceLocation>>, Function<BakedModel, BakedModel>>> modelOverwrites;
+    @Shadow(remap = false) @Final private List<Pair<Supplier<Stream<ResourceLocation>>, Function<BakedModel, BakedModel>>> modelOverwrites;
 
     private Map<ResourceLocation, Function<BakedModel, BakedModel>> modelOverwritesByLocation = new Object2ObjectOpenHashMap<>();
 

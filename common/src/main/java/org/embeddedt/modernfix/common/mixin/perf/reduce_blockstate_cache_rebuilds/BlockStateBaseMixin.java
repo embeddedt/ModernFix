@@ -11,13 +11,10 @@ import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import org.embeddedt.modernfix.duck.IBlockState;
 import org.objectweb.asm.Opcodes;
-import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 
 @Mixin(BlockBehaviour.BlockStateBase.class)
@@ -48,7 +45,7 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
         return cacheInvalid;
     }
 
-    private BlockBehaviour.BlockStateBase.Cache generateCache(BlockBehaviour.BlockStateBase base) {
+    private void mfix$generateCache() {
         if(cacheInvalid) {
             // Ensure that only one block's cache is built at a time
             synchronized (BlockBehaviour.BlockStateBase.class) {
@@ -67,7 +64,6 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
 
             }
         }
-        return this.cache;
     }
 
     @Redirect(method = "*", at = @At(
@@ -77,7 +73,8 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
             ordinal = 0
     ))
     private BlockBehaviour.BlockStateBase.Cache dynamicCacheGen(BlockBehaviour.BlockStateBase base) {
-        return generateCache(base);
+        mfix$generateCache();
+        return this.cache;
     }
 
     @Redirect(method = "*", at = @At(
@@ -105,23 +102,5 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
         if(this.cacheInvalid)
             return this.owner.isRandomlyTicking(this.asState());
         return this.isRandomlyTicking;
-    }
-
-    @Dynamic
-    @Inject(method = "getPathNodeType", at = @At("HEAD"), require = 0, remap = false)
-    private void generateCacheLithium(CallbackInfoReturnable<?> cir) {
-        generateCache((BlockBehaviour.BlockStateBase)(Object)this);
-    }
-
-    @Dynamic
-    @Inject(method = "getNeighborPathNodeType", at = @At("HEAD"), require = 0, remap = false)
-    private void generateCacheLithium2(CallbackInfoReturnable<?> cir) {
-        generateCache((BlockBehaviour.BlockStateBase)(Object)this);
-    }
-
-    @Dynamic
-    @Inject(method = "getAllFlags", at = @At("HEAD"), require = 0, remap = false)
-    private void generateCacheLithium3(CallbackInfoReturnable<?> cir) {
-        generateCache((BlockBehaviour.BlockStateBase)(Object)this);
     }
 }

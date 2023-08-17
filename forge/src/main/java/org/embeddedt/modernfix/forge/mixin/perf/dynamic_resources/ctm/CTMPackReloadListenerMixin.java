@@ -36,22 +36,27 @@ import java.util.function.Predicate;
 @ClientOnlyMixin
 public abstract class CTMPackReloadListenerMixin implements ModernFixClientIntegration {
     /* caches the original render checks */
-    @Shadow @Final private static Map<Holder.Reference<Block>, Predicate<RenderType>> blockRenderChecks;
+    @Shadow(remap = false) @Final private static Map<Holder.Reference<Block>, Predicate<RenderType>> blockRenderChecks;
 
     private static Map<Holder.Reference<Block>, Predicate<RenderType>> renderCheckOverrides = new ConcurrentHashMap<>();
 
     private static ChunkRenderTypeSet DEFAULT_TYPE_SET = ChunkRenderTypeSet.of(RenderType.solid());
 
-    @Shadow protected abstract Predicate<RenderType> getLayerCheck(BlockState state, BakedModel model);
+    @Shadow(remap = false) protected abstract Predicate<RenderType> getLayerCheck(BlockState state, BakedModel model);
 
-    @Shadow protected abstract ChunkRenderTypeSet getExistingRenderCheck(Block block);
+    @Shadow(remap = false) protected abstract ChunkRenderTypeSet getExistingRenderCheck(Block block);
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInit(CallbackInfo ci) {
         ModernFixClient.CLIENT_INTEGRATIONS.add(this);
     }
 
+    /**
+     * @author embeddedt
+     * @reason handle layer changes dynamically
+     */
     @Overwrite(remap = false)
+    @SuppressWarnings("removal")
     private void refreshLayerHacks() {
         renderCheckOverrides.clear();
         if(blockRenderChecks.isEmpty()) {

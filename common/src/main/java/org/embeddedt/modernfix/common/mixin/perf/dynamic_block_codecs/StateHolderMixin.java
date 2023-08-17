@@ -36,7 +36,7 @@ public class StateHolderMixin {
                 }
             });
 
-    @Redirect(method = "codec", at = @At(value = "INVOKE", target = "Lcom/mojang/serialization/Codec;dispatch(Ljava/lang/String;Ljava/util/function/Function;Ljava/util/function/Function;)Lcom/mojang/serialization/Codec;"))
+    @Redirect(method = "codec", at = @At(value = "INVOKE", target = "Lcom/mojang/serialization/Codec;dispatch(Ljava/lang/String;Ljava/util/function/Function;Ljava/util/function/Function;)Lcom/mojang/serialization/Codec;", remap = false))
     private static <O, S extends StateHolder<O, S>> Codec<S> obtainCodec(Codec<O> codec, String typeKey, Function<S, O> type, Function<O, ? extends Codec<S>> codecFn, Codec<O> codecMethodArg, Function<O, S> stateSupplier) {
         return codec.dispatch(typeKey, type, block -> {
             if(block instanceof Block) {

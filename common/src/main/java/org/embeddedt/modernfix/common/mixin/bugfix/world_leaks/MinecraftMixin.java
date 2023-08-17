@@ -22,7 +22,7 @@ public class MinecraftMixin {
     /**
      * To mitigate the effect of leaked client worlds, clear most of the data structures that waste memory.
      */
-    @Inject(method = "clearLevel(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/Minecraft;level:Lnet/minecraft/client/multiplayer/ClientLevel;"))
+    @Inject(method = "disconnect(Lnet/minecraft/client/gui/screens/Screen;)V", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/Minecraft;level:Lnet/minecraft/client/multiplayer/ClientLevel;"))
     private void clearLevelDataForLeaks(CallbackInfo ci) {
         if(this.level != null) {
             try {

@@ -28,6 +28,32 @@ public class ModelBakeryHelpers {
      */
     public static final int MAX_MODEL_LIFETIME_SECS = 300;
 
+    /**
+     * These folders will have all textures stitched onto the atlas when dynamic resources is enabled.
+     */
+    public static String[] getExtraTextureFolders() {
+        return new String[] {
+                "attachment",
+                "bettergrass",
+                "block",
+                "blocks",
+                "cape",
+                "entity/bed",
+                "entity/chest",
+                "item",
+                "items",
+                "model",
+                "models",
+                "part",
+                "pipe",
+                "ropebridge",
+                "runes",
+                "solid_block",
+                "spell_effect",
+                "spell_projectile"
+        };
+    }
+
     private static <T extends Comparable<T>, V extends T> BlockState setPropertyGeneric(BlockState state, Property<T> prop, Object o) {
         return state.setValue(prop, (V)o);
     }

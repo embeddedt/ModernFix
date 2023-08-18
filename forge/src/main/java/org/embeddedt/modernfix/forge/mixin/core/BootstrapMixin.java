@@ -22,7 +22,7 @@ public class BootstrapMixin {
     @Inject(method = "bootStrap", at = @At("HEAD"))
     private static void doModernFixBootstrap(CallbackInfo ci) {
         if(!isBootstrapped) {
-            LOGGER.info("ModernFix reached bootstrap stage ({} after launch)", TimeFormatter.formatNanos(ManagementFactory.getRuntimeMXBean().getUptime() * 1000L));
+            LOGGER.info("ModernFix reached bootstrap stage ({} after launch)", TimeFormatter.formatNanos(ManagementFactory.getRuntimeMXBean().getUptime() * 1000L * 1000L));
             ModWorkManagerQueue.replace();
         }
     }

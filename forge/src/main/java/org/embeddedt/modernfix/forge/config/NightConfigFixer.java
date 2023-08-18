@@ -79,7 +79,7 @@ public class NightConfigFixer {
     private static boolean couldShowMessage = true;
 
     private static void triggerConfigMessage() {
-        if(couldShowMessage && Minecraft.getInstance().level != null && ModernFixClient.recipesUpdated && ModernFixClient.tagsUpdated) {
+        if(false && couldShowMessage && Minecraft.getInstance().level != null && ModernFixClient.recipesUpdated && ModernFixClient.tagsUpdated) {
             Minecraft.getInstance().execute(() -> {
                 if(Minecraft.getInstance().level != null) {
                     couldShowMessage = false;

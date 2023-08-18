@@ -21,9 +21,6 @@ public class ModernFixConfigScreen extends Screen {
     @Override
     protected void init() {
         this.optionList = new OptionList(this, this.minecraft);
-        this.doneButton = new Button(this.width / 2 - 100, this.height - 29, 200, 20, CommonComponents.GUI_DONE, (arg) -> {
-            this.onClose();
-        });
         this.addWidget(this.optionList);
         this.wikiButton = new Button(this.width / 2 - 155, this.height - 29, 150, 20, Component.translatable("modernfix.config.wiki"), (arg) -> {
             Util.getPlatform().openUri("https://github.com/embeddedt/ModernFix/wiki/Summary-of-Patches");

@@ -1,11 +1,10 @@
 package org.embeddedt.modernfix.screen;
 
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.Util;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
-import net.minecraft.network.chat.CommonComponents;
-import net.minecraft.network.chat.Style;
-import net.minecraft.network.chat.TranslatableComponent;
+import net.minecraft.network.chat.*;
 import org.jetbrains.annotations.Nullable;
 
 public class ModernFixConfigScreen extends Screen {
@@ -13,7 +12,7 @@ public class ModernFixConfigScreen extends Screen {
     private Screen lastScreen;
 
     public boolean madeChanges = false;
-    private Button doneButton;
+    private Button doneButton, wikiButton;
     public ModernFixConfigScreen(Screen lastScreen) {
         super(new TranslatableComponent("modernfix.config"));
         this.lastScreen = lastScreen;
@@ -23,9 +22,13 @@ public class ModernFixConfigScreen extends Screen {
     protected void init() {
         this.optionList = new OptionList(this, this.minecraft);
         this.children.add(this.optionList);
-        this.doneButton = new Button(this.width / 2 - 100, this.height - 29, 200, 20, CommonComponents.GUI_DONE, (arg) -> {
+        this.wikiButton = new Button(this.width / 2 - 155, this.height - 29, 150, 20, new TranslatableComponent("modernfix.config.wiki"), (arg) -> {
+            Util.getPlatform().openUri("https://github.com/embeddedt/ModernFix/wiki/Summary-of-Patches");
+        });
+        this.doneButton = new Button(this.width / 2 - 155 + 160, this.height - 29, 150, 20, CommonComponents.GUI_DONE, (arg) -> {
             this.onClose();
         });
+        this.addButton(this.wikiButton);
         this.addButton(this.doneButton);
     }
 

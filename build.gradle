@@ -94,6 +94,7 @@ allprojects {
         maven {
             url 'https://maven.terraformersmc.com/releases'
         }
+        maven { url = "https://jitpack.io" }
     }
 }
 
@@ -146,7 +147,7 @@ configure(subprojects.findAll {it.name == "common" || it.name == "forge" || it.n
     }
 }
 
-tasks.withType(JavaCompile) {
+tasks.withType(JavaCompile).configureEach {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
     // this fixes some edge cases with special characters not displaying correctly
     // see http://yodaconditions.net/blog/fix-for-java-file-encoding-problems-with-gradle.html
@@ -164,10 +165,10 @@ tasks.withType(JavaCompile) {
      */
 }
 
-task generateChangelog(type: se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
+tasks.register('generateChangelog', se.bjurr.gitchangelog.plugin.gradle.GitChangelogTask) {
     def details = versionDetails();
     def theVersionRef
-    if(details.commitDistance > 0) {
+    if (details.commitDistance > 0) {
         theVersionRef = details.lastTag;
     } else {
         def secondLastTagCmd = "git describe --abbrev=0 " + details.lastTag + "^"
@@ -204,8 +205,9 @@ configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
         }
         runs {
             client {
-                vmArgs "-Xmx512m"
-                vmArgs "-Xms512m"
+                vmArgs "-Xmx1G"
+                vmArgs "-Xms1G"
+                property("mixin.debug.export", "true")
             }
         }
     }

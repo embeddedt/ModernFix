@@ -10,13 +10,17 @@ dependencies {
     // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies
     // Do NOT use other classes from fabric loader
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-common:${rootProject.mixinextras_version}"))
 
-    modApi("dev.latvian.mods:kubejs:${kubejs_version}") {
+    modCompileOnly("dev.latvian.mods:kubejs:${kubejs_version}") {
         transitive = false
     }
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury:${rootProject.architectury_version}"
 }
+
+// don't need remapped common jar
+tasks.named('remapJar') { enabled = false }
 
 publishing {
     publications {

@@ -14,14 +14,14 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.ExtensionPoint;
-import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.*;
 import net.minecraftforge.fml.client.registry.ClientRegistry;
 import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartedEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 
@@ -45,7 +45,12 @@ public class ModernFixClientForge {
     private void clientSetup(FMLClientSetupEvent event) {
         configKey = new KeyMapping("key.modernfix.config", KeyConflictContext.UNIVERSAL, InputConstants.UNKNOWN, "key.modernfix");
         ClientRegistry.registerKeyBinding(configKey);
-
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.dynamic_resources.ConnectednessCheck")
+            && ModList.get().isLoaded("connectedness")) {
+            event.enqueueWork(() -> {
+                ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.SIDED_SETUP, "modernfix.connectedness_dynresoruces"));
+            });
+        }
     }
 
     @SubscribeEvent

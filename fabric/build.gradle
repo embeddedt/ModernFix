@@ -31,15 +31,22 @@ configurations {
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     testImplementation "net.fabricmc:fabric-loader-junit:${rootProject.fabric_loader_version}"
+    include(implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-fabric:${rootProject.mixinextras_version}")))
 
-    modImplementation(fabricApi.module("fabric-api-base", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modImplementation(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modImplementation(fabricApi.module("fabric-command-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modImplementation(fabricApi.module("fabric-models-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modImplementation(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modImplementation("com.terraformersmc:modmenu:${rootProject.modmenu_version}") { transitive false }
-    modImplementation "curse.maven:spark-361579:${rootProject.spark_fabric_version}"
-    modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}") { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modCompileOnly(fabricApi.module("fabric-api-base", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modCompileOnly(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modCompileOnly(fabricApi.module("fabric-command-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modCompileOnly(fabricApi.module("fabric-models-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    modCompileOnly(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    if(project.use_fabric_api_at_runtime.toBoolean()) {
+        modImplementation("com.terraformersmc:modmenu:${rootProject.modmenu_version}") { transitive false }
+        modImplementation "curse.maven:spark-361579:${rootProject.spark_fabric_version}"
+        modRuntimeOnly("net.fabricmc.fabric-api:fabric-api:${rootProject.fabric_api_version}") { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    } else {
+        modCompileOnly("com.terraformersmc:modmenu:${rootProject.modmenu_version}") { transitive false }
+        modCompileOnly "curse.maven:spark-361579:${rootProject.spark_fabric_version}"
+    }
+
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury-fabric:${rootProject.architectury_version}"
 

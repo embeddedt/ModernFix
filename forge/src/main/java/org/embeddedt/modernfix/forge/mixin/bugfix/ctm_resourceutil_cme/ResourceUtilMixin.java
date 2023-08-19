@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentMap;
 @ClientOnlyMixin
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class ResourceUtilMixin {
-    @Shadow @Final @Mutable
+    @Shadow(remap = false) @Final @Mutable
     private static Map metadataCache;
 
     /**

@@ -39,6 +39,7 @@ import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
+import org.embeddedt.modernfix.fabric.api.dynresources.ModelScanController;
 import org.embeddedt.modernfix.fabric.bridge.ModelV0Bridge;
 import org.embeddedt.modernfix.util.LayeredForwardingMap;
 import org.jetbrains.annotations.Nullable;
@@ -174,6 +175,13 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private boolean forceLoadModel = false;
 
+    @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
+    private void ignoreRejectedModel(ModelResourceLocation location, CallbackInfo ci) {
+        if(this.inTextureGatheringPass && !this.forceLoadModel && !ModelScanController.shouldScanAndTestWrapping(location)) {
+            ci.cancel();
+        }
+    }
+
     @Inject(method = "loadModel", at = @At(value = "HEAD"), cancellable = true)
     private void ignoreNonFabricModel(ResourceLocation modelLocation, CallbackInfo ci) throws Exception {
         if(this.inTextureGatheringPass && !this.forceLoadModel && !this.injectedModels.contains(modelLocation)) {
@@ -246,25 +254,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 blockStateFiles, modelFiles, this.missingModel, json -> BlockModel.GSON.fromJson(json, BlockModel.class),
                 this::getModel);
         /* take every texture from these folders (1.19.3+ emulation) */
-        String[] extraFolders = new String[] {
-                "attachment",
-                "bettergrass",
-                "block",
-                "blocks",
-                "cape",
-                "entity/bed",
-                "entity/chest",
-                "item",
-                "items",
-                "model",
-                "models",
-                "part",
-                "pipe",
-                "ropebridge",
-                "solid_block",
-                "spell_effect",
-                "spell_projectile"
-        };
+        String[] extraFolders = ModelBakeryHelpers.getExtraTextureFolders();
         for(String folder : extraFolders) {
             Collection<ResourceLocation> textureLocations = this.resourceManager.listResources("textures/" + folder, p -> p.endsWith(".png"));
             for(ResourceLocation rl : textureLocations) {

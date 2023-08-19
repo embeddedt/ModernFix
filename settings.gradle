@@ -10,8 +10,14 @@ pluginManagement {
 include("test_agent")
 include("common")
 
-getProperty("enabled_platforms").tokenize(',').each { it ->
-    include(it.trim())
+def current_platforms = getProperty("enabled_platforms").tokenize(',')
+current_platforms.each { it ->
+    def platform_name = it.trim()
+    include(platform_name)
+    def testmodFolder = new File(platform_name + "/" + "testmod")
+    if(testmodFolder.isDirectory()) {
+        include(platform_name + ":testmod")
+    }
 }
 
 rootProject.name = 'modernfix'

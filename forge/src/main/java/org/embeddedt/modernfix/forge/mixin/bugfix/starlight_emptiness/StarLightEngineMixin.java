@@ -17,11 +17,11 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public abstract class StarLightEngineMixin {
     @Shadow protected abstract LevelChunkSection getChunkSection(int chunkX, int chunkY, int chunkZ);
 
-    @Shadow @Final protected int minSection;
+    @Shadow(remap = false) @Final protected int minSection;
 
     @Inject(method = "handleEmptySectionChanges(Lnet/minecraft/world/level/chunk/LightChunkGetter;Lnet/minecraft/world/level/chunk/ChunkAccess;[Ljava/lang/Boolean;Z)[Z",
             at = @At(value = "INVOKE", target = "Lca/spottedleaf/starlight/common/light/StarLightEngine;setEmptinessMapCache(II[Z)V",
-            shift = At.Shift.AFTER))
+            shift = At.Shift.AFTER, remap = false))
     private void lazyInitMapIfNeeded(LightChunkGetter lightAccess, ChunkAccess chunk, Boolean[] emptinessChanges, boolean unlit, CallbackInfoReturnable<int[]> cir) {
         final int chunkX = chunk.getPos().x;
         final int chunkZ = chunk.getPos().z;

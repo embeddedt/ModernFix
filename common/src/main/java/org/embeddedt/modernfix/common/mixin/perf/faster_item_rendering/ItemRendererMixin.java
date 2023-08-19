@@ -16,20 +16,17 @@ import org.embeddedt.modernfix.render.SimpleItemModelView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(value = ItemRenderer.class, priority = 600)
 public abstract class ItemRendererMixin {
     private ItemDisplayContext transformType;
     private final SimpleItemModelView modelView = new SimpleItemModelView();
-    private boolean mfix$isTopLevelSimpleModel;
 
     @Inject(method = "render", at = @At("HEAD"))
     private void markRenderingType(ItemStack itemStack, ItemDisplayContext transformType, boolean leftHand, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, BakedModel model, CallbackInfo ci) {
         this.transformType = transformType;
-        // used as renderModelLists may be called by custom model renderers
-        this.mfix$isTopLevelSimpleModel = model != null && model.getClass() == SimpleBakedModel.class;
     }
 
     /**
@@ -40,9 +37,9 @@ public abstract class ItemRendererMixin {
      * we do not need to go through the process of rendering every quad. Just render the south ones (the ones facing the
      * camera).
      */
-    @ModifyVariable(method = "renderModelLists", at = @At("HEAD"), index = 1, argsOnly = true)
-    private BakedModel useSimpleWrappedItemModel(BakedModel model, BakedModel arg, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer) {
-        if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && mfix$isTopLevelSimpleModel && model.getClass() == SimpleBakedModel.class && transformType == ItemDisplayContext.GUI) {
+    @ModifyArg(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/ItemRenderer;renderModelLists(Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/world/item/ItemStack;IILcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;)V"), index = 0)
+    private BakedModel useSimpleWrappedItemModel(BakedModel model, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer) {
+        if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemDisplayContext.GUI) {
             FastItemRenderType type;
             ItemTransform transform = model.getTransforms().gui;
             if(transform == ItemTransform.NO_TRANSFORM)

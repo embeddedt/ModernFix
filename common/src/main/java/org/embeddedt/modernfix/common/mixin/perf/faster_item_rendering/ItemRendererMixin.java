@@ -23,10 +23,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class ItemRendererMixin {
     private ItemDisplayContext transformType;
     private final SimpleItemModelView modelView = new SimpleItemModelView();
+    private boolean mfix$isTopLevelSimpleModel;
 
     @Inject(method = "render", at = @At("HEAD"))
     private void markRenderingType(ItemStack itemStack, ItemDisplayContext transformType, boolean leftHand, PoseStack matrixStack, MultiBufferSource buffer, int combinedLight, int combinedOverlay, BakedModel model, CallbackInfo ci) {
         this.transformType = transformType;
+        // used as renderModelLists may be called by custom model renderers
+        this.mfix$isTopLevelSimpleModel = model != null && model.getClass() == SimpleBakedModel.class;
     }
 
     /**
@@ -39,7 +42,7 @@ public abstract class ItemRendererMixin {
      */
     @ModifyVariable(method = "renderModelLists", at = @At("HEAD"), index = 1, argsOnly = true)
     private BakedModel useSimpleWrappedItemModel(BakedModel model, BakedModel arg, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer) {
-        if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemDisplayContext.GUI) {
+        if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && mfix$isTopLevelSimpleModel && model.getClass() == SimpleBakedModel.class && transformType == ItemDisplayContext.GUI) {
             FastItemRenderType type;
             ItemTransform transform = model.getTransforms().gui;
             if(transform == ItemTransform.NO_TRANSFORM)

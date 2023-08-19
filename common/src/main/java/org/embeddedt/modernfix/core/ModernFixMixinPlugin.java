@@ -166,11 +166,13 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 "getFluidState", "method_26227", "m_60819_", "func_204520_s"
         );
         Map<String, MethodNode> injectorMethodNames = new HashMap<>();
+        Map<String, MethodNode> allMethods = new HashMap<>();
         Map<String, String> injectorMixinSource = new HashMap<>();
         String descriptor = Type.getDescriptor(MixinMerged.class);
         for(MethodNode m : targetClass.methods) {
             if((m.access & Opcodes.ACC_STATIC) != 0)
                 continue;
+            allMethods.put(m.name, m);
             Set<AnnotationNode> seenNodes = new HashSet<>();
             if(m.invisibleAnnotations != null) {
                 for(AnnotationNode ann : m.invisibleAnnotations) {
@@ -217,8 +219,35 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             }
         }
         Set<String> accessedFieldNames = new HashSet<>();
-        // We now know all methods that have been injected into initCache. See what fields they write to
-        injectorMethodNames.forEach((name, method) -> {
+
+        // Make a map of all injected methods called by initCache
+        Map<String, MethodNode> writingMethods = new HashMap<>(injectorMethodNames);
+        writingMethods.keySet().retainAll(cacheCalledInjectors);
+
+        // Recursively check the injected methods for any methods they may call
+        int previousSize = 0;
+        Set<String> checkedCalls = new HashSet<>();
+        while(writingMethods.size() > previousSize) {
+            previousSize = writingMethods.size();
+            List<String> keysToCheck = new ArrayList<>(writingMethods.keySet());
+            for(String name : keysToCheck) {
+                if(!checkedCalls.add(name))
+                    continue;
+                for(AbstractInsnNode n : writingMethods.get(name).instructions) {
+                    if(n instanceof MethodInsnNode) {
+                        MethodInsnNode invokeNode = (MethodInsnNode)n;
+                        if(invokeNode.owner.equals(targetClass.name)) {
+                            MethodNode theMethod = allMethods.get(invokeNode.name);
+                            if(theMethod != null)
+                                writingMethods.put(invokeNode.name, theMethod);
+                        }
+                    }
+                }
+            }
+        }
+
+        // We now know all methods that have been injected into initCache, and their callers. See what fields they write to
+        writingMethods.forEach((name, method) -> {
             if(cacheCalledInjectors.contains(name)) {
                 for(AbstractInsnNode n : method.instructions) {
                     if(n instanceof FieldInsnNode) {

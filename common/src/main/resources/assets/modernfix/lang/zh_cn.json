@@ -8,6 +8,7 @@
   "modernfix.perf_mod_warning": "推荐安装这些模组，但你也可以在现代化修复的配置中禁用此警告。",
   "modernfix.config": "现代化修复Mixin配置",
   "modernfix.config.done_restart": "完成（生效需重启）",
+  "modernfix.config.wiki": "打开英文wiki",
   "modernfix.message.reload_config": "检测到模组配置文件的更改。为了避免加载尚未保存完毕的文件，重载过程必须通过使用§b/mfrc§r命令来触发。",
   "modernfix.option.on": "开启",
   "modernfix.option.off": "关闭",

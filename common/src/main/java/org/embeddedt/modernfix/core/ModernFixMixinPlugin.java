@@ -248,13 +248,11 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
         // We now know all methods that have been injected into initCache, and their callers. See what fields they write to
         writingMethods.forEach((name, method) -> {
-            if(cacheCalledInjectors.contains(name)) {
-                for(AbstractInsnNode n : method.instructions) {
-                    if(n instanceof FieldInsnNode) {
-                        FieldInsnNode fieldAcc = (FieldInsnNode)n;
-                        if(fieldAcc.getOpcode() == Opcodes.PUTFIELD && fieldAcc.owner.equals(targetClass.name)) {
-                            accessedFieldNames.add(fieldAcc.name);
-                        }
+            for(AbstractInsnNode n : method.instructions) {
+                if(n instanceof FieldInsnNode) {
+                    FieldInsnNode fieldAcc = (FieldInsnNode)n;
+                    if(fieldAcc.getOpcode() == Opcodes.PUTFIELD && fieldAcc.owner.equals(targetClass.name)) {
+                        accessedFieldNames.add(fieldAcc.name);
                     }
                 }
             }

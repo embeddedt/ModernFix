@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.forge.util;
 import net.minecraftforge.fml.loading.ImmediateWindowHandler;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -14,9 +15,13 @@ public class AsyncLoadingScreen extends Thread implements AutoCloseable {
 
     private static int splashThreadNum = 1;
 
+    private static GLCapabilities caps;
+
     public AsyncLoadingScreen() {
         this.setName("ModernFix splash thread " + splashThreadNum++);
         this.theWindow = GLFW.glfwGetCurrentContext();
+        if(caps == null)
+            caps = GL.createCapabilities();
         if(this.theWindow == 0)
             throw new IllegalStateException("No context found but async loading screen was requested");
         this.keepRunning = new AtomicBoolean(true);
@@ -32,7 +37,7 @@ public class AsyncLoadingScreen extends Thread implements AutoCloseable {
     @Override
     public void run() {
         GLFW.glfwMakeContextCurrent(theWindow);
-        GL.createCapabilities(); // seems to be needed, otherwise we get a "function not valid for context" error
+        GL.setCapabilities(caps);
         while(keepRunning.get()) {
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(50));
             ImmediateWindowHandler.renderTick();

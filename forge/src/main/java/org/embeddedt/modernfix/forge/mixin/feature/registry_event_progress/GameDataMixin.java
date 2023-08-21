@@ -8,12 +8,14 @@ import net.minecraftforge.fml.StartupMessageManager;
 import net.minecraftforge.fml.event.IModBusEvent;
 import net.minecraftforge.registries.GameData;
 import net.minecraftforge.registries.RegisterEvent;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.forge.util.AsyncLoadingScreen;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(value = GameData.class, remap = false)
+@ClientOnlyMixin
 public class GameDataMixin {
     @Redirect(method = "postRegisterEvents", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/ModLoader;postEventWrapContainerInModOrder(Lnet/minecraftforge/eventbus/api/Event;)V"))
     private static <T extends Event & IModBusEvent> void swapThreadAndPost(ModLoader loader, T event) {

@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.forge.mixin.bugfix.loading_screen_freeze;
+package org.embeddedt.modernfix.forge.mixin.feature.registry_event_progress;
 
 import net.minecraftforge.eventbus.api.Event;
 import net.minecraftforge.fml.ModList;

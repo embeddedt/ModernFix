@@ -87,7 +87,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         // we can handle recursion in getModel without issues
         fabric_enableGetOrLoadModelGuard = false;
         this.blockColors = val;
-        this.ignoreModelLoad = true;
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(ModelBakeryHelpers.MAX_MODEL_LIFETIME_SECS, TimeUnit.SECONDS)
                 .maximumSize(ModelBakeryHelpers.MAX_BAKED_MODEL_COUNT)
@@ -117,6 +116,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             }
         };
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
+    }
+
+    @Inject(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", ordinal = 0))
+    private void ignoreFutureModelLoads(CallbackInfo ci) {
+        this.ignoreModelLoad = true;
     }
 
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
@@ -193,7 +197,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;"))
     private Set<ResourceLocation> skipBake(Map<ResourceLocation, UnbakedModel> instance) {
-        return Collections.emptySet();
+        Set<ResourceLocation> modelSet = new HashSet<>(instance.keySet());
+        if(modelSet.size() > 0)
+            ModernFix.LOGGER.info("Early baking {} models", modelSet.size());
+        return modelSet;
     }
 
     /**

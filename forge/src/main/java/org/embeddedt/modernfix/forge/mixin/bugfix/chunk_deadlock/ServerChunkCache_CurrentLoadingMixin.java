@@ -18,7 +18,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Field;
 
-@Mixin(ServerChunkCache.class)
+@Mixin(value = ServerChunkCache.class, priority = 1100)
 public abstract class ServerChunkCache_CurrentLoadingMixin {
     @Shadow @Nullable protected abstract ChunkHolder getVisibleChunkIfPresent(long l);
 

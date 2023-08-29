@@ -38,7 +38,7 @@ public abstract class ServerChunkCache_CurrentLoadingMixin {
      * Check the currentlyLoading field before going to the future chain, as was done in 1.16. In 1.18 upstream seems
      * to have only applied this to getChunkNow().
      */
-    @Inject(method = "getChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerChunkCache;getChunkFutureMainThread(IILnet/minecraft/world/level/chunk/ChunkStatus;Z)Ljava/util/concurrent/CompletableFuture;"), cancellable = true)
+    @Inject(method = "getChunk", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerChunkCache;getChunkFutureMainThread(IILnet/minecraft/world/level/chunk/ChunkStatus;Z)Ljava/util/concurrent/CompletableFuture;"), cancellable = true, require = 0)
     private void checkCurrentlyLoading(int chunkX, int chunkZ, ChunkStatus requiredStatus, boolean load, CallbackInfoReturnable<ChunkAccess> cir) {
         long i = ChunkPos.asLong(chunkX, chunkZ);
         ChunkHolder holder = this.getVisibleChunkIfPresent(i);

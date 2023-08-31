@@ -1,0 +1,81 @@
+plugins {
+    id 'java'
+    id 'architectury-plugin'
+    id 'maven-publish'
+    id 'com.diffplug.spotless'
+}
+
+spotless {
+    java {
+        removeUnusedImports()
+    }
+}
+
+architectury {
+    compileOnly()
+}
+
+group = 'org.embeddedt'
+// extract base version from tag, generate other metadata ourselves
+def details = versionDetails()
+def plusIndex = details.lastTag.indexOf("+")
+if(plusIndex == -1) {
+    plusIndex = details.lastTag.length()
+}
+def baseVersion = details.lastTag.substring(0, plusIndex)
+def dirtyMarker = grgit.status().clean ? "" : ".dirty"
+def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash.substring(0, Math.min(4, details.gitHash.length()))) : ""
+def preMarker = (details.commitDistance > 0 || !details.isCleanTag) ? ("-beta." + details.commitDistance) : ""
+if(preMarker.length() > 0) {
+    // bump to next patch release
+    def versionParts = baseVersion.tokenize(".")
+    baseVersion = "${versionParts[0]}.${versionParts[1]}.${versionParts[2].toInteger() + 1}"
+}
+def versionString = "${baseVersion}${preMarker}+mc${minecraft_version}${commitHashMarker}${dirtyMarker}"
+version = versionString
+archivesBaseName = rootProject.archives_base_name + '-' + project.name
+
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
+
+repositories {
+    maven { url 'https://modmaven.dev/' }
+    maven {
+        url "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
+    maven {
+        name = 'ParchmentMC'
+        url = 'https://maven.parchmentmc.org'
+    }
+    maven {
+        // Shedaniel's maven (Architectury API)
+        url = "https://maven.architectury.dev"
+        content {
+            includeGroup "me.shedaniel"
+        }
+    }
+
+    maven {
+        // saps.dev Maven (KubeJS and Rhino)
+        url = "https://maven.saps.dev/minecraft"
+        content {
+            includeGroup "dev.latvian.mods"
+        }
+    }
+    maven { // CTM
+        url "https://maven.tterrag.com/"
+    }
+    maven { url 'https://maven.blamejared.com' }
+    repositories {
+        maven {
+            name = "Fuzs Mod Resources"
+            url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+        }
+    }
+    maven {
+        url 'https://maven.terraformersmc.com/releases'
+    }
+    maven { url = "https://jitpack.io" }
+}

@@ -1,4 +1,6 @@
-apply plugin: "dev.architectury.loom"
+plugins {
+    id 'dev.architectury.loom'
+}
 
 loom {
     accessWidenerPath = project(":common").loom.accessWidenerPath

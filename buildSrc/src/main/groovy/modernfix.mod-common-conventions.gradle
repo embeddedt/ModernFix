@@ -1,0 +1,52 @@
+plugins {
+    id 'modernfix.common-conventions'
+    id 'dev.architectury.loom'
+}
+
+loom {
+    silentMojangMappingsLicense()
+    accessWidenerPath = file("${rootDir}/common/src/main/resources/modernfix.accesswidener")
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
+    mappings loom.layered() {
+        officialMojangMappings()
+        if(rootProject.hasProperty("parchment_version")) {
+            parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
+        }
+    }
+}
+
+tasks {
+    processResources {
+        def mixinFileList = []
+        def mixinDirectory = file("src/main/java/org/embeddedt/modernfix/" + project.name + "/mixin")
+        fileTree(mixinDirectory).visit { FileVisitDetails details ->
+            if(details.file.isFile()) {
+                def fileName = mixinDirectory.relativePath(details.file).toString().replaceFirst(/\.java$/, "").replace('/', '.')
+                mixinFileList << fileName
+            }
+        }
+
+        def mixinClassesStringB = new StringBuilder()
+        for(int i = 0; i < mixinFileList.size(); i++) {
+            mixinClassesStringB.append("    \"")
+            mixinClassesStringB.append(mixinFileList.get(i))
+            mixinClassesStringB.append('"')
+            if(i < (mixinFileList.size() - 1))
+                mixinClassesStringB.append(',')
+            mixinClassesStringB.append('\n')
+        }
+
+        def replacements = [
+                mixin_classes: mixinClassesStringB.toString()
+        ]
+
+        inputs.properties replacements
+        def filePattern = "modernfix-" + project.name + ".mixins.json"
+        filesMatching(filePattern) {
+            expand replacements
+        }
+    }
+}

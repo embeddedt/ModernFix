@@ -1,6 +1,6 @@
 plugins {
     id "architectury-plugin" version "3.4-SNAPSHOT"
-    id "dev.architectury.loom" version "1.2-SNAPSHOT" apply false
+    id "dev.architectury.loom" version "1.3-SNAPSHOT" apply false
     id "maven-publish"
     id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
     id 'com.palantir.git-version' version '1.0.0'
@@ -8,6 +8,7 @@ plugins {
     id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '1.79.0'
     id "com.modrinth.minotaur" version "2.+" apply false
 	id("com.diffplug.spotless") version "6.18.0" apply false
+    id 'modernfix.common-conventions' apply false
 }
 
 architectury {
@@ -16,136 +17,7 @@ architectury {
 
 ext.archives_base_name = 'modernfix'
 
-allprojects {
-    apply plugin: "java"
-    apply plugin: "architectury-plugin"
-    apply plugin: "maven-publish"
-	apply plugin: "com.diffplug.spotless"
-
-	spotless {
-		java {
-			removeUnusedImports()
-		}
-	}
-
-    architectury {
-        compileOnly()
-    }
-
-	group = 'org.embeddedt'
-    // extract base version from tag, generate other metadata ourselves
-    def details = versionDetails()
-    def plusIndex = details.lastTag.indexOf("+")
-    if(plusIndex == -1) {
-        plusIndex = details.lastTag.length()
-    }
-    def baseVersion = details.lastTag.substring(0, plusIndex)
-    def dirtyMarker = grgit.status().clean ? "" : ".dirty"
-    def commitHashMarker = details.commitDistance > 0 ? ("." + details.gitHash.substring(0, Math.min(4, details.gitHash.length()))) : ""
-    def preMarker = (details.commitDistance > 0 || !details.isCleanTag) ? ("-beta." + details.commitDistance) : ""
-    if(preMarker.length() > 0) {
-        // bump to next patch release
-        def versionParts = baseVersion.tokenize(".")
-        baseVersion = "${versionParts[0]}.${versionParts[1]}.${versionParts[2].toInteger() + 1}"
-    }
-    def versionString = "${baseVersion}${preMarker}+mc${minecraft_version}${commitHashMarker}${dirtyMarker}"
-    version = versionString
-    archivesBaseName = rootProject.archives_base_name + '-' + project.name
-
-    sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
-
-    repositories {
-        maven { url 'https://modmaven.dev/' }
-        maven {
-            url "https://cursemaven.com"
-            content {
-                includeGroup "curse.maven"
-            }
-        }
-        maven {
-            name = 'ParchmentMC'
-            url = 'https://maven.parchmentmc.org'
-        }
-        maven {
-            // Shedaniel's maven (Architectury API)
-            url = "https://maven.architectury.dev"
-            content {
-                includeGroup "me.shedaniel"
-            }
-        }
-
-        maven {
-            // saps.dev Maven (KubeJS and Rhino)
-            url = "https://maven.saps.dev/minecraft"
-            content {
-                includeGroup "dev.latvian.mods"
-            }
-        }
-        maven { // CTM
-            url "https://maven.tterrag.com/"
-        }
-        maven { url 'https://maven.blamejared.com' }
-        repositories {
-            maven {
-                name = "Fuzs Mod Resources"
-                url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
-            }
-        }
-        maven {
-            url 'https://maven.terraformersmc.com/releases'
-        }
-        maven { url = "https://jitpack.io" }
-    }
-}
-
-configure(subprojects.findAll {it.name == "common" || it.name == "forge" || it.name == "fabric"}) {
-    apply plugin: "dev.architectury.loom"
-
-    loom {
-        silentMojangMappingsLicense()
-    }
-
-    dependencies {
-        minecraft "com.mojang:minecraft:${rootProject.minecraft_version}"
-        mappings loom.layered() {
-            officialMojangMappings()
-            if(rootProject.hasProperty("parchment_version")) {
-                parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
-            }
-        }
-    }
-
-    processResources {
-        def mixinFileList = []
-        def mixinDirectory = file("src/main/java/org/embeddedt/modernfix/" + project.name + "/mixin")
-        fileTree(mixinDirectory).visit { FileVisitDetails details ->
-            if(details.file.isFile()) {
-                def fileName = mixinDirectory.relativePath(details.file).toString().replaceFirst(/\.java$/, "").replace('/', '.')
-                mixinFileList << fileName
-            }
-        }
-
-        def mixinClassesStringB = new StringBuilder()
-        for(int i = 0; i < mixinFileList.size(); i++) {
-            mixinClassesStringB.append("    \"")
-            mixinClassesStringB.append(mixinFileList.get(i))
-            mixinClassesStringB.append('"')
-            if(i < (mixinFileList.size() - 1))
-                mixinClassesStringB.append(',')
-            mixinClassesStringB.append('\n')
-        }
-
-        def replacements = [
-                mixin_classes: mixinClassesStringB.toString()
-        ]
-
-        inputs.properties replacements
-        def filePattern = "modernfix-" + project.name + ".mixins.json"
-        filesMatching(filePattern) {
-            expand replacements
-        }
-    }
-}
+apply plugin: 'modernfix.common-conventions'
 
 tasks.withType(JavaCompile).configureEach {
     // ensure that the encoding is set to UTF-8, no matter what the system default is
@@ -189,76 +61,6 @@ tasks.register('checkCleanTag') {
         if (!details.isCleanTag || versionDetails().commitDistance != 0) {
             throw new GradleException('Not a clean tree.')
         }
-    }
-}
-
-configure(subprojects.findAll {it.name == "forge" || it.name == "fabric"}) {
-    apply plugin: 'com.matthewprenger.cursegradle'
-    apply plugin: 'com.modrinth.minotaur'
-
-    loom {
-        mods {
-            main { // to match the default mod generated for Forge
-                sourceSet project.sourceSets.main
-                sourceSet project(':common').sourceSets.main
-            }
-        }
-        runs {
-            client {
-                vmArgs "-Xmx1G"
-                vmArgs "-Xms1G"
-                property("mixin.debug.export", "true")
-            }
-        }
-    }
-
-    def copyJarNameConsistent = tasks.register('copyJarNameConsistent', Copy) {
-        from remapJar // shortcut for createJar.outputs.files
-        into project.file("build/libs")
-        rename { name -> "modernfix-" + project.name + "-latest.jar" }
-    }
-
-    def copyJarToBin = tasks.register('copyJarToBin', Copy) {
-        from remapJar // shortcut for createJar.outputs.files
-        into rootProject.file("bin")
-        mustRunAfter "copyJarNameConsistent"
-    }
-
-    tasks.build.dependsOn(copyJarToBin, copyJarNameConsistent)
-
-    def isBeta = project.version.toString().contains("beta")
-
-    curseforge {
-        if (System.getenv("CURSEFORGE_TOKEN") != null) {
-            apiKey = System.getenv("CURSEFORGE_TOKEN")
-            project {
-                id = "790626"
-                changelog = file('../CHANGELOG.md')
-                changelogType = "markdown"
-                releaseType = isBeta ? "beta" : "release"
-                addGameVersion project.name.capitalize()
-                gameVersionStrings.addAll(supported_minecraft_versions.tokenize(","))
-                mainArtifact remapJar
-            }
-        }
-    }
-
-    modrinth {
-        token = System.getenv("MODRINTH_TOKEN")
-        projectId = "modernfix" // This can be the project ID or the slug. Either will work!
-        versionType = isBeta ? "beta" : "release" // This is the default -- can also be `beta` or `alpha`
-        uploadFile = remapJar
-        gameVersions = supported_minecraft_versions.tokenize(",")
-        loaders = [project.name]
-        changelog.set(provider { file("CHANGELOG.md").getText('UTF-8') })
-    }
-
-    tasks.curseforge.dependsOn(rootProject.generateChangelog)
-    tasks.modrinth.dependsOn(rootProject.generateChangelog)
-
-    tasks.register('publishToModSites') {
-        publishToModSites.dependsOn(tasks.modrinth)
-        publishToModSites.dependsOn(tasks.curseforge)
     }
 }
 

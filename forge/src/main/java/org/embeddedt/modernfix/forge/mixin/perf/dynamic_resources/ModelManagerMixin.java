@@ -16,6 +16,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.CompletableFuture;
@@ -41,8 +42,8 @@ public class ModelManagerMixin {
 
     private BlockModel loadSingleBlockModel(ResourceManager manager, ResourceLocation location) {
         return manager.getResource(location).map(resource -> {
-            try {
-                return BlockModel.fromStream(resource.openAsReader());
+            try (BufferedReader reader = resource.openAsReader()) {
+                return BlockModel.fromStream(reader);
             } catch(IOException e) {
                 ModernFix.LOGGER.error("Couldn't load model", e);
                 return null;
@@ -52,8 +53,8 @@ public class ModelManagerMixin {
 
     private List<ModelBakery.LoadedJson> loadSingleBlockState(ResourceManager manager, ResourceLocation location) {
         return manager.getResourceStack(location).stream().map(resource -> {
-            try {
-                return new ModelBakery.LoadedJson(resource.sourcePackId(), GsonHelper.parse(resource.openAsReader()));
+            try (BufferedReader reader = resource.openAsReader()) {
+                return new ModelBakery.LoadedJson(resource.sourcePackId(), GsonHelper.parse(reader));
             } catch(IOException e) {
                 ModernFix.LOGGER.error("Couldn't load blockstate", e);
                 return null;

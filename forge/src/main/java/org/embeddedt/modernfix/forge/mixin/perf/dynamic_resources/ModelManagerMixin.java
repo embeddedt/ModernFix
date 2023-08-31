@@ -18,7 +18,9 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.io.BufferedReader;
 import java.io.IOException;
-import java.util.*;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.stream.Collectors;

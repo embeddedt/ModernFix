@@ -207,10 +207,11 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot", "threadtweak");
         disableIfModPresent("mixin.perf.boost_worker_count", "smoothboot", "threadtweak");
         disableIfModPresent("mixin.perf.async_jei", "modernui");
-        disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge" ,"skyblockbuilder");
+        disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge" ,"skyblockbuilder", "modern_beta");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");
         disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
+        disableIfModPresent("mixin.bugfix.preserve_early_window_pos", "better_loading_screen");
         disableIfModPresent("mixin.perf.cache_strongholds", "littletiles");
         // content overlap
         disableIfModPresent("mixin.perf.deduplicate_wall_shapes", "dashloader");

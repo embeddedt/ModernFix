@@ -103,14 +103,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 .expireAfterAccess(ModelBakeryHelpers.MAX_MODEL_LIFETIME_SECS, TimeUnit.SECONDS)
                 .maximumSize(ModelBakeryHelpers.MAX_BAKED_MODEL_COUNT)
                 .concurrencyLevel(8)
-                .removalListener(this::onModelRemoved)
+                .<Triple<ResourceLocation, Transformation, Boolean>, BakedModel>removalListener(this::onBakedRemoved)
                 .softValues()
                 .build();
         this.loadedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(ModelBakeryHelpers.MAX_MODEL_LIFETIME_SECS, TimeUnit.SECONDS)
                 .maximumSize(ModelBakeryHelpers.MAX_UNBAKED_MODEL_COUNT)
                 .concurrencyLevel(8)
-                .removalListener(this::onModelRemoved)
+                .<ResourceLocation, UnbakedModel>removalListener(this::onUnbakedRemoved)
                 .softValues()
                 .build();
         this.bakedCache = loadedBakedModels.asMap();
@@ -118,21 +118,22 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
     }
 
-    private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
+    private <K extends ResourceLocation, V extends UnbakedModel> void onUnbakedRemoved(RemovalNotification<K, V> notification) {
         if(!debugDynamicModelLoading)
             return;
-        Object k = notification.getKey();
+        ResourceLocation k = notification.getKey();
         if(k == null)
             return;
-        ResourceLocation rl;
-        boolean baked = false;
-        if(k instanceof ResourceLocation) {
-            rl = (ResourceLocation)k;
-        } else {
-            rl = ((Triple<ResourceLocation, Transformation, Boolean>)k).getLeft();
-            baked = true;
-        }
-        ModernFix.LOGGER.warn("Evicted {} model {}", baked ? "baked" : "unbaked", rl);
+        ModernFix.LOGGER.warn("Evicted unbaked model {}", k);
+    }
+
+    private <K extends Triple<ResourceLocation, Transformation, Boolean>, V extends BakedModel> void onBakedRemoved(RemovalNotification<K, V> notification) {
+        if(!debugDynamicModelLoading)
+            return;
+        ResourceLocation k = notification.getKey().getLeft();
+        if(k == null)
+            return;
+        ModernFix.LOGGER.warn("Evicted baked model {}", k);
     }
 
     private UnbakedModel missingModel;

@@ -7,6 +7,7 @@ import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
+import org.embeddedt.modernfix.searchtree.DummySearchTree;
 import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
@@ -36,7 +37,7 @@ public abstract class MinecraftMixin {
         SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier = list -> provider.getSearchTree(true);
         this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, nameSupplier);
         this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, tagSupplier);
-        //this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new DummySearchTree<>());
+        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new DummySearchTree<>());
         ModernFixPlatformHooks.INSTANCE.registerCreativeSearchTrees(this.searchRegistry, nameSupplier, tagSupplier, this::populateSearchTree);
         // grab components for all key mappings in order to prevent them from being loaded off-thread later
         // this populates the LazyLoadedValues

@@ -21,12 +21,22 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: 17
-      - name: Build ModernFix using Gradle
+      - name: Setup Gradle
         uses: gradle/gradle-build-action@v2
         with:
           cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
           gradle-home-cache-cleanup: true
-          arguments: build
+      - name: Setup project Loom cache
+        uses: actions/cache@v3
+        with:
+          path: |
+            .gradle/loom-cache
+          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle.properties', '**/*.gradle*', '**/gradle-wrapper.properties') }}
+          restore-keys: ${{ runner.os }}-gradle-
+      - name: Build ModernFix
+        run: |
+          chmod +x gradlew
+          ./gradlew build
       - name: Upload Artifacts to GitHub
         uses: actions/upload-artifact@v3
         with:

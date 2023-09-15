@@ -87,8 +87,19 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
         // don't generate the full cache here as mods will iterate for the fluid state a lot
         // assume blockstates will not change their contained fluidstate at runtime more than once
         // this is how Lithium's implementation used to work, so it should be fine
-        if(this.cacheInvalid && this.fluidState == MFIX$VANILLA_DEFAULT_FLUID)
-            this.fluidState = this.owner.getFluidState(this.asState());
+        if(this.cacheInvalid && this.fluidState == MFIX$VANILLA_DEFAULT_FLUID) {
+            synchronized (BlockBehaviour.BlockStateBase.class) {
+                if(!buildingCache) {
+                    buildingCache = true;
+                    try {
+                        this.fluidState = this.owner.getFluidState(this.asState());
+                    } finally {
+                        buildingCache = false;
+                    }
+                }
+            }
+
+        }
         return this.fluidState;
     }
 

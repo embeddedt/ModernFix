@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
+package org.embeddedt.modernfix.common.mixin.perf.dynamic_sounds;
 
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;

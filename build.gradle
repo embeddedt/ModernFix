@@ -50,8 +50,8 @@ tasks.register('generateChangelog', se.bjurr.gitchangelog.plugin.gradle.GitChang
 
     fromRef = theVersionRef
 
-    file = new File("CHANGELOG.md");
-    templateContent = new File('gradle/changelog.mustache').getText('UTF-8').replace("[[modernFixVersionRef]]", theVersionRef);
+    file = new File("${rootDir}/CHANGELOG.md");
+    templateContent = new File("${rootDir}/gradle/changelog.mustache").getText('UTF-8').replace("[[modernFixVersionRef]]", theVersionRef);
     toCommit = "HEAD";
 }
 

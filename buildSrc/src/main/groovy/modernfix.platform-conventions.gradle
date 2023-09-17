@@ -40,7 +40,7 @@ curseforge {
         apiKey = System.getenv("CURSEFORGE_TOKEN")
         project {
             id = "790626"
-            changelog = file('../CHANGELOG.md')
+            changelog = file("${rootDir}/CHANGELOG.md")
             changelogType = "markdown"
             releaseType = isBeta ? "beta" : "release"
             addGameVersion project.name.capitalize()

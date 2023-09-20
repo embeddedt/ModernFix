@@ -226,6 +226,21 @@ public class ModernFixEarlyConfig {
         if(isFabric) {
             disableIfModPresent("mixin.bugfix.packet_leak", "memoryleakfix");
         }
+
+        checkBlockstateCacheRebuilds();
+    }
+
+    private void checkBlockstateCacheRebuilds() {
+        if(!ModernFixPlatformHooks.INSTANCE.isDevEnv())
+            return;
+        try {
+            if(ModernFixEarlyConfig.class.getResource("/net/minecraft/world/level/Level.class") == null) {
+                LOGGER.warn("We are in a non-Mojmap dev environment. Disabling blockstate cache patch");
+                this.options.get("mixin.perf.reduce_blockstate_cache_rebuilds").addModOverride(false, "[not mojmap]");
+            }
+        } catch(Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     private void disableIfModPresent(String configName, String... ids) {

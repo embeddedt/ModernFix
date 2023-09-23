@@ -26,7 +26,6 @@ public abstract class SoundBufferLibraryMixin {
     @Shadow @Final @Mutable
     private Map<ResourceLocation, CompletableFuture<SoundBuffer>> cache =
     CacheBuilder.newBuilder()
-    .maximumSize(DynamicSoundHelpers.MAX_SOUND_COUNT)
     .expireAfterAccess(DynamicSoundHelpers.MAX_SOUND_LIFETIME_SECS, TimeUnit.SECONDS)
     // Excessive use of type hinting due to it assuming Object as the broadest correct type
     .<ResourceLocation, CompletableFuture<SoundBuffer>>removalListener(this::onSoundRemoval)

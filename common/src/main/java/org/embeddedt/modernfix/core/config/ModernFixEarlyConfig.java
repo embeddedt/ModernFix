@@ -215,7 +215,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");
         disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
         disableIfModPresent("mixin.bugfix.preserve_early_window_pos", "better_loading_screen");
-        disableIfModPresent("mixin.perf.cache_strongholds", "littletiles");
+        disableIfModPresent("mixin.perf.cache_strongholds", "littletiles", "c2me");
         // content overlap
         disableIfModPresent("mixin.perf.deduplicate_wall_shapes", "dashloader");
         disableIfModPresent("mixin.perf.nbt_memory_usage", "c2me");

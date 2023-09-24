@@ -57,7 +57,7 @@ modrinth {
     uploadFile = remapJar
     gameVersions = supported_minecraft_versions.tokenize(",")
     loaders = [project.name]
-    changelog.set(provider { file("CHANGELOG.md").getText('UTF-8') })
+    changelog.set(provider { file("${rootDir}/CHANGELOG.md").getText('UTF-8') })
 }
 
 tasks.curseforge.dependsOn(rootProject.generateChangelog)

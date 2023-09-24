@@ -4,7 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.material.FluidState;
 import org.embeddedt.modernfix.duck.IBlockState;
 import org.embeddedt.modernfix.testing.util.BootstrapMinecraft;
 import org.junit.jupiter.api.*;

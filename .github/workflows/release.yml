@@ -24,7 +24,7 @@ jobs:
       - name: Build and publish mod to CurseForge & Modrinth
         run: |
           chmod +x gradlew
-          ./gradlew forge:publishToModSites fabric:publishToModSites forge:copyJarToBin fabric:copyJarToBin
+          ./gradlew publishToModSites copyJarToBin
         env:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}

@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.EmptyBlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.material.FluidState;
 import org.embeddedt.modernfix.duck.IBlockState;
 import org.embeddedt.modernfix.testing.util.BootstrapMinecraft;
 import org.junit.jupiter.api.*;
@@ -73,5 +74,20 @@ public class BlockStateCacheTest {
                 assertEquals(block.isRandomlyTicking(state), state.isRandomlyTicking(), "mismatched random tick state on " + state);
             }
         }
+    }
+
+    @Test
+    @Order(5)
+    public void checkRecursiveFluidState() {
+        Block b = new Block(BlockBehaviour.Properties.copy(Blocks.STONE)) {
+            @Override
+            public FluidState getFluidState(BlockState state) {
+                return state.getFluidState();
+            }
+        };
+        BlockState state = b.getStateDefinition().any();
+        ((IBlockState)state).clearCache();
+        // this should not throw
+        state.getFluidState();
     }
 }

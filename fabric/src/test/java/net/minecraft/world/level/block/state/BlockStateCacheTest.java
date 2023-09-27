@@ -27,6 +27,9 @@ public class BlockStateCacheTest {
         BlockState stoneBlock = Blocks.STONE.defaultBlockState();
         assertTrue(((IBlockState)stoneBlock).isCacheInvalid());
         assertNull(stoneBlock.cache);
+
+        // make sure lazy cache correctly handles solid
+        assertTrue(stoneBlock.isSolid());
     }
 
     /**

@@ -30,6 +30,7 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
     @Shadow private BlockBehaviour.BlockStateBase.Cache cache;
     @Shadow private FluidState fluidState;
     @Shadow private boolean isRandomlyTicking;
+    @Shadow @Deprecated private boolean legacySolid;
 
     @Shadow protected abstract BlockState asState();
 
@@ -113,5 +114,16 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
         if(this.cacheInvalid)
             return this.owner.isRandomlyTicking(this.asState());
         return this.isRandomlyTicking;
+    }
+
+    @Redirect(method = "*", at = @At(
+            value = "FIELD",
+            opcode = Opcodes.GETFIELD,
+            target = "Lnet/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase;legacySolid:Z",
+            ordinal = 0
+    ))
+    private boolean genCacheBeforeCheckingSolid(BlockBehaviour.BlockStateBase base) {
+        mfix$generateCache();
+        return this.legacySolid;
     }
 }

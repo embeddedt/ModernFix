@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -217,13 +218,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         loadedModels.put(MISSING_MODEL_LOCATION, missingModel);
     }
 
-    @Inject(method = "uploadTextures", at = @At(value = "FIELD", target = "Lnet/minecraft/client/resources/model/ModelBakery;topLevelModels:Ljava/util/Map;", ordinal = 0), cancellable = true)
-    private void skipBake(TextureManager resourceManager, ProfilerFiller profiler, CallbackInfoReturnable<AtlasSet> cir) {
-        profiler.pop();
+    @Redirect(method = "uploadTextures", at = @At(value = "INVOKE", target = "Ljava/util/Set;forEach(Ljava/util/function/Consumer;)V", ordinal = 0))
+    private void skipBake(Set instance, Consumer consumer, TextureManager resourceManager, ProfilerFiller profiler) {
         // ensure missing model is a permanent override
         this.bakedTopLevelModels.put(MISSING_MODEL_LOCATION, this.bake(MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0, this.atlasSet::getSprite));
         DynamicBakedModelProvider.currentInstance = (DynamicBakedModelProvider)this.bakedTopLevelModels;
-        cir.setReturnValue(atlasSet);
     }
 
     /**

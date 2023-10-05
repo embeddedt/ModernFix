@@ -1,15 +1,12 @@
 package org.embeddedt.modernfix.forge.mixin.bugfix.recipe_book_type_desync;
 
 import com.llamalad7.mixinextras.sugar.Local;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientPacketListener;
-import net.minecraft.network.Connection;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.stats.RecipeBookSettings;
 import net.minecraft.world.inventory.RecipeBookType;
-import net.minecraftforge.fml.network.NetworkHooks;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.forge.packet.NetworkUtils;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
@@ -41,15 +38,9 @@ public class RecipeBookSettingsMixin {
     }
     @Redirect(method = "read(Lnet/minecraft/network/FriendlyByteBuf;)Lnet/minecraft/stats/RecipeBookSettings;", at = @At(value = "INVOKE", target = "Lnet/minecraft/network/FriendlyByteBuf;readBoolean()Z"))
     private static boolean useDefaultBooleanIfVanilla(FriendlyByteBuf buf, @Local(ordinal = 0) RecipeBookType type) {
-        if(type.ordinal() >= (mfix$maxVanillaOrdinal + 1)) {
-            ClientPacketListener listener = Minecraft.getInstance().getConnection();
-            if(listener != null) {
-                Connection connection = listener.getConnection();
-                if(NetworkHooks.isVanillaConnection(connection)) {
-                    ModernFix.LOGGER.warn("Not reading recipe book data for type '{}' as we are using vanilla connection", type.name());
-                    return false; // skip actually reading buffer
-                }
-            }
+        if(type.ordinal() >= (mfix$maxVanillaOrdinal + 1) && NetworkUtils.isCurrentlyVanilla) {
+            ModernFix.LOGGER.warn("Not reading recipe book data for type '{}' as we are using vanilla connection", type.name());
+            return false; // skip actually reading buffer
         }
         return buf.readBoolean();
     }

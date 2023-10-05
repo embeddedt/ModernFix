@@ -15,7 +15,7 @@ public abstract class NetworkHooksMixin {
         throw new AssertionError();
     }
 
-    @Inject(method = "handleClientLoginSuccess", at = @At("RETURN"))
+    @Inject(method = "handleClientLoginSuccess", at = @At("RETURN"), remap = false)
     private static void setVanillaGlobalFlag(Connection manager, CallbackInfo ci) {
         NetworkUtils.isCurrentlyVanilla = isVanillaConnection(manager);
     }

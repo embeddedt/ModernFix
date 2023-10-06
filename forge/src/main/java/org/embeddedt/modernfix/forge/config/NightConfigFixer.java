@@ -2,12 +2,9 @@ package org.embeddedt.modernfix.forge.config;
 
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
-import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.util.CommonModUtil;
 
@@ -79,6 +76,7 @@ public class NightConfigFixer {
     private static boolean couldShowMessage = true;
 
     private static void triggerConfigMessage() {
+        /*
         if(false && couldShowMessage && Minecraft.getInstance().level != null && ModernFixClient.recipesUpdated && ModernFixClient.tagsUpdated) {
             Minecraft.getInstance().execute(() -> {
                 if(Minecraft.getInstance().level != null) {
@@ -87,6 +85,7 @@ public class NightConfigFixer {
                 }
             });
         }
+         */
     }
 
     static class MonitoringConfigTracker implements Runnable {

@@ -76,11 +76,13 @@ public class CachingStructureManager {
                 ModernFix.LOGGER.debug("Using cached upgraded version of {}", location);
                 currentTag = cachedUpgraded;
             } else {
+                /*
                 synchronized (laggyStructureMods) {
                     if(laggyStructureMods.add(location.getNamespace())) {
                         ModernFix.LOGGER.warn("The namespace {} contains an outdated structure file, which can cause worldgen lag. Please view debug.log for the full filename, determine which mod provides the structure, and report to the mod/datapack author, including the debug log.", location.getNamespace());
                     }
                 }
+                */
                 ModernFix.LOGGER.debug("Structure {} is being run through DFU (hash {}), this will cause launch time delays", location, hash);
                 currentTag = DataFixTypes.STRUCTURE.update(datafixer, currentTag, currentDataVersion,
                         SharedConstants.getCurrentVersion().getDataVersion().getVersion());

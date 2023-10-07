@@ -18,13 +18,13 @@ public class ServerGamePacketListenerImplMixin {
         if(player == this.player) {
             // use positionRider
             Vec3 oldPos = this.player.position();
-            yRot = this.player.yRot;
-            xRot = this.player.xRot;
+            yRot = this.player.getYRot();
+            xRot = this.player.getXRot();
             float yHeadRot = this.player.getYHeadRot();
             this.player.getRootVehicle().positionRider(this.player);
             // keep old rotation
-            this.player.yRot = yRot;
-            this.player.xRot = xRot;
+            this.player.setYRot(yRot);
+            this.player.setXRot(xRot);
             this.player.setYHeadRot(yHeadRot);
             // save old position
             this.player.xo = oldPos.x;

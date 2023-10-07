@@ -24,13 +24,12 @@ public abstract class SoundBufferLibraryMixin {
     private static final boolean debugDynamicSoundLoading = Boolean.getBoolean("modernfix.debugDynamicSoundLoading");
 
     @Shadow @Final @Mutable
-    private Map<ResourceLocation, CompletableFuture<SoundBuffer>> cache =
-    CacheBuilder.newBuilder()
-    .expireAfterAccess(DynamicSoundHelpers.MAX_SOUND_LIFETIME_SECS, TimeUnit.SECONDS)
-    // Excessive use of type hinting due to it assuming Object as the broadest correct type
-    .<ResourceLocation, CompletableFuture<SoundBuffer>>removalListener(this::onSoundRemoval)
-    .<ResourceLocation, CompletableFuture<SoundBuffer>>build()
-    .asMap();
+    private Map<ResourceLocation, CompletableFuture<SoundBuffer>> cache = CacheBuilder.newBuilder()
+        .expireAfterAccess(DynamicSoundHelpers.MAX_SOUND_LIFETIME_SECS, TimeUnit.SECONDS)
+        // Excessive use of type hinting due to it assuming Object as the broadest correct type
+        .<ResourceLocation, CompletableFuture<SoundBuffer>>removalListener(this::onSoundRemoval)
+        .build()
+        .asMap();
 
     private <K extends ResourceLocation, V extends CompletableFuture<SoundBuffer>> void onSoundRemoval(RemovalNotification<K, V> notification) {
         notification.getValue().thenAccept(SoundBuffer::discardAlBuffer);

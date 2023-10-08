@@ -42,6 +42,7 @@
   "modernfix.option.mixin.perf.deduplicate_location": "All versions, but disabled by default due to load time impact. Deduplicates resource location namespaces and paths. This saves RAM but also increases the cost of constructing a new `ResourceLocation` by quite a bit.",
   "modernfix.option.mixin.perf.dynamic_dfu": "All versions. Modifies DFU initialization to happen the first time something needs to be upgraded. This sounds similar to LazyDFU but is distinctly implemented, as it avoids loading *any* DFU classes/data structures, while LazyDFU only disables rule optimization. Essentially, this option is a safer version of DataFixerSlayer as it will still load DFU when needed.\n\nYou should typically continue to use LazyDFU even with this option enabled, as otherwise DFU rule optimization will cause lag.",
   "modernfix.option.mixin.perf.dynamic_resources": "All versions. See https://github.com/embeddedt/ModernFix/wiki/Dynamic-Resources-FAQ.",
+  "modernfix.option.mixin.perf.dynamic_sounds": "All versions. Allows the game to unload sounds, instead of sounds indefinitely persisting after being loaded.",
   "modernfix.option.mixin.perf.dynamic_structure_manager": "All versions. Allows the game to unload structure files after generation concludes instead of keeping them loaded forever.",
   "modernfix.option.mixin.perf.fast_registry_validation": "All versions. Forge needlessly looks up a method via reflection every single time a registry is validated. This patch simply caches the returned value since it will be the same every time.",
   "modernfix.option.mixin.perf.faster_font_loading": "All versions. Optimizes the font renderer to load fonts faster, speeding up resource reload.",
@@ -114,5 +115,10 @@
   "modernfix.option.mixin.perf.twilightforest.structure_spawn_fix": "Fixes lag caused by Twilight Forest worldgen checking structures very inefficiently",
   "modernfix.option.mixin.perf.fast_forge_dummies": "Speeds up Forge registry freezing during launch by using a faster code path",
   "modernfix.option.mixin.perf.tag_id_caching": "Speeds up uses of tag entries by caching the location object instead of recreating it every time",
-  "modernfix.option.mixin.feature.disable_unihex_font": "Remove the Unicode font, saves 10MB but causes special characters to no longer render"
+  "modernfix.option.mixin.feature.disable_unihex_font": "Remove the Unicode font, saves 10MB but causes special characters to no longer render",
+  "modernfix.option.mixin.bugfix.world_leaks": "Reduces the memory usage of old client-side worlds that aren't needed after switching dimensions. These are normally garbage collected in vanilla, but mods sometimes retain references to them.",
+  "modernfix.option.mixin.perf.compact_mojang_registries": "(Fabric) Experimental option that reduces the memory usage of registries by roughly 50%. Not useful in most modpacks unless they contain millions of blocks and items.",
+  "modernfix.option.mixin.perf.dynamic_block_codecs": "Avoids storing a codec for every block(state) and instead generates and caches it on the fly when needed. Generally not worth enabling unless you have a million blocks/items.",
+  "modernfix.option.mixin.perf.faster_command_suggestions": "Mitigate lag when there are hundreds of thousands of suggestions while typing a command",
+  "modernfix.option.mixin.perf.mojang_registry_size": "Fixes an issue causing registration of blocks/items to slow down proportional to the number already registered. This improves startup time."
 }

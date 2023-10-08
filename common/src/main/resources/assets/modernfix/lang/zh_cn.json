@@ -8,6 +8,7 @@
   "modernfix.perf_mod_warning": "推荐安装这些模组，但你也可以在现代化修复的配置中禁用此警告。",
   "modernfix.config": "现代化修复Mixin配置",
   "modernfix.config.done_restart": "完成（生效需重启）",
+  "modernfix.config.wiki": "打开英文wiki",
   "modernfix.message.reload_config": "检测到模组配置文件的更改。为了避免加载尚未保存完毕的文件，重载过程必须通过使用§b/mfrc§r命令来触发。",
   "modernfix.option.on": "开启",
   "modernfix.option.off": "关闭",
@@ -41,6 +42,7 @@
   "modernfix.option.mixin.perf.deduplicate_location": "全版本共有，但由于会影响加载时间，默认禁用。对资源位置的命名空间和路径进行去重。这节省了内存，但也大大增加了新资源位置的构造成本。",
   "modernfix.option.mixin.perf.dynamic_dfu": "全版本共有。修改了DFU的初始化，使其仅在第一次需要升级数据时加载。这听起来类似DFU载入优化，但实现方式截然不同，因为它能避免加载§o任何§rDFU类/数据结构，而DFU载入优化只是禁用其规则优化。本质上说，这是一个DataFixerSlayer的安全版本，因为它仍然会在需要时加载DFU。\n\n即使启用了这个选项，你也应该继续使用DFU载入优化，否则DFU规则优化依然会导致卡顿。",
   "modernfix.option.mixin.perf.dynamic_resources": "全版本共有。详见https://github.com/Kasualix/ModernFix/wiki/动态资源加载---常见问题解答。",
+  "modernfix.option.mixin.perf.dynamic_sounds": "全版本共有。允许游戏卸载声音，而不是在加载声音后无限期地保留它们。",
   "modernfix.option.mixin.perf.dynamic_structure_manager": "全版本共有。允许游戏在结构生成结束后卸载结构文件，而非让它们永远处于已加载状态。",
   "modernfix.option.mixin.perf.fast_registry_validation": "全版本共有。每次验证注册时，Forge都会通过反射来查找一个方法，这完全没必要。这个补丁简单地缓存了方法的返回值，因为它每次都是一样的。",
   "modernfix.option.mixin.perf.faster_font_loading": "全版本共有。优化字体渲染器，以更快地加载字体，加快资源重载速度。",
@@ -52,7 +54,7 @@
   "modernfix.option.mixin.perf.model_optimizations": "全版本共有。通过优化以加快模型加载过程。",
   "modernfix.option.mixin.perf.nbt_memory_usage": "全版本共有。对复合NBT标签使用一个更加高效的支持映射（backing map），从而消除重复键名，对小型复合 NBT 也使用数组映射。这减少了在内存中存储许多复合NBT标签的开销。",
   "modernfix.option.mixin.perf.nuke_empty_chunk_sections": "仅1.16。灵感来自氢（Hydrogen）模组。将存储充满空气的区块部分标记为空（empty），避免在内存中存储它们。",
-  "modernfix.option.mixin.perf.reduce_blockstate_cache_rebuilds": "全版本共有。§l一项关键优化。§r较新的Minecraft（1.12以上）实现了一个方块状态缓存系统，它可以缓存方块状态的常用信息，譬如其是否为固体方块，它的碰撞箱形状等等。原版中重建此缓存非常快（只要一两秒钟），但在安装了许多模组后就相当慢了，因为游戏中多了很多其它的方块状态，它们的缓存都需要被其重建。\n\n在Forge的影响下，这个问题变得更加严重，因为缓存会在很多地方重建，但这些数据在下一次重建前几乎肯定不会被用到。至于在哪儿，比如，在到达主菜单之前（在“Freezing data”阶段），以及在加载世界时（会出现很多次！）。\n\n通过让缓存重建转为惰性，现代化修复解决了这个性能瓶颈问题。每个方块状态在第一次访问数据时都会重建其缓存。无论何时，原版或Forge试图重建所有方块状态缓存的行为都会被重定向，变成简单地使每个方块状态的缓存失效。\n\n此项优化不应该对启动后的TPS产生任何影响。",
+  "modernfix.option.mixin.perf.reduce_blockstate_cache_rebuilds": "全版本共有。§l一项关键优化。§r较新的Minecraft（1.12以上）实现了一个方块状态缓存系统，它可以缓存方块状态的常用信息，譬如其是否为固体方块，它的碰撞箱形状等等。原版中重建此缓存非常快（只要一两秒钟），但在安装了许多模组后就相当慢了，因为游戏中多了很多其它的方块状态，它们的缓存都需要被其重建。\n\n在Forge的影响下，这个问题变得更加严重，因为缓存会在很多地方重建，但这些数据在下一次重建前几乎肯定不会被用到。至于在哪儿，比如，在到达主菜单之前（在“Freezing data”阶段），以及在加载世界时（会出现很多次！）。\n\n通过让缓存重建转为惰性，现代化修复解决了这个性能瓶颈问题。每个方块状态在第一次访问数据时都会重建其缓存。无论何时，原版或Forge试图重建所有方块状态缓存的行为都会被重定向，变成简单地使每个方块状态的缓存失效。\n\n此项优化应该不会对启动后的TPS产生任何影响。",
   "modernfix.option.mixin.perf.remove_biome_temperature_cache": "全版本共有。移除生物群系温度缓存，以减少内存占用，就像新版本的锂所做的那样。",
   "modernfix.option.mixin.perf.resourcepacks": "全版本共有。§l一项关键优化。§r高版本的启动严重受到文件系统访问的瓶颈限制。资源包经常接受到很多请求，要列出资源或检查一项给定的资源是否存在，而每次请求都会调用一个效率极低的文件API。\n\n现代化修复通过简单地缓存模组和原版提供的所有资源的列表，完全消除了此处的大部分瓶颈。缓存在资源重载时会进行重建（除了原版资源，因为它们在游戏运行时不应改变）。\n\n高清修复不能正确加载它的连接纹理（CTM）资源，除此之外此补丁没有已知的兼容问题。不过，我不建议在任何情况下使用高清修复，因为它本身就会增加几分钟的启动时间，而且根本没有与现代化修复进行过任何测试。",
   "modernfix.option.mixin.perf.reuse_datapacks": "仅1.16。试图尽可能跳过数据包重载，来加快单人世界切换/重进时的速度。可能会导致一些模组的兼容性问题，但目前默认启用。",
@@ -113,5 +115,10 @@
   "modernfix.option.mixin.perf.twilightforest.structure_spawn_fix": "针对暮色森林模组，修复了其世界生成检查结构效率极低导致卡顿的问题",
   "modernfix.option.mixin.perf.fast_forge_dummies": "使用更快的代码路径，加快启动时Forge注册表的冻结速度",
   "modernfix.option.mixin.perf.tag_id_caching": "缓存位置对象，不再每次都重新创建它，这可以加快标签条目的使用速度",
-  "modernfix.option.mixin.feature.disable_unihex_font": "删除Unicode字体，可以节省10MB内存，但会导致特殊字符不再渲染"
+  "modernfix.option.mixin.feature.disable_unihex_font": "删除Unicode字体，可以节省10MB内存，但会导致特殊字符不再渲染",
+  "modernfix.option.mixin.bugfix.world_leaks": "减少切换维度后不需要的旧客户端世界的内存占用。这部分内存在原版中通常会被垃圾回收，但有时模组会保留对它们的引用。",
+  "modernfix.option.mixin.perf.compact_mojang_registries": "（Fabric）实验性选项，可将注册表的内存占用减少约 50%。在大多数整合包中没什么用，除非它们包含数百万个方块和物品。",
+  "modernfix.option.mixin.perf.dynamic_block_codecs": "不再给每个方块（状态）都存储一个编解码器，只在需要时动态生成、缓存它。通常不值得启用，除非你有一百万个方块/物品。",
+  "modernfix.option.mixin.perf.faster_command_suggestions": "在输入命令时，若有数十万个建议，可以缓解卡顿。",
+  "modernfix.option.mixin.perf.mojang_registry_size": "修复了一个问题，它会导致方块/物品的注册速度减慢，减慢的程度与已注册的数量成正比。这缩短了启动时间。"
 }

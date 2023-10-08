@@ -4,6 +4,7 @@ import dev.latvian.kubejs.server.TagEventJS;
 import dev.latvian.kubejs.util.UtilsJS;
 import me.shedaniel.architectury.registry.Registry;
 import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.forge.util.KubeUtil;
 import org.spongepowered.asm.mixin.Mixin;
@@ -29,15 +30,21 @@ public class TagWrapperMixin<T> {
 
     @Redirect(method = "add", at = @At(value = "INVOKE", target = "Lme/shedaniel/architectury/registry/Registry;getIds()Ljava/util/Set;", ordinal = 0), remap = false)
     private Set<ResourceLocation> getCachedIds(Registry<T> registryIn) {
+        String currentPatternStr = this.currentPatternStr;
         if(currentPatternStr == null)
             throw new AssertionError();
         Set<ResourceLocation> cachedSet = KubeUtil.matchedIdsForRegex.get(currentPatternStr);
         if(cachedSet == null) {
             Pattern thePattern = UtilsJS.parseRegex(currentPatternStr);
-            ArrayList<ResourceLocation> locations = new ArrayList<>(registryIn.getIds());
-            cachedSet = locations.parallelStream()
-                    .filter(rLoc -> thePattern.matcher(rLoc.toString()).find())
-                    .collect(Collectors.toSet());
+            if(thePattern != null) {
+                ArrayList<ResourceLocation> locations = new ArrayList<>(registryIn.getIds());
+                cachedSet = locations.parallelStream()
+                        .filter(rLoc -> thePattern.matcher(rLoc.toString()).find())
+                        .collect(Collectors.toSet());
+            } else {
+                ModernFix.LOGGER.error("Empty pattern for '{}' somehow... ignoring...", currentPatternStr);
+                cachedSet = new HashSet<>();
+            }
             KubeUtil.matchedIdsForRegex.put(currentPatternStr, cachedSet);
         }
         return cachedSet;

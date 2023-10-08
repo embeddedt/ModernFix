@@ -210,11 +210,12 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot", "threadtweak");
         disableIfModPresent("mixin.perf.boost_worker_count", "smoothboot", "threadtweak");
         disableIfModPresent("mixin.perf.async_jei", "modernui");
-        disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge" ,"skyblockbuilder");
+        disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge" ,"skyblockbuilder", "modern_beta");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");
         disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
-        disableIfModPresent("mixin.perf.cache_strongholds", "littletiles");
+        disableIfModPresent("mixin.bugfix.preserve_early_window_pos", "better_loading_screen");
+        disableIfModPresent("mixin.perf.cache_strongholds", "littletiles", "c2me");
         // content overlap
         disableIfModPresent("mixin.perf.deduplicate_wall_shapes", "dashloader");
         disableIfModPresent("mixin.perf.nbt_memory_usage", "c2me");
@@ -227,6 +228,21 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.faster_texture_loading", "stitch", "optifine", "changed");
         if(isFabric) {
             disableIfModPresent("mixin.bugfix.packet_leak", "memoryleakfix");
+        }
+
+        checkBlockstateCacheRebuilds();
+    }
+
+    private void checkBlockstateCacheRebuilds() {
+        if(!ModernFixPlatformHooks.INSTANCE.isDevEnv())
+            return;
+        try {
+            if(ModernFixEarlyConfig.class.getResource("/net/minecraft/world/level/Level.class") == null) {
+                LOGGER.warn("We are in a non-Mojmap dev environment. Disabling blockstate cache patch");
+                this.options.get("mixin.perf.reduce_blockstate_cache_rebuilds").addModOverride(false, "[not mojmap]");
+            }
+        } catch(Throwable e) {
+            e.printStackTrace();
         }
     }
 

@@ -1,15 +1,13 @@
 plugins {
     id "com.github.johnrengelman.shadow" version "7.1.2"
     id 'com.adarshr.test-logger' version '3.2.0'
+    id "modernfix.mod-common-conventions"
+    id "modernfix.platform-conventions"
 }
 
 architectury {
     platformSetupLoomIde()
     fabric()
-}
-
-loom {
-    accessWidenerPath = project(":common").loom.accessWidenerPath
 }
 
 configurations {

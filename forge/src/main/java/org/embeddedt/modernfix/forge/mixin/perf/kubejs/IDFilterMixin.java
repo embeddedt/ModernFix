@@ -24,8 +24,11 @@ public class IDFilterMixin {
     @Overwrite(remap = false)
     public boolean test(RecipeJS recipe) {
         if(!_targetSearched) {
-            _target = KubeUtil.originalRecipesByHash.get(this.id);
-            _targetSearched = true;
+            if(KubeUtil.originalRecipesByHash.size() > 0) {
+                _target = KubeUtil.originalRecipesByHash.get(this.id);
+                _targetSearched = true;
+            } else
+                return recipe.getOrCreateId().equals(this.id); // fallback
         }
         return recipe == _target;
     }

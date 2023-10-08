@@ -42,6 +42,7 @@
   "modernfix.option.mixin.perf.deduplicate_location": "すべてのバージョンですが、時間の影響によりデフォルトでは無効になります。リソースロケーションの名前空間とパスをDeduplicatesします。 これによりRAMは節約されますが、新しい「ResourceLocation」を構築するコストもかなり増加します。",
   "modernfix.option.mixin.perf.dynamic_dfu": "すべてのバージョン。何かをアップグレードする必要があるときにDFU初期化を変更します。 これはLazyDFUに似ているように聞こえますが、LazyDFUはルールの最適化のみを無効にするので、明確に実装されています。 基本的に、このオプションはDataFixerSlayerの安全なバージョンであり、必要に応じてDFUをロードします。\n\nDFUルールの最適化が遅れるため、通常はこのオプションを有効にしてもLazyDFUを使用し続ける必要があります。",
   "modernfix.option.mixin.perf.dynamic_resources": "すべてのバージョン。https://github.com/embeddedt/ModernFix/wiki/Dynamic-Resources-FAQを参照してください。",
+  "modernfix.option.mixin.perf.dynamic_sounds": "すべてのバージョン.サウンドがロードされた後に無期限に存続するのではなく,ゲームがサウンドをアンロードできるようにします.",
   "modernfix.option.mixin.perf.dynamic_structure_manager": "すべてのバージョン。生成後、ゲームは永久に読み込まれるのではなく、構造ファイルをアンロードすることができます。",
   "modernfix.option.mixin.perf.fast_registry_validation": "すべてのバージョン。Forge はレジストリが検証されるたびに反射を使ってメソッドを検索します。 このパッチは、毎回同じになるため、返された値をキャッシュするだけです。",
   "modernfix.option.mixin.perf.faster_font_loading": "すべてのバージョンです。フォントレンダラーを最適化し、フォントの読み込みを高速化し、リソースのリロードを高速化します。",

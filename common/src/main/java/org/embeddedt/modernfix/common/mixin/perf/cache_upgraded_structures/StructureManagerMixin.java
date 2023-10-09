@@ -14,6 +14,7 @@ import org.spongepowered.asm.mixin.Shadow;
 
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.Optional;
 
 @Mixin(StructureTemplateManager.class)
@@ -29,8 +30,8 @@ public class StructureManagerMixin {
     @Overwrite
     private Optional<StructureTemplate> loadFromResource(ResourceLocation id) {
         ResourceLocation arg = new ResourceLocation(id.getNamespace(), "structures/" + id.getPath() + ".nbt");
-        try {
-            return Optional.of(CachingStructureManager.readStructure(id, this.fixerUpper, this.resourceManager.open(arg)));
+        try(InputStream stream = this.resourceManager.open(arg)) {
+            return Optional.of(CachingStructureManager.readStructure(id, this.fixerUpper, stream));
         } catch(FileNotFoundException e) {
             return Optional.empty();
         } catch(IOException e) {

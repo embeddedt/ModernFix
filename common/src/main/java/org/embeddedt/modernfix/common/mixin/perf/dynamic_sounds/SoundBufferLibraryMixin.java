@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_sounds;
 
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
 import com.mojang.blaze3d.audio.SoundBuffer;
 import net.minecraft.client.sounds.SoundBufferLibrary;
@@ -26,6 +27,7 @@ public abstract class SoundBufferLibraryMixin {
     @Shadow @Final @Mutable
     private Map<ResourceLocation, CompletableFuture<SoundBuffer>> cache = CacheBuilder.newBuilder()
         .expireAfterAccess(DynamicSoundHelpers.MAX_SOUND_LIFETIME_SECS, TimeUnit.SECONDS)
+        .concurrencyLevel(1)
         // Excessive use of type hinting due to it assuming Object as the broadest correct type
         .<ResourceLocation, CompletableFuture<SoundBuffer>>removalListener(this::onSoundRemoval)
         .build()

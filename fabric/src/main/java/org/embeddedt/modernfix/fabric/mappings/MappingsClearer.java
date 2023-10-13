@@ -21,6 +21,14 @@ public class MappingsClearer {
         if(FabricLoader.getInstance().isDevelopmentEnvironment())
             return; // never do this in dev
         CommonModUtil.runWithoutCrash(() -> {
+            // For now, force the mapping resolver to be initialized. Fabric Loader 0.14.23 stops initializing it early,
+            // which means that we actually need to keep the TinyMappingFactory tree around for initialization to work
+            // later. We force init it now because then we can store less in memory.
+            // Comparing heap dumps on 0.14.23 suggests a savings of 20MB by doing it our way, since many mods will
+            // end up needing the mapping resolver.
+            // This will need to be revisited when https://github.com/FabricMC/fabric-loader/pull/812 is merged.
+            FabricLoader.getInstance().getMappingResolver();
+
             // clear notch->intermediary mappings
             MappingConfiguration config = FabricLauncherBase.getLauncher().getMappingConfiguration();
             Field mappingsField = MappingConfiguration.class.getDeclaredField("mappings");

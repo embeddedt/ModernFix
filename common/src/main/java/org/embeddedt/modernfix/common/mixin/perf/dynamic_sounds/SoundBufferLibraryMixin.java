@@ -32,6 +32,8 @@ public abstract class SoundBufferLibraryMixin {
         .asMap();
 
     private <K extends ResourceLocation, V extends CompletableFuture<SoundBuffer>> void onSoundRemoval(RemovalNotification<K, V> notification) {
+        if(notification.getCause() == RemovalCause.REPLACED && notification.getValue() == cache.get(notification.getKey()))
+            return;
         notification.getValue().thenAccept(SoundBuffer::discardAlBuffer);
         if(debugDynamicSoundLoading) {
             K k = notification.getKey();

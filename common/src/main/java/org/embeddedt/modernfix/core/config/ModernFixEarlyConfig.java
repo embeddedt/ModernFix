@@ -161,6 +161,7 @@ public class ModernFixEarlyConfig {
 
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
+            .putConditionally(() -> !isFabric, "mixin.perf.async_jei", false)
             .put("mixin.perf.dynamic_sounds", false)
             .put("mixin.perf.reuse_datapacks", false)
             .put("mixin.perf.dynamic_block_codecs", false)
@@ -210,7 +211,6 @@ public class ModernFixEarlyConfig {
         /* Mod compat */
         disableIfModPresent("mixin.perf.thread_priorities", "smoothboot", "threadtweak");
         disableIfModPresent("mixin.perf.boost_worker_count", "smoothboot", "threadtweak");
-        disableIfModPresent("mixin.perf.async_jei", "modernui");
         disableIfModPresent("mixin.perf.compress_biome_container", "chocolate", "betterendforge" ,"skyblockbuilder", "modern_beta");
         disableIfModPresent("mixin.bugfix.mc218112", "performant");
         disableIfModPresent("mixin.bugfix.remove_block_chunkloading", "performant");

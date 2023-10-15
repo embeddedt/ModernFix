@@ -37,11 +37,11 @@ public abstract class SoundBufferLibraryMixin {
         if(notification.getCause() == RemovalCause.REPLACED && notification.getValue() == cache.get(notification.getKey()))
             return;
         notification.getValue().thenAccept(SoundBuffer::discardAlBuffer);
-        if(debugDynamicSoundLoading) {
-            K k = notification.getKey();
-            if(k == null)
-                return;
-            ModernFix.LOGGER.warn("Evicted sound {}", k);
-        }
+        if(!debugDynamicSoundLoading)
+            return;
+        K k = notification.getKey();
+        if(k == null)
+            return;
+        ModernFix.LOGGER.warn("Evicted sound {}", k);
     }
 }

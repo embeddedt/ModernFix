@@ -31,5 +31,4 @@ public abstract class YggdrasilGsonDeserializerMixin {
 		((ICachedProfileTexture)texture).setCachedHash(url);
 		return url;
 	}
-
 }

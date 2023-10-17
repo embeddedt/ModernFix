@@ -21,6 +21,7 @@ public abstract class MinecraftProfileTextureMixin implements ICachedProfileText
 	 * @author Fury_Phoenix
 	 * @see org.embeddedt.modernfix.common.mixin.perf.cache_profile_texture_url.YggdrasilGsonDeserializerMixin#setCachedURL
 	 **/
+	
 	private String modernfix$cachedHash;
 
 	@Inject(method = "<init>(Ljava/lang/String;Ljava/util/Map;)V", at = @At("RETURN"), cancellable = false)

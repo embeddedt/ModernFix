@@ -5,6 +5,7 @@ import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.SharedConstants;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.datafix.DataFixTypes;
@@ -58,7 +59,7 @@ public class CachingStructureManager {
 
     public static CompoundTag readStructureTag(ResourceLocation location, DataFixer datafixer, InputStream stream) throws IOException {
         byte[] structureBytes = toBytes(stream);
-        CompoundTag currentTag = NbtIo.readCompressed(new ByteArrayInputStream(structureBytes));
+        CompoundTag currentTag = NbtIo.readCompressed(new ByteArrayInputStream(structureBytes), NbtAccounter.unlimitedHeap());
         if (!currentTag.contains("DataVersion", 99)) {
             currentTag.putInt("DataVersion", 500);
         }
@@ -101,7 +102,7 @@ public class CachingStructureManager {
     private static synchronized CompoundTag getCachedUpgraded(ResourceLocation location, String hash) {
         File theFile = getCachePath(location, hash);
         try {
-            return NbtIo.readCompressed(theFile);
+            return NbtIo.readCompressed(theFile, NbtAccounter.unlimitedHeap());
         } catch(FileNotFoundException e) {
             return null;
         } catch(IOException e) {

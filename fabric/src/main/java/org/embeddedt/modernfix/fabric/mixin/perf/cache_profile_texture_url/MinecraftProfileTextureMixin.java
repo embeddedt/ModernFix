@@ -1,7 +1,6 @@
 package org.embeddedt.modernfix.fabric.mixin.perf.cache_profile_texture_url;
 
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
-
 import org.apache.commons.io.FilenameUtils;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.duck.ICachedProfileTexture;

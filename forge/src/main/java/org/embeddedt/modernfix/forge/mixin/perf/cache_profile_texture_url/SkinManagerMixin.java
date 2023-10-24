@@ -30,13 +30,12 @@ public abstract class SkinManagerMixin {
 
 	@WrapOperation
 	(
-		method = "registerTexture",
+		method = "registerTexture{1}(*Lnet/minecraft/client/resources/SkinManager$SkinTextureCallback;)Lnet/minecraft/util/Identifier",
 		at = @At(
 			value = "INVOKE",
 			target = "Lcom/mojang/authlib/minecraft/MinecraftProfileTexture;getHash()Ljava/lang/String;",
 			remap = false
 		)
-		
 	)
 	private String stashCachedHash(MinecraftProfileTexture texture, Operation<String> original) {
 		return hashCache.computeIfAbsent(texture, k -> original.call());

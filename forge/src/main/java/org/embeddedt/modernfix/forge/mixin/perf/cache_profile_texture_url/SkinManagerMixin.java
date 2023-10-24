@@ -38,7 +38,7 @@ public abstract class SkinManagerMixin {
 		)
 		
 	)
-	private String stashCachedHash(SkinManager manager, Operation<String> original, MinecraftProfileTexture texture) {
+	private String stashCachedHash(MinecraftProfileTexture texture, Operation<String> original) {
 		return hashCache.computeIfAbsent(texture, k -> original.call());
 	}
 }

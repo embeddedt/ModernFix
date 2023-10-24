@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.dynamicresources;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.math.Transformation;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -22,6 +21,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
@@ -85,7 +85,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     public DynamicBakedModelProvider(ModelBakery bakery, Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> cache) {
         this.bakery = bakery;
         this.bakedCache = cache;
-        this.permanentOverrides = Collections.synchronizedMap(new Object2ObjectOpenHashMap<>());
+        this.permanentOverrides = new ConcurrentHashMap<>();
         if(currentInstance == null)
             currentInstance = this;
     }
@@ -109,12 +109,12 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public boolean containsKey(Object o) {
-        return permanentOverrides.getOrDefault(o, SENTINEL) != null;
+        return o != null && permanentOverrides.getOrDefault(o, SENTINEL) != null;
     }
 
     @Override
     public boolean containsValue(Object o) {
-        return permanentOverrides.containsValue(o) || bakedCache.containsValue(o);
+        return o != null && (permanentOverrides.containsValue(o) || bakedCache.containsValue(o));
     }
     
     private static boolean isVanillaTopLevelModel(ResourceLocation location) {
@@ -164,6 +164,9 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public BakedModel put(ResourceLocation resourceLocation, BakedModel bakedModel) {
+        if(resourceLocation == null)
+            return null;
+
         BakedModel m = permanentOverrides.put(resourceLocation, bakedModel);
         if(m != null)
             return m;
@@ -173,6 +176,9 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public BakedModel remove(Object o) {
+        if(o == null)
+            return null;
+
         BakedModel m = permanentOverrides.remove(o);
         if(m != null)
             return m;

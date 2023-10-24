@@ -30,16 +30,13 @@ public abstract class SkinManagerMixin {
 
 	@WrapOperation
 	(
-		method =
-		"name = registerTexture " +
-		// Target the lone overload that has a SkinTextureAvailableCallBack
-		"desc = /\\(net\\/minecraft\\/class_1071\\$class_1072;\\)/",
+		// Mixes (un)obfuscated types
+		method = "method_4651",
 		at = @At(
 			value = "INVOKE",
-			target = "Lcom/mojang/authlib/minecraft/MinecraftProfileTexture;getHash()Ljava/lang/String;",
-			remap = false
+			target = "Lcom/mojang/authlib/minecraft/MinecraftProfileTexture;getHash()Ljava/lang/String;"
 		),
-		allow = 1
+		remap = false
 	)
 	private String stashCachedHash(MinecraftProfileTexture texture, Operation<String> original) {
 		return hashCache.computeIfAbsent(texture, k -> original.call());

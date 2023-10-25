@@ -11,7 +11,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 @Mixin(MinecraftServer.class)
 @ClientOnlyMixin
 public class ClientMinecraftServerMixin {
-    @Inject(method = "runServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;getMillis()J", ordinal = 0))
+    @Inject(method = "runServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;getNanos()J", ordinal = 0))
     private void markServerStarted(CallbackInfo ci) {
         ModernFixClient.INSTANCE.onServerStarted((MinecraftServer)(Object)this);
     }

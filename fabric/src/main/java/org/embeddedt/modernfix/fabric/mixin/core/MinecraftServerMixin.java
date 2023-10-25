@@ -17,7 +17,7 @@ public class MinecraftServerMixin {
         ModernFixFabric.theServer = new WeakReference<>((MinecraftServer)(Object)this);
     }
 
-    @Inject(method = "runServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;getMillis()J", ordinal = 0))
+    @Inject(method = "runServer", at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;getNanos()J", ordinal = 0))
     private void hookServerStarted(CallbackInfo ci) {
         ModernFix.INSTANCE.onServerStarted();
     }

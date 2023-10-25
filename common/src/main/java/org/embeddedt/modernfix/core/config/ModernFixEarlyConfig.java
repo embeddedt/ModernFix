@@ -235,7 +235,7 @@ public class ModernFixEarlyConfig {
         if(!ModernFixPlatformHooks.INSTANCE.isDevEnv())
             return;
         try {
-            if(ModernFixEarlyConfig.class.getResource("/net/minecraft/world/level/Level.class") == null) {
+            if(ModernFixEarlyConfig.class.getClassLoader().getResource("/net/minecraft/world/level/Level.class") == null) {
                 LOGGER.warn("We are in a non-Mojmap dev environment. Disabling blockstate cache patch");
                 this.options.get("mixin.perf.reduce_blockstate_cache_rebuilds").addModOverride(false, "[not mojmap]");
             }

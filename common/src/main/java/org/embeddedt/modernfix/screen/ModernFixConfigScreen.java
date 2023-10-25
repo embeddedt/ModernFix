@@ -13,6 +13,8 @@ public class ModernFixConfigScreen extends Screen {
 
     public boolean madeChanges = false;
     private Button doneButton, wikiButton;
+    private double lastScrollAmount = 0;
+
     public ModernFixConfigScreen(Screen lastScreen) {
         super(new TranslatableComponent("modernfix.config"));
         this.lastScreen = lastScreen;
@@ -21,6 +23,7 @@ public class ModernFixConfigScreen extends Screen {
     @Override
     protected void init() {
         this.optionList = new OptionList(this, this.minecraft);
+        this.optionList.setScrollAmount(lastScrollAmount);
         this.addWidget(this.optionList);
         this.wikiButton = new Button(this.width / 2 - 155, this.height - 29, 150, 20, new TranslatableComponent("modernfix.config.wiki"), (arg) -> {
             Util.getPlatform().openUri("https://github.com/embeddedt/ModernFix/wiki/Summary-of-Patches");
@@ -49,5 +52,9 @@ public class ModernFixConfigScreen extends Screen {
     @Override
     public void renderComponentHoverEffect(PoseStack matrixStack, @Nullable Style style, int mouseX, int mouseY) {
         super.renderComponentHoverEffect(matrixStack, style, mouseX, mouseY);
+    }
+
+    public void setLastScrollAmount(double d) {
+        this.lastScrollAmount = d;
     }
 }

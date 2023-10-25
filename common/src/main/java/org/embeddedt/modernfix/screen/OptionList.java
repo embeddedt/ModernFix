@@ -167,6 +167,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             });
             updateStatus();
             this.helpButton = new Button(75, 0, 20, 20, Component.literal("?"), (arg) -> {
+                mainScreen.setLastScrollAmount(getScrollAmount());
                 Minecraft.getInstance().setScreen(new ModernFixOptionInfoScreen(mainScreen, optionName));
             });
             if(!I18n.exists("modernfix.option." + optionName)) {

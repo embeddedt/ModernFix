@@ -20,6 +20,7 @@ import org.objectweb.asm.tree.ClassNode;
 import org.spongepowered.asm.mixin.Mixin;
 
 import java.io.*;
+import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 import java.util.function.BooleanSupplier;
@@ -156,7 +157,6 @@ public class ModernFixEarlyConfig {
 
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
-            .putConditionally(() -> !isFabric, "mixin.perf.async_jei", false)
             .put("mixin.perf.dynamic_sounds", false)
             .put("mixin.perf.dynamic_block_codecs", false)
             .put("mixin.feature.direct_stack_trace", false)
@@ -236,7 +236,10 @@ public class ModernFixEarlyConfig {
         if(!ModernFixPlatformHooks.INSTANCE.isDevEnv())
             return;
         try {
-            if(ModernFixEarlyConfig.class.getClassLoader().getResource("/net/minecraft/world/level/Level.class") == null) {
+            URL deobfClass = isFabric ?
+                    ModernFixEarlyConfig.class.getResource("/net/minecraft/world/level/Level.class") :
+                    ModernFixEarlyConfig.class.getClassLoader().getResource("/net/minecraft/world/level/Level.class");
+            if(deobfClass == null) {
                 LOGGER.warn("We are in a non-Mojmap dev environment. Disabling blockstate cache patch");
                 this.options.get("mixin.perf.reduce_blockstate_cache_rebuilds").addModOverride(false, "[not mojmap]");
             }

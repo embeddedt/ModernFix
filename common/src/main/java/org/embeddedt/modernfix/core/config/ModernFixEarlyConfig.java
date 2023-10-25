@@ -156,7 +156,6 @@ public class ModernFixEarlyConfig {
 
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
-            .putConditionally(() -> !isFabric, "mixin.perf.async_jei", false)
             .put("mixin.perf.dynamic_sounds", false)
             .put("mixin.perf.dynamic_block_codecs", false)
             .put("mixin.feature.direct_stack_trace", false)

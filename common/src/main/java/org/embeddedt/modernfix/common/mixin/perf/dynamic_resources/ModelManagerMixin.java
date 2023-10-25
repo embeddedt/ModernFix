@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.fabric.mixin.perf.dynamic_resources;
+package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.renderer.block.model.BlockModel;

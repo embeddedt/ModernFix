@@ -31,7 +31,7 @@ public abstract class SkinManagerMixin {
 	@WrapOperation
 	(
 		// Mixes (un)obfuscated types
-		method = "method_4651",
+		method = "m_118828_",
 		at = @At(
 			value = "INVOKE",
 			target = "Lcom/mojang/authlib/minecraft/MinecraftProfileTexture;getHash()Ljava/lang/String;"
@@ -39,6 +39,6 @@ public abstract class SkinManagerMixin {
 		remap = false
 	)
 	private String stashCachedHash(MinecraftProfileTexture texture, Operation<String> original) {
-		return hashCache.computeIfAbsent(texture, k -> original.call());
+		return hashCache.computeIfAbsent(texture, k -> original.call(k));
 	}
 }

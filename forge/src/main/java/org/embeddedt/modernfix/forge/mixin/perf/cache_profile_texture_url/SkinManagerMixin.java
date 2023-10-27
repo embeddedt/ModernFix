@@ -4,7 +4,6 @@ import com.google.common.cache.CacheBuilder;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
-import net.minecraft.client.resources.SkinManager;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.Mixin;
@@ -13,12 +12,12 @@ import org.spongepowered.asm.mixin.injection.At;
 import java.util.concurrent.TimeUnit;
 import java.util.Map;
 
-@Mixin(value=SkinManager.class)
+@Mixin(targets="net.minecraft.client.resources.SkinManager$TextureCache")
 @ClientOnlyMixin
 public abstract class SkinManagerMixin {
 	/**
 	 * @author Fury_Phoenix
-	 * @reason No lib mixins on (neo)forge, yet
+	 * @reason No lib mixins on (neo)forge, yet.
 	 * **/
 	@Unique
 	private final Map<MinecraftProfileTexture, String> hashCache = CacheBuilder.newBuilder()
@@ -31,12 +30,12 @@ public abstract class SkinManagerMixin {
 	@WrapOperation
 	(
 		// Mixes (un)obfuscated types
-		method = "m_118828_",
+		method = {"getOrLoad", "registerTexture"},
 		at = @At(
 			value = "INVOKE",
-			target = "Lcom/mojang/authlib/minecraft/MinecraftProfileTexture;getHash()Ljava/lang/String;"
-		),
-		remap = false
+			target = "Lcom/mojang/authlib/minecraft/MinecraftProfileTexture;getHash()Ljava/lang/String;",
+			remap = false
+		)
 	)
 	private String stashCachedHash(MinecraftProfileTexture texture, Operation<String> original) {
 		return hashCache.computeIfAbsent(texture, k -> original.call(k));

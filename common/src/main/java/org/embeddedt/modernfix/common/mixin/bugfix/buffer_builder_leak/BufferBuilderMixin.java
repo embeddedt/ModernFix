@@ -2,9 +2,12 @@ package org.embeddedt.modernfix.common.mixin.bugfix.buffer_builder_leak;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import org.embeddedt.modernfix.ModernFix;
-import org.lwjgl.system.MemoryUtil;
+import org.embeddedt.modernfix.render.UnsafeBufferHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.nio.ByteBuffer;
 
@@ -12,8 +15,15 @@ import java.nio.ByteBuffer;
 public class BufferBuilderMixin {
     @Shadow private ByteBuffer buffer;
 
-    private static final MemoryUtil.MemoryAllocator ALLOCATOR = MemoryUtil.getAllocator(false);
     private static boolean leakReported = false;
+
+    /**
+     * Ensure UnsafeBufferHelper is classloaded early, to avoid Forge's event transformer showing an error in the log.
+     */
+    @Inject(method = "<clinit>", at = @At(value = "RETURN"))
+    private static void initUnsafeBufferHelper(CallbackInfo ci) {
+        UnsafeBufferHelper.init();
+    }
 
     @Override
     protected void finalize() throws Throwable {
@@ -25,7 +35,7 @@ public class BufferBuilderMixin {
                     leakReported = true;
                     ModernFix.LOGGER.warn("One or more BufferBuilders have been leaked, ModernFix will attempt to correct this.");
                 }
-                ALLOCATOR.free(MemoryUtil.memAddress0(buf));
+                UnsafeBufferHelper.free(buf);
                 buffer = null;
             }
         } finally {

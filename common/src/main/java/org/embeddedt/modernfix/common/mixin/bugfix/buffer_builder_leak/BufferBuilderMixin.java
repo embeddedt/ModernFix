@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.common.mixin.bugfix.buffer_builder_leak;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import org.embeddedt.modernfix.ModernFix;
-import org.lwjgl.system.MemoryUtil;
+import org.embeddedt.modernfix.render.UnsafeBufferHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -12,7 +12,6 @@ import java.nio.ByteBuffer;
 public class BufferBuilderMixin {
     @Shadow private ByteBuffer buffer;
 
-    private static final MemoryUtil.MemoryAllocator ALLOCATOR = MemoryUtil.getAllocator(false);
     private static boolean leakReported = false;
 
     @Override
@@ -25,7 +24,7 @@ public class BufferBuilderMixin {
                     leakReported = true;
                     ModernFix.LOGGER.warn("One or more BufferBuilders have been leaked, ModernFix will attempt to correct this.");
                 }
-                ALLOCATOR.free(MemoryUtil.memAddress0(buf));
+                UnsafeBufferHelper.free(buf);
                 buffer = null;
             }
         } finally {

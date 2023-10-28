@@ -33,6 +33,10 @@ public class UnsafeBufferHelper {
         }
     }
 
+    public static void init() {
+
+    }
+
     public static void free(ByteBuffer buf) {
         if(UNSAFE != null && ADDRESS >= 0) {
             // set the address to 0 to prevent double free

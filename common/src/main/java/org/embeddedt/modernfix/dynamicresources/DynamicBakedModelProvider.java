@@ -96,11 +96,11 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     public void setMissingModel(BakedModel model) {
         this.missingModel = model;
-        this.permanentOverrides.put(ModelBakery.MISSING_MODEL_LOCATION, this.missingModel);
+        this.put(ModelBakery.MISSING_MODEL_LOCATION, this.missingModel);
     }
 
-    private static Triple<ResourceLocation, Transformation, Boolean> vanillaKey(Object o) {
-        return Triple.of((ResourceLocation)o, BlockModelRotation.X0_Y0.getRotation(), false);
+    private static ModelBakery.BakedCacheKey vanillaKey(Object o) {
+        return new ModelBakery.BakedCacheKey((ResourceLocation)o, BlockModelRotation.X0_Y0.getRotation(), false);
     }
     @Override
     public int size() {

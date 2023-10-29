@@ -183,8 +183,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     }
 
     @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;"))
-    private Set skipBakingModels(Map map) {
-        return Collections.emptySet();
+    private Set skipBakingModels(Map instance) {
+        Set<ResourceLocation> modelSet = new HashSet<>(instance.keySet());
+        if(modelSet.size() > 0)
+            ModernFix.LOGGER.info("Early baking {} models", modelSet.size());
+        return modelSet;
     }
 
     /**

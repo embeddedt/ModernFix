@@ -153,6 +153,8 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
             noGroupField.setAccessible(true);
             InjectorGroupInfo noGroup = (InjectorGroupInfo)noGroupField.get(null);
             groupMembersField.set(noGroup, new DummyList<>());
+        } catch(NoSuchFieldException ignored) {
+            // Connector will replace FML's mixin with one which already has the fix, don't bother logging
         } catch(RuntimeException | ReflectiveOperationException e) {
             ModernFixMixinPlugin.instance.logger.error("Failed to patch mixin memory leak", e);
         }

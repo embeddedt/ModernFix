@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.RemovalNotification;
+import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
@@ -36,6 +37,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
@@ -74,9 +76,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
 
+    // disable fabric recursion
+    @SuppressWarnings("unused")
+    private boolean fabric_enableGetOrLoadModelGuard;
+
 
     @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/resources/model/ModelBakery;blockColors:Lnet/minecraft/client/color/block/BlockColors;"))
     private void replaceTopLevelBakedModels(ModelBakery bakery, BlockColors val) {
+        fabric_enableGetOrLoadModelGuard = false;
         this.blockColors = val;
         this.loadedBakedModels = CacheBuilder.newBuilder()
                 .expireAfterAccess(ModelBakeryHelpers.MAX_MODEL_LIFETIME_SECS, TimeUnit.SECONDS)
@@ -93,7 +100,19 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 .softValues()
                 .build();
         this.bakedCache = loadedBakedModels.asMap();
-        this.unbakedCache = loadedModels.asMap();
+        ConcurrentMap<ResourceLocation, UnbakedModel> unbakedCacheBackingMap = loadedModels.asMap();
+        this.unbakedCache = new ForwardingMap<ResourceLocation, UnbakedModel>() {
+            @Override
+            protected Map<ResourceLocation, UnbakedModel> delegate() {
+                return unbakedCacheBackingMap;
+            }
+
+            @Override
+            public UnbakedModel put(ResourceLocation key, UnbakedModel value) {
+                smallLoadingCache.put(key, value);
+                return super.put(key, value);
+            }
+        };
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
     }
 

@@ -22,8 +22,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public class ClientSetupMixin {
     @Shadow(remap = false) @Final private static BakedModelOverrideRegistry BAKED_MODEL_OVERRIDE_REGISTRY;
 
-    @Inject(method = "<init>", at = @At("RETURN"))
-    private void addDynamicListener(CallbackInfo ci) {
+    @Inject(method = "registerBakedModelOverrides", at = @At("RETURN"), remap = false)
+    private static void addDynamicListener(CallbackInfo ci) {
         ModernFixClient.CLIENT_INTEGRATIONS.add(new ModernFixClientIntegration() {
             @Override
             public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState state, ModelBakery bakery) {

@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.dynamicresources;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.math.Transformation;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -40,8 +39,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     public static DynamicBakedModelProvider currentInstance = null;
     private final ModelBakery bakery;
     private final Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> bakedCache;
-    private volatile Map<ResourceLocation, BakedModel> permanentOverridesView = null;
-    private final Map<ResourceLocation, BakedModel> permanentOverridesMutable;
+    private final Map<ResourceLocation, BakedModel> permanentOverrides;
     private BakedModel missingModel;
     private static final BakedModel SENTINEL = new BakedModel() {
         @Override
@@ -88,7 +86,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     public DynamicBakedModelProvider(ModelBakery bakery, Map<Triple<ResourceLocation, Transformation, Boolean>, BakedModel> cache) {
         this.bakery = bakery;
         this.bakedCache = cache;
-        this.permanentOverridesMutable = new Object2ObjectOpenHashMap<>();
+        this.permanentOverrides = Collections.synchronizedMap(new Object2ObjectOpenHashMap<>());
         if(currentInstance == null)
             currentInstance = this;
     }
@@ -110,27 +108,14 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         return bakedCache.isEmpty();
     }
 
-    private Map<ResourceLocation, BakedModel> getPermanentOverrides() {
-        Map<ResourceLocation, BakedModel> map = permanentOverridesView;
-        if(map == null) {
-            synchronized (this) {
-                map = permanentOverridesView;
-                if(map == null) {
-                    permanentOverridesView = map = Object2ObjectMaps.unmodifiable(new Object2ObjectOpenHashMap<>(permanentOverridesMutable));
-                }
-            }
-        }
-        return map;
-    }
-
     @Override
     public boolean containsKey(Object o) {
-        return getPermanentOverrides().getOrDefault(o, SENTINEL) != null;
+        return permanentOverrides.getOrDefault(o, SENTINEL) != null;
     }
 
     @Override
     public boolean containsValue(Object o) {
-        return getPermanentOverrides().containsValue(o) || bakedCache.containsValue(o);
+        return permanentOverrides.containsValue(o) || bakedCache.containsValue(o);
     }
     
     private static boolean isVanillaTopLevelModel(ResourceLocation location) {
@@ -156,7 +141,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public BakedModel get(Object o) {
-        BakedModel model = getPermanentOverrides().getOrDefault(o, SENTINEL);
+        BakedModel model = permanentOverrides.getOrDefault(o, SENTINEL);
         if(model != SENTINEL)
             return model;
         else {
@@ -172,7 +157,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
             if(model == missingModel) {
                 // to correctly emulate the original map, we return null for missing models, unless they are top-level
                 model = isVanillaTopLevelModel((ResourceLocation)o) ? model : null;
-                this.put((ResourceLocation) o, model);
+                permanentOverrides.put((ResourceLocation) o, model);
             }
             return model;
         }
@@ -180,11 +165,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public BakedModel put(ResourceLocation resourceLocation, BakedModel bakedModel) {
-        BakedModel m;
-        synchronized (this) {
-            m = permanentOverridesMutable.put(resourceLocation, bakedModel);
-            permanentOverridesView = null;
-        }
+        BakedModel m = permanentOverrides.put(resourceLocation, bakedModel);
         if(m != null)
             return m;
         else
@@ -193,11 +174,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public BakedModel remove(Object o) {
-        BakedModel m;
-        synchronized (this) {
-            m = permanentOverridesMutable.remove(o);
-            permanentOverridesView = null;
-        }
+        BakedModel m = permanentOverrides.remove(o);
         if(m != null)
             return m;
         return bakedCache.remove(vanillaKey(o));
@@ -205,10 +182,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public void putAll(@NotNull Map<? extends ResourceLocation, ? extends BakedModel> map) {
-        synchronized (this) {
-            permanentOverridesMutable.putAll(map);
-            permanentOverridesView = null;
-        }
+        permanentOverrides.putAll(map);
     }
 
     @Override
@@ -237,27 +211,23 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
     @Nullable
     @Override
     public BakedModel replace(ResourceLocation key, BakedModel value) {
-        synchronized (this) {
-            BakedModel existingOverride = permanentOverridesMutable.get(key);
-            // as long as no valid override was put in (null can mean unable to load model, so we treat as invalid), replace
-            // the model
-            if(existingOverride == null)
-                return this.put(key, value);
-            else
-                return existingOverride;
-        }
+        BakedModel existingOverride = permanentOverrides.get(key);
+        // as long as no valid override was put in (null can mean unable to load model, so we treat as invalid), replace
+        // the model
+        if(existingOverride == null)
+            return this.put(key, value);
+        else
+            return existingOverride;
     }
 
     @Override
     public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
-        synchronized (this) {
-            permanentOverridesMutable.replaceAll(function);
-            permanentOverridesView = null;
-        }
+        Set<ResourceLocation> overridenLocations = permanentOverrides.keySet();
+        permanentOverrides.replaceAll(function);
         boolean uvLock = BlockModelRotation.X0_Y0.isUvLocked();
         Transformation rotation = BlockModelRotation.X0_Y0.getRotation();
         bakedCache.replaceAll((loc, oldModel) -> {
-            if(loc.getMiddle() != rotation || loc.getRight() != uvLock || getPermanentOverrides().containsKey(loc.getLeft()))
+            if(loc.getMiddle() != rotation || loc.getRight() != uvLock || overridenLocations.contains(loc.getLeft()))
                 return oldModel;
             else
                 return function.apply(loc.getLeft(), oldModel);

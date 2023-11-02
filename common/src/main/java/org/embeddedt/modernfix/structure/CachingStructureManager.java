@@ -101,8 +101,8 @@ public class CachingStructureManager {
 
     private static synchronized CompoundTag getCachedUpgraded(ResourceLocation location, String hash) {
         File theFile = getCachePath(location, hash);
-        try {
-            return NbtIo.readCompressed(theFile, NbtAccounter.unlimitedHeap());
+        try(FileInputStream stream = new FileInputStream(theFile)) {
+            return NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
         } catch(FileNotFoundException e) {
             return null;
         } catch(IOException e) {
@@ -113,8 +113,8 @@ public class CachingStructureManager {
 
     private static synchronized void saveCachedUpgraded(ResourceLocation location, String hash, CompoundTag tagToSave) {
         File theFile = getCachePath(location, truncateHash(hash));
-        try {
-            NbtIo.writeCompressed(tagToSave, theFile);
+        try(FileOutputStream stream = new FileOutputStream(theFile)) {
+            NbtIo.writeCompressed(tagToSave, stream);
         } catch(IOException e) {
             e.printStackTrace();
         }

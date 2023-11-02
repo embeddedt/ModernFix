@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 @Mixin(BufferBuilder.class)
 public class BufferBuilderMixin {
     @Shadow private ByteBuffer buffer;
+    @Shadow private boolean closed;
 
     private static boolean leakReported = false;
 
@@ -30,7 +31,7 @@ public class BufferBuilderMixin {
         try {
             ByteBuffer buf = buffer;
             // can be null if a mod already tried to free the buffer
-            if(buf != null) {
+            if(!this.closed && buf != null) {
                 if(!leakReported) {
                     leakReported = true;
                     ModernFix.LOGGER.warn("One or more BufferBuilders have been leaked, ModernFix will attempt to correct this.");

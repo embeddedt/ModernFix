@@ -61,6 +61,47 @@ public class ModelBakeEventHelper {
         }
     }
 
+    private static final Set<String> WARNED_MOD_IDS = new HashSet<>();
+
+    /**
+     * Create a model registry that warns if keySet, entrySet, values are accessed.
+     * @param modId the mod that the event is being fired for
+     * @return a wrapper around the model registry
+     */
+    private Map<ResourceLocation, BakedModel> createWarningRegistry(String modId) {
+        return new ForwardingMap<ResourceLocation, BakedModel>() {
+            @Override
+            protected Map<ResourceLocation, BakedModel> delegate() {
+                return modelRegistry;
+            }
+
+            private void logWarning() {
+                if(!WARNED_MOD_IDS.add(modId))
+                    return;
+                ModernFix.LOGGER.warn("Mod '{}' is accessing Map#keySet/entrySet/values on the model registry map inside its event handler." +
+                        " This probably won't work as expected with dynamic resources on. Prefer using Map#get/put and constructing ModelResourceLocations another way.", modId);
+            }
+
+            @Override
+            public Set<ResourceLocation> keySet() {
+                logWarning();
+                return super.keySet();
+            }
+
+            @Override
+            public Set<Entry<ResourceLocation, BakedModel>> entrySet() {
+                logWarning();
+                return super.entrySet();
+            }
+
+            @Override
+            public Collection<BakedModel> values() {
+                logWarning();
+                return super.values();
+            }
+        };
+    }
+
     public Map<ResourceLocation, BakedModel> wrapRegistry(String modId) {
         final Set<String> modIdsToInclude = new HashSet<>();
         modIdsToInclude.add(modId);
@@ -69,7 +110,7 @@ public class ModelBakeEventHelper {
         } catch(IllegalArgumentException ignored) { /* sanity check */ }
         modIdsToInclude.remove("minecraft");
         if(modIdsToInclude.stream().noneMatch(INCOMPATIBLE_MODS::contains))
-            return this.modelRegistry;
+            return createWarningRegistry(modId);
         Set<ResourceLocation> ourModelLocations = Sets.filter(this.topLevelModelLocations, loc -> modIdsToInclude.contains(loc.getNamespace()));
         BakedModel missingModel = modelRegistry.get(ModelBakery.MISSING_MODEL_LOCATION);
         return new ForwardingMap<ResourceLocation, BakedModel>() {

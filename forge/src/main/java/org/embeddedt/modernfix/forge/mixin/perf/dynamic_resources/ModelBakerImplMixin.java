@@ -12,7 +12,6 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
-import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.forge.dynresources.IModelBakerImpl;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -109,7 +108,7 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl {
         }
     }
 
-    @ModifyExpressionValue(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At(value = "INVOKE", target = "Ljava/util/Map;get(Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 0))
+    @ModifyExpressionValue(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At(value = "INVOKE", target = "Ljava/util/Map;get(Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 0), remap = false)
     private Object ignoreCacheIfRequested(Object o) {
         return mfix$ignoreCache ? null : o;
     }

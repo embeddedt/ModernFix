@@ -28,10 +28,7 @@ import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
-import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.*;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
@@ -42,8 +39,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 
-/* high priority so that our injectors are added before other mods' */
-@Mixin(value = ModelBakery.class, priority = 600)
+/* low priority so that our injectors are added after other mods' */
+@Mixin(value = ModelBakery.class, priority = 1100)
 @ClientOnlyMixin
 public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
@@ -68,6 +65,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final private static Logger LOGGER;
 
+    @Shadow
+    public abstract void loadTopLevel(ModelResourceLocation modelResourceLocation);
+
     @Shadow public abstract UnbakedModel getModel(ResourceLocation resourceLocation);
 
     private Cache<ModelBakery.BakedCacheKey, BakedModel> loadedBakedModels;
@@ -75,6 +75,8 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private Cache<ResourceLocation, UnbakedModel> loadedModels;
 
     private HashMap<ResourceLocation, UnbakedModel> smallLoadingCache = new HashMap<>();
+
+    private boolean ignoreModelLoad;
 
     // disable fabric recursion
     @SuppressWarnings("unused")
@@ -116,6 +118,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
     }
 
+    @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", ordinal = 0), index = 0)
+    private String ignoreFutureModelLoads(String name) {
+        this.ignoreModelLoad = true;
+        return name;
+    }
+
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
         if(!debugDynamicModelLoading)
             return;
@@ -130,6 +138,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             rl = ((ModelBakery.BakedCacheKey)k).id();
             baked = true;
         }
+        /* can fire when a model is replaced */
+        if(!baked && this.loadedModels.getIfPresent(rl) != null)
+            return;
         ModernFix.LOGGER.warn("Evicted {} model {}", baked ? "baked" : "unbaked", rl);
     }
 
@@ -138,21 +149,23 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private Set<ResourceLocation> blockStateFiles;
     private Set<ResourceLocation> modelFiles;
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBakery;loadBlockModel(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/renderer/block/model/BlockModel;", ordinal = 0))
-    private BlockModel captureMissingModel(ModelBakery bakery, ResourceLocation location) throws IOException {
-        this.missingModel = this.loadBlockModel(location);
+    @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;put(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 0), index = 1)
+    private Object captureMissingModel(Object model) {
+        this.missingModel = (UnbakedModel)model;
         this.blockStateFiles = new HashSet<>();
         this.modelFiles = new HashSet<>();
-        return (BlockModel)this.missingModel;
+        return this.missingModel;
     }
 
     /**
      * @author embeddedt
-     * @reason don't actually load the model.
+     * @reason don't actually load most models
      */
-    @Inject(method = "loadTopLevel", at = @At("HEAD"), cancellable = true)
-    private void addTopLevelFile(ModelResourceLocation location, CallbackInfo ci) {
-        ci.cancel();
+    @Redirect(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBakery;loadTopLevel(Lnet/minecraft/client/resources/model/ModelResourceLocation;)V"))
+    private void addTopLevelFile(ModelBakery bakery, ModelResourceLocation location) {
+        if(location == MISSING_MODEL_LOCATION || !this.ignoreModelLoad) {
+            loadTopLevel(location);
+        }
     }
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0))
@@ -177,13 +190,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private BiFunction<ResourceLocation, Material, TextureAtlasSprite> textureGetter;
 
     @Inject(method = "bakeModels", at = @At("HEAD"))
-    private void storeTextureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
+    private void captureGetter(BiFunction<ResourceLocation, Material, TextureAtlasSprite> getter, CallbackInfo ci) {
+        this.ignoreModelLoad = false;
         textureGetter = getter;
         DynamicBakedModelProvider.currentInstance = (DynamicBakedModelProvider)this.bakedTopLevelModels;
     }
 
     @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Ljava/util/Map;keySet()Ljava/util/Set;"))
-    private Set skipBakingModels(Map instance) {
+    private Set<ResourceLocation> skipBake(Map<ResourceLocation, UnbakedModel> instance) {
         Set<ResourceLocation> modelSet = new HashSet<>(instance.keySet());
         if(modelSet.size() > 0)
             ModernFix.LOGGER.info("Early baking {} models", modelSet.size());
@@ -295,9 +309,16 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Override
     public BakedModel bakeDefault(ResourceLocation modelLocation, ModelState state) {
+        ModelBakery.BakedCacheKey key = new ModelBakery.BakedCacheKey(modelLocation, BlockModelRotation.X0_Y0.getRotation(), BlockModelRotation.X0_Y0.isUvLocked());
+        BakedModel m = loadedBakedModels.getIfPresent(key);
+        if(m != null)
+            return m;
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
-        return theBaker.bake(modelLocation, state, theBaker.getModelTextureGetter());
+        synchronized(this) { m = theBaker.bake(modelLocation, state, theBaker.getModelTextureGetter()); }
+        if(m != null)
+            loadedBakedModels.put(key, m);
+        return m;
     }
 
     @Override

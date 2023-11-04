@@ -1,9 +1,13 @@
 package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources;
 
-import net.minecraft.client.renderer.block.model.BlockModel;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
@@ -17,71 +21,104 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Function;
 
-@Mixin(ModelBakery.ModelBakerImpl.class)
+@Mixin(value = ModelBakery.ModelBakerImpl.class, priority = 600)
 public abstract class ModelBakerImplMixin implements IModelBakerImpl {
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
     @Shadow @Final private ModelBakery field_40571;
 
-    @Shadow public abstract UnbakedModel getModel(ResourceLocation arg);
-
     private boolean mfix$ignoreCache = false;
+
+    @Shadow @Final private Function<Material, TextureAtlasSprite> modelTextureGetter;
+
+    private static final MethodHandle blockStateLoaderHandle;
+    static {
+        try {
+            blockStateLoaderHandle = MethodHandles.lookup().unreflect(
+                    ObfuscationReflectionHelper.findMethod(ModelBakery.class, "m_119263_", BlockState.class)
+            );
+        } catch(ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     @Override
     public void mfix$ignoreCache() {
         mfix$ignoreCache = true;
     }
 
-    @Inject(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At("HEAD"), cancellable = true, remap = false)
-    public void getOrLoadBakedModelDynamic(ResourceLocation arg, ModelState arg2, Function<Material, TextureAtlasSprite> textureGetter, CallbackInfoReturnable<BakedModel> cir) {
-        ModelBakery.BakedCacheKey key = new ModelBakery.BakedCacheKey(arg, arg2.getRotation(), arg2.isUvLocked());
-        BakedModel existing = mfix$ignoreCache ? null : this.field_40571.bakedCache.get(key);
-        if (existing != null) {
-            cir.setReturnValue(existing);
-        } else {
-            synchronized (this) {
-                if(debugDynamicModelLoading)
-                    ModernFix.LOGGER.info("Baking {}", arg);
-                UnbakedModel iunbakedmodel = this.getModel(arg);
-                IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
-                if(iunbakedmodel == extendedBakery.mfix$getUnbakedMissingModel() && debugDynamicModelLoading)
-                    ModernFix.LOGGER.warn("Model {} not present", arg);
-                // TODO: make sure parent resolution doesn't re-run many times
-                iunbakedmodel.resolveParents(this::getModel);
-                BakedModel ibakedmodel = null;
-                if (iunbakedmodel instanceof BlockModel) {
-                    BlockModel blockmodel = (BlockModel)iunbakedmodel;
-                    if (blockmodel.getRootModel() == ModelBakery.GENERATION_MARKER) {
-                        ibakedmodel = ModelBakery.ITEM_MODEL_GENERATOR.generateBlockModel(textureGetter, blockmodel).bake((ModelBaker)this, blockmodel, textureGetter, arg2, arg, false);
-                    }
-                }
-                if(iunbakedmodel != extendedBakery.mfix$getUnbakedMissingModel()) {
-                    for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+    private ResourceLocation capturedLocation;
+    private UnbakedModel capturedModel;
+    private ModelState capturedState;
+
+    @Inject(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At("HEAD"), remap = false)
+    private void captureState(ResourceLocation arg, ModelState state, Function<Material, TextureAtlasSprite> sprites, CallbackInfoReturnable<BakedModel> cir) {
+        capturedState = state;
+    }
+
+    @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)
+    private void obtainModel(ResourceLocation arg, CallbackInfoReturnable<UnbakedModel> cir) {
+        capturedLocation = arg;
+        if(debugDynamicModelLoading)
+            ModernFix.LOGGER.info("Baking {}", arg);
+        IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
+        if(arg instanceof ModelResourceLocation && arg != ModelBakery.MISSING_MODEL_LOCATION) {
+            // synchronized because we use topLevelModels
+            synchronized (this.field_40571) {
+                /* to emulate vanilla model loading, treat as top-level */
+                Optional<Block> blockOpt = Objects.equals(((ModelResourceLocation)arg).getVariant(), "inventory") ? Optional.empty() : BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(arg.getNamespace(), arg.getPath()));
+                if(blockOpt.isPresent()) {
+                    /* load via lambda for mods that expect blockstate to get loaded */
+                    for(BlockState state : extendedBakery.getBlockStatesForMRL(blockOpt.get().getStateDefinition(), (ModelResourceLocation)arg)) {
                         try {
-                            iunbakedmodel = integration.onUnbakedModelPreBake(arg, iunbakedmodel, this.field_40571);
-                        } catch(RuntimeException e) {
-                            ModernFix.LOGGER.error("Exception encountered firing bake event for {}", arg, e);
+                            blockStateLoaderHandle.invokeExact(this.field_40571, state);
+                        } catch(Throwable e) {
+                            ModernFix.LOGGER.error("Error loading model", e);
                         }
                     }
+                } else {
+                    this.field_40571.loadTopLevel((ModelResourceLocation)arg);
                 }
-                if(ibakedmodel == null) {
-                    if(iunbakedmodel == extendedBakery.mfix$getUnbakedMissingModel()) {
-                        // use a shared baked missing model
-                        if(extendedBakery.getBakedMissingModel() == null) {
-                            extendedBakery.setBakedMissingModel(iunbakedmodel.bake((ModelBaker)this, textureGetter, arg2, arg));
-                            ((DynamicBakedModelProvider)this.field_40571.getBakedTopLevelModels()).setMissingModel(extendedBakery.getBakedMissingModel());
-                        }
-                        ibakedmodel = extendedBakery.getBakedMissingModel();
-                    } else
-                        ibakedmodel = iunbakedmodel.bake((ModelBaker)this, textureGetter, arg2, arg);
+                cir.setReturnValue(this.field_40571.topLevelModels.getOrDefault(arg, extendedBakery.mfix$getUnbakedMissingModel()));
+                // avoid leaks
+                this.field_40571.topLevelModels.clear();
+            }
+        } else
+            cir.setReturnValue(this.field_40571.getModel(arg));
+        UnbakedModel toReplace = cir.getReturnValue();
+        if(true) {
+            for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                try {
+                    toReplace = integration.onUnbakedModelPreBake(arg, toReplace, this.field_40571);
+                } catch(RuntimeException e) {
+                    ModernFix.LOGGER.error("Exception firing model pre-bake event for {}", arg, e);
                 }
-                for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
-                    ibakedmodel = integration.onBakedModelLoad(arg, iunbakedmodel, ibakedmodel, arg2, this.field_40571);
-                }
-                this.field_40571.bakedCache.put(key, ibakedmodel);
-                cir.setReturnValue(ibakedmodel);
             }
         }
+        cir.setReturnValue(toReplace);
+        cir.getReturnValue().resolveParents(this.field_40571::getModel);
+        capturedModel = cir.getReturnValue();
+        if(cir.getReturnValue() == extendedBakery.mfix$getUnbakedMissingModel()) {
+            if(arg != ModelBakery.MISSING_MODEL_LOCATION && debugDynamicModelLoading)
+                ModernFix.LOGGER.warn("Model {} not present", arg);
+        }
+    }
+
+    @ModifyExpressionValue(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At(value = "INVOKE", target = "Ljava/util/Map;get(Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 0))
+    private Object ignoreCacheIfRequested(Object o) {
+        return mfix$ignoreCache ? null : o;
+    }
+
+    @ModifyExpressionValue(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
+    private BakedModel unifyMissingBakedModel(BakedModel model) {
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            model = integration.onBakedModelLoad(capturedLocation, capturedModel, model, capturedState, this.field_40571);
+        }
+        return model;
     }
 }

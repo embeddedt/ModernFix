@@ -27,7 +27,7 @@ import java.util.*;
  */
 public class ModelBakeEventHelper {
     // TODO: make into config option
-    private static final Set<String> INCOMPATIBLE_MODS = ImmutableSet.of("industrialforegoing", "vampirism");
+    private static final Set<String> INCOMPATIBLE_MODS = ImmutableSet.of("industrialforegoing", "vampirism", "embers");
     private final Map<ResourceLocation, BakedModel> modelRegistry;
     private final Set<ResourceLocation> topLevelModelLocations;
     private final MutableGraph<String> dependencyGraph;

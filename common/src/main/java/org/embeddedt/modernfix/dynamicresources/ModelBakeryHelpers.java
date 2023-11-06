@@ -167,11 +167,11 @@ public class ModelBakeryHelpers {
             for(String namespace : pack.getNamespaces(PackType.CLIENT_RESOURCES)) {
                 Collection<ResourceLocation> allBlockstates = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "blockstates", Integer.MAX_VALUE, p -> p.endsWith(".json"));
                 for(ResourceLocation blockstate : allBlockstates) {
-                    allAvailableStates.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("blockstates/", "").replace(".json", "")));
+                    allAvailableStates.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replaceFirst("blockstates/", "").replace(".json", "")));
                 }
                 Collection<ResourceLocation> allModels = pack.getResources(PackType.CLIENT_RESOURCES, namespace, "models", Integer.MAX_VALUE, p -> p.endsWith(".json"));
                 for(ResourceLocation blockstate : allModels) {
-                    allAvailableModels.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replace("models/", "").replace(".json", "")));
+                    allAvailableModels.add(new ResourceLocation(blockstate.getNamespace(), blockstate.getPath().replaceFirst("models/", "").replace(".json", "")));
                 }
             }
             if(!isTrustedPack.test(pack)) {

@@ -120,5 +120,6 @@
   "modernfix.option.mixin.perf.compact_mojang_registries": "（Fabric）实验性选项，可将注册表的内存占用减少约 50%。在大多数整合包中没什么用，除非它们包含数百万个方块和物品。",
   "modernfix.option.mixin.perf.dynamic_block_codecs": "不再给每个方块（状态）都存储一个编解码器，只在需要时动态生成、缓存它。通常不值得启用，除非你有一百万个方块/物品。",
   "modernfix.option.mixin.perf.faster_command_suggestions": "在输入命令时，若有数十万个建议，可以缓解卡顿。",
-  "modernfix.option.mixin.perf.mojang_registry_size": "修复了一个问题，它会导致方块/物品的注册速度减慢，减慢的程度与已注册的数量成正比。这缩短了启动时间。"
+  "modernfix.option.mixin.perf.mojang_registry_size": "修复了一个问题，它会导致方块/物品的注册速度减慢，减慢的程度与已注册的数量成正比。这缩短了启动时间。",
+  "modernfix.option.mixin.perf.cache_profile_texture_url": "避免毫无意义地创建一个URL对象，加速头颅方块的渲染。"
 }

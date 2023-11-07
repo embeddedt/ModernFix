@@ -17,6 +17,7 @@ import net.minecraftforge.forgespi.language.IModInfo;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
+import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
@@ -69,7 +70,7 @@ public class ModelBakeEventHelper {
      * @return a wrapper around the model registry
      */
     private Map<ResourceLocation, BakedModel> createWarningRegistry(String modId) {
-        return new ForwardingMap<ResourceLocation, BakedModel>() {
+        return new ForwardingInclDefaultsMap<ResourceLocation, BakedModel>() {
             @Override
             protected Map<ResourceLocation, BakedModel> delegate() {
                 return modelRegistry;

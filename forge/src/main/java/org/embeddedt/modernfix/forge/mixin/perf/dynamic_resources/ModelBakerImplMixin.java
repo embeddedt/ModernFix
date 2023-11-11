@@ -3,11 +3,7 @@ package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
@@ -20,10 +16,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodHandles;
-import java.util.Objects;
-import java.util.Optional;
 import java.util.function.Function;
 
 @Mixin(value = ModelBakery.ModelBakerImpl.class, priority = 600)
@@ -34,17 +26,6 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl {
     private boolean mfix$ignoreCache = false;
 
     @Shadow @Final private Function<Material, TextureAtlasSprite> modelTextureGetter;
-
-    private static final MethodHandle blockStateLoaderHandle;
-    static {
-        try {
-            blockStateLoaderHandle = MethodHandles.lookup().unreflect(
-                    ObfuscationReflectionHelper.findMethod(ModelBakery.class, "m_119263_", BlockState.class)
-            );
-        } catch(ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
 
     @Override
     public void mfix$ignoreCache() {
@@ -69,20 +50,7 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl {
         if(arg instanceof ModelResourceLocation && arg != ModelBakery.MISSING_MODEL_LOCATION) {
             // synchronized because we use topLevelModels
             synchronized (this.field_40571) {
-                /* to emulate vanilla model loading, treat as top-level */
-                Optional<Block> blockOpt = Objects.equals(((ModelResourceLocation)arg).getVariant(), "inventory") ? Optional.empty() : BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(arg.getNamespace(), arg.getPath()));
-                if(blockOpt.isPresent()) {
-                    /* load via lambda for mods that expect blockstate to get loaded */
-                    for(BlockState state : extendedBakery.getBlockStatesForMRL(blockOpt.get().getStateDefinition(), (ModelResourceLocation)arg)) {
-                        try {
-                            blockStateLoaderHandle.invokeExact(this.field_40571, state);
-                        } catch(Throwable e) {
-                            ModernFix.LOGGER.error("Error loading model", e);
-                        }
-                    }
-                } else {
-                    this.field_40571.loadTopLevel((ModelResourceLocation)arg);
-                }
+                this.field_40571.loadTopLevel((ModelResourceLocation)arg);
                 cir.setReturnValue(this.field_40571.topLevelModels.getOrDefault(arg, extendedBakery.mfix$getUnbakedMissingModel()));
                 // avoid leaks
                 this.field_40571.topLevelModels.clear();

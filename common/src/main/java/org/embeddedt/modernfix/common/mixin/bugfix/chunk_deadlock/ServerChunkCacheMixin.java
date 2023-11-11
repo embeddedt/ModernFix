@@ -55,8 +55,6 @@ public abstract class ServerChunkCacheMixin {
                 }
                 if(debugDeadServerAccess)
                     ModernFix.LOGGER.warn("Async loading of a chunk was requested, this might not be desirable", new Exception());
-                else
-                    ModernFix.LOGGER.warn("Suspicious async chunkload, pass -Dmodernfix.debugBadChunkloading=true for more details");
                 try {
                     resultingChunk = future.get(10, TimeUnit.SECONDS);
                     if(resultingChunk.left().isPresent()) {

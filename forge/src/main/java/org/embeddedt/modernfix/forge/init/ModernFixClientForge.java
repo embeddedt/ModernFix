@@ -11,7 +11,6 @@ import net.minecraftforge.client.event.CustomizeGuiOverlayEvent;
 import net.minecraftforge.client.event.RecipesUpdatedEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.event.TagsUpdatedEvent;
 import net.minecraftforge.event.TickEvent;
@@ -19,12 +18,13 @@ import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.*;
+import net.minecraftforge.fml.ModLoader;
+import net.minecraftforge.fml.ModLoadingContext;
+import net.minecraftforge.fml.ModLoadingStage;
+import net.minecraftforge.fml.ModLoadingWarning;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFixClient;
-import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
 
@@ -52,8 +52,7 @@ public class ModernFixClientForge {
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
-        if(false && ModernFixMixinPlugin.instance.isOptionEnabled("perf.dynamic_resources.ConnectednessCheck")
-                && ModList.get().isLoaded("connectedness")) {
+        if(false) {
             event.enqueueWork(() -> {
                 ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.SIDED_SETUP, "modernfix.connectedness_dynresoruces"));
             });
@@ -80,7 +79,7 @@ public class ModernFixClientForge {
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public void onRenderOverlay(CustomizeGuiOverlayEvent.DebugText event) {
-        if(commonMod.brandingString != null && Minecraft.getInstance().options.renderDebug) {
+        if(commonMod.brandingString != null && Minecraft.getInstance().getDebugOverlay().showDebugScreen()) {
             if(brandingList.size() == 0) {
                 brandingList.add("");
                 brandingList.add(commonMod.brandingString);
@@ -103,10 +102,8 @@ public class ModernFixClientForge {
     @SubscribeEvent
     public void onDisconnect(LevelEvent.Unload event) {
         if(event.getLevel().isClientSide()) {
-            DebugScreenOverlay overlay = ObfuscationReflectionHelper.getPrivateValue(ForgeGui.class, (ForgeGui)Minecraft.getInstance().gui, "debugOverlay");
-            if(overlay != null) {
-                Minecraft.getInstance().tell(overlay::clearChunkCache);
-            }
+            DebugScreenOverlay overlay = Minecraft.getInstance().getDebugOverlay();
+            Minecraft.getInstance().tell(overlay::clearChunkCache);
         }
     }
 

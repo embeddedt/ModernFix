@@ -1,10 +1,10 @@
 package org.embeddedt.modernfix.forge.mixin.core;
 
 import net.minecraft.server.Bootstrap;
-import net.minecraftforge.network.NetworkConstants;
-import org.slf4j.Logger;
+import net.minecraftforge.network.NetworkInitialization;
 import org.embeddedt.modernfix.forge.load.ModWorkManagerQueue;
 import org.embeddedt.modernfix.util.TimeFormatter;
+import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -31,6 +31,6 @@ public class BootstrapMixin {
     /* for https://github.com/MinecraftForge/MinecraftForge/issues/9505 */
     @Inject(method = "bootStrap", at = @At("RETURN"))
     private static void doClassloadHack(CallbackInfo ci) {
-        NetworkConstants.init();
+        NetworkInitialization.init();
     }
 }

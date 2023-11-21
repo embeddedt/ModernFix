@@ -90,7 +90,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public void sendPacket(ServerPlayer player, Object packet) {
-        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
+        PacketHandler.INSTANCE.send(packet, PacketDistributor.PLAYER.with(player));
     }
 
     public void injectPlatformSpecificHacks() {

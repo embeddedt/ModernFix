@@ -20,4 +20,4 @@ current_platforms.each { it ->
     }
 }
 
-rootProject.name = 'ModernFix'
+rootProject.name = 'modernfix'

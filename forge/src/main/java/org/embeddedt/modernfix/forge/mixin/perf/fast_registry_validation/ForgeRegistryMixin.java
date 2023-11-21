@@ -13,22 +13,6 @@ import java.util.BitSet;
 
 @Mixin(value = ForgeRegistry.class, remap = false)
 public class ForgeRegistryMixin<V> {
-    //private static Method bitSetTrimMethod = null;
-    //private static boolean bitSetTrimMethodRetrieved = false;
-
-    ///**
-    // * Cache the result of findMethod instead of running it multiple times.
-    // * Null checks are not required as the surrounding code handles it already.
-    // */
-    //@Redirect(method = "validateContent", at = @At(value = "HEAD"))
-    //private Method skipMultipleRemap(Class<?> clz, String methodName, Class<?>[] params) {
-    //    if(!bitSetTrimMethodRetrieved) {
-    //        bitSetTrimMethodRetrieved = true;
-    //        bitSetTrimMethod = ObfuscationReflectionHelper.findMethod(BitSet.class, methodName, params);
-    //    }
-    //    return bitSetTrimMethod;
-    //}
-
     private int expectedNextBit = -1;
 
     /**

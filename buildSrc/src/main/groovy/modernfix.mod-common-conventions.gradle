@@ -16,37 +16,21 @@ dependencies {
             parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
         }
     }
+    annotationProcessor project(":annotation-processor")
 }
 
+project.sourceSets {
+    main.resources.srcDirs += [layout.buildDirectory.dir("generated/sources/annotationProcessor/java/main/resources")]
+}
+// hack to shut up gradle about the hack to include generated resources
 tasks {
     processResources {
-        def mixinFileList = []
-        def mixinDirectory = file("src/main/java/org/embeddedt/modernfix/" + project.name + "/mixin")
-        fileTree(mixinDirectory).visit { FileVisitDetails details ->
-            if(details.file.isFile()) {
-                def fileName = mixinDirectory.relativePath(details.file).toString().replaceFirst(/\.java$/, "").replace('/', '.')
-                mixinFileList << fileName
-            }
-        }
+        dependsOn compileJava
+    }
+}
 
-        def mixinClassesStringB = new StringBuilder()
-        for(int i = 0; i < mixinFileList.size(); i++) {
-            mixinClassesStringB.append("    \"")
-            mixinClassesStringB.append(mixinFileList.get(i))
-            mixinClassesStringB.append('"')
-            if(i < (mixinFileList.size() - 1))
-                mixinClassesStringB.append(',')
-            mixinClassesStringB.append('\n')
-        }
-
-        def replacements = [
-                mixin_classes: mixinClassesStringB.toString()
-        ]
-
-        inputs.properties replacements
-        def filePattern = "modernfix-" + project.name + ".mixins.json"
-        filesMatching(filePattern) {
-            expand replacements
-        }
+tasks.withType(JavaCompile) {
+    configure(options) {
+        options.compilerArgs << "-ArootProject.name=${rootProject.name}" << "-Aproject.name=${project.name}"
     }
 }

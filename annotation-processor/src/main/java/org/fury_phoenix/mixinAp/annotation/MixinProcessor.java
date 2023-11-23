@@ -2,20 +2,16 @@ package org.fury_phoenix.mixinAp.annotation;
 
 import com.google.auto.service.AutoService;
 import com.google.common.base.Throwables;
-import com.google.common.collect.ListMultimap;
-import com.google.common.collect.ArrayListMultimap;
 
 import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 import java.io.Writer;
-import java.lang.annotation.ElementType;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
@@ -26,14 +22,11 @@ import javax.annotation.processing.SupportedOptions;
 import javax.annotation.processing.SupportedSourceVersion;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
-import javax.lang.model.element.ElementKind;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
 import javax.tools.StandardLocation;
 
 import org.fury_phoenix.mixinAp.config.MixinConfig;
-
-import static java.util.function.Predicate.not;
 
 @SupportedAnnotationTypes({"org.spongepowered.asm.mixin.Mixin", "org.embeddedt.modernfix.annotation.ClientOnlyMixin"})
 @SupportedOptions({"rootProject.name", "project.name"})

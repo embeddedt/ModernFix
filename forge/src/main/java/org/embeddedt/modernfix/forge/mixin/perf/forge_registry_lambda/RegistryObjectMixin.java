@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.forge.mixin.perf.forge_registry_lambda;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fml.RegistryObject;
 import net.minecraftforge.registries.IForgeRegistryEntry;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;

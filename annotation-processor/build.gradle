@@ -1,0 +1,21 @@
+plugins {
+    id 'java-library'
+    id 'com.diffplug.spotless'
+}
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    implementation 'com.google.code.gson:gson:2.10.1'
+    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
+    compileOnly 'com.google.auto.service:auto-service:1.1.1'
+}
+
+spotless {
+    java {
+        removeUnusedImports()
+    }
+}
+version = '1.0'

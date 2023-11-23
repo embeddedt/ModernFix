@@ -61,6 +61,13 @@ public class CachedResourcePath {
      * DOES NOT INTERN!
      */
     public CachedResourcePath(String[] pathComponents) {
+        for(String s : pathComponents) {
+            if(s.length() == 0) {
+                // reconstruct the whole array skipping blanks. inefficient, but should not be the common case
+                pathComponents = Arrays.stream(pathComponents).filter(comp -> comp.length() > 0).toArray(String[]::new);
+                break;
+            }
+        }
         this.pathComponents = pathComponents;
     }
 

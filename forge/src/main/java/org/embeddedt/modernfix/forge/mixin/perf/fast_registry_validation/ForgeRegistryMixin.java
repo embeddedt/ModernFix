@@ -1,6 +1,5 @@
 package org.embeddedt.modernfix.forge.mixin.perf.fast_registry_validation;
 
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import net.minecraftforge.registries.ForgeRegistry;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.Marker;
@@ -10,27 +9,10 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.BitSet;
 
 @Mixin(value = ForgeRegistry.class, remap = false)
 public class ForgeRegistryMixin<V> {
-    private static Method bitSetTrimMethod = null;
-    private static boolean bitSetTrimMethodRetrieved = false;
-
-    /**
-     * Cache the result of findMethod instead of running it multiple times.
-     * Null checks are not required as the surrounding code handles it already.
-     */
-    @Redirect(method = "validateContent", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/util/ObfuscationReflectionHelper;findMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;"))
-    private Method skipMultipleRemap(Class<?> clz, String methodName, Class<?>[] params) {
-        if(!bitSetTrimMethodRetrieved) {
-            bitSetTrimMethodRetrieved = true;
-            bitSetTrimMethod = ObfuscationReflectionHelper.findMethod(clz, methodName, params);
-        }
-        return bitSetTrimMethod;
-    }
-
     private int expectedNextBit = -1;
 
     /**

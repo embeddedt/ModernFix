@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.common.mixin.bugfix.buffer_builder_leak;
 
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.render.UnsafeBufferHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -12,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.nio.ByteBuffer;
 
 @Mixin(BufferBuilder.class)
+@ClientOnlyMixin
 public class BufferBuilderMixin {
     @Shadow private ByteBuffer buffer;
 

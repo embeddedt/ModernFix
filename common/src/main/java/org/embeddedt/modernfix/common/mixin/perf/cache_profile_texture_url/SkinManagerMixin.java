@@ -4,6 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
 import net.minecraft.client.resources.SkinManager;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,6 +14,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Mixin(SkinManager.class)
+@ClientOnlyMixin
 public class SkinManagerMixin {
     @Unique
     private final Cache<MinecraftProfileTexture, String> mfix$hashCache = CacheBuilder.newBuilder()

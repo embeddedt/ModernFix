@@ -53,11 +53,9 @@ public class MixinProcessor extends AbstractProcessor {
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         if(roundEnv.processingOver()){
-            // set difference of mixins and client
-            List<String> commonSet = mixinConfigList.get("mixins");
-            commonSet.removeAll(mixinConfigList.get("client"));
+            filterMixinSets();
             // create record for serialization, compute package name
-            String packageName = commonSet.get(0).split("(?<=mixin)")[0];
+            String packageName = mixinConfigList.get("mixins").get(0).split("(?<=mixin)")[0];
             finalizeMixinConfig();
             generateMixinConfig(
                 new MixinConfig(packageName,
@@ -69,6 +67,34 @@ public class MixinProcessor extends AbstractProcessor {
             processMixins(annotations, roundEnv);
         }
         return false;
+    }
+
+    private void processMixins(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+        for (TypeElement annotation : annotations) {
+            Set<? extends Element> annotatedMixins = roundEnv.getElementsAnnotatedWith(annotation);
+
+            List<String> mixins = annotatedMixins.stream()
+            .filter(TypeElement.class::isInstance)
+            .map(TypeElement.class::cast)
+            .map(TypeElement::toString)
+            .collect(Collectors.toList());
+
+            mixinConfigList.putIfAbsent(aliases.get(annotation.getSimpleName().toString()), mixins);
+        }
+    }
+
+    private void filterMixinSets() {
+        // set difference of mixins and client
+        List<String> commonSet = mixinConfigList.get("mixins");
+        commonSet.removeAll(mixinConfigList.get("client"));
+    }
+
+    private String computeMixinConfigPath() {
+        var projectName = processingEnv.getOptions().get("project.name");
+        return "resources/" +
+        rootProjectName +
+        (projectName != null ? "-" + projectName : "") +
+        ".mixins.json";
     }
 
     private void generateMixinConfig(Object config) {
@@ -85,28 +111,6 @@ public class MixinProcessor extends AbstractProcessor {
         } catch (IOException e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
             Throwables.getStackTraceAsString(e));
-        }
-    }
-    
-    private String computeMixinConfigPath() {
-        var projectName = processingEnv.getOptions().get("project.name");
-        return "resources/" + 
-        rootProjectName + 
-        (projectName != null ? "-" + projectName : "") +
-        ".mixins.json";
-    }
-
-    private void processMixins(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        for (TypeElement annotation : annotations) {
-            Set<? extends Element> annotatedMixins = roundEnv.getElementsAnnotatedWith(annotation);
-
-            List<String> mixins = annotatedMixins.stream()
-            .filter(TypeElement.class::isInstance)
-            .map(TypeElement.class::cast)
-            .map(TypeElement::toString)
-            .collect(Collectors.toList());
-
-            mixinConfigList.putIfAbsent(aliases.get(annotation.getSimpleName().toString()), mixins);
         }
     }
     

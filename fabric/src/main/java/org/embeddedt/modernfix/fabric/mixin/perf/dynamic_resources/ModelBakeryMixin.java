@@ -18,6 +18,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
+import org.embeddedt.modernfix.duck.IExtendedModelBaker;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
@@ -309,6 +310,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             return m;
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
+        ((IExtendedModelBaker)theBaker).throwOnMissingModel();
         synchronized(this) { m = theBaker.bake(modelLocation, state); }
         if(m != null)
             loadedBakedModels.put(key, m);
@@ -318,16 +320,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Override
     public ImmutableList<BlockState> getBlockStatesForMRL(StateDefinition<Block, BlockState> stateDefinition, ModelResourceLocation location) {
         return loadOnlyRelevantBlockState(stateDefinition, location);
-    }
-
-    private BakedModel bakedMissingModel = null;
-
-    public void setBakedMissingModel(BakedModel m) {
-        bakedMissingModel = m;
-    }
-
-    public BakedModel getBakedMissingModel() {
-        return bakedMissingModel;
     }
 
     public UnbakedModel mfix$getUnbakedMissingModel() {

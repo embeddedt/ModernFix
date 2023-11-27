@@ -13,7 +13,5 @@ import net.minecraft.world.level.block.state.StateDefinition;
 public interface IExtendedModelBakery {
     ImmutableList<BlockState> getBlockStatesForMRL(StateDefinition<Block, BlockState> stateDefinition, ModelResourceLocation location);
     BakedModel bakeDefault(ResourceLocation modelLocation, ModelState state);
-    BakedModel getBakedMissingModel();
-    void setBakedMissingModel(BakedModel m);
     UnbakedModel mfix$getUnbakedMissingModel();
 }

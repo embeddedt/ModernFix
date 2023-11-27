@@ -10,8 +10,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
+import org.embeddedt.modernfix.duck.IExtendedModelBaker;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
-import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
+import org.embeddedt.modernfix.dynamicresources.ModelMissingException;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -27,7 +28,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @Mixin(value = ModelBakery.ModelBakerImpl.class, priority = 600)
-public abstract class ModelBakerImplMixin {
+public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
     @Shadow @Final private ModelBakery field_40571;
 
@@ -52,16 +53,16 @@ public abstract class ModelBakerImplMixin {
         }
     }
 
-    private void createBakedMissingModelIfNeeded(IExtendedModelBakery extendedBakery, UnbakedModel iunbakedmodel, ModelState arg2, ResourceLocation arg) {
-        if(extendedBakery.getBakedMissingModel() == null) {
-            extendedBakery.setBakedMissingModel(iunbakedmodel.bake((ModelBaker)this, this.modelTextureGetter, arg2, arg));
-            ((DynamicBakedModelProvider)this.field_40571.getBakedTopLevelModels()).setMissingModel(extendedBakery.getBakedMissingModel());
-        }
-    }
-
     private ResourceLocation capturedLocation;
     private UnbakedModel capturedModel;
     private ModelState capturedState;
+
+    private boolean throwIfMissing;
+
+    @Override
+    public void throwOnMissingModel() {
+        throwIfMissing = true;
+    }
 
     @Inject(method = "bake", at = @At("HEAD"))
     private void captureState(ResourceLocation rl, ModelState state, CallbackInfoReturnable<BakedModel> cir) {
@@ -111,8 +112,12 @@ public abstract class ModelBakerImplMixin {
         cir.getReturnValue().resolveParents(this.field_40571::getModel);
         capturedModel = cir.getReturnValue();
         if(cir.getReturnValue() == extendedBakery.mfix$getUnbakedMissingModel()) {
-            if(arg != ModelBakery.MISSING_MODEL_LOCATION && debugDynamicModelLoading)
-                ModernFix.LOGGER.warn("Model {} not present", arg);
+            if(arg != ModelBakery.MISSING_MODEL_LOCATION) {
+                if(debugDynamicModelLoading)
+                    ModernFix.LOGGER.warn("Model {} not present", arg);
+                if(throwIfMissing)
+                    throw new ModelMissingException();
+            }
         }
     }
 

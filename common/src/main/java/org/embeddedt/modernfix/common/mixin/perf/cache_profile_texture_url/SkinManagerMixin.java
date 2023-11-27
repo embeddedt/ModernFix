@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.common.mixin.perf.cache_profile_texture_url;
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.authlib.minecraft.MinecraftProfileTexture;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,6 +13,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.TimeUnit;
 
 @Mixin(targets = {"net/minecraft/client/resources/SkinManager$TextureCache" })
+@ClientOnlyMixin
 public class SkinManagerMixin {
     @Unique
     private final Cache<MinecraftProfileTexture, String> mfix$hashCache = CacheBuilder.newBuilder()

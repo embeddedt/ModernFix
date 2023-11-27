@@ -4,11 +4,13 @@ import com.mojang.serialization.Lifecycle;
 import net.minecraft.client.gui.screens.worldselection.CreateWorldScreen;
 import net.minecraft.world.level.storage.PrimaryLevelData;
 import net.minecraft.world.level.storage.WorldData;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 
 @Mixin(CreateWorldScreen.class)
+@ClientOnlyMixin
 public class CreateWorldScreenMixin {
     /**
      * Fix experimental world dialog still being shown the first time you reopen a world that was created

@@ -18,6 +18,7 @@ import net.minecraft.world.level.block.state.properties.Property;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
+import org.embeddedt.modernfix.duck.IExtendedModelBaker;
 import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
@@ -315,6 +316,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             return m;
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
+        ((IExtendedModelBaker)theBaker).throwOnMissingModel();
         synchronized(this) { m = theBaker.bake(modelLocation, state, theBaker.getModelTextureGetter()); }
         if(m != null)
             loadedBakedModels.put(key, m);

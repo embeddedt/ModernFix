@@ -22,7 +22,7 @@ public class ForgeRegistryMixin<V> {
      * Cache the result of findMethod instead of running it multiple times.
      * Null checks are not required as the surrounding code handles it already.
      */
-    @Redirect(method = "validateContent", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/util/ObfuscationReflectionHelper;findMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;"))
+    @Redirect(method = "validateContent", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/fml/util/ObfuscationReflectionHelper;findMethod(Ljava/lang/Class;Ljava/lang/String;[Ljava/lang/Class;)Ljava/lang/reflect/Method;"), require = 0)
     private Method skipMultipleRemap(Class<?> clz, String methodName, Class<?>[] params) {
         if(!bitSetTrimMethodRetrieved) {
             bitSetTrimMethodRetrieved = true;

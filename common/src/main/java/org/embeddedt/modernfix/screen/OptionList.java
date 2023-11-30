@@ -69,7 +69,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
     }
 
     public OptionList(ModernFixConfigScreen arg, Minecraft arg2) {
-        super(arg2,arg.width + 45, arg.height, 43, arg.height - 32, 20);
+        super(arg2,arg.width + 45, arg.height - 52, 20, 20);
 
         this.mainScreen = arg;
 

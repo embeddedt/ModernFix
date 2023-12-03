@@ -1,7 +1,17 @@
 package org.fury_phoenix.mixinAp.config;
 
-import java.util.List;
+import com.google.common.base.Throwables;
+import com.google.gson.GsonBuilder;
 import com.google.gson.annotations.SerializedName;
+
+import java.io.IOException;
+import java.io.Writer;
+import java.util.List;
+import java.util.Optional;
+
+import javax.annotation.processing.ProcessingEnvironment;
+import javax.tools.Diagnostic;
+import javax.tools.StandardLocation;
 
 public record MixinConfig(
     boolean required,
@@ -25,5 +35,35 @@ public record MixinConfig(
     }
     public record OverwriteOptions(boolean conformVisibility) {
         public static final OverwriteOptions DEFAULT = new OverwriteOptions(true);
+    }
+
+    public void generateMixinConfig(ProcessingEnvironment env) {
+        try (
+        Writer mixinConfigWriter = env.getFiler()
+        .createResource(StandardLocation.SOURCE_OUTPUT, "",
+            MixinConfig.computeMixinConfigPath(
+                env.getOptions().get("rootProject.name"),
+                Optional.ofNullable(env.getOptions().get("project.name"))
+            )
+        ).openWriter()
+        ) {
+            String mixinConfig = new GsonBuilder()
+            .setPrettyPrinting()
+            .create()
+            .toJson(this);
+
+            mixinConfigWriter.write(mixinConfig);
+            mixinConfigWriter.write("\n");
+        } catch (IOException e) {
+            env.getMessager().printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
+            Throwables.getStackTraceAsString(e));
+        }
+    }
+
+    private static String computeMixinConfigPath(String rootProjectName, Optional<String> projectName) {
+        return "resources/" +
+        rootProjectName +
+        projectName.orElse("") +
+        ".mixins.json";
     }
 }

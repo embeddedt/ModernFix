@@ -1,21 +1,16 @@
 package org.fury_phoenix.mixinAp.annotation;
 
 import com.google.auto.service.AutoService;
-import com.google.common.base.Throwables;
 
-import com.google.gson.GsonBuilder;
-
-import java.io.IOException;
-import java.io.Writer;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.annotation.processing.AbstractProcessor;
 import javax.annotation.processing.Processor;
-import javax.annotation.processing.ProcessingEnvironment;
 import javax.annotation.processing.RoundEnvironment;
 import javax.annotation.processing.SupportedAnnotationTypes;
 import javax.annotation.processing.SupportedOptions;
@@ -24,7 +19,6 @@ import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
 import javax.tools.Diagnostic;
-import javax.tools.StandardLocation;
 
 import org.fury_phoenix.mixinAp.config.MixinConfig;
 
@@ -40,15 +34,7 @@ public class MixinProcessor extends AbstractProcessor {
     "ClientOnlyMixin", "client"
     );
 
-    private String rootProjectName;
-
     private final Map<String, List<String>> mixinConfigList = new HashMap<>();
-
-    @Override
-    public void init(ProcessingEnvironment processingEnv) {
-        super.init(processingEnv);
-        rootProjectName = processingEnv.getOptions().get("rootProject.name");
-    }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -57,12 +43,10 @@ public class MixinProcessor extends AbstractProcessor {
             // create record for serialization, compute package name
             String packageName = mixinConfigList.get("mixins").get(0).split("(?<=mixin)")[0];
             finalizeMixinConfig();
-            generateMixinConfig(
-                new MixinConfig(packageName,
-                    mixinConfigList.get("mixins"),
-                    mixinConfigList.get("client")
-                )
-            );
+            new MixinConfig(packageName,
+                mixinConfigList.get("mixins"),
+                mixinConfigList.get("client")
+            ).generateMixinConfig(processingEnv);
         } else {
             processMixins(annotations, roundEnv);
         }
@@ -73,8 +57,14 @@ public class MixinProcessor extends AbstractProcessor {
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedMixins = roundEnv.getElementsAnnotatedWith(annotation);
 
-            List<String> mixins = annotatedMixins.stream()
-            .filter(TypeElement.class::isInstance)
+            Stream<TypeElement> mixinStream =
+            annotatedMixins.stream()
+            .map(TypeElement.class::cast);
+
+            validateCommonMixins(annotation, mixinStream);
+
+            List<String> mixins =
+            annotatedMixins.stream()
             .map(TypeElement.class::cast)
             .map(TypeElement::toString)
             .collect(Collectors.toList());
@@ -84,36 +74,25 @@ public class MixinProcessor extends AbstractProcessor {
     }
 
     private void filterMixinSets() {
-        // set difference of mixins and client
         List<String> commonSet = mixinConfigList.get("mixins");
         commonSet.removeAll(mixinConfigList.get("client"));
     }
 
-    private String computeMixinConfigPath() {
-        var projectName = processingEnv.getOptions().get("project.name");
-        return "resources/" +
-        rootProjectName +
-        (projectName != null ? "-" + projectName : "") +
-        ".mixins.json";
+    private void validateCommonMixins(TypeElement annotation, Stream<TypeElement> mixins) {
+        if(!annotation.getSimpleName().toString().equals("Mixin"))
+            return;
+        ClientMixinValidator validator = new ClientMixinValidator(processingEnv);
+        mixins.parallel()
+        .filter(validator::targetsClient)
+        .map(validator::getEntry)
+        .forEach(this::logClientClassTarget);
     }
 
-    private void generateMixinConfig(Object config) {
-        try (Writer mixinConfigWriter = processingEnv.getFiler()
-        .createResource(StandardLocation.SOURCE_OUTPUT, "", computeMixinConfigPath())
-        .openWriter()) {
-            String mixinConfig = new GsonBuilder()
-            .setPrettyPrinting()
-            .create()
-            .toJson(config);
-
-            mixinConfigWriter.write(mixinConfig);
-            mixinConfigWriter.write("\n");
-        } catch (IOException e) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
-            Throwables.getStackTraceAsString(e));
-        }
+    private void logClientClassTarget(Map.Entry<? extends CharSequence, ? extends CharSequence> mixin) {
+        processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR,
+        "Mixin " + mixin.getKey() + " targets client-side classes: " + mixin.getValue());
     }
-    
+
     private void finalizeMixinConfig() {
         // relativize class names
         for(var list : mixinConfigList.values()) {

@@ -27,9 +27,9 @@ import static java.util.AbstractMap.SimpleImmutableEntry;
 public class ClientMixinValidator {
 
     private final ITypeHandleProvider typeHandleProvider;
-    
+
     private final ProcessingEnvironment processingEnv;
-    
+
     private final Messager messager;
     
     public ClientMixinValidator(ProcessingEnvironment env) {
@@ -37,13 +37,12 @@ public class ClientMixinValidator {
         processingEnv = env;
         messager = env.getMessager();
     }
-    
+
     public boolean validateMixin(TypeElement annotatedMixinClass) {
         return targetsClient(annotatedMixinClass) &&
         !getAnnotationHandle(annotatedMixinClass, ClientOnlyMixin.class).exists();
     }
-    
-    // some sort of javac bug with method reference resolution for mixed staticness
+
     public boolean targetsClient(TypeElement annotatedMixinClass) {
         return targetsClient(
         ClientMixinValidator.getTargets(

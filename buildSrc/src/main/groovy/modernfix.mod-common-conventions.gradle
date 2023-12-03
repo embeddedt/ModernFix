@@ -16,6 +16,7 @@ dependencies {
             parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
         }
     }
+    implementation project(":annotations")
     annotationProcessor project(":annotation-processor")
 }
 
@@ -30,6 +31,8 @@ tasks {
 }
 
 tasks.withType(JavaCompile) {
+    options.fork = true
+    options.forkOptions.jvmArgs << '--enable-preview'
     configure(options) {
         options.compilerArgs << "-ArootProject.name=${rootProject.name}" << "-Aproject.name=${project.name}"
     }

@@ -5,12 +5,24 @@ plugins {
 
 repositories {
     mavenCentral()
+    maven {
+        name "Fabric"
+        url uri("https://maven.fabricmc.net")
+    }
 }
 
 dependencies {
     implementation 'com.google.code.gson:gson:2.10.1'
     annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
+
+    implementation "net.fabricmc:sponge-mixin:0.12.5+"
+    implementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    implementation project(":annotations")
+}
+
+tasks.withType(JavaCompile) {
+    options.compilerArgs += '--enable-preview'
 }
 
 spotless {
@@ -18,4 +30,4 @@ spotless {
         removeUnusedImports()
     }
 }
-version = '1.0'
+version = '1.1.0'

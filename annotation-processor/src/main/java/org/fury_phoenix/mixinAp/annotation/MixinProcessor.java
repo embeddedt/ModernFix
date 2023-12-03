@@ -83,7 +83,7 @@ public class MixinProcessor extends AbstractProcessor {
             return;
         ClientMixinValidator validator = new ClientMixinValidator(processingEnv);
         mixins.parallel()
-        .filter(validator::targetsClient)
+        .filter(validator::validateMixin)
         .map(validator::getEntry)
         .forEach(this::logClientClassTarget);
     }

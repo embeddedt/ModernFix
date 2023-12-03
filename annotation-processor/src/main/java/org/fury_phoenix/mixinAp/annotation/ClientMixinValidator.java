@@ -6,10 +6,10 @@ import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
+import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
-
 import javax.tools.Diagnostic;
 
 import net.fabricmc.api.Environment;
@@ -30,16 +30,25 @@ public class ClientMixinValidator {
     
     private final ProcessingEnvironment processingEnv;
     
+    private final Messager messager;
+    
     public ClientMixinValidator(ProcessingEnvironment env) {
         typeHandleProvider = AnnotatedMixinsAccessor.getMixinAP(env);
         processingEnv = env;
+        messager = env.getMessager();
     }
+    
+    public boolean validateMixin(TypeElement annotatedMixinClass) {
+        return targetsClient(annotatedMixinClass) &&
+        !getAnnotationHandle(annotatedMixinClass, ClientOnlyMixin.class).exists();
+    }
+    
     // some sort of javac bug with method reference resolution for mixed staticness
     public boolean targetsClient(TypeElement annotatedMixinClass) {
         return targetsClient(
         ClientMixinValidator.getTargets(
             getAnnotationHandle(annotatedMixinClass, Mixin.class)
-        )) && !getAnnotationHandle(annotatedMixinClass, ClientOnlyMixin.class).exists();
+        ));
     }
 
     private boolean targetsClient(List<?> classTargets) {
@@ -49,13 +58,11 @@ public class ClientMixinValidator {
 
     private boolean targetsClient(Object classTarget) {
         return switch (classTarget) {
-            case null -> throw new IllegalArgumentException("Can't be empty!");
             case TypeMirror tm ->
                 EnvType.CLIENT == getEnvType(tm);
             // If you're using a dollar sign in class names you are insane
-            case String s && (getEnvType(s) != null) ->
-                EnvType.CLIENT == getEnvType(s);
-            case String s -> warn(s);
+            case String s ->
+                EnvType.CLIENT == getEnvType(s.split("\\$")[0]);
             default ->
                 throw new IllegalArgumentException("Unhandled type: " + classTarget.getClass() + "\n"
                 + "Stringified contents: " + classTarget.toString());
@@ -64,16 +71,17 @@ public class ClientMixinValidator {
 
     private EnvType getEnvType(Object o) {
         TypeHandle handle = getTypeHandle(o);
-        if(handle.isImaginary())
+        if(handle == null) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, o + " can't be found, skipping!");
             return null;
-        Environment env = handle.getElement().getAnnotation(Environment.class);
-        if(env == null)
-            return null;
-        return env.value();
+        }
+        String[] stringEnum = handle.getAnnotation(Environment.class).getValue("value");
+        if(stringEnum == null) return null;
+        return Enum.valueOf(EnvType.class, stringEnum[1]);
     }
 
-    private boolean warn(String s) {
-        processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, s + "can't be loaded, so it is skipped!");
+    private boolean warn(Object o) {
+        messager.printMessage(Diagnostic.Kind.WARNING, o + " can't be loaded, so it is skipped!");
         return false;
     }
 

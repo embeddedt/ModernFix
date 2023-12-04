@@ -87,6 +87,7 @@ remapJar {
     input.set shadowJar.archiveFile
     dependsOn shadowJar
     archiveClassifier.set(null)
+    atAccessWideners.add "modernfix.accesswidener"
 }
 
 jar {

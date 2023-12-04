@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(targets = { "net/neoforged/neoforge/registries/NeoForgeRegistryCallbacks$BlockCallbacks" })
 public class BlockCallbacksMixin {
-    @Redirect(method = "onBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))
+    @Redirect(method = "onBake", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;", ordinal = 0))
     private ImmutableList<BlockState> skipCache(StateDefinition<Block, BlockState> definition) {
         // prevent initCache from being called on these blockstates
         return ImmutableList.of();

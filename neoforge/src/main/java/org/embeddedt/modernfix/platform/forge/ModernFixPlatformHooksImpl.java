@@ -9,21 +9,19 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.CreativeModeTabSearchRegistry;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.fml.ModLoader;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.fml.loading.FMLPaths;
-import net.minecraftforge.fml.loading.LoadingModList;
-import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.server.ServerLifecycleHooks;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.ModLoader;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.fml.loading.FMLPaths;
+import net.neoforged.fml.loading.LoadingModList;
+import net.neoforged.fml.loading.moddiscovery.ModInfo;
+import net.neoforged.neoforge.client.CreativeModeTabSearchRegistry;
+import net.neoforged.neoforge.common.NeoForge;
+import net.neoforged.neoforge.event.RegisterCommandsEvent;
+import net.neoforged.neoforge.network.PacketDistributor;
+import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
-import org.embeddedt.modernfix.forge.classloading.ATInjector;
-import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
 import org.embeddedt.modernfix.forge.init.ModernFixForge;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
@@ -90,14 +88,10 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public void sendPacket(ServerPlayer player, Object packet) {
-        PacketHandler.INSTANCE.send(packet, PacketDistributor.PLAYER.with(player));
+        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 
     public void injectPlatformSpecificHacks() {
-        if(!isEarlyLoadingNormally() && ModernFixMixinPlugin.instance.isOptionEnabled("bugfix.forge_at_inject_error.ATInjector")) {
-            ATInjector.injectModATs();
-        }
-        FastAccessTransformerList.attemptReplace();
 
         /* https://github.com/FabricMC/Mixin/pull/99 */
         try {
@@ -125,7 +119,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler) {
-        MinecraftForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
+        NeoForge.EVENT_BUS.addListener((RegisterCommandsEvent event) -> {
             handler.accept(event.getDispatcher());
         });
     }

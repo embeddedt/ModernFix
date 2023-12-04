@@ -1,9 +1,9 @@
 package org.embeddedt.modernfix.forge.mixin.perf.model_optimizations;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.client.model.obj.ObjLoader;
-import net.minecraftforge.client.model.obj.ObjMaterialLibrary;
-import net.minecraftforge.client.model.obj.ObjModel;
+import net.neoforged.neoforge.client.model.obj.ObjLoader;
+import net.neoforged.neoforge.client.model.obj.ObjMaterialLibrary;
+import net.neoforged.neoforge.client.model.obj.ObjModel;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Final;
@@ -27,12 +27,12 @@ public class OBJLoaderMixin {
     @Mutable
     @Shadow(remap = false) private Map<ObjModel.ModelSettings, ObjModel> modelCache;
 
-    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/ObjLoader;materialCache:Ljava/util/Map;", remap = false))
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/neoforged/neoforge/client/model/obj/ObjLoader;materialCache:Ljava/util/Map;", remap = false))
     private void useConcMap1(ObjLoader instance, Map<ResourceLocation, ObjMaterialLibrary> value) {
         this.materialCache = new ConcurrentHashMap<>();
     }
 
-    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraftforge/client/model/obj/ObjLoader;modelCache:Ljava/util/Map;", remap = false))
+    @Redirect(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/neoforged/neoforge/client/model/obj/ObjLoader;modelCache:Ljava/util/Map;", remap = false))
     private void useConcMap2(ObjLoader instance, Map<ResourceLocation, ObjMaterialLibrary> value) {
         this.modelCache = new ConcurrentHashMap<>();
     }

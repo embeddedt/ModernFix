@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.forge.load;
 
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.forgespi.language.IModFileInfo;
-import net.minecraftforge.forgespi.locating.IModFile;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.IModFileInfo;
+import net.neoforged.neoforgespi.locating.IModFile;
 
 import java.nio.file.Path;
 import java.util.IdentityHashMap;

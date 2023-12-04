@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.forge.util;
 
-import net.minecraftforge.fml.loading.ImmediateWindowHandler;
+import net.neoforged.fml.loading.ImmediateWindowHandler;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GLCapabilities;

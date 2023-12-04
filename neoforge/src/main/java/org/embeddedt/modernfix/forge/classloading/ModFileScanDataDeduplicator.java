@@ -2,9 +2,9 @@ package org.embeddedt.modernfix.forge.classloading;
 
 import com.google.common.collect.Interner;
 import com.google.common.collect.Interners;
-import net.minecraftforge.fml.ModList;
-import net.minecraftforge.forgespi.language.ModFileScanData;
-import net.minecraftforge.forgespi.locating.IModFile;
+import net.neoforged.fml.ModList;
+import net.neoforged.neoforgespi.language.ModFileScanData;
+import net.neoforged.neoforgespi.locating.IModFile;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Field;

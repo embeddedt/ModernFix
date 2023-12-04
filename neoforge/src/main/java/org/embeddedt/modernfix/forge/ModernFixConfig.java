@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.forge;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.common.ForgeConfigSpec;
+import net.neoforged.neoforge.common.ModConfigSpec;
 
 import java.util.List;
 import java.util.Set;
@@ -10,10 +10,10 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class ModernFixConfig {
-    private static final ForgeConfigSpec.Builder COMMON_BUILDER = new ForgeConfigSpec.Builder();
-    public static ForgeConfigSpec COMMON_CONFIG;
+    private static final ModConfigSpec.Builder COMMON_BUILDER = new ModConfigSpec.Builder();
+    public static ModConfigSpec COMMON_CONFIG;
 
-    public static ForgeConfigSpec.ConfigValue<List<? extends String>> BLACKLIST_ASYNC_JEI_PLUGINS;
+    public static ModConfigSpec.ConfigValue<List<? extends String>> BLACKLIST_ASYNC_JEI_PLUGINS;
 
     private static Set<ResourceLocation> jeiPluginBlacklist;
 

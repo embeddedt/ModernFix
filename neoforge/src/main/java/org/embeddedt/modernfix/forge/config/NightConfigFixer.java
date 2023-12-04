@@ -2,8 +2,8 @@ package org.embeddedt.modernfix.forge.config;
 
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
-import net.minecraftforge.fml.loading.FMLLoader;
-import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import net.neoforged.fml.loading.FMLLoader;
+import net.neoforged.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.util.CommonModUtil;

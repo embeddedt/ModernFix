@@ -53,7 +53,8 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
 
     @Override
     public BakedModel onBakedModelLoad(ResourceLocation rl, UnbakedModel rootModel, BakedModel baked, ModelState state, ModelBakery bakery) {
-        if (!(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer()) {
+        if(true) throw new UnsupportedOperationException("not ported yet");
+        if (false /*!(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer()*/) {
             Deque<ResourceLocation> dependencies = new ArrayDeque<>();
             Set<ResourceLocation> seenModels = new HashSet<>();
             dependencies.push(rl);
@@ -104,6 +105,8 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
     }
 
     private void handleInit(ResourceLocation key, BakedModel wrappedModel, ModelBakery bakery) {
+        if(true) throw new UnsupportedOperationException("not ported yet");
+        /*
         if(wrappedModel instanceof AbstractCTMBakedModel baked) {
             IModelCTM var10 = baked.getModel();
             if (var10 instanceof ModelCTM ctmModel) {
@@ -120,5 +123,6 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
                 }
             }
         }
+         */
     }
 }

@@ -5,12 +5,12 @@ import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.core.Holder;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
@@ -60,8 +60,8 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
     private void refreshLayerHacks() {
         renderCheckOverrides.clear();
         if(blockRenderChecks.isEmpty()) {
-            for(Block block : ForgeRegistries.BLOCKS.getValues()) {
-                Holder.Reference<Block> holder = ForgeRegistries.BLOCKS.getDelegateOrThrow(block);
+            for(Block block : BuiltInRegistries.BLOCK) {
+                Holder.Reference<Block> holder = block.builtInRegistryHolder();
                 ChunkRenderTypeSet original = this.getExistingRenderCheck(block);
                 if(original == null)
                     original = DEFAULT_TYPE_SET;
@@ -82,11 +82,14 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
     public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState modelState, ModelBakery bakery) {
         if(!(location instanceof ModelResourceLocation))
             return originalModel;
+        if(true) throw new UnsupportedOperationException("not ported yet");
+        /*
         if(!(originalModel instanceof AbstractCTMBakedModel || originalModel instanceof WeightedBakedModel || originalModel instanceof MultiPartBakedModel))
             return originalModel;
+        */
         /* we construct a new ResourceLocation because an MRL is coming in */
-        Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(location.getNamespace(), location.getPath()));
-        Holder.Reference<Block> delegate = block != null ? ForgeRegistries.BLOCKS.getDelegateOrThrow(block) : null;
+        Block block = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(location.getNamespace(), location.getPath())).orElse(null);
+        Holder.Reference<Block> delegate = block != null ? block.builtInRegistryHolder() : null;
         if(block == null || block == Blocks.AIR || renderCheckOverrides.containsKey(delegate))
             return originalModel;
         /* find all states that match this MRL */

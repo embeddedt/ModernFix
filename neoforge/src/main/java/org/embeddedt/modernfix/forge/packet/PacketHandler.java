@@ -1,30 +1,33 @@
 package org.embeddedt.modernfix.forge.packet;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.Channel;
-import net.minecraftforge.network.ChannelBuilder;
-import net.minecraftforge.network.SimpleChannel;
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.fml.DistExecutor;
+import net.neoforged.neoforge.network.NetworkEvent;
+import net.neoforged.neoforge.network.NetworkRegistry;
+import net.neoforged.neoforge.network.simple.SimpleChannel;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 
 public class PacketHandler {
-    private static final int PROTOCOL_VERSION = 1;
-    public static final SimpleChannel INSTANCE = ChannelBuilder
-            .named(new ResourceLocation(ModernFix.MODID, "main"))
-            .networkProtocolVersion(PROTOCOL_VERSION)
-            .serverAcceptedVersions(Channel.VersionTest.ACCEPT_MISSING.or(Channel.VersionTest.exact(PROTOCOL_VERSION)))
-            .clientAcceptedVersions(Channel.VersionTest.ACCEPT_MISSING.or(Channel.VersionTest.exact(PROTOCOL_VERSION)))
-            .simpleChannel();
+    private static final String PROTOCOL_VERSION = "1";
+    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
+            new ResourceLocation(ModernFix.MODID, "main"),
+            () -> PROTOCOL_VERSION,
+            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION),
+            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION)
+    );
 
     public static void register() {
-        INSTANCE.messageBuilder(EntityIDSyncPacket.class).encoder(EntityIDSyncPacket::serialize).decoder(EntityIDSyncPacket::deserialize).consumerNetworkThread((msg, ctx) -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                ctx.enqueueWork(() -> ModernFixClient.handleEntityIDSync(msg));
-                ctx.setPacketHandled(true);
-            });
-        }).add();
+        int id = 1;
+        INSTANCE.registerMessage(id++, EntityIDSyncPacket.class, EntityIDSyncPacket::serialize, EntityIDSyncPacket::deserialize, PacketHandler::handleSyncPacket);
+    }
+
+    private static void handleSyncPacket(EntityIDSyncPacket packet, NetworkEvent.Context contextSupplier) {
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            contextSupplier.enqueueWork(() -> ModernFixClient.handleEntityIDSync(packet));
+            contextSupplier.setPacketHandled(true);
+        });
     }
 }

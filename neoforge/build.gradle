@@ -6,18 +6,7 @@ plugins {
 
 architectury {
     platformSetupLoomIde()
-    forge()
-}
-
-loom {
-    forge {
-        convertAccessWideners = true
-        extraAccessWideners.add loom.accessWidenerPath.get().asFile.name
-
-        mixinConfig "modernfix-common.mixins.json"
-        mixinConfig "modernfix-forge.mixins.json"
-    }
-    mixin.defaultRefmapName = "modernfix.refmap.json"
+    neoForge()
 }
 
 configurations {
@@ -41,10 +30,11 @@ repositories {
             includeGroup "extra-mods"
         }
     }
+    maven { url "https://maven.neoforged.net" }
 }
 
 dependencies {
-    forge "net.minecraftforge:forge:${rootProject.forge_version}"
+    neoForge "net.neoforged:neoforge:${rootProject.forge_version}"
     implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-common:${rootProject.mixinextras_version}"))
     implementation(include("com.github.llamalad7.mixinextras:mixinextras-forge:${rootProject.mixinextras_version}"))
     // Remove the next line if you don't want to depend on the API

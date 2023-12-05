@@ -63,6 +63,7 @@ public record MixinConfig(
     private static String computeMixinConfigPath(String rootProjectName, Optional<String> projectName) {
         return "resources/" +
         rootProjectName +
+        (projectName.isPresent() ? "-" : "") +
         projectName.orElse("") +
         ".mixins.json";
     }

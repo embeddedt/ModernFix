@@ -43,7 +43,7 @@ curseforge {
             changelog = file("${rootDir}/CHANGELOG.md")
             changelogType = "markdown"
             releaseType = isBeta ? "beta" : "release"
-            addGameVersion project.name.capitalize()
+            addGameVersion (project.name.equals("neoforge") ? "NeoForge" : project.name.capitalize())
             gameVersionStrings.addAll(supported_minecraft_versions.tokenize(","))
             mainArtifact remapJar
         }

@@ -3,17 +3,17 @@ package org.fury_phoenix.mixinAp.annotation;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
-
-import net.fabricmc.api.Environment;
-import net.fabricmc.api.EnvType;
 
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
@@ -31,11 +31,21 @@ public class ClientMixinValidator {
     private final ProcessingEnvironment processingEnv;
 
     private final Messager messager;
-    
+
+    private final Elements elemUtils;
+
+    private final Class<? extends Annotation> markerClass = getMarkerClass();
+
+    private static final Set<String> markers = Set.of(
+    "net.fabricmc.api.Environment",
+    "net.minecraftforge.api.distmarker.OnlyIn",
+    "net.neoforged.api.distmarker.OnlyIn");
+
     public ClientMixinValidator(ProcessingEnvironment env) {
         typeHandleProvider = AnnotatedMixinsAccessor.getMixinAP(env);
         processingEnv = env;
         messager = env.getMessager();
+        elemUtils = env.getElementUtils();
     }
 
     public boolean validateMixin(TypeElement annotatedMixinClass) {
@@ -58,25 +68,42 @@ public class ClientMixinValidator {
     private boolean targetsClient(Object classTarget) {
         return switch (classTarget) {
             case TypeMirror tm ->
-                EnvType.CLIENT == getEnvType(tm);
+                isClientMarked(tm);
             // If you're using a dollar sign in class names you are insane
             case String s ->
-                EnvType.CLIENT == getEnvType(s.split("\\$")[0]);
+                targetsClient(elemUtils.getTypeElement(toSourceString(s.split("\\$")[0])).asType());
             default ->
                 throw new IllegalArgumentException("Unhandled type: " + classTarget.getClass() + "\n"
                 + "Stringified contents: " + classTarget.toString());
         };
     }
 
-    private EnvType getEnvType(Object o) {
-        TypeHandle handle = getTypeHandle(o);
+    private boolean isClientMarked(AnnotatedConstruct ac) {
+        TypeHandle handle = getTypeHandle(ac);
         if(handle == null) {
-            processingEnv.getMessager().printMessage(Diagnostic.Kind.WARNING, o + " can't be found, skipping!");
-            return null;
+            messager.printMessage(Diagnostic.Kind.WARNING, "Class can't be loaded! " + ac);
+            return false;
         }
-        String[] stringEnum = handle.getAnnotation(Environment.class).getValue("value");
-        if(stringEnum == null) return null;
-        return Enum.valueOf(EnvType.class, stringEnum[1]);
+        IAnnotationHandle marker = handle.getAnnotation(markerClass);
+
+        if(marker == null) return false;
+
+        String[] markerEnum = marker.getValue("value");
+
+        if(markerEnum == null) return false;
+
+        String markerEnumValue = markerEnum[1];
+        return markerEnumValue.toString().equals("CLIENT");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Annotation> getMarkerClass() {
+        for(var annotation : markers) {
+            try {
+                return (Class<Annotation>)Class.forName(annotation);
+            } catch (ClassNotFoundException e) {}
+        }
+        return null;
     }
 
     private boolean warn(Object o) {

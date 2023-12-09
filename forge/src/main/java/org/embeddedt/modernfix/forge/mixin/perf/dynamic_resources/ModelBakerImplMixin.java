@@ -1,6 +1,8 @@
 package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
@@ -34,20 +36,11 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
         mfix$ignoreCache = true;
     }
 
-    private ResourceLocation capturedLocation;
-    private UnbakedModel capturedModel;
-    private ModelState capturedState;
-
     private boolean throwIfMissing;
 
     @Override
     public void throwOnMissingModel() {
         throwIfMissing = true;
-    }
-
-    @Inject(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At("HEAD"), remap = false)
-    private void captureState(ResourceLocation arg, ModelState state, Function<Material, TextureAtlasSprite> sprites, CallbackInfoReturnable<BakedModel> cir) {
-        capturedState = state;
     }
 
     @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)
@@ -77,10 +70,6 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
         }
         cir.setReturnValue(toReplace);
         cir.getReturnValue().resolveParents(this.field_40571::getModel);
-        if(capturedLocation == null) {
-            capturedLocation = arg;
-            capturedModel = cir.getReturnValue();
-        }
         if(cir.getReturnValue() == extendedBakery.mfix$getUnbakedMissingModel()) {
             if(arg != ModelBakery.MISSING_MODEL_LOCATION) {
                 if(debugDynamicModelLoading)
@@ -96,25 +85,13 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
         return mfix$ignoreCache ? null : o;
     }
 
-    @ModifyExpressionValue(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
-    private BakedModel unifyMissingBakedModel(BakedModel model) {
-        // Save these variables in case the nested model calls getModel somehow
-        ResourceLocation location = this.capturedLocation;
-        UnbakedModel unbakedModel = this.capturedModel;
-        ModelState state = this.capturedState;
-
-        // Safety check
-        if(location == null) {
-            return model;
-        }
+    @WrapOperation(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
+    private BakedModel callBakedModelIntegration(UnbakedModel unbakedModel, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState state, ResourceLocation location, Operation<BakedModel> operation) {
+        BakedModel model = operation.call(unbakedModel, baker, spriteGetter, state, location);
 
         for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
             model = integration.onBakedModelLoad(location, unbakedModel, model, state, this.field_40571);
         }
-
-        // Allow more capturing
-        this.capturedLocation = null;
-        this.capturedModel = null;
 
         return model;
     }

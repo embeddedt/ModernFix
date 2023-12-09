@@ -52,7 +52,6 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
 
     @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)
     private void obtainModel(ResourceLocation arg, CallbackInfoReturnable<UnbakedModel> cir) {
-        capturedLocation = arg;
         if(debugDynamicModelLoading)
             ModernFix.LOGGER.info("Baking {}", arg);
         IExtendedModelBakery extendedBakery = (IExtendedModelBakery)this.field_40571;
@@ -78,7 +77,10 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
         }
         cir.setReturnValue(toReplace);
         cir.getReturnValue().resolveParents(this.field_40571::getModel);
-        capturedModel = cir.getReturnValue();
+        if(capturedLocation == null) {
+            capturedLocation = arg;
+            capturedModel = cir.getReturnValue();
+        }
         if(cir.getReturnValue() == extendedBakery.mfix$getUnbakedMissingModel()) {
             if(arg != ModelBakery.MISSING_MODEL_LOCATION) {
                 if(debugDynamicModelLoading)
@@ -96,9 +98,24 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
 
     @ModifyExpressionValue(method = "bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
     private BakedModel unifyMissingBakedModel(BakedModel model) {
-        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
-            model = integration.onBakedModelLoad(capturedLocation, capturedModel, model, capturedState, this.field_40571);
+        // Save these variables in case the nested model calls getModel somehow
+        ResourceLocation location = this.capturedLocation;
+        UnbakedModel unbakedModel = this.capturedModel;
+        ModelState state = this.capturedState;
+
+        // Safety check
+        if(location == null) {
+            return model;
         }
+
+        for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+            model = integration.onBakedModelLoad(location, unbakedModel, model, state, this.field_40571);
+        }
+
+        // Allow more capturing
+        this.capturedLocation = null;
+        this.capturedModel = null;
+
         return model;
     }
 }

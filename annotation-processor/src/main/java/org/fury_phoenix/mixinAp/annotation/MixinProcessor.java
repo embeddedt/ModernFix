@@ -1,6 +1,7 @@
 package org.fury_phoenix.mixinAp.annotation;
 
 import com.google.auto.service.AutoService;
+import com.google.common.base.Throwables;
 
 import java.util.List;
 import java.util.HashMap;
@@ -23,7 +24,7 @@ import javax.tools.Diagnostic;
 import org.fury_phoenix.mixinAp.config.MixinConfig;
 
 @SupportedAnnotationTypes({"org.spongepowered.asm.mixin.Mixin", "org.embeddedt.modernfix.annotation.ClientOnlyMixin"})
-@SupportedOptions({"rootProject.name", "project.name"})
+@SupportedOptions({"rootProject.name", "project.name", "org.fury_phoenix.mixinAp.validator.debug"})
 @SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public class MixinProcessor extends AbstractProcessor {
@@ -38,22 +39,28 @@ public class MixinProcessor extends AbstractProcessor {
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
-        if(roundEnv.processingOver()){
-            filterMixinSets();
-            // create record for serialization, compute package name
-            String packageName = mixinConfigList.get("mixins").get(0).split("(?<=mixin)")[0];
-            finalizeMixinConfig();
-            new MixinConfig(packageName,
-                mixinConfigList.get("mixins"),
-                mixinConfigList.get("client")
-            ).generateMixinConfig(processingEnv);
-        } else {
-            processMixins(annotations, roundEnv);
+        try {
+            if(roundEnv.processingOver()){
+                filterMixinSets();
+                // create record for serialization, compute package name
+                String packageName = mixinConfigList.get("mixins").get(0).split("(?<=mixin)")[0];
+                finalizeMixinConfig();
+                new MixinConfig(packageName,
+                    mixinConfigList.get("mixins"),
+                    mixinConfigList.get("client")
+                ).generateMixinConfig(processingEnv);
+            } else {
+                processMixins(annotations, roundEnv);
+            }
+        } catch (Exception e) {
+            processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
+            Throwables.getStackTraceAsString(e));
         }
         return false;
     }
 
-    private void processMixins(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
+    private void processMixins(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
+    throws ReflectiveOperationException {
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedMixins = roundEnv.getElementsAnnotatedWith(annotation);
 
@@ -78,7 +85,8 @@ public class MixinProcessor extends AbstractProcessor {
         commonSet.removeAll(mixinConfigList.get("client"));
     }
 
-    private void validateCommonMixins(TypeElement annotation, Stream<TypeElement> mixins) {
+    private void validateCommonMixins(TypeElement annotation, Stream<TypeElement> mixins)
+    throws ReflectiveOperationException {
         if(!annotation.getSimpleName().toString().equals("Mixin"))
             return;
         ClientMixinValidator validator = new ClientMixinValidator(processingEnv);

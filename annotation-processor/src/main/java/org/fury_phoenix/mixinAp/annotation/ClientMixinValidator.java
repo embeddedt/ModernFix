@@ -1,7 +1,11 @@
 package org.fury_phoenix.mixinAp.annotation;
 
+import com.google.common.base.Throwables;
+
 import java.lang.annotation.Annotation;
+import java.lang.invoke.*;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -9,10 +13,10 @@ import java.util.stream.Stream;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
-import javax.lang.model.AnnotatedConstruct;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
+import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
@@ -28,24 +32,50 @@ public class ClientMixinValidator {
 
     private final ITypeHandleProvider typeHandleProvider;
 
-    private final ProcessingEnvironment processingEnv;
-
     private final Messager messager;
 
     private final Elements elemUtils;
 
-    private final Class<? extends Annotation> markerClass = getMarkerClass();
+    private final Types types;
 
-    private static final Set<String> markers = Set.of(
+    private final boolean debug;
+
+    private final Class<? extends Annotation> markerClass = getMarkerClass(markers);
+
+    private final Class<? extends Enum<?>> markerEnumClass = getMarkerEnumClass(markerEnums);
+
+    private static final Collection<String> markers = Set.of(
     "net.fabricmc.api.Environment",
     "net.minecraftforge.api.distmarker.OnlyIn",
     "net.neoforged.api.distmarker.OnlyIn");
 
-    public ClientMixinValidator(ProcessingEnvironment env) {
+    private static final Collection<String> markerEnums = Set.of(
+    "net.fabricmc.api.EnvType",
+    "net.minecraftforge.api.distmarker.Dist",
+    "net.neoforged.api.distmarker.Dist");
+
+    private static final Collection<String> unannotatedClasses = new HashSet<>();
+
+    private static final MethodHandles.Lookup lookup = MethodHandles.publicLookup();
+
+    private final MethodType enumValueAccessorType = MethodType.methodType(markerEnumClass);
+
+    private final MethodHandle enumValueAccessor;
+
+    public ClientMixinValidator(ProcessingEnvironment env)
+    throws ReflectiveOperationException {
         typeHandleProvider = AnnotatedMixinsAccessor.getMixinAP(env);
-        processingEnv = env;
+        debug = Boolean.valueOf(env.getOptions().get("org.fury_phoenix.mixinAp.validator.debug"));
         messager = env.getMessager();
         elemUtils = env.getElementUtils();
+        types = env.getTypeUtils();
+        try { enumValueAccessor = getMethod(markerClass); }
+        catch (ReflectiveOperationException e) { throw e; }
+    }
+
+    private MethodHandle getMethod(Class<?> clz)
+    throws ReflectiveOperationException {
+        return lookup.findVirtual(clz, "value", enumValueAccessorType);
     }
 
     public boolean validateMixin(TypeElement annotatedMixinClass) {
@@ -61,44 +91,52 @@ public class ClientMixinValidator {
     }
 
     private boolean targetsClient(List<?> classTargets) {
-        return classTargets.stream()
-        .anyMatch(this::targetsClient);
+        return classTargets.stream().anyMatch(this::targetsClient);
     }
 
     private boolean targetsClient(Object classTarget) {
         return switch (classTarget) {
-            case TypeMirror tm ->
-                isClientMarked(tm);
+            case TypeElement te ->
+                isClientMarked(te);
+            case TypeMirror tm -> {
+                var el = types.asElement(tm);
+                yield el != null ? targetsClient(el) : warn("TypeMirror of " + tm);
+            }
             // If you're using a dollar sign in class names you are insane
-            case String s ->
-                targetsClient(elemUtils.getTypeElement(toSourceString(s.split("\\$")[0])).asType());
+            case String s -> {
+                var te =
+                elemUtils.getTypeElement(toSourceString(s.split("\\$")[0]));
+                yield te != null ? targetsClient(te) : warn(s);
+            }
             default ->
-                throw new IllegalArgumentException("Unhandled type: " + classTarget.getClass() + "\n"
-                + "Stringified contents: " + classTarget.toString());
+                throw new IllegalArgumentException("Unhandled type: "
+                + classTarget.getClass() + "\n" + "Stringified contents: "
+                + classTarget.toString());
         };
     }
 
-    private boolean isClientMarked(AnnotatedConstruct ac) {
-        TypeHandle handle = getTypeHandle(ac);
-        if(handle == null) {
-            messager.printMessage(Diagnostic.Kind.WARNING, "Class can't be loaded! " + ac);
+    private boolean isClientMarked(TypeElement te) {
+        Annotation marker = te.getAnnotation(markerClass);
+        if(marker == null) {
+            if(debug && unannotatedClasses.add(te.toString())) {
+                messager.printMessage(Diagnostic.Kind.WARNING,
+                "Missing " + markerClass.getCanonicalName() + " on " + te + "!");
+            }
             return false;
         }
-        IAnnotationHandle marker = handle.getAnnotation(markerClass);
-
-        if(marker == null) return false;
-
-        String[] markerEnum = marker.getValue("value");
-
-        if(markerEnum == null) return false;
-
-        String markerEnumValue = markerEnum[1];
-        return markerEnumValue.toString().equals("CLIENT");
+        try {
+            Object value = enumValueAccessor.invoke(marker);
+            return value.toString().equals("CLIENT");
+        } catch (Throwable e) {
+            messager.printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
+            Throwables.getStackTraceAsString(e));
+        }
+        return false;
     }
 
     @SuppressWarnings("unchecked")
-    private static Class<? extends Annotation> getMarkerClass() {
-        for(var annotation : markers) {
+    private static Class<? extends Annotation> getMarkerClass(Collection<String> markerSet) {
+        for(var annotation : markerSet) {
             try {
                 return (Class<Annotation>)Class.forName(annotation);
             } catch (ClassNotFoundException e) {}
@@ -106,8 +144,19 @@ public class ClientMixinValidator {
         return null;
     }
 
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Enum<?>> getMarkerEnumClass(Collection<String> enumSet) {
+        for(var enumClass : enumSet) {
+            try {
+                return (Class<Enum<?>>)Class.forName(enumClass);
+            } catch (ClassNotFoundException e) {}
+        }
+        return null;
+    }
+
     private boolean warn(Object o) {
-        messager.printMessage(Diagnostic.Kind.WARNING, o + " can't be loaded, so it is skipped!");
+        messager.printMessage(Diagnostic.Kind.WARNING,
+        toSourceString(o.toString()) + " can't be loaded, so it is skipped!");
         return false;
     }
 
@@ -117,7 +166,8 @@ public class ClientMixinValidator {
             annotatedMixinClass.getQualifiedName(),
             ClientMixinValidator.getTargets(
             getAnnotationHandle(annotatedMixinClass, Mixin.class)
-            ).stream().filter(this::targetsClient)
+            ).stream()
+            .filter(this::targetsClient)
             .map(Object::toString)
             .map(ClientMixinValidator::toSourceString)
             .collect(Collectors.joining(", "))
@@ -128,7 +178,8 @@ public class ClientMixinValidator {
         return typeHandleProvider.getTypeHandle(annotatedClass);
     }
 
-    private IAnnotationHandle getAnnotationHandle(Object annotatedClass, Class<? extends Annotation> annotation) {
+    private IAnnotationHandle
+    getAnnotationHandle(Object annotatedClass, Class<? extends Annotation> annotation) {
         return getTypeHandle(annotatedClass).getAnnotation(annotation);
     }
 

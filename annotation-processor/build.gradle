@@ -17,7 +17,6 @@ dependencies {
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
 
     implementation "net.fabricmc:sponge-mixin:0.12.5+"
-    implementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     implementation project(":annotations")
 }
 
@@ -30,4 +29,4 @@ spotless {
         removeUnusedImports()
     }
 }
-version = '1.1.0'
+version = '1.1.1'

@@ -55,6 +55,8 @@ public class MixinProcessor extends AbstractProcessor {
         } catch (Exception e) {
             processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
             Throwables.getStackTraceAsString(e));
+            throw new RuntimeException(e);
+            // Halt the AP to prevent nonsense errors
         }
         return false;
     }

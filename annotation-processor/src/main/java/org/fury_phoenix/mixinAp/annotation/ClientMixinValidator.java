@@ -40,10 +40,6 @@ public class ClientMixinValidator {
 
     private final boolean debug;
 
-    private final Class<? extends Annotation> markerClass = getMarkerClass(markers);
-
-    private final Class<? extends Enum<?>> markerEnumClass = getMarkerEnumClass(markerEnums);
-
     private static final Collection<String> markers = Set.of(
     "net.fabricmc.api.Environment",
     "net.minecraftforge.api.distmarker.OnlyIn",
@@ -58,10 +54,6 @@ public class ClientMixinValidator {
 
     private static final MethodHandles.Lookup lookup = MethodHandles.publicLookup();
 
-    private final MethodType enumValueAccessorType = MethodType.methodType(markerEnumClass);
-
-    private final MethodHandle enumValueAccessor;
-
     public ClientMixinValidator(ProcessingEnvironment env)
     throws ReflectiveOperationException {
         typeHandleProvider = AnnotatedMixinsAccessor.getMixinAP(env);
@@ -69,13 +61,6 @@ public class ClientMixinValidator {
         messager = env.getMessager();
         elemUtils = env.getElementUtils();
         types = env.getTypeUtils();
-        try { enumValueAccessor = getMethod(markerClass); }
-        catch (ReflectiveOperationException e) { throw e; }
-    }
-
-    private MethodHandle getMethod(Class<?> clz)
-    throws ReflectiveOperationException {
-        return lookup.findVirtual(clz, "value", enumValueAccessorType);
     }
 
     public boolean validateMixin(TypeElement annotatedMixinClass) {
@@ -116,16 +101,16 @@ public class ClientMixinValidator {
     }
 
     private boolean isClientMarked(TypeElement te) {
-        Annotation marker = te.getAnnotation(markerClass);
+        Annotation marker = te.getAnnotation(getMarkerClass(markers));
         if(marker == null) {
             if(debug && unannotatedClasses.add(te.toString())) {
                 messager.printMessage(Diagnostic.Kind.WARNING,
-                "Missing " + markerClass.getCanonicalName() + " on " + te + "!");
+                "Missing " + getMarkerClass(markers).getCanonicalName() + " on " + te + "!");
             }
             return false;
         }
         try {
-            Object value = enumValueAccessor.invoke(marker);
+            Object value = getAccessor().invoke(marker);
             return value.toString().equals("CLIENT");
         } catch (Throwable e) {
             messager.printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
@@ -134,30 +119,17 @@ public class ClientMixinValidator {
         return false;
     }
 
-    @SuppressWarnings("unchecked")
-    private static Class<? extends Annotation> getMarkerClass(Collection<String> markerSet) {
-        for(var annotation : markerSet) {
-            try {
-                return (Class<Annotation>)Class.forName(annotation);
-            } catch (ClassNotFoundException e) {}
-        }
-        return null;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Class<? extends Enum<?>> getMarkerEnumClass(Collection<String> enumSet) {
-        for(var enumClass : enumSet) {
-            try {
-                return (Class<Enum<?>>)Class.forName(enumClass);
-            } catch (ClassNotFoundException e) {}
-        }
-        return null;
-    }
-
     private boolean warn(Object o) {
         messager.printMessage(Diagnostic.Kind.WARNING,
         toSourceString(o.toString()) + " can't be loaded, so it is skipped!");
         return false;
+    }
+
+    private MethodHandle getAccessor() throws ReflectiveOperationException {
+        Class<? extends Annotation> markerClass = getMarkerClass(markers);
+        Class<? extends Enum<?>> markerEnumClass = getMarkerEnumClass(markerEnums);
+        MethodType enumValueAccessorType = MethodType.methodType(markerEnumClass);
+        return lookup.findVirtual(markerClass, "value", enumValueAccessorType);
     }
 
     public SimpleImmutableEntry<? extends CharSequence, ? extends CharSequence>
@@ -178,13 +150,9 @@ public class ClientMixinValidator {
         return typeHandleProvider.getTypeHandle(annotatedClass);
     }
 
-    private IAnnotationHandle
-    getAnnotationHandle(Object annotatedClass, Class<? extends Annotation> annotation) {
+    private IAnnotationHandle getAnnotationHandle
+    (Object annotatedClass, Class<? extends Annotation> annotation) {
         return getTypeHandle(annotatedClass).getAnnotation(annotation);
-    }
-
-    public static String toSourceString(String bytecodeName) {
-        return bytecodeName.replaceAll("\\/", ".");
     }
 
     private static List<Object> getTargets(IAnnotationHandle mixinAnnotation) {
@@ -196,4 +164,29 @@ public class ClientMixinValidator {
         .collect(Collectors.toList());
         return targets;
     }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Annotation> getMarkerClass(Collection<String> markerSet) {
+        for(var annotation : markerSet) {
+            try {
+                return (Class<Annotation>)Class.forName(annotation);
+            } catch (ClassNotFoundException e) {}
+        }
+        throw new RuntimeException();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static Class<? extends Enum<?>> getMarkerEnumClass(Collection<String> enumSet) {
+        for(var enumClass : enumSet) {
+            try {
+                return (Class<Enum<?>>)Class.forName(enumClass);
+            } catch (ClassNotFoundException e) {}
+        }
+        throw new RuntimeException();
+    }
+
+    public static String toSourceString(String bytecodeName) {
+        return bytecodeName.replaceAll("\\/", ".");
+    }
+
 }

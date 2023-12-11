@@ -4,7 +4,6 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.MappingResolver;
 import net.fabricmc.loader.impl.launch.FabricLauncherBase;
 import net.fabricmc.loader.impl.launch.MappingConfiguration;
-import net.fabricmc.mapping.tree.TinyMappingFactory;
 import org.embeddedt.modernfix.util.CommonModUtil;
 
 import java.lang.reflect.Constructor;
@@ -18,7 +17,9 @@ import java.util.Map;
 public class MappingsClearer {
     @SuppressWarnings("unchecked")
     public static void clear() {
-        if(FabricLoader.getInstance().isDevelopmentEnvironment())
+        // TODO: Port this to Fabric Loader 0.15
+
+        if(true) //FabricLoader.getInstance().isDevelopmentEnvironment())
             return; // never do this in dev
         CommonModUtil.runWithoutCrash(() -> {
             // For now, force the mapping resolver to be initialized. Fabric Loader 0.14.23 stops initializing it early,
@@ -33,7 +34,7 @@ public class MappingsClearer {
             MappingConfiguration config = FabricLauncherBase.getLauncher().getMappingConfiguration();
             Field mappingsField = MappingConfiguration.class.getDeclaredField("mappings");
             mappingsField.setAccessible(true);
-            mappingsField.set(config, TinyMappingFactory.EMPTY_TREE);
+            //mappingsField.set(config, TinyMappingFactory.EMPTY_TREE);
 
             // clear useless intermediary->intermediary mappings
             MappingResolver resolver = FabricLoader.getInstance().getMappingResolver();

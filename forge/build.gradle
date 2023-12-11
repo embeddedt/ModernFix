@@ -64,6 +64,7 @@ dependencies {
     modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
     modCompileOnly("curse.maven:supermartijncore-454372:4455378")
     modCompileOnly("curse.maven:valhesiastructures-347488:3476252")
+    modCompileOnly("curse.maven:sophbackpacks-422301:4167327")
     modCompileOnly files("deps/starlight-1.2.jar")
     modCompileOnly("appeng:appliedenergistics2:8.4.7")
     modCompileOnly("vazkii.patchouli:Patchouli:1.16.4-53.3")

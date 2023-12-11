@@ -1,14 +1,10 @@
 package org.fury_phoenix.mixinAp.annotation;
 
-import com.google.common.base.Throwables;
-
 import java.lang.annotation.Annotation;
-import java.lang.invoke.*;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -41,14 +37,12 @@ public class ClientMixinValidator {
 
     private final boolean debug;
 
-    private static final Map<String, String> markers = Map.of(
-    "net.fabricmc.api.Environment", "net.fabricmc.api.EnvType",
-    "net.minecraftforge.api.distmarker.OnlyIn", "net.minecraftforge.api.distmarker.Dist",
-    "net.neoforged.api.distmarker.OnlyIn", "net.neoforged.api.distmarker.Dist");
+    private static final Iterable<String> markers = Set.of(
+    "net.fabricmc.api.Environment",
+    "net.minecraftforge.api.distmarker.OnlyIn",
+    "net.neoforged.api.distmarker.OnlyIn");
 
     private static final Collection<String> unannotatedClasses = new HashSet<>();
-
-    private static final MethodHandles.Lookup lookup = MethodHandles.publicLookup();
 
     public ClientMixinValidator(ProcessingEnvironment env)
     throws ReflectiveOperationException {
@@ -97,11 +91,12 @@ public class ClientMixinValidator {
     }
 
     private boolean isClientMarked(TypeElement te) {
-        for (var entry : getPlatformClasses(markers).entrySet()) {
-            IAnnotationHandle marker = getAnnotationHandle(te, entry.getKey());
-            if(!marker.exists()) continue;
+        for (var marker : getPlatformMarkers(markers)) {
+            messager.printMessage(Diagnostic.Kind.WARNING, marker.toString());
+            IAnnotationHandle handle = getAnnotationHandle(te, marker);
+            if(!handle.exists()) continue;
 
-            String[] enumValue = marker.getValue("value");
+            String[] enumValue = handle.getValue("value");
             if(enumValue==null) continue;
 
             return enumValue[1].equals("CLIENT");
@@ -117,15 +112,6 @@ public class ClientMixinValidator {
         messager.printMessage(Diagnostic.Kind.WARNING,
         toSourceString(o.toString()) + " can't be loaded, so it is skipped!");
         return false;
-    }
-
-    private static Optional<MethodHandle> getAccessor(Class<? extends Annotation> markerClass,
-    Class<? extends Enum<?>> enumClass) {
-        MethodType enumValueAccessorType = MethodType.methodType(enumClass);
-        try {
-        return Optional.of(lookup.findVirtual(markerClass, "value", enumValueAccessorType));
-        } catch (ReflectiveOperationException e) {}
-        return Optional.empty();
     }
 
     public SimpleImmutableEntry<? extends CharSequence, ? extends CharSequence>
@@ -159,14 +145,11 @@ public class ClientMixinValidator {
         .collect(Collectors.toList());
     }
 
-    private static Map<Class<? extends Annotation>, Class<? extends Enum<?>>>
-    getPlatformClasses(Map<String, String> map) {
-        Map<Class<? extends Annotation>, Class<? extends Enum<?>>> platformClasses = new HashMap<>();
-        for(var entry : map.entrySet()) {
-            Optional<Class<? extends Annotation>> annotation = getMarkerClass(entry.getKey());
-            Optional<Class<? extends Enum<?>>> enumClz = getMarkerEnumClass(entry.getValue());
-            if(!annotation.isEmpty() && !enumClz.isEmpty())
-                platformClasses.put(annotation.orElseThrow(), enumClz.orElseThrow());
+    private static Iterable<Class<? extends Annotation>>
+    getPlatformMarkers(Iterable<String> markers) {
+        Set<Class<? extends Annotation>> platformClasses = new HashSet<>();
+        for(var marker : markers) {
+            getMarkerClass(marker).ifPresent(platformClasses::add);
         }
         return platformClasses;
     }
@@ -179,24 +162,7 @@ public class ClientMixinValidator {
         return Optional.empty();
     }
 
-    @SuppressWarnings("unchecked")
-    private static Optional<Class<? extends Enum<?>>> getMarkerEnumClass(String enumClz) {
-        try {
-            Optional.of((Class<? extends Enum<?>>)Class.forName(enumClz));
-        } catch (ClassNotFoundException e) {}
-        return Optional.empty();
-    }
-
     public static String toSourceString(String bytecodeName) {
         return bytecodeName.replaceAll("\\/", ".");
-    }
-
-    private Object invoke(MethodHandle mh, Annotation marker) {
-        try { return mh.invoke(marker); }
-        catch (Throwable e) {
-            messager.printMessage(Diagnostic.Kind.ERROR, "Fatal error:" +
-            Throwables.getStackTraceAsString(e));
-        }
-        return null;
     }
 }

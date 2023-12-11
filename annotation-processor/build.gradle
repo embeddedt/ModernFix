@@ -17,7 +17,6 @@ dependencies {
     implementation "net.fabricmc:sponge-mixin:0.12.5+"
     // Platform classes
     implementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
-    implementation "net.minecraftforge:mergetool:1.1.0"
     implementation project(":annotations")
 }
 

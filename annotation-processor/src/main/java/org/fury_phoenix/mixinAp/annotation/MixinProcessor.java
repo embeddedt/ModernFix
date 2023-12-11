@@ -92,7 +92,8 @@ public class MixinProcessor extends AbstractProcessor {
         if(!annotation.getSimpleName().toString().equals("Mixin"))
             return;
         ClientMixinValidator validator = new ClientMixinValidator(processingEnv);
-        mixins.parallel()
+        // The implementation may throw a CME
+        mixins.sequential()
         .filter(validator::validateMixin)
         .map(validator::getEntry)
         .forEach(this::logClientClassTarget);

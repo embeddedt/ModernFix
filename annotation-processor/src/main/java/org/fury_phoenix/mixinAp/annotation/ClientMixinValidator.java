@@ -7,7 +7,6 @@ import java.lang.invoke.*;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.stream.Collectors;
@@ -72,7 +71,7 @@ public class ClientMixinValidator {
         ));
     }
 
-    private boolean targetsClient(List<?> classTargets) {
+    private boolean targetsClient(Collection<?> classTargets) {
         return classTargets.stream().anyMatch(this::targetsClient);
     }
 
@@ -157,11 +156,9 @@ public class ClientMixinValidator {
     private static Collection<Object> getTargets(IAnnotationHandle mixinAnnotation) {
         Collection<? extends TypeMirror> clzss = mixinAnnotation.getList("value");
         Collection<? extends String> imaginary = mixinAnnotation.getList("targets");
-        Collection<Object> targets =
-        Stream.of(clzss, imaginary)
+        return Stream.of(clzss, imaginary)
         .flatMap(Collection::stream)
         .collect(Collectors.toList());
-        return targets;
     }
 
     private static Map<Class<? extends Annotation>, Class<? extends Enum<?>>>

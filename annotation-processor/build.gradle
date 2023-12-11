@@ -9,6 +9,10 @@ repositories {
         name "Fabric"
         url uri("https://maven.fabricmc.net")
     }
+    maven {
+    name "neoforged"
+    url "https://maven.neoforged.net/releases"
+    }
 }
 
 dependencies {
@@ -17,8 +21,10 @@ dependencies {
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
 
     implementation "net.fabricmc:sponge-mixin:0.12.5+"
-    // Out of necessity
+    // Platform classes
     implementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    implementation "net.minecraftforge:mergetool:1.1.0"
+    implementation "net.neoforged:mergetool:2.0.0"
     implementation project(":annotations")
 }
 

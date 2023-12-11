@@ -1,5 +1,7 @@
 package org.embeddedt.modernfix.fabric.mixin.perf.dynamic_resources;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
@@ -18,7 +20,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.ModifyVariable;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.invoke.MethodHandle;
@@ -53,20 +54,11 @@ public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
         }
     }
 
-    private ResourceLocation capturedLocation;
-    private UnbakedModel capturedModel;
-    private ModelState capturedState;
-
     private boolean throwIfMissing;
 
     @Override
     public void throwOnMissingModel() {
         throwIfMissing = true;
-    }
-
-    @Inject(method = "bake", at = @At("HEAD"))
-    private void captureState(ResourceLocation rl, ModelState state, CallbackInfoReturnable<BakedModel> cir) {
-        capturedState = state;
     }
 
     @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)
@@ -109,10 +101,6 @@ public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
         }
         cir.setReturnValue(toReplace);
         cir.getReturnValue().resolveParents(this.field_40571::getModel);
-        if(capturedLocation == null) {
-            capturedLocation = arg;
-            capturedModel = cir.getReturnValue();
-        }
         if(cir.getReturnValue() == extendedBakery.mfix$getUnbakedMissingModel()) {
             if(arg != ModelBakery.MISSING_MODEL_LOCATION) {
                 if(debugDynamicModelLoading)
@@ -123,30 +111,16 @@ public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
         }
     }
 
-    @ModifyVariable(method = "bake", at = @At(value = "INVOKE_ASSIGN", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
-    private BakedModel unifyMissingBakedModel(BakedModel model) {
-        // Save these variables in case the nested model calls getModel somehow
-        ResourceLocation location = this.capturedLocation;
-        UnbakedModel unbakedModel = this.capturedModel;
-        ModelState state = this.capturedState;
-
-        // Safety check
-        if(location == null) {
-            return model;
-        }
+    @WrapOperation(method = "bake", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/UnbakedModel;bake(Lnet/minecraft/client/resources/model/ModelBaker;Ljava/util/function/Function;Lnet/minecraft/client/resources/model/ModelState;Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/BakedModel;"))
+    private BakedModel callBakedModelIntegration(UnbakedModel unbakedModel, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState state, ResourceLocation location, Operation<BakedModel> operation) {
+        BakedModel model = operation.call(unbakedModel, baker, spriteGetter, state, location);
 
         for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
             model = integration.onBakedModelLoad(location, unbakedModel, model, state, this.field_40571);
         }
 
-        // Allow more capturing
-        this.capturedLocation = null;
-        this.capturedModel = null;
-
         return model;
     }
-
-
 
     /**
      * @author embeddedt

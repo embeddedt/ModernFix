@@ -36,7 +36,6 @@ tasks.withType(JavaCompile) {
     configure(options) {
         if (!name.toLowerCase().contains('test')) {
         options.compilerArgs << "-ArootProject.name=${rootProject.name}" << "-Aproject.name=${project.name}"
-        << "-Aorg.fury_phoenix.mixinAp.validator.debug=true"
         }
     }
 }

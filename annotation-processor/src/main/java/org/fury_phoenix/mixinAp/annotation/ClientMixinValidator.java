@@ -98,15 +98,13 @@ public class ClientMixinValidator {
 
     private boolean isClientMarked(TypeElement te) {
         for (var entry : getPlatformClasses(markers).entrySet()) {
-            Annotation marker = te.getAnnotation(entry.getKey());
-            if(marker == null) continue;
+            IAnnotationHandle marker = getAnnotationHandle(te, entry.getKey());
+            if(!marker.exists()) continue;
 
-            Optional<MethodHandle> accessor = getAccessor(entry.getKey(), entry.getValue());
-            Optional<String> enumValue =  accessor.map((mh) -> this.invoke(mh, marker))
-            .map(Object::toString);
-            if(enumValue.isPresent())
-                return enumValue.orElseThrow().equals("CLIENT");
-            return false;
+            String[] enumValue = marker.getValue("value");
+            if(enumValue==null) continue;
+
+            return enumValue[1].equals("CLIENT");
         }
         if(debug && unannotatedClasses.add(te.toString())) {
             messager.printMessage(Diagnostic.Kind.WARNING,

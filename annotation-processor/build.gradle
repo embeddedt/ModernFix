@@ -18,7 +18,6 @@ dependencies {
     // Platform classes
     implementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     implementation "net.minecraftforge:mergetool:1.1.0"
-    implementation "net.neoforged:mergetool:2.0.0"
     implementation project(":annotations")
 }
 

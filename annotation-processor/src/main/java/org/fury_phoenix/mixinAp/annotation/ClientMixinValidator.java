@@ -92,7 +92,6 @@ public class ClientMixinValidator {
 
     private boolean isClientMarked(TypeElement te) {
         for (var marker : getPlatformMarkers(markers)) {
-            messager.printMessage(Diagnostic.Kind.WARNING, marker.toString());
             IAnnotationHandle handle = getAnnotationHandle(te, marker);
             if(!handle.exists()) continue;
 

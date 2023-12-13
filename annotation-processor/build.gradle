@@ -1,4 +1,5 @@
 plugins {
+    id "com.github.johnrengelman.shadow" version "7.1.2"
     id 'java-library'
     id 'com.diffplug.spotless'
 }
@@ -14,6 +15,7 @@ dependencies {
     annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
 
+    shadow "net.fabricmc:sponge-mixin:0.12.5+"
     implementation "net.fabricmc:sponge-mixin:0.12.5+"
     // Platform classes
     runtimeOnly "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
@@ -22,6 +24,17 @@ dependencies {
 
 tasks.withType(JavaCompile) {
     options.compilerArgs += '--enable-preview'
+}
+
+shadowJar {
+    dependencies {
+        include(dependency('net.fabricmc:sponge-mixin:.*'))
+    }
+    exclude 'META-INF/services/org.spongepowered*'
+    exclude 'META-INF/services/cpw*'
+    relocate ('org.spongepowered', 'shadow.org.fury_phoenix.shadow.spongepowered') {
+        exclude 'org.spongepowered.tools.obfuscation.MixinObfuscationProcessorTargets'
+    }
 }
 
 spotless {

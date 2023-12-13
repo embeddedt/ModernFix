@@ -20,6 +20,7 @@ dependencies {
     // Platform classes
     runtimeOnly "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     implementation project(":annotations")
+    implementation project(":annotation-processor-hack")
 }
 
 tasks.withType(JavaCompile) {
@@ -32,9 +33,8 @@ shadowJar {
     }
     exclude 'META-INF/services/org.spongepowered*'
     exclude 'META-INF/services/cpw*'
-    relocate ('org.spongepowered', 'shadow.org.fury_phoenix.shadow.spongepowered') {
-        exclude 'org.spongepowered.tools.obfuscation.MixinObfuscationProcessorTargets'
-    }
+    relocate ('org.spongepowered', 'shadow.org.fury_phoenix.shadow.spongepowered')
+    minimize()
 }
 
 spotless {

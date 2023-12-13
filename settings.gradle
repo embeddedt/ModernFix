@@ -8,6 +8,7 @@ pluginManagement {
 }
 
 include("annotation-processor")
+include("annotation-processor-hack")
 include("annotations")
 include("test_agent")
 include("common")

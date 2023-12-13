@@ -90,7 +90,6 @@ public class ModernFixForge {
             Pair.of(ImmutableList.of("ferritecore"), "modernfix.no_ferritecore")
     );
 
-    @SubscribeEvent
     public void commonSetup(FMLCommonSetupEvent event) {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.warn_missing_perf_mods.Warnings")) {
             event.enqueueWork(() -> {
@@ -107,6 +106,7 @@ public class ModernFixForge {
             });
         }
     }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onServerDead(ServerStoppedEvent event) {
         commonMod.onServerDead(event.getServer());

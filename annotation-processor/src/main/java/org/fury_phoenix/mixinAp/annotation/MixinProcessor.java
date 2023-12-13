@@ -6,6 +6,7 @@ import com.google.common.base.Throwables;
 import java.util.List;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -43,7 +44,9 @@ public class MixinProcessor extends AbstractProcessor {
             if(roundEnv.processingOver()){
                 filterMixinSets();
                 // create record for serialization, compute package name
-                String packageName = mixinConfigList.get("mixins").get(0).split("(?<=mixin)")[0];
+                String packageName = Optional.ofNullable(mixinConfigList.get("mixins"))
+                .orElse(mixinConfigList.get("client"))
+                .get(0).split("(?<=mixin)")[0];
                 finalizeMixinConfig();
                 new MixinConfig(packageName,
                     mixinConfigList.get("mixins"),
@@ -84,6 +87,7 @@ public class MixinProcessor extends AbstractProcessor {
 
     private void filterMixinSets() {
         List<String> commonSet = mixinConfigList.get("mixins");
+        if(commonSet == null) return;
         commonSet.removeAll(mixinConfigList.get("client"));
     }
 

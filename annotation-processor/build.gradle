@@ -11,6 +11,7 @@ repositories {
 }
 
 dependencies {
+    shadow 'com.google.code.gson:gson:2.10.1'
     implementation 'com.google.code.gson:gson:2.10.1'
     implementation "net.fabricmc:sponge-mixin:0.12.5+"
     // Platform classes

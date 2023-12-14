@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "com.github.johnrengelman.shadow" version "${rootProject.shadow_version}"
     id 'java-library'
     id 'com.diffplug.spotless'
 }
@@ -11,16 +11,15 @@ repositories {
 }
 
 dependencies {
+    implementation 'com.google.guava:guava:21.0'
     implementation 'com.google.code.gson:gson:2.10.1'
     annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
 
-    shadow "net.fabricmc:sponge-mixin:0.12.5+"
     implementation "net.fabricmc:sponge-mixin:0.12.5+"
     // Platform classes
-    runtimeOnly "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+//    "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     implementation project(":annotations")
-    implementation project(":annotation-processor-hack")
 }
 
 tasks.withType(JavaCompile) {

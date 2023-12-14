@@ -11,11 +11,7 @@ repositories {
 }
 
 dependencies {
-    implementation 'com.google.guava:guava:21.0'
     implementation 'com.google.code.gson:gson:2.10.1'
-    annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
-    compileOnly 'com.google.auto.service:auto-service:1.1.1'
-
     implementation "net.fabricmc:sponge-mixin:0.12.5+"
     // Platform classes
 //    "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
@@ -32,6 +28,8 @@ shadowJar {
     }
     exclude 'META-INF/services/org.spongepowered*'
     exclude 'META-INF/services/cpw*'
+    exclude 'META-INF/maven*'
+    exclude 'LICENSE.txt'
     relocate ('org.spongepowered', 'shadow.org.fury_phoenix.shadow.spongepowered')
     minimize()
 }

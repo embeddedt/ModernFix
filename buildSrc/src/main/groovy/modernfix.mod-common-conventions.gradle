@@ -17,7 +17,7 @@ dependencies {
         }
     }
     implementation project(":annotations")
-    annotationProcessor project(path: ":annotation-processor", configuration: "shadow")
+    annotationProcessor project(":annotation-processor-unshadow")
 }
 
 project.sourceSets {

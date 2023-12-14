@@ -15,7 +15,7 @@ pluginManagement {
 }
 
 include("annotation-processor")
-include("annotation-processor-hack")
+include("annotation-processor-unshadow")
 include("annotations")
 include("test_agent")
 include("common")

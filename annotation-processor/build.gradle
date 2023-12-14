@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "${rootProject.shadow_version}"
+    id "com.github.johnrengelman.shadow"
     id 'java-library'
     id 'com.diffplug.spotless'
 }
@@ -41,4 +41,4 @@ spotless {
         removeUnusedImports()
     }
 }
-version = '1.1.1'
+version = '1.1.2'

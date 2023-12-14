@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "${rootProject.shadow_version}"
+    id "com.github.johnrengelman.shadow"
     id "modernfix.mod-common-conventions"
     id "modernfix.platform-conventions"
 }

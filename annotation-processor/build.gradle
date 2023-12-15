@@ -1,5 +1,4 @@
 plugins {
-    id "com.github.johnrengelman.shadow"
     id 'java-library'
     id 'com.diffplug.spotless'
 }
@@ -11,9 +10,8 @@ repositories {
 }
 
 dependencies {
-    shadow 'com.google.code.gson:gson:2.10.1'
     implementation 'com.google.code.gson:gson:2.10.1'
-    implementation "net.fabricmc:sponge-mixin:0.12.5+"
+    implementation 'com.google.auto:auto-common:1.2.1'
     // Platform classes
 //    "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     implementation project(":annotations")
@@ -21,18 +19,7 @@ dependencies {
 
 tasks.withType(JavaCompile) {
     options.compilerArgs += '--enable-preview'
-}
-
-shadowJar {
-    dependencies {
-        include(dependency('net.fabricmc:sponge-mixin:.*'))
-    }
-    exclude 'META-INF/services/org.spongepowered*'
-    exclude 'META-INF/services/cpw*'
-    exclude 'META-INF/maven*'
-    exclude 'LICENSE.txt'
-    relocate ('org.spongepowered', 'shadow.org.fury_phoenix.shadow.spongepowered')
-    minimize()
+    options.release = 17
 }
 
 spotless {
@@ -40,4 +27,4 @@ spotless {
         removeUnusedImports()
     }
 }
-version = '1.1.2'
+version = '1.1.4'

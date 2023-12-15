@@ -7,6 +7,7 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.registries.IRegistryDelegate;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.dynamicresources.DynamicModelCache;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.util.ItemMesherMap;
 import org.spongepowered.asm.mixin.*;
@@ -23,6 +24,8 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     @Shadow(remap = false) @Final @Mutable private Map<IRegistryDelegate<Item>, ModelResourceLocation> locations;
 
     private Map<IRegistryDelegate<Item>, ModelResourceLocation> overrideLocations;
+
+    private final DynamicModelCache<IRegistryDelegate<Item>> mfix$modelCache = new DynamicModelCache<>(k -> this.mfix$getModelSlow((IRegistryDelegate<Item>)k), true);
 
     public ItemModelMesherForgeMixin(ModelManager arg) {
         super(arg);
@@ -47,6 +50,11 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
         return map;
     }
 
+    private BakedModel mfix$getModelSlow(IRegistryDelegate<Item> key) {
+        ModelResourceLocation map = mfix$getLocationForge(key);
+        return map == null ? null : getModelManager().getModel(map);
+    }
+
     /**
      * @author embeddedt
      * @reason Get the stored location for that item and meta, and get the model
@@ -55,8 +63,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     @Overwrite
     @Override
     public BakedModel getItemModel(Item item) {
-        ModelResourceLocation map = mfix$getLocationForge(item.delegate);
-        return map == null ? null : getModelManager().getModel(map);
+        return this.mfix$modelCache.get(item.delegate);
     }
 
     /**
@@ -77,5 +84,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
      **/
     @Overwrite
     @Override
-    public void rebuildCache() {}
+    public void rebuildCache() {
+        this.mfix$modelCache.clear();
+    }
 }

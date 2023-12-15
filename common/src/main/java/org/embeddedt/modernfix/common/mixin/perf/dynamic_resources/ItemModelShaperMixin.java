@@ -6,6 +6,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.Item;
+import org.embeddedt.modernfix.dynamicresources.DynamicModelCache;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.util.DynamicInt2ObjectMap;
 import org.spongepowered.asm.mixin.*;
@@ -31,6 +32,8 @@ public abstract class ItemModelShaperMixin {
 
     private static final ModelResourceLocation SENTINEL_VANILLA = new ModelResourceLocation("modernfix", "sentinel");
 
+    private final DynamicModelCache<Item> mfix$itemModelCache = new DynamicModelCache<>(k -> this.mfix$getModelForItem((Item)k), true);
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void replaceLocationMap(CallbackInfo ci) {
         overrideLocationsVanilla = new HashMap<>();
@@ -47,6 +50,12 @@ public abstract class ItemModelShaperMixin {
         return map;
     }
 
+
+    private BakedModel mfix$getModelForItem(Item item) {
+        ModelResourceLocation map = mfix$getLocation(item);
+        return map == null ? null : getModelManager().getModel(map);
+    }
+
     /**
      * @author embeddedt
      * @reason Get the stored location for that item and meta, and get the model
@@ -54,8 +63,7 @@ public abstract class ItemModelShaperMixin {
      **/
     @Overwrite
     public BakedModel getItemModel(Item item) {
-        ModelResourceLocation map = mfix$getLocation(item);
-        return map == null ? null : getModelManager().getModel(map);
+        return this.mfix$itemModelCache.get(item);
     }
 
     /**
@@ -74,5 +82,7 @@ public abstract class ItemModelShaperMixin {
      * all models).
      **/
     @Overwrite
-    public void rebuildCache() {}
+    public void rebuildCache() {
+        this.mfix$itemModelCache.clear();
+    }
 }

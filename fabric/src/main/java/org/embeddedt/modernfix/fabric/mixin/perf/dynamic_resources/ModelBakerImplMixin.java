@@ -11,6 +11,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBaker;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
@@ -29,6 +30,7 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @Mixin(value = ModelBakery.ModelBakerImpl.class, priority = 600)
+@ClientOnlyMixin
 public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
     @Shadow @Final private ModelBakery field_40571;

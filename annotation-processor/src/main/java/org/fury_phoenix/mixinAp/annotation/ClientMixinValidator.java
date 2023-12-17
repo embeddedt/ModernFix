@@ -126,8 +126,8 @@ public class ClientMixinValidator {
         return false;
     }
 
-    public SimpleImmutableEntry<? extends CharSequence, ? extends CharSequence>
-    getEntry(TypeElement annotatedMixinClass) {
+    public Map.Entry<? extends CharSequence, ? extends CharSequence>
+    getClientMixinEntry(TypeElement annotatedMixinClass) {
         return new SimpleImmutableEntry<>(
             annotatedMixinClass.getQualifiedName(),
             getTargets(annotatedMixinClass)
@@ -167,7 +167,7 @@ public class ClientMixinValidator {
         }
         return Stream.of(clzsses, imaginaries)
         .flatMap(Collection::stream)
-        .collect(Collectors.toList());
+        .collect(Collectors.toSet());
     }
 
     public static String toSourceString(String bytecodeName) {

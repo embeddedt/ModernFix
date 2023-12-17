@@ -99,7 +99,7 @@ public class MixinProcessor extends AbstractProcessor {
         // The implementation may throw a CME
         mixins.sequential()
         .filter(validator::validateMixin)
-        .map(validator::getEntry)
+        .map(validator::getClientMixinEntry)
         .forEach(this::logClientClassTarget);
     }
 

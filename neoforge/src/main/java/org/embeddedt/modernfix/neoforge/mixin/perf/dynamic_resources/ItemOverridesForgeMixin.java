@@ -4,6 +4,7 @@ import net.minecraft.client.renderer.block.model.ItemOverride;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynamicresources.ItemOverrideBakedModel;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,6 +16,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.function.Function;
 
 @Mixin(ItemOverrides.class)
+@ClientOnlyMixin
 public class ItemOverridesForgeMixin {
     @Shadow @Final private ItemOverrides.BakedOverride[] overrides;
     private volatile boolean forceLoadedModels = false;

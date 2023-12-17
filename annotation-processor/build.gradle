@@ -23,6 +23,11 @@ dependencies {
 
     implementation project(":annotations")
     shadow project(":annotations")
+    // Shadow annotations
+    implementation 'net.fabricmc:sponge-mixin:0.12.5+'
+    implementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
+    implementation 'net.minecraftforge:mergetool:1.1.7'
+    implementation 'net.neoforged:mergetool:2.0.2'
 }
 
 tasks.withType(JavaCompile) {
@@ -31,7 +36,20 @@ tasks.withType(JavaCompile) {
 }
 
 shadowJar {
+    dependencies {
+        include(dependency('net.fabricmc:sponge-mixin:'))
+        include(dependency('net.fabricmc:fabric-loader:'))
+        include(dependency(':mergetool:'))
+    }
+    // shadowJar bug
+    include '*.jar'
     include 'META-INF/services/javax.annotation.processing.Processor'
+    include 'org/spongepowered/asm/mixin/Mixin.class'
+    include 'org/fury_phoenix/**/*'
+    include {it.getName() == 'OnlyIn.class'}
+    include {it.getName() == 'Dist.class'}
+    include {it.getName() == 'Environment.class'}
+    include {it.getName() == 'EnvType.class'}
 }
 
 spotless {

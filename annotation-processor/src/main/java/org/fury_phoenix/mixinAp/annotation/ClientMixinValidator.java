@@ -3,13 +3,16 @@ package org.fury_phoenix.mixinAp.annotation;
 import java.lang.annotation.Annotation;
 import java.util.Collection;
 import java.util.HashSet;
-import java.util.Optional;
+import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import javax.annotation.processing.Messager;
 import javax.annotation.processing.ProcessingEnvironment;
+import javax.lang.model.element.AnnotationValue;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.Elements;
@@ -18,16 +21,11 @@ import javax.tools.Diagnostic;
 
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.util.asm.IAnnotationHandle;
-import org.spongepowered.tools.obfuscation.AnnotatedMixinsAccessor;
-import org.spongepowered.tools.obfuscation.interfaces.ITypeHandleProvider;
-import org.spongepowered.tools.obfuscation.mirror.TypeHandle;
 
+import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
 import static java.util.AbstractMap.SimpleImmutableEntry;
 
 public class ClientMixinValidator {
-
-    private final ITypeHandleProvider typeHandleProvider;
 
     private final Messager messager;
 
@@ -37,16 +35,33 @@ public class ClientMixinValidator {
 
     private final boolean debug;
 
-    private static final Iterable<String> markers = Set.of(
-    "net.fabricmc.api.Environment",
-    "net.minecraftforge.api.distmarker.OnlyIn",
-    "net.neoforged.api.distmarker.OnlyIn");
+    /*
+     * @author Fury_Phoenix
+     * @reason This is covariant for ClientMixinValidator.markers
+     * whilst the direct reference is not as it doesn't cover Annotation
+     */
+    private static final Function<net.fabricmc.api.Environment, ?>
+    EnvironmentAccessor = net.fabricmc.api.Environment::value;
+
+    private static final Function<net.minecraftforge.api.distmarker.OnlyIn, ?>
+    ForgeAccessor = net.minecraftforge.api.distmarker.OnlyIn::value;
+
+    private static final Function<net.neoforged.api.distmarker.OnlyIn, ?>
+    NeoForgeAccessor = net.neoforged.api.distmarker.OnlyIn::value;
+
+    /*
+     * @author Fury_Phoenix
+     * @reason Partial duck-typing
+     */
+    private static final Map
+    <Class<? extends Annotation>, Function<? extends Annotation, ?>>
+    markers = Map.of(net.fabricmc.api.Environment.class, EnvironmentAccessor,
+    net.minecraftforge.api.distmarker.OnlyIn.class, ForgeAccessor,
+    net.neoforged.api.distmarker.OnlyIn.class, NeoForgeAccessor);
 
     private static final Collection<String> unannotatedClasses = new HashSet<>();
 
-    public ClientMixinValidator(ProcessingEnvironment env)
-    throws ReflectiveOperationException {
-        typeHandleProvider = AnnotatedMixinsAccessor.getMixinAP(env);
+    public ClientMixinValidator(ProcessingEnvironment env) {
         debug = Boolean.valueOf(env.getOptions().get("org.fury_phoenix.mixinAp.validator.debug"));
         messager = env.getMessager();
         elemUtils = env.getElementUtils();
@@ -55,14 +70,11 @@ public class ClientMixinValidator {
 
     public boolean validateMixin(TypeElement annotatedMixinClass) {
         return targetsClient(annotatedMixinClass) &&
-        !getAnnotationHandle(annotatedMixinClass, ClientOnlyMixin.class).exists();
+        (annotatedMixinClass.getAnnotation(ClientOnlyMixin.class) == null);
     }
 
     public boolean targetsClient(TypeElement annotatedMixinClass) {
-        return targetsClient(
-        ClientMixinValidator.getTargets(
-            getAnnotationHandle(annotatedMixinClass, Mixin.class)
-        ));
+        return targetsClient(getTargets(annotatedMixinClass));
     }
 
     private boolean targetsClient(Collection<?> classTargets) {
@@ -91,14 +103,15 @@ public class ClientMixinValidator {
     }
 
     private boolean isClientMarked(TypeElement te) {
-        for (var marker : getPlatformMarkers(markers)) {
-            IAnnotationHandle handle = getAnnotationHandle(te, marker);
-            if(!handle.exists()) continue;
+        for (var entry : markers.entrySet()) {
+            var marker = te.getAnnotation(entry.getKey());
+            if(marker == null) continue;
 
-            String[] enumValue = handle.getValue("value");
-            if(enumValue==null) continue;
-
-            return enumValue[1].equals("CLIENT");
+            // Pretend to accept Annotations
+            @SuppressWarnings("unchecked")
+            boolean isClient = ((Function<Annotation, ?>)entry.getValue())
+            .apply(marker).toString().equals("CLIENT");
+            return isClient;
         }
         if(debug && unannotatedClasses.add(te.toString())) {
             messager.printMessage(Diagnostic.Kind.WARNING,
@@ -117,9 +130,8 @@ public class ClientMixinValidator {
     getEntry(TypeElement annotatedMixinClass) {
         return new SimpleImmutableEntry<>(
             annotatedMixinClass.getQualifiedName(),
-            ClientMixinValidator.getTargets(
-            getAnnotationHandle(annotatedMixinClass, Mixin.class)
-            ).stream()
+            getTargets(annotatedMixinClass)
+            .stream()
             .filter(this::targetsClient)
             .map(Object::toString)
             .map(ClientMixinValidator::toSourceString)
@@ -127,38 +139,35 @@ public class ClientMixinValidator {
         );
     }
 
-    private TypeHandle getTypeHandle(Object annotatedClass) {
-        return typeHandleProvider.getTypeHandle(annotatedClass);
-    }
+    private Collection<Object> getTargets(TypeElement mixinAnnotatedClass) {
+        Collection<? extends TypeMirror> clzsses = Set.of();
+        Collection<? extends String> imaginaries = Set.of();
+        TypeMirror MixinElement = elemUtils.getTypeElement(Mixin.class.getName()).asType();
+        for (var annotationMirror : mixinAnnotatedClass.getAnnotationMirrors()) {
+            if(!annotationMirror.getAnnotationType().equals(MixinElement))
+                continue;
 
-    private IAnnotationHandle getAnnotationHandle
-    (Object annotatedClass, Class<? extends Annotation> annotation) {
-        return getTypeHandle(annotatedClass).getAnnotation(annotation);
-    }
+            @SuppressWarnings("unchecked")
+            var wrappedClzss = (List<? extends AnnotationValue>)
+            getAnnotationValue(annotationMirror, "value").getValue();
 
-    private static Collection<Object> getTargets(IAnnotationHandle mixinAnnotation) {
-        Collection<? extends TypeMirror> clzss = mixinAnnotation.getList("value");
-        Collection<? extends String> imaginary = mixinAnnotation.getList("targets");
-        return Stream.of(clzss, imaginary)
+            clzsses = wrappedClzss.stream()
+            .map(AnnotationValue::getValue)
+            .map(TypeMirror.class::cast)
+            .collect(Collectors.toSet());
+
+            @SuppressWarnings("unchecked")
+            var wrappedStrings = (List<? extends AnnotationValue>)
+            getAnnotationValue(annotationMirror, "targets").getValue();
+
+            imaginaries = wrappedStrings.stream()
+            .map(AnnotationValue::getValue)
+            .map(String.class::cast)
+            .collect(Collectors.toSet());
+        }
+        return Stream.of(clzsses, imaginaries)
         .flatMap(Collection::stream)
         .collect(Collectors.toList());
-    }
-
-    private static Iterable<Class<? extends Annotation>>
-    getPlatformMarkers(Iterable<String> markers) {
-        Set<Class<? extends Annotation>> platformClasses = new HashSet<>();
-        for(var marker : markers) {
-            getMarkerClass(marker).ifPresent(platformClasses::add);
-        }
-        return platformClasses;
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Optional<Class<? extends Annotation>> getMarkerClass(String marker) {
-        try {
-            return Optional.of((Class<? extends Annotation>)Class.forName(marker));
-        } catch (ClassNotFoundException e) {}
-        return Optional.empty();
     }
 
     public static String toSourceString(String bytecodeName) {

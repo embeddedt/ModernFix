@@ -63,9 +63,13 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
                 if(original == null)
                     original = DEFAULT_PREDICATE;
                 blockRenderChecks.put(block.delegate, original);
-                ItemBlockRenderTypes.setRenderLayer(block, type -> this.useOverrideIfPresent(block.delegate, type));
+                updateBlockPredicate(block);
             }
         }
+    }
+
+    private void updateBlockPredicate(Block block) {
+        ItemBlockRenderTypes.setRenderLayer(block, type -> this.useOverrideIfPresent(block.delegate, type));
     }
 
     private boolean useOverrideIfPresent(IRegistryDelegate<Block> delegate, RenderType type) {
@@ -97,6 +101,7 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
             Predicate<RenderType> newPredicate = this.getLayerCheck(state, originalModel);
             if(newPredicate != null) {
                 renderCheckOverrides.put(block.delegate, newPredicate);
+                updateBlockPredicate(block);
                 return originalModel;
             }
         }

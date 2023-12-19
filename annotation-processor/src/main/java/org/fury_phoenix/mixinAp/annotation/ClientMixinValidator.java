@@ -19,7 +19,10 @@ import javax.lang.model.util.Elements;
 import javax.lang.model.util.Types;
 import javax.tools.Diagnostic;
 
+import net.fabricmc.api.Environment;
+
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.fury_phoenix.mixinAp.util.TypedAccessorMap;
 import org.spongepowered.asm.mixin.Mixin;
 
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
@@ -35,29 +38,32 @@ public class ClientMixinValidator {
 
     private final boolean debug;
 
-    /*
-     * @author Fury_Phoenix
-     * @reason This is covariant for ClientMixinValidator.markers
-     * whilst the direct reference is not as it doesn't cover Annotation
-     */
-    private static final Function<net.fabricmc.api.Environment, ?>
-    EnvironmentAccessor = net.fabricmc.api.Environment::value;
+    private static final TypedAccessorMap<Annotation> markers = new TypedAccessorMap<>();
 
-    private static final Function<net.minecraftforge.api.distmarker.OnlyIn, ?>
-    ForgeAccessor = net.minecraftforge.api.distmarker.OnlyIn::value;
+    private static final Map.Entry<Class<Environment>, Function<? super Environment, ?>>
+    FabricAccessor = new SimpleImmutableEntry<>(Environment.class, Environment::value);
 
-    private static final Function<net.neoforged.api.distmarker.OnlyIn, ?>
-    NeoForgeAccessor = net.neoforged.api.distmarker.OnlyIn::value;
+    private static final Map.Entry<
+        Class<net.minecraftforge.api.distmarker.OnlyIn>,
+        Function<? super net.minecraftforge.api.distmarker.OnlyIn, ?>>
+    ForgeAccessor = new SimpleImmutableEntry<>(
+        net.minecraftforge.api.distmarker.OnlyIn.class,
+        net.minecraftforge.api.distmarker.OnlyIn::value
+    );
 
-    /*
-     * @author Fury_Phoenix
-     * @reason Partial duck-typing
-     */
-    private static final Map
-    <Class<? extends Annotation>, Function<? extends Annotation, ?>>
-    markers = Map.of(net.fabricmc.api.Environment.class, EnvironmentAccessor,
-    net.minecraftforge.api.distmarker.OnlyIn.class, ForgeAccessor,
-    net.neoforged.api.distmarker.OnlyIn.class, NeoForgeAccessor);
+    private static final Map.Entry<
+        Class<net.neoforged.api.distmarker.OnlyIn>,
+        Function<? super net.neoforged.api.distmarker.OnlyIn, ?>>
+    NeoForgeAccessor = new SimpleImmutableEntry<>(
+        net.neoforged.api.distmarker.OnlyIn.class,
+        net.neoforged.api.distmarker.OnlyIn::value
+    );
+
+    static {
+        markers.put(FabricAccessor);
+        markers.put(ForgeAccessor);
+        markers.put(NeoForgeAccessor);
+    }
 
     private static final Collection<String> unannotatedClasses = new HashSet<>();
 
@@ -107,11 +113,7 @@ public class ClientMixinValidator {
             var marker = te.getAnnotation(entry.getKey());
             if(marker == null) continue;
 
-            // Pretend to accept Annotations
-            @SuppressWarnings("unchecked")
-            boolean isClient = ((Function<Annotation, ?>)entry.getValue())
-            .apply(marker).toString().equals("CLIENT");
-            return isClient;
+            return entry.getValue().apply(marker).toString().equals("CLIENT");
         }
         if(debug && unannotatedClasses.add(te.toString())) {
             messager.printMessage(Diagnostic.Kind.WARNING,
@@ -139,17 +141,17 @@ public class ClientMixinValidator {
         );
     }
 
-    private Collection<Object> getTargets(TypeElement mixinAnnotatedClass) {
+    private Collection<Object> getTargets(TypeElement annotatedMixinClass) {
         Collection<? extends TypeMirror> clzsses = Set.of();
         Collection<? extends String> imaginaries = Set.of();
         TypeMirror MixinElement = elemUtils.getTypeElement(Mixin.class.getName()).asType();
-        for (var annotationMirror : mixinAnnotatedClass.getAnnotationMirrors()) {
-            if(!annotationMirror.getAnnotationType().equals(MixinElement))
+        for (var mirror : annotatedMixinClass.getAnnotationMirrors()) {
+            if(!types.isSameType(mirror.getAnnotationType(), MixinElement))
                 continue;
 
             @SuppressWarnings("unchecked")
             var wrappedClzss = (List<? extends AnnotationValue>)
-            getAnnotationValue(annotationMirror, "value").getValue();
+            getAnnotationValue(mirror, "value").getValue();
 
             clzsses = wrappedClzss.stream()
             .map(AnnotationValue::getValue)
@@ -158,7 +160,7 @@ public class ClientMixinValidator {
 
             @SuppressWarnings("unchecked")
             var wrappedStrings = (List<? extends AnnotationValue>)
-            getAnnotationValue(annotationMirror, "targets").getValue();
+            getAnnotationValue(mirror, "targets").getValue();
 
             imaginaries = wrappedStrings.stream()
             .map(AnnotationValue::getValue)

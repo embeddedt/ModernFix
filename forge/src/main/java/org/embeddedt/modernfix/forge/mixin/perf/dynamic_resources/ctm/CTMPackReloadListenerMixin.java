@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources.ctm;
 
 import com.google.common.collect.ImmutableList;
+import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
 import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.*;
@@ -16,6 +17,7 @@ import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.api.helpers.ModelHelpers;
+import org.embeddedt.modernfix.forge.dynresources.ModernFixCTMPredicate;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -27,7 +29,6 @@ import team.chisel.ctm.client.model.AbstractCTMBakedModel;
 import team.chisel.ctm.client.util.CTMPackReloadListener;
 
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 @Mixin(CTMPackReloadListener.class)
@@ -37,7 +38,7 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
     /* caches the original render checks */
     @Shadow(remap = false) @Final private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> blockRenderChecks;
 
-    private static Map<IRegistryDelegate<Block>, Predicate<RenderType>> renderCheckOverrides = new ConcurrentHashMap<>();
+    private static volatile Map<IRegistryDelegate<Block>, ModernFixCTMPredicate> mfixBouncerPredicates = null;
 
     private static Predicate<RenderType> DEFAULT_PREDICATE = type -> type == RenderType.solid();
 
@@ -50,33 +51,55 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
         ModernFixClient.CLIENT_INTEGRATIONS.add(this);
     }
 
+    private static void initMap() {
+        if(mfixBouncerPredicates == null) {
+            synchronized (CTMPackReloadListener.class) {
+                if(mfixBouncerPredicates == null) {
+                    Map<IRegistryDelegate<Block>, ModernFixCTMPredicate> map = new Reference2ReferenceOpenHashMap<>();
+                    for(Block registeredBlock : ForgeRegistries.BLOCKS.getValues()) {
+                        map.put(registeredBlock.delegate, new ModernFixCTMPredicate());
+                    }
+                    mfixBouncerPredicates = map;
+                }
+            }
+        }
+    }
+
     /**
      * @author embeddedt
      * @reason handle layer changes dynamically
      */
     @Overwrite(remap = false)
     private void refreshLayerHacks() {
-        renderCheckOverrides.clear();
-        if(blockRenderChecks.isEmpty()) {
-            for(Block block : ForgeRegistries.BLOCKS.getValues()) {
-                Predicate<RenderType> original = this.getExistingRenderCheck(block);
-                if(original == null)
-                    original = DEFAULT_PREDICATE;
+        // Make sure predicate map exists
+        initMap();
+        mfixBouncerPredicates.values().forEach(bouncer -> bouncer.ctmOverride = null);
+    }
+
+    private static ModernFixCTMPredicate getPredicateForBlock(Block block) {
+        initMap();
+        ModernFixCTMPredicate predicate = mfixBouncerPredicates.get(block.delegate);
+        if(predicate == null) {
+            throw new NullPointerException("ModernFix CTM predicate missing for block: " + block.getRegistryName());
+        }
+        return predicate;
+    }
+
+    private void updateBlockPredicate(Block block, Predicate<RenderType> override) {
+        Predicate<RenderType> original = this.getExistingRenderCheck(block);
+        if(original == null) {
+            original = DEFAULT_PREDICATE;
+        }
+        ModernFixCTMPredicate bouncer = getPredicateForBlock(block);
+        if(original != bouncer) {
+            // Give the bouncer the original predicate for correct behavior
+            bouncer.defaultPredicate = original;
+            synchronized (ItemBlockRenderTypes.class) {
                 blockRenderChecks.put(block.delegate, original);
-                updateBlockPredicate(block);
             }
         }
-    }
-
-    private void updateBlockPredicate(Block block) {
-        ItemBlockRenderTypes.setRenderLayer(block, type -> this.useOverrideIfPresent(block.delegate, type));
-    }
-
-    private boolean useOverrideIfPresent(IRegistryDelegate<Block> delegate, RenderType type) {
-        Predicate<RenderType> override = renderCheckOverrides.get(delegate);
-        if(override == null)
-            override = blockRenderChecks.get(delegate);
-        return override.test(type);
+        bouncer.ctmOverride = override;
+        ItemBlockRenderTypes.setRenderLayer(block, bouncer);
     }
 
     @Override
@@ -87,7 +110,7 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
             return originalModel;
         /* we construct a new ResourceLocation because an MRL is coming in */
         Block block = ForgeRegistries.BLOCKS.getValue(new ResourceLocation(location.getNamespace(), location.getPath()));
-        if(block == null || block == Blocks.AIR || renderCheckOverrides.containsKey(block.delegate))
+        if(block == null || block == Blocks.AIR || getPredicateForBlock(block).ctmOverride != null)
             return originalModel;
         /* find all states that match this MRL */
         ImmutableList<BlockState> allStates;
@@ -100,8 +123,7 @@ public abstract class CTMPackReloadListenerMixin implements ModernFixClientInteg
         for(BlockState state : allStates) {
             Predicate<RenderType> newPredicate = this.getLayerCheck(state, originalModel);
             if(newPredicate != null) {
-                renderCheckOverrides.put(block.delegate, newPredicate);
-                updateBlockPredicate(block);
+                updateBlockPredicate(block, newPredicate);
                 return originalModel;
             }
         }

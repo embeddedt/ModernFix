@@ -32,7 +32,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 
 @Mixin(CTMPackReloadListener.class)
-@RequiresMod("ctm")
+@RequiresMod("ctm_but_dont_actually_enable")
 @ClientOnlyMixin
 public abstract class CTMPackReloadListenerMixin implements ModernFixClientIntegration {
     /* caches the original render checks */

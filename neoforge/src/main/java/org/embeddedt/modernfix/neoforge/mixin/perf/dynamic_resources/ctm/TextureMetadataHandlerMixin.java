@@ -46,7 +46,7 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
     @Override
     public BakedModel onBakedModelLoad(ResourceLocation rl, UnbakedModel rootModel, BakedModel baked, ModelState state, ModelBakery bakery) {
         if(true) throw new UnsupportedOperationException("not ported yet");
-        if (false /*!(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer()*/) {
+        if (rl instanceof ModelResourceLocation && false /* !(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer() */) {
             Deque<ResourceLocation> dependencies = new ArrayDeque<>();
             Set<ResourceLocation> seenModels = new HashSet<>();
             dependencies.push(rl);

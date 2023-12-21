@@ -11,27 +11,31 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
+import java.lang.ref.WeakReference;
 import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Delegate model that stores the location of an actual baked model, for use in ItemOverrides.
  */
 public class ItemOverrideBakedModel implements BakedModel {
-    private static final Map<ResourceLocation, ItemOverrideBakedModel> OVERRIDE_MODELS = new ConcurrentHashMap<>();
     public final ResourceLocation realLocation;
+    private WeakReference<BakedModel> realModel = new WeakReference<>(null);
 
     private ItemOverrideBakedModel(ResourceLocation realLocation) {
         this.realLocation = realLocation;
     }
 
     public static ItemOverrideBakedModel of(ResourceLocation realLocation) {
-        return OVERRIDE_MODELS.computeIfAbsent(realLocation, ItemOverrideBakedModel::new);
+        return new ItemOverrideBakedModel(realLocation);
     }
 
     public BakedModel getRealModel() {
-        return DynamicBakedModelProvider.currentInstance.get(realLocation);
+        BakedModel m = realModel.get();
+        if(m == null) {
+            m = DynamicBakedModelProvider.currentInstance.get(realLocation);
+            realModel = new WeakReference<>(m);
+        }
+        return m;
     }
 
     @Override

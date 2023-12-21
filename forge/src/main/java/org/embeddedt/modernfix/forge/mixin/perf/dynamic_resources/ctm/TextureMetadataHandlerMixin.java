@@ -53,7 +53,7 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
 
     @Override
     public BakedModel onBakedModelLoad(ResourceLocation rl, UnbakedModel rootModel, BakedModel baked, ModelState state, ModelBakery bakery) {
-        if (!(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer()) {
+        if (rl instanceof ModelResourceLocation && !(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer()) {
             Deque<ResourceLocation> dependencies = new ArrayDeque<>();
             Set<ResourceLocation> seenModels = new HashSet<>();
             dependencies.push(rl);

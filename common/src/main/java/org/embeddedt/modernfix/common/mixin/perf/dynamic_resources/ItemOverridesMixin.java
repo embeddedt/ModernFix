@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 @Mixin(ItemOverrides.class)
 public class ItemOverridesMixin {
     @Inject(method = "resolve", at = @At("RETURN"), cancellable = true)
-    private void getRealModel(BakedModel bakedModel, ItemStack itemStack, ClientLevel clientLevel, LivingEntity livingEntity, CallbackInfoReturnable<BakedModel> cir) {
+    private void getRealModel(BakedModel bakedModel, ItemStack stack, ClientLevel level, LivingEntity entity, int seed, CallbackInfoReturnable<BakedModel> cir) {
         BakedModel original = cir.getReturnValue();
         if(original instanceof ItemOverrideBakedModel) {
             ItemOverrideBakedModel override = (ItemOverrideBakedModel)original;

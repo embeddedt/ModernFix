@@ -1,7 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.block.model.ItemOverride;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.entity.LivingEntity;

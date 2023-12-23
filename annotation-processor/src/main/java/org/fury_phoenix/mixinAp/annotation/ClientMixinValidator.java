@@ -22,11 +22,13 @@ import javax.tools.Diagnostic;
 import net.fabricmc.api.Environment;
 
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.IgnoreMixin;
 import org.fury_phoenix.mixinAp.util.TypedAccessorMap;
 import org.spongepowered.asm.mixin.Mixin;
 
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
 import static java.util.AbstractMap.SimpleImmutableEntry;
+import static java.util.function.Predicate.not;
 
 public class ClientMixinValidator {
 
@@ -80,7 +82,8 @@ public class ClientMixinValidator {
     }
 
     public boolean targetsClient(TypeElement annotatedMixinClass) {
-        return targetsClient(getTargets(annotatedMixinClass));
+        return targetsClient(getTargets(annotatedMixinClass)) &&
+        !isIgnored(annotatedMixinClass);
     }
 
     private boolean targetsClient(Collection<?> classTargets) {
@@ -118,6 +121,15 @@ public class ClientMixinValidator {
         if(debug && unannotatedClasses.add(te.toString())) {
             messager.printMessage(Diagnostic.Kind.WARNING,
             "No marker annotations present on " + te + "!");
+        }
+        return false;
+    }
+
+    private boolean isIgnored(TypeElement te) {
+        if(te.getAnnotation(IgnoreMixin.class) != null) {
+            messager.printMessage(Diagnostic.Kind.WARNING,
+            toSourceString(te.toString()) + " is ignored!");
+            return true;
         }
         return false;
     }

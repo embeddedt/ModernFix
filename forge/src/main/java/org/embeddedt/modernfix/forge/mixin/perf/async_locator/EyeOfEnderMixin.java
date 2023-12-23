@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.forge.mixin.perf.async_locator;
 
 import net.minecraft.world.entity.projectile.EyeOfEnder;
-import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.IgnoreMixin;
 import org.embeddedt.modernfix.forge.structure.logic.EyeOfEnderData;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(EyeOfEnder.class)
-@ClientOnlyMixin
+@IgnoreMixin
 public class EyeOfEnderMixin implements EyeOfEnderData {
     private boolean locateTaskOngoing = false;
 

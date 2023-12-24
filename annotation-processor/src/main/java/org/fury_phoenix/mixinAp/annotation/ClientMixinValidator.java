@@ -28,7 +28,6 @@ import org.spongepowered.asm.mixin.Mixin;
 
 import static com.google.auto.common.AnnotationMirrors.getAnnotationValue;
 import static java.util.AbstractMap.SimpleImmutableEntry;
-import static java.util.function.Predicate.not;
 
 public class ClientMixinValidator {
 

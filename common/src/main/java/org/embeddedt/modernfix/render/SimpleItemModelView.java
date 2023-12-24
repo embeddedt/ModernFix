@@ -1,6 +1,5 @@
 package org.embeddedt.modernfix.render;
 
-import com.google.common.collect.ImmutableList;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -42,19 +41,20 @@ public class SimpleItemModelView implements BakedModel {
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, Random rand) {
-        if(side != null) {
-            return isCorrectDirectionForType(side) ? wrappedItem.getQuads(state, side, rand) : ImmutableList.of();
-        } else {
-            nullQuadList.clear();
-            List<BakedQuad> realList = wrappedItem.getQuads(state, null, rand);
-            for(int i = 0; i < realList.size(); i++) {
-                BakedQuad quad = realList.get(i);
-                if(isCorrectDirectionForType(quad.getDirection())) {
-                    nullQuadList.add(quad);
-                }
-            }
-            return nullQuadList;
+        boolean isWholeListValid = isCorrectDirectionForType(side);
+        List<BakedQuad> realList = wrappedItem.getQuads(state, side, rand);
+        if (isWholeListValid) {
+            return realList;
         }
+        nullQuadList.clear();
+        //noinspection ForLoopReplaceableByForEach
+        for(int i = 0; i < realList.size(); i++) {
+            BakedQuad quad = realList.get(i);
+            if(isCorrectDirectionForType(quad.getDirection())) {
+                nullQuadList.add(quad);
+            }
+        }
+        return nullQuadList;
     }
 
     @Override

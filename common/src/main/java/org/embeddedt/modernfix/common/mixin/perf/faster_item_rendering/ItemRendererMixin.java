@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.faster_item_rendering;
 
+import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -38,7 +39,13 @@ public abstract class ItemRendererMixin {
      * camera).
      */
     @ModifyArg(method = "render", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/renderer/entity/ItemRenderer;renderModelLists(Lnet/minecraft/client/resources/model/BakedModel;Lnet/minecraft/world/item/ItemStack;IILcom/mojang/blaze3d/vertex/PoseStack;Lcom/mojang/blaze3d/vertex/VertexConsumer;)V"), index = 0)
-    private BakedModel useSimpleWrappedItemModel(BakedModel model, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer) {
+    private BakedModel useSimpleWrappedItemModel(BakedModel model, ItemStack stack, int combinedLight, int combinedOverlay, PoseStack matrixStack, VertexConsumer buffer, @Local(ordinal = 0) BakedModel originalModel) {
+        // Forge composite models split themselves into a smaller simple model, we need to detect that the parent
+        // was not simple
+        if(originalModel != null && originalModel.getClass() != SimpleBakedModel.class) {
+            return model;
+        }
+
         if(!RenderState.IS_RENDERING_LEVEL && !stack.isEmpty() && model.getClass() == SimpleBakedModel.class && transformType == ItemTransforms.TransformType.GUI) {
             FastItemRenderType type;
             ItemTransform transform = model.getTransforms().gui;

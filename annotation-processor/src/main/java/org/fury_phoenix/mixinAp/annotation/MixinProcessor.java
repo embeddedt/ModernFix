@@ -64,8 +64,7 @@ public class MixinProcessor extends AbstractProcessor {
         return false;
     }
 
-    private void processMixins(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv)
-    throws ReflectiveOperationException {
+    private void processMixins(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (TypeElement annotation : annotations) {
             Set<? extends Element> annotatedMixins = roundEnv.getElementsAnnotatedWith(annotation);
 
@@ -91,8 +90,7 @@ public class MixinProcessor extends AbstractProcessor {
         commonSet.removeAll(mixinConfigList.get("client"));
     }
 
-    private void validateCommonMixins(TypeElement annotation, Stream<TypeElement> mixins)
-    throws ReflectiveOperationException {
+    private void validateCommonMixins(TypeElement annotation, Stream<TypeElement> mixins) {
         if(!annotation.getSimpleName().toString().equals("Mixin"))
             return;
         ClientMixinValidator validator = new ClientMixinValidator(processingEnv);

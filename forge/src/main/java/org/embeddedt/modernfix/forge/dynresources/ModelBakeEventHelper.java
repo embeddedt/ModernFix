@@ -153,7 +153,9 @@ public class ModelBakeEventHelper {
 
             @Override
             public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
-                for(ResourceLocation location : keySet()) {
+                ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. This requires temporarily loading every model for that mod, which is slow.", modId);
+                List<ResourceLocation> locations = new ArrayList<>(keySet());
+                for(ResourceLocation location : locations) {
                     put(location, function.apply(location, get(location)));
                 }
             }

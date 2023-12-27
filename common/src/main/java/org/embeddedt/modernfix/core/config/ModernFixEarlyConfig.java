@@ -229,6 +229,7 @@ public class ModernFixEarlyConfig {
         }
 
         checkBlockstateCacheRebuilds();
+        checkModelDataManager();
     }
 
     private void checkBlockstateCacheRebuilds() {
@@ -244,6 +245,16 @@ public class ModernFixEarlyConfig {
             }
         } catch(Throwable e) {
             e.printStackTrace();
+        }
+    }
+
+    private void checkModelDataManager() {
+        if(!isFabric && modPresent("rubidium") && !modPresent("embeddium")) {
+            Option option = this.options.get("mixin.bugfix.model_data_manager_cme");
+            if(option != null) {
+                LOGGER.warn("ModelDataManager bugfixes have been disabled to prevent broken rendering with Rubidium installed. Please migrate to Embeddium.");
+                option.addModOverride(false, "rubidium");
+            }
         }
     }
 

@@ -31,12 +31,12 @@ public abstract class ModelDataManagerMixin {
      * Make the set of positions to refresh a real concurrent hash set rather than relying on synchronizedSet,
      * because the returned iterator won't be thread-safe otherwise. See https://github.com/AppliedEnergistics/Applied-Energistics-2/issues/7511
      */
-    @ModifyArg(method = "requestModelDataRefresh", at = @At(value = "INVOKE", target = "Ljava/util/Map;computeIfAbsent(Ljava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;", ordinal = 0), index = 1)
+    @ModifyArg(method = "requestModelDataRefresh", at = @At(value = "INVOKE", target = "Ljava/util/Map;computeIfAbsent(Ljava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;", ordinal = 0), index = 1, remap = false)
     private static Function<ChunkPos, Set<BlockPos>> changeTypeOfSetUsed(Function<ChunkPos, Set<BlockPos>> mappingFunction) {
         return pos -> Collections.newSetFromMap(new ConcurrentHashMap<>());
     }
 
-    @Redirect(method = "getModelData(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/ChunkPos;)Ljava/util/Map;", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/model/ModelDataManager;refreshModelData(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/ChunkPos;)V"))
+    @Redirect(method = "getModelData(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/ChunkPos;)Ljava/util/Map;", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/model/ModelDataManager;refreshModelData(Lnet/minecraft/world/level/Level;Lnet/minecraft/world/level/ChunkPos;)V"), remap = false)
     private static void onlyRefreshOnMainThread(Level toUpdate, ChunkPos pos) {
         // Only refresh model data on the main thread. This prevents calling getBlockEntity from worker threads
         // which could cause weird CMEs or other behavior.

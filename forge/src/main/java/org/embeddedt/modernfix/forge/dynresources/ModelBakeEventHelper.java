@@ -21,6 +21,7 @@ import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiFunction;
 
 /**
  * Stores a list of all known default block/item models in the game, and provides a namespaced version
@@ -79,7 +80,7 @@ public class ModelBakeEventHelper {
             private void logWarning() {
                 if(!WARNED_MOD_IDS.add(modId))
                     return;
-                ModernFix.LOGGER.warn("Mod '{}' is accessing Map#keySet/entrySet/values on the model registry map inside its event handler." +
+                ModernFix.LOGGER.warn("Mod '{}' is accessing Map#keySet/entrySet/values/replaceAll on the model registry map inside its event handler." +
                         " This probably won't work as expected with dynamic resources on. Prefer using Map#get/put and constructing ModelResourceLocations another way.", modId);
             }
 
@@ -99,6 +100,12 @@ public class ModelBakeEventHelper {
             public Collection<BakedModel> values() {
                 logWarning();
                 return super.values();
+            }
+
+            @Override
+            public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
+                logWarning();
+                super.replaceAll(function);
             }
         };
     }
@@ -138,6 +145,13 @@ public class ModelBakeEventHelper {
             @Override
             public boolean containsKey(@Nullable Object key) {
                 return ourModelLocations.contains(key) || super.containsKey(key);
+            }
+
+            @Override
+            public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
+                for(ResourceLocation location : keySet()) {
+                    put(location, function.apply(location, get(location)));
+                }
             }
         };
     }

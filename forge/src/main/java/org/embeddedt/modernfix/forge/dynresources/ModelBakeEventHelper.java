@@ -156,7 +156,11 @@ public class ModelBakeEventHelper {
                 ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. This requires temporarily loading every model for that mod, which is slow.", modId);
                 List<ResourceLocation> locations = new ArrayList<>(keySet());
                 for(ResourceLocation location : locations) {
-                    put(location, function.apply(location, get(location)));
+                    BakedModel existing = get(location);
+                    BakedModel replacement = function.apply(location, existing);
+                    if(replacement != existing) {
+                        put(location, replacement);
+                    }
                 }
             }
         };

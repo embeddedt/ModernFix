@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources;
 
+import com.google.common.base.Stopwatch;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.client.ForgeHooksClient;
@@ -9,6 +10,7 @@ import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.forge.dynresources.ModelBakeEventHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -16,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.lang.reflect.Method;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
 @Mixin(ForgeHooksClient.class)
 public class ForgeHooksClientMixin {
@@ -32,10 +35,15 @@ public class ForgeHooksClientMixin {
         ModList.get().forEachModContainer((id, mc) -> {
             Map<ResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
             ModelEvent.BakingCompleted postedEvent = new ModelEvent.BakingCompleted(bakeEvent.getModelManager(), newRegistry, bakeEvent.getModelBakery());
+            Stopwatch timer = Stopwatch.createStarted();
             try {
                 acceptEv.invoke(mc, postedEvent);
             } catch(ReflectiveOperationException e) {
                 e.printStackTrace();
+            }
+            timer.stop();
+            if(timer.elapsed(TimeUnit.SECONDS) >= 1) {
+                ModernFix.LOGGER.warn("Mod '{}' took {} in the model bake event", id, timer);
             }
         });
     }

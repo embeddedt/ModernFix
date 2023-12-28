@@ -343,7 +343,7 @@ public class ModelBakeryHelpers {
     }
 
     private static <T extends Comparable<T>> T getValueHelper(Property<T> property, String value) {
-        return property.getValue(value).orElse((T) null);
+        return property.getValue(value).orElse(null);
     }
 
     private static final Splitter COMMA_SPLITTER = Splitter.on(',');

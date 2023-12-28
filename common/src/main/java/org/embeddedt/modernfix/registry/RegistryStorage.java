@@ -15,9 +15,8 @@ public class RegistryStorage {
 
     public static <T> BiMap<ResourceKey<T>, DirectStorageRegistryObject> createKeyStorage(ResourceKey<? extends Registry<T>> registryKey, BiMap<ResourceLocation, DirectStorageRegistryObject> storage) {
         if(storage instanceof DirectStorageBiMap) {
-            DirectStorageBiMap<ResourceLocation, DirectStorageRegistryObject> directStorageBiMap = (DirectStorageBiMap<ResourceLocation, DirectStorageRegistryObject>)storage;
             // silently ignore put/putAll calls on this map
-            return new TransformingBiMap<ResourceLocation, DirectStorageRegistryObject, ResourceKey<T>, DirectStorageRegistryObject>(directStorageBiMap, loc -> ResourceKey.create(registryKey, loc), ResourceKey::location, Function.identity(), Function.identity()) {
+            return new TransformingBiMap<ResourceLocation, DirectStorageRegistryObject, ResourceKey<T>, DirectStorageRegistryObject>(storage, loc -> ResourceKey.create(registryKey, loc), ResourceKey::location, Function.identity(), Function.identity()) {
                 @Override
                 public DirectStorageRegistryObject put(ResourceKey<T> key, DirectStorageRegistryObject value) {
                     return null;

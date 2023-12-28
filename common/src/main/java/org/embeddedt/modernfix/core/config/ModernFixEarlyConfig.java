@@ -25,6 +25,8 @@ import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
+import java.util.stream.StreamSupport;
 
 public class ModernFixEarlyConfig {
     private static final Logger LOGGER = LogManager.getLogger("ModernFixConfig");
@@ -84,7 +86,10 @@ public class ModernFixEarlyConfig {
                 continue;
             try(Reader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8))) {
                 JsonObject configObject = (JsonObject)new JsonParser().parse(reader);
-                JsonArray mixinList = configObject.getAsJsonArray("mixins");
+                List<JsonElement> mixinList = Stream.of("mixins", "client")
+                        .map(key -> Optional.ofNullable(configObject.getAsJsonArray(key)))
+                        .flatMap(arr -> arr.map(jsonElements -> StreamSupport.stream(jsonElements.spliterator(), false)).orElseGet(Stream::of))
+                        .collect(Collectors.toList());
                 String packageName = configObject.get("package").getAsString().replace('.', '/');
                 for(JsonElement mixin : mixinList) {
                     mixinPaths.add(packageName + "/" + mixin.getAsString().replace('.', '/') + ".class");

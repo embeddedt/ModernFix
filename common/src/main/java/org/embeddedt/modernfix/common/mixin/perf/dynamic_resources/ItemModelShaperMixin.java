@@ -6,6 +6,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.Item;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelCache;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.util.DynamicInt2ObjectMap;
@@ -18,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Mixin(ItemModelShaper.class)
+@ClientOnlyMixin
 public abstract class ItemModelShaperMixin {
 
     @Shadow public abstract ModelManager getModelManager();

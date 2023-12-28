@@ -5,8 +5,17 @@ pluginManagement {
         maven { url "https://maven.architectury.dev/" }
         maven { url "https://maven.minecraftforge.net/" }
     }
+    resolutionStrategy {
+            eachPlugin {
+                if (requested.id.id == "com.github.johnrengelman.shadow") {
+                    useModule("gradle.plugin.com.github.johnrengelman:shadow:${shadow_version}")
+                }
+            }
+    }
 }
 
+include("annotation-processor")
+include("annotations")
 include("test_agent")
 include("common")
 

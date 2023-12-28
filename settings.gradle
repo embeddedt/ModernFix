@@ -19,8 +19,6 @@ include("annotations")
 include("test_agent")
 include("common")
 
-startParameter.excludedTaskNames.add(':fabric:testmod:genSources')
-
 def current_platforms = getProperty("enabled_platforms").tokenize(',')
 current_platforms.each { it ->
     def platform_name = it.trim()

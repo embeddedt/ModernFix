@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "com.github.johnrengelman.shadow"
     id "modernfix.mod-common-conventions"
     id "modernfix.platform-conventions"
 }
@@ -76,6 +76,8 @@ dependencies {
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionForge")) { transitive = false }
+    shadowCommon(project(path: ":annotations"))
+    forgeRuntimeLibrary(project(path: ":annotations"))
 }
 
 processResources {

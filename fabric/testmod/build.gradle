@@ -41,3 +41,5 @@ processResources {
     }
 }
 
+// Make genSources do nothing in this project
+project.gradle.startParameter.excludedTaskNames.add("genSources")

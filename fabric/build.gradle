@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "com.github.johnrengelman.shadow"
     id 'com.adarshr.test-logger' version '3.2.0'
     id "modernfix.mod-common-conventions"
     id "modernfix.platform-conventions"
@@ -63,6 +63,7 @@ dependencies {
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     testImplementation(shadowCommon(project(path: ":common", configuration: "transformProductionFabric"))) { transitive false }
+    shadowCommon(project(path: ":annotations"))
 
     testImplementation(platform("org.junit:junit-bom:${project.junit_version}"))
     testImplementation("org.junit.jupiter:junit-jupiter-api")

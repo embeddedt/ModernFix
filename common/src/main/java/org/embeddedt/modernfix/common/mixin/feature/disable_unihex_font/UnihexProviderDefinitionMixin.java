@@ -7,6 +7,7 @@ import net.minecraft.client.gui.font.providers.GlyphProviderDefinition;
 import net.minecraft.client.gui.font.providers.UnihexProvider;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -16,6 +17,7 @@ import java.io.IOException;
 import java.lang.reflect.Constructor;
 
 @Mixin(UnihexProvider.Definition.class)
+@ClientOnlyMixin
 public class UnihexProviderDefinitionMixin {
     @Inject(method = "unpack", at = @At("HEAD"), cancellable = true)
     private void disableProvider(CallbackInfoReturnable<Either<GlyphProviderDefinition.Loader, GlyphProviderDefinition.Reference>> cir) {

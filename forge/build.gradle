@@ -45,8 +45,8 @@ repositories {
 
 dependencies {
     forge "net.minecraftforge:forge:${rootProject.forge_version}"
-    shadow(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-common:${rootProject.mixinextras_version}"))
-    runtimeOnly("com.github.llamalad7.mixinextras:mixinextras-common:${rootProject.mixinextras_version}")
+    shadow(annotationProcessor("io.github.llamalad7:mixinextras-common:${rootProject.mixinextras_version}"))
+    runtimeOnly("io.github.llamalad7:mixinextras-common:${rootProject.mixinextras_version}")
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury-forge:${rootProject.architectury_version}"
 

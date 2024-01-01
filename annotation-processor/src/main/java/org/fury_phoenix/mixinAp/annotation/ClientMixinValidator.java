@@ -166,6 +166,7 @@ public class ClientMixinValidator {
 
             clzsses = wrappedClzss.stream()
             .map(AnnotationValue::getValue)
+            .filter(o -> o instanceof TypeMirror)
             .map(TypeMirror.class::cast)
             .collect(Collectors.toSet());
 

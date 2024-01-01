@@ -11,6 +11,7 @@ import net.fabricmc.loader.api.metadata.CustomValue;
 import net.fabricmc.loader.api.metadata.ModMetadata;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -72,7 +73,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         return FabricLoader.getInstance().getGameDir();
     }
 
-    public void sendPacket(ServerPlayer player, Object packet) {
+    public void sendPacket(ServerPlayer player, CustomPacketPayload packet) {
         //PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
     }
 

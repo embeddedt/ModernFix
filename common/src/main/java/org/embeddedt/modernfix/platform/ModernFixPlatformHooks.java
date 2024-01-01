@@ -4,6 +4,7 @@ import com.google.common.collect.Multimap;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
@@ -39,7 +40,7 @@ public interface ModernFixPlatformHooks {
 
     Path getGameDirectory();
 
-    void sendPacket(ServerPlayer player, Object packet);
+    void sendPacket(ServerPlayer player, CustomPacketPayload packet);
 
     Multimap<String, String> getCustomModOptions();
 

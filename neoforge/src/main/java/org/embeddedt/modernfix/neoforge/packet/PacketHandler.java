@@ -1,33 +1,24 @@
 package org.embeddedt.modernfix.neoforge.packet;
 
-import net.minecraft.resources.ResourceLocation;
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.fml.DistExecutor;
-import net.neoforged.neoforge.network.NetworkEvent;
-import net.neoforged.neoforge.network.NetworkRegistry;
-import net.neoforged.neoforge.network.simple.SimpleChannel;
+import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlerEvent;
+import net.neoforged.neoforge.network.handling.PlayPayloadContext;
+import net.neoforged.neoforge.network.registration.IPayloadRegistrar;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(ModernFix.MODID, "main"),
-            () -> PROTOCOL_VERSION,
-            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION),
-            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION)
-    );
-
-    public static void register() {
-        int id = 1;
-        INSTANCE.registerMessage(id++, EntityIDSyncPacket.class, EntityIDSyncPacket::serialize, EntityIDSyncPacket::deserialize, PacketHandler::handleSyncPacket);
+    private static void registerPackets(final RegisterPayloadHandlerEvent event) {
+        final IPayloadRegistrar registrar = event.registrar(ModernFix.MODID).optional();
+        registrar.play(EntityIDSyncPacket.ID, EntityIDSyncPacket::new, PacketHandler::handleSyncPacket);
     }
 
-    private static void handleSyncPacket(EntityIDSyncPacket packet, NetworkEvent.Context contextSupplier) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-            contextSupplier.enqueueWork(() -> ModernFixClient.handleEntityIDSync(packet));
-            contextSupplier.setPacketHandled(true);
-        });
+    public static void register() {
+        FMLJavaModLoadingContext.get().getModEventBus().addListener(PacketHandler::registerPackets);
+    }
+
+    private static void handleSyncPacket(EntityIDSyncPacket packet, PlayPayloadContext context) {
+        context.workHandler().execute(() -> ModernFixClient.handleEntityIDSync(packet));
     }
 }

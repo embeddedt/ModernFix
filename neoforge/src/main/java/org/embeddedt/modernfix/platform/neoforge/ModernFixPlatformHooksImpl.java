@@ -25,7 +25,6 @@ import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.neoforge.config.NightConfigFixer;
 import org.embeddedt.modernfix.neoforge.init.ModernFixForge;
-import org.embeddedt.modernfix.neoforge.packet.PacketHandler;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;

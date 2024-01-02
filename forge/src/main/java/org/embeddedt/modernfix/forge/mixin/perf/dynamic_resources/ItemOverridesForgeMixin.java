@@ -22,7 +22,7 @@ public class ItemOverridesForgeMixin {
      * @author embeddedt
      * @reason servers insist on generating invalid item overrides that have missing models
      */
-    @WrapOperation(method = "bakeModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBaker;bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;"))
+    @WrapOperation(method = "bakeModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBaker;bake(Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/ModelState;Ljava/util/function/Function;)Lnet/minecraft/client/resources/model/BakedModel;"), remap = false)
     private BakedModel bake(ModelBaker instance, ResourceLocation resourceLocation, ModelState modelState, Function<ResourceLocation, TextureAtlasSprite> spriteGetter, Operation<BakedModel> original) {
         boolean prevState = ((IExtendedModelBaker)instance).throwOnMissingModel(false);
         try {

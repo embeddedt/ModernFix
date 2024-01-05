@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.client.model.data.ModelDataManager;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -23,6 +25,8 @@ import java.util.function.Function;
 @ClientOnlyMixin
 public abstract class ModelDataManagerMixin {
     @Shadow protected abstract void refreshAt(ChunkPos chunk);
+
+    @Shadow @Final private static Map<ChunkPos, Set<BlockPos>> needModelDataRefresh;
 
     /**
      * Make the set of positions to refresh a real concurrent hash set rather than relying on synchronizedSet,
@@ -37,7 +41,8 @@ public abstract class ModelDataManagerMixin {
     private void onlyRefreshOnMainThread(ModelDataManager instance, ChunkPos pos) {
         // Only refresh model data on the main thread. This prevents calling getBlockEntity from worker threads
         // which could cause weird CMEs or other behavior.
-        if(Minecraft.getInstance().isSameThread()) {
+        // Avoid the loop if no model data needs to be refreshed, to prevent unnecessary allocation.
+        if(Minecraft.getInstance().isSameThread() && !needModelDataRefresh.isEmpty()) {
             // Refresh the given chunk, and all its neighbors. This is less efficient than the default code
             // but we have no choice since we need to not do refreshing on workers, and blocks might
             // try to access model data in neighboring chunks.

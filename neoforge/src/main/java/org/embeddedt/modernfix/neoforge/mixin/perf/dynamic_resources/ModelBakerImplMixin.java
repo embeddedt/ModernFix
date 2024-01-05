@@ -41,8 +41,10 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
     private boolean throwIfMissing;
 
     @Override
-    public void throwOnMissingModel() {
-        throwIfMissing = true;
+    public boolean throwOnMissingModel(boolean flag) {
+        boolean old = throwIfMissing;
+        throwIfMissing = flag;
+        return old;
     }
 
     @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)

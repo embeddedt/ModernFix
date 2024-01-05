@@ -154,13 +154,26 @@ public class ModelBakeEventHelper {
 
             @Override
             public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
-                ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. This requires temporarily loading every model for that mod, which is slow.", modId);
+                ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. Some hacks will be used to keep this fast, but they may not be 100% compatible.", modId);
                 List<ResourceLocation> locations = new ArrayList<>(keySet());
                 for(ResourceLocation location : locations) {
-                    BakedModel existing = get(location);
-                    BakedModel replacement = function.apply(location, existing);
-                    if(replacement != existing) {
-                        put(location, replacement);
+                    /*
+                     * Fetching every model is insanely slow. So we call the function with a null object first, since it
+                     * probably isn't expecting that. If we get an exception thrown, or it returns nonnull, then we know
+                     * it actually cares about the given model.
+                     */
+                    boolean needsReplacement;
+                    try {
+                        needsReplacement = function.apply(location, null) != null;
+                    } catch(Throwable e) {
+                        needsReplacement = true;
+                    }
+                    if(needsReplacement) {
+                        BakedModel existing = get(location);
+                        BakedModel replacement = function.apply(location, existing);
+                        if(replacement != existing) {
+                            put(location, replacement);
+                        }
                     }
                 }
             }

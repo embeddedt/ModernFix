@@ -26,7 +26,7 @@ import java.util.function.Function;
 public abstract class ModelDataManagerMixin {
     @Shadow protected abstract void refreshAt(ChunkPos chunk);
 
-    @Shadow @Final private static Map<ChunkPos, Set<BlockPos>> needModelDataRefresh;
+    @Shadow @Final private Map<ChunkPos, Set<BlockPos>> needModelDataRefresh;
 
     /**
      * Make the set of positions to refresh a real concurrent hash set rather than relying on synchronizedSet,

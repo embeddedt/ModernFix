@@ -43,7 +43,7 @@ public class ClassInfoManager {
         Class<?> fabricLogger = null;
         try {
             fabricLogger = Class.forName("net.fabricmc.loader.impl.knot.MixinLogger");
-        } catch(Throwable e) {
+        } catch(ClassNotFoundException e) {
             // Probably not Fabric
             return;
         }

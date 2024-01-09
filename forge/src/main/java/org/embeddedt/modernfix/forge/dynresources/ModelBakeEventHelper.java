@@ -164,7 +164,7 @@ public class ModelBakeEventHelper {
                     boolean needsReplacement;
                     try {
                         needsReplacement = function.apply(location, null) != null;
-                    } catch(Throwable e) {
+                    } catch(Exception e) {
                         needsReplacement = true;
                     }
                     if(needsReplacement) {

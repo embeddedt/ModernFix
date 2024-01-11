@@ -1,7 +1,6 @@
 package org.embeddedt.modernfix.neoforge.mixin.core;
 
 import net.minecraft.server.Bootstrap;
-import net.neoforged.neoforge.network.NetworkConstants;
 import org.embeddedt.modernfix.util.TimeFormatter;
 import org.slf4j.Logger;
 import org.spongepowered.asm.mixin.Final;
@@ -24,11 +23,5 @@ public class BootstrapMixin {
         if(!isBootstrapped) {
             LOGGER.info("ModernFix reached bootstrap stage ({} after launch)", TimeFormatter.formatNanos(ManagementFactory.getRuntimeMXBean().getUptime() * 1000L * 1000L));
         }
-    }
-
-    /* for https://github.com/MinecraftForge/MinecraftForge/issues/9505 */
-    @Inject(method = "bootStrap", at = @At("RETURN"))
-    private static void doClassloadHack(CallbackInfo ci) {
-        NetworkConstants.init();
     }
 }

@@ -21,6 +21,7 @@ import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.function.BiFunction;
 
 /**
  * Stores a list of all known default block/item models in the game, and provides a namespaced version
@@ -28,7 +29,12 @@ import java.util.*;
  */
 public class ModelBakeEventHelper {
     // TODO: make into config option
-    private static final Set<String> INCOMPATIBLE_MODS = ImmutableSet.of("industrialforegoing", "vampirism", "elevatorid", "embers");
+    private static final Set<String> INCOMPATIBLE_MODS = ImmutableSet.of(
+            "industrialforegoing",
+            "mekanism",
+            "vampirism",
+            "elevatorid",
+            "embers");
     private final Map<ResourceLocation, BakedModel> modelRegistry;
     private final Set<ResourceLocation> topLevelModelLocations;
     private final MutableGraph<String> dependencyGraph;
@@ -79,7 +85,7 @@ public class ModelBakeEventHelper {
             private void logWarning() {
                 if(!WARNED_MOD_IDS.add(modId))
                     return;
-                ModernFix.LOGGER.warn("Mod '{}' is accessing Map#keySet/entrySet/values on the model registry map inside its event handler." +
+                ModernFix.LOGGER.warn("Mod '{}' is accessing Map#keySet/entrySet/values/replaceAll on the model registry map inside its event handler." +
                         " This probably won't work as expected with dynamic resources on. Prefer using Map#get/put and constructing ModelResourceLocations another way.", modId);
             }
 
@@ -99,6 +105,12 @@ public class ModelBakeEventHelper {
             public Collection<BakedModel> values() {
                 logWarning();
                 return super.values();
+            }
+
+            @Override
+            public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
+                logWarning();
+                super.replaceAll(function);
             }
         };
     }
@@ -138,6 +150,32 @@ public class ModelBakeEventHelper {
             @Override
             public boolean containsKey(@Nullable Object key) {
                 return ourModelLocations.contains(key) || super.containsKey(key);
+            }
+
+            @Override
+            public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
+                ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. Some hacks will be used to keep this fast, but they may not be 100% compatible.", modId);
+                List<ResourceLocation> locations = new ArrayList<>(keySet());
+                for(ResourceLocation location : locations) {
+                    /*
+                     * Fetching every model is insanely slow. So we call the function with a null object first, since it
+                     * probably isn't expecting that. If we get an exception thrown, or it returns nonnull, then we know
+                     * it actually cares about the given model.
+                     */
+                    boolean needsReplacement;
+                    try {
+                        needsReplacement = function.apply(location, null) != null;
+                    } catch(Throwable e) {
+                        needsReplacement = true;
+                    }
+                    if(needsReplacement) {
+                        BakedModel existing = get(location);
+                        BakedModel replacement = function.apply(location, existing);
+                        if(replacement != existing) {
+                            put(location, replacement);
+                        }
+                    }
+                }
             }
         };
     }

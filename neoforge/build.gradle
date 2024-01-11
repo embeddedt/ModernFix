@@ -1,5 +1,5 @@
 plugins {
-    id "com.github.johnrengelman.shadow" version "7.1.2"
+    id "com.github.johnrengelman.shadow"
     id "modernfix.mod-common-conventions"
     id "modernfix.platform-conventions"
 }
@@ -35,8 +35,7 @@ repositories {
 
 dependencies {
     neoForge "net.neoforged:neoforge:${rootProject.forge_version}"
-    //implementation(annotationProcessor("com.github.llamalad7.mixinextras:mixinextras-common:${rootProject.mixinextras_version}"))
-    //implementation(include("com.github.llamalad7.mixinextras:mixinextras-forge:${rootProject.mixinextras_version}"))
+
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury-forge:${rootProject.architectury_version}"
 
@@ -65,6 +64,8 @@ dependencies {
 
     common(project(path: ":common", configuration: "namedElements")) { transitive false }
     shadowCommon(project(path: ":common", configuration: "transformProductionNeoForge")) { transitive = false }
+    shadowCommon(project(path: ":annotations"))
+    forgeRuntimeLibrary(project(path: ":annotations"))
 }
 
 processResources {

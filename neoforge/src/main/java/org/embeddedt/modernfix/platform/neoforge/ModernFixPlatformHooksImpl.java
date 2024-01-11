@@ -5,6 +5,7 @@ import com.google.common.collect.Multimap;
 import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.CreativeModeTab;
@@ -24,7 +25,6 @@ import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.neoforge.config.NightConfigFixer;
 import org.embeddedt.modernfix.neoforge.init.ModernFixForge;
-import org.embeddedt.modernfix.neoforge.packet.PacketHandler;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
@@ -87,8 +87,8 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         return FMLPaths.GAMEDIR.get();
     }
 
-    public void sendPacket(ServerPlayer player, Object packet) {
-        PacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), packet);
+    public void sendPacket(ServerPlayer player, CustomPacketPayload packet) {
+        PacketDistributor.PLAYER.with(player).send(packet);
     }
 
     public void injectPlatformSpecificHacks() {

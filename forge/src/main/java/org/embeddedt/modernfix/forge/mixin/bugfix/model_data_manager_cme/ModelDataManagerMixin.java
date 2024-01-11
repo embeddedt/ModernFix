@@ -5,6 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.client.model.data.ModelDataManager;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Collections;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -24,12 +26,14 @@ import java.util.function.Function;
 public abstract class ModelDataManagerMixin {
     @Shadow protected abstract void refreshAt(ChunkPos chunk);
 
+    @Shadow @Final private Map<ChunkPos, Set<BlockPos>> needModelDataRefresh;
+
     /**
      * Make the set of positions to refresh a real concurrent hash set rather than relying on synchronizedSet,
      * because the returned iterator won't be thread-safe otherwise. See https://github.com/AppliedEnergistics/Applied-Energistics-2/issues/7511
      */
     @ModifyArg(method = "requestRefresh", at = @At(value = "INVOKE", target = "Ljava/util/Map;computeIfAbsent(Ljava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;", ordinal = 0), index = 1, remap = false)
-    private static Function<ChunkPos, Set<BlockPos>> changeTypeOfSetUsed(Function<ChunkPos, Set<BlockPos>> mappingFunction) {
+    private Function<ChunkPos, Set<BlockPos>> changeTypeOfSetUsed(Function<ChunkPos, Set<BlockPos>> mappingFunction) {
         return pos -> Collections.newSetFromMap(new ConcurrentHashMap<>());
     }
 
@@ -37,7 +41,8 @@ public abstract class ModelDataManagerMixin {
     private void onlyRefreshOnMainThread(ModelDataManager instance, ChunkPos pos) {
         // Only refresh model data on the main thread. This prevents calling getBlockEntity from worker threads
         // which could cause weird CMEs or other behavior.
-        if(Minecraft.getInstance().isSameThread()) {
+        // Avoid the loop if no model data needs to be refreshed, to prevent unnecessary allocation.
+        if(Minecraft.getInstance().isSameThread() && !needModelDataRefresh.isEmpty()) {
             // Refresh the given chunk, and all its neighbors. This is less efficient than the default code
             // but we have no choice since we need to not do refreshing on workers, and blocks might
             // try to access model data in neighboring chunks.

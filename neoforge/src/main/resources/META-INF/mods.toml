@@ -45,9 +45,9 @@ Egregious, yet effective performance improvements for modern Minecraft
 # the modid of the dependency
 modId = "neoforge" #mandatory
 # Does this dependency have to exist - if not, ordering below must be specified
-mandatory = true #mandatory
+type = "required" #mandatory
 # The version range of the dependency
-versionRange = "[20.4.22-beta,)" #mandatory
+versionRange = "[20.4.70-beta,)" #mandatory
 # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
 ordering = "NONE"
 # Side this dependency is applied on - BOTH, CLIENT or SERVER
@@ -55,14 +55,14 @@ side = "BOTH"
 # Here's another dependency
 [[dependencies.modernfix]]
 modId = "minecraft"
-mandatory = true
+type = "required"
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
 versionRange = "[1.20, 1.21)"
 ordering = "NONE"
 side = "BOTH"
 [[dependencies.modernfix]]
 modId = "jei"
-mandatory = false
+type = "optional"
 # This version range declares a minimum of the current minecraft version up to but not including the next major version
 versionRange = "[13,)"
 ordering = "BEFORE"

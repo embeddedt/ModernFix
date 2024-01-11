@@ -8,6 +8,7 @@ import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IExtendedModelBaker;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
@@ -23,6 +24,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.function.Function;
 
 @Mixin(value = ModelBakery.ModelBakerImpl.class, priority = 600)
+@ClientOnlyMixin
 public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedModelBaker {
     private static final boolean debugDynamicModelLoading = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
     @Shadow @Final private ModelBakery field_40571;
@@ -39,8 +41,10 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
     private boolean throwIfMissing;
 
     @Override
-    public void throwOnMissingModel() {
-        throwIfMissing = true;
+    public boolean throwOnMissingModel(boolean flag) {
+        boolean old = throwIfMissing;
+        throwIfMissing = flag;
+        return old;
     }
 
     @Inject(method = "getModel", at = @At("HEAD"), cancellable = true)

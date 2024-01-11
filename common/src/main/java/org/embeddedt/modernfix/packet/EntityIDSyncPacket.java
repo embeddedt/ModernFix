@@ -2,7 +2,9 @@ package org.embeddedt.modernfix.packet;
 
 import com.mojang.datafixers.util.Pair;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.network.syncher.EntityDataAccessor;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 import org.embeddedt.modernfix.ModernFix;
 
@@ -10,7 +12,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
 
-public class EntityIDSyncPacket {
+public class EntityIDSyncPacket implements CustomPacketPayload {
+    public static final ResourceLocation ID = new ResourceLocation(ModernFix.MODID, "entity_id_sync");
     private Map<Class<? extends Entity>, List<Pair<String, Integer>>> map;
 
     public EntityIDSyncPacket(Map<Class<? extends Entity>, List<Pair<String, Integer>>> map) {
@@ -21,11 +24,8 @@ public class EntityIDSyncPacket {
         return this.map;
     }
 
-    public EntityIDSyncPacket() {
-        this.map = new HashMap<>();
-    }
-
-    public void serialize(FriendlyByteBuf buf) {
+    @Override
+    public void write(FriendlyByteBuf buf) {
         buf.writeVarInt(map.keySet().size());
         for(Map.Entry<Class<? extends Entity>, List<Pair<String, Integer>>> entry : map.entrySet()) {
             buf.writeUtf(entry.getKey().getName());
@@ -38,8 +38,8 @@ public class EntityIDSyncPacket {
     }
 
     @SuppressWarnings("unchecked")
-    public static EntityIDSyncPacket deserialize(FriendlyByteBuf buf) {
-        EntityIDSyncPacket self = new EntityIDSyncPacket();
+    public EntityIDSyncPacket(FriendlyByteBuf buf) {
+        EntityIDSyncPacket self = this;
         int numEntityClasses = buf.readVarInt();
         for(int i = 0; i < numEntityClasses; i++) {
             String clzName = buf.readUtf();
@@ -73,6 +73,10 @@ public class EntityIDSyncPacket {
                 ModernFix.LOGGER.error("Error deserializing packet", e);
             }
         }
-        return self;
+    }
+
+    @Override
+    public ResourceLocation id() {
+        return ID;
     }
 }

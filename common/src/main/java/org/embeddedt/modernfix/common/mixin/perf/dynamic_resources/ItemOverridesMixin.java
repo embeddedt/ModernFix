@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.At;
 @Mixin(ItemOverrides.class)
 @ClientOnlyMixin
 public class ItemOverridesMixin {
-    @WrapOperation(method = "bakeModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBaker;getModel(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/UnbakedModel;"))
+    @WrapOperation(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelBaker;getModel(Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/UnbakedModel;"))
     private UnbakedModel preventThrowForMissing(ModelBaker instance, ResourceLocation resourceLocation, Operation<UnbakedModel> original) {
         boolean prevState = ((IExtendedModelBaker)instance).throwOnMissingModel(false);
         try {

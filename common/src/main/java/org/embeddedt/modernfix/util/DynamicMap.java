@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
@@ -64,18 +65,18 @@ public class DynamicMap<K, V> implements Map<K, V> {
     @NotNull
     @Override
     public Set<K> keySet() {
-        throw new UnsupportedOperationException();
+        return Collections.emptySet();
     }
 
     @NotNull
     @Override
     public Collection<V> values() {
-        throw new UnsupportedOperationException();
+        return Collections.emptyList();
     }
 
     @NotNull
     @Override
     public Set<Entry<K, V>> entrySet() {
-        throw new UnsupportedOperationException();
+        return Collections.emptySet();
     }
 }

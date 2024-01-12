@@ -2,8 +2,11 @@ package org.embeddedt.modernfix.util;
 
 import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
 import it.unimi.dsi.fastutil.ints.IntSet;
+import it.unimi.dsi.fastutil.ints.IntSets;
 import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import it.unimi.dsi.fastutil.objects.ObjectLists;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
+import it.unimi.dsi.fastutil.objects.ObjectSets;
 
 import java.util.Map;
 import java.util.function.Function;
@@ -15,17 +18,17 @@ public class DynamicInt2ObjectMap<V> extends DynamicMap<Integer, V> implements I
 
     @Override
     public IntSet keySet() {
-        throw new UnsupportedOperationException();
+        return IntSets.EMPTY_SET;
     }
 
     @Override
     public ObjectCollection<V> values() {
-        throw new UnsupportedOperationException();
+        return ObjectLists.emptyList();
     }
 
     @Override
     public ObjectSet<Map.Entry<Integer, V>> entrySet() {
-        throw new UnsupportedOperationException();
+        return ObjectSets.emptySet();
     }
 
     @Override

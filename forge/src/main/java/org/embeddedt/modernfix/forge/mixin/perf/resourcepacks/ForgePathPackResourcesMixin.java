@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Set;
 
 @Mixin(PathPackResources.class)
@@ -87,7 +88,7 @@ public abstract class ForgePathPackResourcesMixin implements ICachingResourcePac
     @Redirect(method = "getRootResource", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;exists(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z"))
     private boolean useCacheForExistence(Path path, LinkOption[] options, String[] originalPaths) {
         // the cache only stores things with a namespace and pack type
-        if(originalPaths.length < 3)
+        if(originalPaths.length < 3 || (!Objects.equals(originalPaths[0], "assets") && !Objects.equals(originalPaths[0], "data")))
             return Files.exists(path, options);
         else
             return this.generateResourceCache().hasResource(originalPaths);

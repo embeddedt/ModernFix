@@ -76,7 +76,7 @@ public abstract class ModFileResourcePackMixin implements ICachingResourcePack {
     @Inject(method = "hasResource(Ljava/lang/String;)Z", at = @At(value = "HEAD"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
         PackResourcesCacheEngine engine = this.generateResourceCache();
-        if(engine != null)
+        if(engine != null && (path.startsWith("assets/") || path.startsWith("data/")))
             cir.setReturnValue(engine.hasResource(path));
     }
 

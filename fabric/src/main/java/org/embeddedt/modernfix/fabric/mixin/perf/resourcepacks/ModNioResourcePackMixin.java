@@ -65,7 +65,7 @@ public abstract class ModNioResourcePackMixin implements ICachingResourcePack {
 
     @Inject(method = "hasResource", at = @At(value = "INVOKE", target = "Lnet/fabricmc/fabric/impl/resource/loader/ModNioResourcePack;getPath(Ljava/lang/String;)Ljava/nio/file/Path;"), cancellable = true)
     private void useCacheForExistence(String path, CallbackInfoReturnable<Boolean> cir) {
-        if(cacheEngine != null)
+        if(cacheEngine != null && (path.startsWith("assets/") || path.startsWith("data/")))
             cir.setReturnValue(this.cacheEngine.hasResource(path));
     }
 }

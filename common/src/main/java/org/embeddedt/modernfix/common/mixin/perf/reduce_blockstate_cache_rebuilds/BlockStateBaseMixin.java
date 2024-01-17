@@ -93,7 +93,7 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
                 if(!buildingCache) {
                     buildingCache = true;
                     try {
-                        this.fluidState = this.owner.getFluidState(this.asState());
+                        this.fluidState = ((BlockBehaviourInvoker)this.owner).invokeGetFluidState(this.asState());
                     } finally {
                         buildingCache = false;
                     }
@@ -112,7 +112,7 @@ public abstract class BlockStateBaseMixin extends StateHolder<Block, BlockState>
     ))
     private boolean genCacheBeforeGettingTicking(BlockBehaviour.BlockStateBase base) {
         if(this.cacheInvalid)
-            return this.owner.isRandomlyTicking(this.asState());
+            return ((BlockBehaviourInvoker)this.owner).invokeIsRandomlyTicking(this.asState());
         return this.isRandomlyTicking;
     }
 

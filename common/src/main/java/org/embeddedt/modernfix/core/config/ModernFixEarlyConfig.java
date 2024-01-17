@@ -178,7 +178,6 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.warn_missing_perf_mods", true)
             .put("mixin.feature.spark_profile_launch", false)
             .put("mixin.devenv", isDevEnv)
-            .put("mixin.perf.remove_spawn_chunks", isDevEnv)
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
             .putConditionally(() -> !isFabric, "mixin.feature.registry_event_progress", false)
             .putConditionally(() -> isFabric, "mixin.perf.clear_fabric_mapping_tables", false)

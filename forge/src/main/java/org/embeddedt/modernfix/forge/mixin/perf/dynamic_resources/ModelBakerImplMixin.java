@@ -94,7 +94,7 @@ public abstract class ModelBakerImplMixin implements IModelBakerImpl, IExtendedM
         BakedModel model = operation.call(unbakedModel, baker, spriteGetter, state, location);
 
         for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
-            model = integration.onBakedModelLoad(location, unbakedModel, model, state, this.field_40571);
+            model = integration.onBakedModelLoad(location, unbakedModel, model, state, this.field_40571, spriteGetter);
         }
 
         return model;

@@ -96,7 +96,7 @@ public class DummyServerConfiguration implements WorldData {
     }
 
     @Override
-    public boolean getAllowCommands() {
+    public boolean isAllowCommands() {
         return false;
     }
 

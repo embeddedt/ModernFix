@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 public class CrashReportMixin {
     @Shadow @Final private Throwable exception;
 
-    @Inject(method = "addCategory(Ljava/lang/String;I)Lnet/minecraft/CrashReportCategory;", at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;error(Ljava/lang/String;[Ljava/lang/Object;)V", remap = false))
+    @Inject(method = "addCategory(Ljava/lang/String;I)Lnet/minecraft/CrashReportCategory;", at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;error(Ljava/lang/String;Ljava/lang/Object;Ljava/lang/Object;)V", remap = false))
     private void dumpStacktrace(String s, int i, CallbackInfoReturnable<CrashReportCategory> cir) {
         new Exception("ModernFix crash stacktrace").printStackTrace();
         if(this.exception != null)

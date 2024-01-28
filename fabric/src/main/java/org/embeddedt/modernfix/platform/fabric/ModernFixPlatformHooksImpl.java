@@ -38,13 +38,11 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         return FabricLoader.getInstance().getEnvironmentType() == EnvType.SERVER;
     }
 
-    private static String verString;
+    private static final String verString = FabricLoader.getInstance().getModContainer("modernfix")
+    .map(mfModContainer -> mfModContainer.getMetadata().getVersion().getFriendlyString())
+    .orElse("[unknown]");
 
     public String getVersionString() {
-        if(verString == null) {
-            ModContainer mfModContainer = FabricLoader.getInstance().getModContainer("modernfix").get();
-            verString = mfModContainer.getMetadata().getVersion().getFriendlyString();
-        }
         return verString;
     }
 

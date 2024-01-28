@@ -43,7 +43,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Consumer;
 
 public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
@@ -55,17 +55,11 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         return FMLLoader.getDist().isDedicatedServer();
     }
 
-    private static String verString;
+    private static final String verString = Optional.ofNullable(
+    ModernFixMixinPlugin.class.getPackage().getImplementationVersion())
+    .orElse("[unknown]");
 
     public String getVersionString() {
-        if(verString == null) {
-            try {
-                verString = ModernFixMixinPlugin.class.getPackage().getImplementationVersion();
-                Objects.requireNonNull(verString);
-            } catch(Throwable e) {
-                verString = "[unknown]";
-            }
-        }
         return verString;
     }
 

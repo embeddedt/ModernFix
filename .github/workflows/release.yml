@@ -8,28 +8,27 @@ on:
 jobs:
   release:
     if: github.repository_owner == 'embeddedt'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 17
+          check-latest: true
       - name: Remove tags for release on other versions
         run: ./scripts/tagcleaner.sh
       - name: Build and publish mod to CurseForge & Modrinth
-        run: |
-          chmod +x gradlew
-          ./gradlew publishToModSites copyJarToBin
+        run: ./gradlew publishToModSites copyJarToBin
         env:
           CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
       - name: Upload assets to GitHub
-        uses: AButler/upload-release-assets@v2.0
+        uses: AButler/upload-release-assets@v3.0
         with:
           files: 'bin/*'
           repo-token: ${{ secrets.GITHUB_TOKEN }}

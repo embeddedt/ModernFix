@@ -10,35 +10,34 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           fetch-depth: 0
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: 17
+          check-latest: true
       - name: Setup Gradle
-        uses: gradle/gradle-build-action@v2
+        uses: gradle/actions/setup-gradle@v3
         with:
           cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
           gradle-home-cache-cleanup: true
       - name: Setup project Loom cache
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: |
             .gradle/loom-cache
           key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle.properties', '**/*.gradle*', '**/gradle-wrapper.properties') }}
           restore-keys: ${{ runner.os }}-gradle-
-      - name: Build ModernFix
-        run: |
-          chmod +x gradlew
-          ./gradlew build
+      - name: Build ModernFix using Gradle
+        run: ./gradlew build
       - name: Upload Artifacts to GitHub
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: Package
           path: bin

@@ -34,7 +34,7 @@ public class ForgeHooksClientMixin {
         Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
         ModList.get().forEachModContainer((id, mc) -> {
             Map<ResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
-            ModelEvent.ModifyBakingResult postedEvent = new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getModelBakery());
+            ModelEvent.ModifyBakingResult postedEvent = new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getTextureGetter(), bakeEvent.getModelBakery());
             Stopwatch timer = Stopwatch.createStarted();
             try {
                 acceptEv.invoke(mc, postedEvent);

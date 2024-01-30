@@ -1,7 +1,6 @@
 package org.embeddedt.modernfix.fabric.mappings;
 
-import net.fabricmc.loader.api.FabricLoader;
-import net.fabricmc.loader.api.MappingResolver;
+import net.fabricmc.loader.api.*;
 import net.fabricmc.loader.impl.launch.FabricLauncherBase;
 import net.fabricmc.loader.impl.launch.MappingConfiguration;
 import net.fabricmc.mapping.tree.TinyMappingFactory;
@@ -10,16 +9,34 @@ import org.embeddedt.modernfix.util.CommonModUtil;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.util.Map;
+import java.util.Optional;
 
 /**
  * Designed for Fabric Loader 0.14.x, probably has issues on other versions. The entire thing is wrapped in a try-catch
  * so it should never cause crashes, just fail to work.
  */
 public class MappingsClearer {
+    private static final Version LOADER_015;
+
+    static {
+        try {
+            LOADER_015 = Version.parse("0.15.0");
+        } catch (VersionParsingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public static void clear() {
         if(FabricLoader.getInstance().isDevelopmentEnvironment())
             return; // never do this in dev
+
+        Optional<Version> loaderVersion = FabricLoader.getInstance().getModContainer("fabricloader").map(m -> m.getMetadata().getVersion());
+        if(!loaderVersion.isPresent() || LOADER_015.compareTo(loaderVersion.get()) < 0) {
+            // Fabric Loader is probably too new, abort
+            return;
+        }
+
         CommonModUtil.runWithoutCrash(() -> {
             // For now, force the mapping resolver to be initialized. Fabric Loader 0.14.23 stops initializing it early,
             // which means that we actually need to keep the TinyMappingFactory tree around for initialization to work

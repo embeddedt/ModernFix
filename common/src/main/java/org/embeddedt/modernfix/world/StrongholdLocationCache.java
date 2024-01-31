@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.world;
 
 import net.minecraft.core.Holder;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerLevel;
@@ -33,7 +34,7 @@ public class StrongholdLocationCache extends SavedData {
         this.setDirty();
     }
 
-    public static StrongholdLocationCache load(CompoundTag arg) {
+    public static StrongholdLocationCache load(CompoundTag arg, HolderLookup.Provider provider) {
         StrongholdLocationCache cache = new StrongholdLocationCache();
         if(arg.contains("Positions", Tag.TAG_LONG_ARRAY)) {
             long[] positions = arg.getLongArray("Positions");
@@ -45,7 +46,7 @@ public class StrongholdLocationCache extends SavedData {
     }
 
     @Override
-    public CompoundTag save(CompoundTag compoundTag) {
+    public CompoundTag save(CompoundTag compoundTag, HolderLookup.Provider provider) {
         long[] serialized = new long[chunkPosList.size()];
         for(int i = 0; i < chunkPosList.size(); i++) {
             ChunkPos thePos = chunkPosList.get(i);

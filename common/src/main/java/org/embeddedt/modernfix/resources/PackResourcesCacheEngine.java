@@ -60,7 +60,7 @@ public class PackResourcesCacheEngine {
                         String namespace = pair.getFirst();
                         Path root = pair.getSecond();
                         String[] prefix = new String[] { type.getDirectory(), namespace };
-                        try (Stream<Path> stream = Files.walk(root)) {
+                        try (Stream<Path> stream = Files.find(root, Integer.MAX_VALUE, (p, a) -> a.isRegularFile())) {
                             stream
                                     .map(path -> root.relativize(path.toAbsolutePath()))
                                     .filter(PackResourcesCacheEngine::isValidCachedResourcePath)
@@ -154,8 +154,10 @@ public class PackResourcesCacheEngine {
             if((cachePath.getNameCount() - 2) > maxDepth)
                 continue;
             String fullPath = cachePath.getFullPath(2);
-            if(!fullPath.startsWith(testPath))
+            String fullTestPath = fullPath.endsWith("/") ? fullPath : (fullPath + "/");
+            if(!fullTestPath.startsWith(testPath)) {
                 continue;
+            }
             ResourceLocation foundResource = new ResourceLocation(resourceNamespace, fullPath);
             if(!filter.test(foundResource))
                 continue;

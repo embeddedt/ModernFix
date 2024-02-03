@@ -56,6 +56,12 @@ public class ModernFixClient {
                 ModernFix.LOGGER.error("Could not instantiate integration {}", className, e);
             }
         }
+
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.dynamic_resources.FireIntegrationHook")) {
+            for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                integration.onDynamicResourcesStatusChange(true);
+            }
+        }
     }
 
     public void resetWorldLoadStateMachine() {

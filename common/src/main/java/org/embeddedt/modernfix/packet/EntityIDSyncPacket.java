@@ -39,6 +39,7 @@ public class EntityIDSyncPacket implements CustomPacketPayload {
 
     @SuppressWarnings("unchecked")
     public EntityIDSyncPacket(FriendlyByteBuf buf) {
+        this.map = new HashMap<>();
         EntityIDSyncPacket self = this;
         int numEntityClasses = buf.readVarInt();
         for(int i = 0; i < numEntityClasses; i++) {

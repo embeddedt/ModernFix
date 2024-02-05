@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class LivingEntityRendererMixin {
     @Redirect(method = "render(Lnet/minecraft/world/entity/LivingEntity;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/eventbus/api/IEventBus;post(Lnet/minecraftforge/eventbus/api/Event;)Z", ordinal = 0))
     private boolean fireCheckingPoseStack(IEventBus instance, Event event) {
-        PoseStack stack = ((RenderLivingEvent)event).getMatrixStack();
+        PoseStack stack = ((RenderLivingEvent)event).getPoseStack();
         int size = ((PoseStackAccessor)stack).getPoseStack().size();
         if (instance.post(event)) {
             // Pop the stack if someone pushed it in the event

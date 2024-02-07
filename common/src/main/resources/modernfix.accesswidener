@@ -21,9 +21,6 @@ accessible field net/minecraft/client/renderer/texture/Stitcher$Holder height I
 accessible field net/minecraft/network/syncher/EntityDataAccessor id I
 mutable field net/minecraft/network/syncher/EntityDataAccessor id I
 accessible class net/minecraft/client/resources/model/ModelBakery$BlockStateDefinitionException
-accessible field net/minecraft/network/syncher/SynchedEntityData itemsById Lit/unimi/dsi/fastutil/ints/Int2ObjectMap;
-accessible field net/minecraft/network/syncher/SynchedEntityData ENTITY_ID_POOL Lit/unimi/dsi/fastutil/objects/Object2IntMap;
-accessible field net/minecraft/network/syncher/SynchedEntityData lock Ljava/util/concurrent/locks/ReadWriteLock;
 accessible method net/minecraft/Util makeExecutor (Ljava/lang/String;)Ljava/util/concurrent/ExecutorService;
 accessible field net/minecraft/server/level/ChunkMap updatingChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
 accessible field net/minecraft/server/level/ChunkMap visibleChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;

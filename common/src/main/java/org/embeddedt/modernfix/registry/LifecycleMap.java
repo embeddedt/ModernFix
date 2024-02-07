@@ -1,15 +1,16 @@
 package org.embeddedt.modernfix.registry;
 
-import com.mojang.serialization.Lifecycle;
 import it.unimi.dsi.fastutil.objects.Reference2ReferenceOpenHashMap;
+import net.minecraft.core.RegistrationInfo;
+import net.minecraft.resources.ResourceKey;
 
-public class LifecycleMap<T> extends Reference2ReferenceOpenHashMap<T, Lifecycle> {
+public class LifecycleMap<T> extends Reference2ReferenceOpenHashMap<ResourceKey<T>, RegistrationInfo> {
     public LifecycleMap() {
-        this.defaultReturnValue(Lifecycle.stable());
+        this.defaultReturnValue(RegistrationInfo.BUILT_IN);
     }
 
     @Override
-    public Lifecycle put(T t, Lifecycle lifecycle) {
+    public RegistrationInfo put(ResourceKey<T> t, RegistrationInfo lifecycle) {
         if(lifecycle != defRetValue)
             return super.put(t, lifecycle);
         else {

@@ -25,7 +25,7 @@ import java.util.Map;
  */
 @Mixin(WallBlock.class)
 public abstract class WallBlockMixin extends Block {
-    private static Map<ImmutableList<Float>, Pair<Map<ImmutableMap<Property<?>, Comparable<?>>, VoxelShape>, StateDefinition<Block, BlockState>>> CACHE_BY_SHAPE_VALS = new HashMap<>();
+    private static Map<ImmutableList<Float>, Pair<Map<Map<Property<?>, Comparable<?>>, VoxelShape>, StateDefinition<Block, BlockState>>> CACHE_BY_SHAPE_VALS = new HashMap<>();
 
     public WallBlockMixin(Properties properties) {
         super(properties);
@@ -34,7 +34,7 @@ public abstract class WallBlockMixin extends Block {
     @Inject(method = "makeShapes", at = @At("HEAD"), cancellable = true)
     private synchronized void useCachedShapeMap(float f1, float f2, float f3, float f4, float f5, float f6, CallbackInfoReturnable<Map<BlockState, VoxelShape>> cir) {
         ImmutableList<Float> key = ImmutableList.of(f1, f2, f3, f4, f5, f6);
-        Pair<Map<ImmutableMap<Property<?>, Comparable<?>>, VoxelShape>, StateDefinition<Block, BlockState>> cache = CACHE_BY_SHAPE_VALS.get(key);
+        Pair<Map<Map<Property<?>, Comparable<?>>, VoxelShape>, StateDefinition<Block, BlockState>> cache = CACHE_BY_SHAPE_VALS.get(key);
         // require the properties to be identical
         if(cache == null || !cache.getSecond().getProperties().equals(this.stateDefinition.getProperties()))
             return;
@@ -55,7 +55,7 @@ public abstract class WallBlockMixin extends Block {
             return;
         ImmutableList<Float> key = ImmutableList.of(f1, f2, f3, f4, f5, f6);
         if(!CACHE_BY_SHAPE_VALS.containsKey(key)) {
-            Map<ImmutableMap<Property<?>, Comparable<?>>, VoxelShape> cacheByProperties = new HashMap<>();
+            Map<Map<Property<?>, Comparable<?>>, VoxelShape> cacheByProperties = new HashMap<>();
             Map<BlockState, VoxelShape> shapeMap = cir.getReturnValue();
             for(Map.Entry<BlockState, VoxelShape> entry : shapeMap.entrySet()) {
                 cacheByProperties.put(entry.getKey().getValues(), entry.getValue());

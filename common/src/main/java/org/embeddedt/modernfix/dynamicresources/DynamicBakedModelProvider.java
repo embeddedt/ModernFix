@@ -91,11 +91,6 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
             currentInstance = this;
     }
 
-    public void setMissingModel(BakedModel model) {
-        this.missingModel = model;
-        this.put(ModelBakery.MISSING_MODEL_LOCATION, this.missingModel);
-    }
-
     private static ModelBakery.BakedCacheKey vanillaKey(Object o) {
         return new ModelBakery.BakedCacheKey((ResourceLocation)o, BlockModelRotation.X0_Y0.getRotation(), false);
     }
@@ -140,6 +135,14 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         return false;
     }
 
+    private BakedModel getMissingModel() {
+        BakedModel m = missingModel;
+        if(m == null) {
+            m = missingModel = ((IExtendedModelBakery)bakery).bakeDefault(ModelBakery.MISSING_MODEL_LOCATION, BlockModelRotation.X0_Y0);
+        }
+        return m;
+    }
+
     @Override
     public BakedModel get(Object o) {
         BakedModel model = permanentOverrides.getOrDefault(o, SENTINEL);
@@ -148,14 +151,14 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         else {
             try {
                 if(BAKE_SKIPPED_TOPLEVEL.contains((ResourceLocation)o))
-                    model = missingModel;
+                    model = getMissingModel();
                 else
                     model = ((IExtendedModelBakery)bakery).bakeDefault((ResourceLocation)o, BlockModelRotation.X0_Y0);
             } catch(RuntimeException e) {
                 ModernFix.LOGGER.error("Exception baking {}: {}", o, e);
-                model = missingModel;
+                model = getMissingModel();
             }
-            if(model == missingModel) {
+            if(model == getMissingModel()) {
                 // to correctly emulate the original map, we return null for missing models, unless they are top-level
                 model = isVanillaTopLevelModel((ResourceLocation)o) ? model : null;
                 permanentOverrides.put((ResourceLocation) o, model);

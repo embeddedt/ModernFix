@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.forge.mixin.perf.forge_registry_alloc;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -14,9 +15,11 @@ import java.util.Map;
 
 @Mixin(value = ForgeRegistry.class, remap = false)
 public abstract class ForgeRegistryMixin<V> {
-    @Shadow @Final private Map<ResourceLocation, Holder.Reference<V>> delegatesByName;
+    // Replace the backing maps with fastutil maps for a bit more speed, since value->holder lookups in particular
+    // are a bottleneck in many areas (e.g. render type lookup)
+    @Shadow @Final private Map<ResourceLocation, Holder.Reference<V>> delegatesByName = new Object2ObjectOpenHashMap<>();
 
-    @Shadow @Final private Map<V, Holder.Reference<V>> delegatesByValue;
+    @Shadow @Final private Map<V, Holder.Reference<V>> delegatesByValue = new Object2ObjectOpenHashMap<>();
 
     /**
      * @author embeddedt

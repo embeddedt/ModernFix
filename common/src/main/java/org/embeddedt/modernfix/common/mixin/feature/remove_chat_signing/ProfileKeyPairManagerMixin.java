@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.common.mixin.feature.remove_chat_signing;
 
 import net.minecraft.client.multiplayer.ProfileKeyPairManager;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
-import org.embeddedt.modernfix.core.config.Option;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 

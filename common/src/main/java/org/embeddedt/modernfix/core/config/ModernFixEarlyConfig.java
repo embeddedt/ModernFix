@@ -174,6 +174,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.faster_item_rendering", false)
             .put("mixin.feature.spam_thread_dump", false)
             .put("mixin.feature.disable_unihex_font", false)
+            .put("mixin.feature.remove_chat_signing", false)
             .put("mixin.feature.snapshot_easter_egg", true)
             .put("mixin.feature.warn_missing_perf_mods", true)
             .put("mixin.feature.spark_profile_launch", false)

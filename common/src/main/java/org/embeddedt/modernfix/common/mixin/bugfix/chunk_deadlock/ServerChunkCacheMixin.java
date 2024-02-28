@@ -1,16 +1,15 @@
 package org.embeddedt.modernfix.common.mixin.bugfix.chunk_deadlock;
 
-import com.mojang.datafixers.util.Either;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ChunkResult;
 import net.minecraft.server.level.ServerChunkCache;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.Biomes;
 import net.minecraft.world.level.chunk.ChunkAccess;
-import net.minecraft.world.level.chunk.ChunkStatus;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.chunk.EmptyLevelChunk;
 import org.embeddedt.modernfix.ModernFix;
 import org.spongepowered.asm.mixin.Final;
@@ -26,7 +25,7 @@ public abstract class ServerChunkCacheMixin {
     @Shadow @Final private Thread mainThread;
     @Shadow @Final public ServerLevel level;
 
-    @Shadow protected abstract CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> getChunkFutureMainThread(int k, int l, ChunkStatus arg, boolean bl);
+    @Shadow protected abstract CompletableFuture<ChunkResult<ChunkAccess>> getChunkFutureMainThread(int k, int l, ChunkStatus arg, boolean bl);
 
     @Shadow @Final private ServerChunkCache.MainThreadExecutor mainThreadProcessor;
     private final boolean debugDeadServerAccess = Boolean.getBoolean("modernfix.debugBadChunkloading");
@@ -41,24 +40,24 @@ public abstract class ServerChunkCacheMixin {
             Holder<Biome> plains = this.level.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS);
             cir.setReturnValue(new EmptyLevelChunk(this.level, new ChunkPos(chunkX, chunkZ), plains));
         } else if(Thread.currentThread() != this.mainThread) {
-            CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>> future = CompletableFuture.supplyAsync(() -> this.getChunkFutureMainThread(chunkX, chunkZ, requiredStatus, false), this.mainThreadProcessor).join();
+            CompletableFuture<ChunkResult<ChunkAccess>> future = CompletableFuture.supplyAsync(() -> this.getChunkFutureMainThread(chunkX, chunkZ, requiredStatus, false), this.mainThreadProcessor).join();
             if(!future.isDone()) {
                 // Wait at least 500 milliseconds before printing anything
-                Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure> resultingChunk = null;
+                ChunkResult<ChunkAccess> resultingChunk = null;
                 try {
                     resultingChunk = future.get(500, TimeUnit.MILLISECONDS);
                 } catch(InterruptedException | ExecutionException | TimeoutException ignored) {
                 }
-                if(resultingChunk != null && resultingChunk.left().isPresent()) {
-                    cir.setReturnValue(resultingChunk.left().get());
+                if(resultingChunk != null && resultingChunk.isSuccess()) {
+                    cir.setReturnValue(resultingChunk.orElse(null));
                     return;
                 }
                 if(debugDeadServerAccess)
                     ModernFix.LOGGER.warn("Async loading of a chunk was requested, this might not be desirable", new Exception());
                 try {
                     resultingChunk = future.get(10, TimeUnit.SECONDS);
-                    if(resultingChunk.left().isPresent()) {
-                        cir.setReturnValue(resultingChunk.left().get());
+                    if(resultingChunk.isSuccess()) {
+                        cir.setReturnValue(resultingChunk.orElse(null));
                         return;
                     }
                 } catch(InterruptedException | ExecutionException | TimeoutException e) {

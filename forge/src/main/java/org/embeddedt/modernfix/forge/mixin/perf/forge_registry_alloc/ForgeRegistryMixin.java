@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.forge.mixin.perf.forge_registry_alloc;
 
+import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
@@ -19,7 +20,7 @@ public abstract class ForgeRegistryMixin<V> {
     // are a bottleneck in many areas (e.g. render type lookup)
     @Shadow @Final private Map<ResourceLocation, Holder.Reference<V>> delegatesByName = new Object2ObjectOpenHashMap<>();
 
-    @Shadow @Final private Map<V, Holder.Reference<V>> delegatesByValue = new Object2ObjectOpenHashMap<>();
+    @Shadow @Final private Map<V, Holder.Reference<V>> delegatesByValue = new Object2ObjectOpenHashMap<>(Hash.DEFAULT_INITIAL_SIZE, 0.5F);
 
     /**
      * @author embeddedt

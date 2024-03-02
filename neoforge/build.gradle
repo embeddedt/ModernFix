@@ -50,8 +50,6 @@ dependencies {
     modCompileOnly("curse.maven:supermartijncore-454372:4455391")
     modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
 
-    modCompileOnly("curse.maven:blueprint-382216:3991478")
-
     // runtime remapping at home
     for (extraModJar in fileTree(dir: extraModsDir, include: '*.jar')) {
         def basename = extraModJar.name.substring(0, extraModJar.name.length() - ".jar".length())

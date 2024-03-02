@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.forge.mixin.bugfix.entity_pose_stack;
+package org.embeddedt.modernfix.neoforge.mixin.bugfix.entity_pose_stack;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;

@@ -23,9 +23,11 @@ def current_platforms = getProperty("enabled_platforms").tokenize(',')
 current_platforms.each { it ->
     def platform_name = it.trim()
     include(platform_name)
-    def testmodFolder = new File(platform_name + "/" + "testmod")
-    if(testmodFolder.isDirectory()) {
-        include(platform_name + ":testmod")
+    if(hasProperty("modernfix.testmod.enable")) {
+        def testmodFolder = new File(platform_name + "/" + "testmod")
+        if (testmodFolder.isDirectory()) {
+            include(platform_name + ":testmod")
+        }
     }
 }
 

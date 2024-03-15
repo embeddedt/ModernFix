@@ -162,9 +162,7 @@ public class ModernFixEarlyConfig {
 
     private static final ImmutableMap<String, Boolean> DEFAULT_SETTING_OVERRIDES = new DefaultSettingMapBuilder()
             .put("mixin.perf.dynamic_resources", false)
-            .put("mixin.perf.dynamic_block_codecs", false)
             .put("mixin.feature.direct_stack_trace", false)
-            .putConditionally(ModernFixPlatformHooks.INSTANCE::isDevEnv, "mixin.perf.rewrite_registry", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.deduplicate_climate_parameters", false)
             .put("mixin.bugfix.packet_leak", false)
@@ -228,6 +226,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
         disableIfModPresent("mixin.launch.class_search_cache", "optifine");
         disableIfModPresent("mixin.perf.faster_texture_stitching", "optifine");
+        disableIfModPresent("mixin.bugfix.entity_pose_stack", "optifine");
         disableIfModPresent("mixin.perf.datapack_reload_exceptions", "cyanide");
         disableIfModPresent("mixin.bugfix.buffer_builder_leak", "isometric-renders");
         disableIfModPresent("mixin.feature.remove_chat_signing", "nochatreports");

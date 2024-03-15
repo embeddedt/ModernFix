@@ -1,10 +1,10 @@
-package org.embeddedt.modernfix.forge.mixin.bugfix.entity_pose_stack;
+package org.embeddedt.modernfix.neoforge.mixin.bugfix.entity_pose_stack;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
-import net.minecraftforge.client.event.RenderPlayerEvent;
-import net.minecraftforge.eventbus.api.Event;
-import net.minecraftforge.eventbus.api.IEventBus;
+import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.IEventBus;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,18 +13,17 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(PlayerRenderer.class)
 @ClientOnlyMixin
 public class PlayerRendererMixin {
-    @Redirect(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/eventbus/api/IEventBus;post(Lnet/minecraftforge/eventbus/api/Event;)Z", ordinal = 0))
-    private boolean fireCheckingPoseStack(IEventBus instance, Event event) {
+    @Redirect(method = "render(Lnet/minecraft/client/player/AbstractClientPlayer;FFLcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/MultiBufferSource;I)V", at = @At(value = "INVOKE", target = "Lnet/neoforged/bus/api/IEventBus;post(Lnet/neoforged/bus/api/Event;)Lnet/neoforged/bus/api/Event;", ordinal = 0))
+    private Event fireCheckingPoseStack(IEventBus instance, Event event) {
         PoseStack stack = ((RenderPlayerEvent)event).getPoseStack();
         int size = ((PoseStackAccessor)stack).getPoseStack().size();
-        if (instance.post(event)) {
+        instance.post(event);
+        if (((RenderPlayerEvent.Pre)event).isCanceled()) {
             // Pop the stack if someone pushed it in the event
             while (((PoseStackAccessor)stack).getPoseStack().size() > size) {
                 stack.popPose();
             }
-            return true;
-        } else {
-            return false;
         }
+        return event;
     }
 }

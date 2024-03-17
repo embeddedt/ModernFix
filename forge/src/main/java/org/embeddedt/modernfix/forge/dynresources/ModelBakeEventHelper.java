@@ -42,8 +42,9 @@ public class ModelBakeEventHelper {
         this.topLevelModelLocations = new HashSet<>(modelRegistry.keySet());
         // Skip going through ModelLocationCache because most of the accesses will be misses
         for(Block block : ForgeRegistries.BLOCKS) {
+            ResourceLocation name = block.delegate.name();
             for(BlockState state : block.getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(state));
+                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(name, state));
             }
         }
         ForgeRegistries.ITEMS.getKeys().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));

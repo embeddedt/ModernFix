@@ -11,7 +11,6 @@ import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -41,11 +40,13 @@ public class ModelBakeEventHelper {
     public ModelBakeEventHelper(Map<ResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
         this.topLevelModelLocations = new HashSet<>(modelRegistry.keySet());
-        for(Block block : BuiltInRegistries.BLOCK) {
-            for(BlockState state : block.getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(state));
+        // Skip going through ModelLocationCache because most of the accesses will be misses
+        BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
+            var location = entry.getKey().location();
+            for(BlockState state : entry.getValue().getStateDefinition().getPossibleStates()) {
+                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(location, state));
             }
-        }
+        });
         BuiltInRegistries.ITEM.keySet().forEach(location -> topLevelModelLocations.add(new ModelResourceLocation(location, "inventory")));
         this.dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {

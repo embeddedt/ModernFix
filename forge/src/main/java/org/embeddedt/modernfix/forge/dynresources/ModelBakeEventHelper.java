@@ -10,7 +10,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
@@ -20,7 +19,14 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.Set;
 import java.util.function.BiFunction;
 
 /**
@@ -41,12 +47,12 @@ public class ModelBakeEventHelper {
         this.modelRegistry = modelRegistry;
         this.topLevelModelLocations = new HashSet<>(modelRegistry.keySet());
         // Skip going through ModelLocationCache because most of the accesses will be misses
-        for(Block block : ForgeRegistries.BLOCKS) {
-            ResourceLocation name = block.delegate.name();
-            for(BlockState state : block.getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(name, state));
+        ForgeRegistries.BLOCKS.getEntries().forEach(entry -> {
+            var location = entry.getKey().location();
+            for(BlockState state : entry.getValue().getStateDefinition().getPossibleStates()) {
+                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(location, state));
             }
-        }
+        });
         ForgeRegistries.ITEMS.getKeys().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));
         this.dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {

@@ -5,10 +5,11 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.ModContainer;
@@ -16,7 +17,6 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModInfo;
 import net.minecraftforge.registries.ForgeRegistries;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
@@ -41,14 +41,13 @@ public class ModelBakeEventHelper {
     public ModelBakeEventHelper(Map<ResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
         this.topLevelModelLocations = new HashSet<>(modelRegistry.keySet());
+        // Skip going through ModelLocationCache because most of the accesses will be misses
         for(Block block : ForgeRegistries.BLOCKS) {
             for(BlockState state : block.getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(ModelLocationCache.get(state));
+                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(state));
             }
         }
-        for(Item item : ForgeRegistries.ITEMS) {
-            topLevelModelLocations.add(ModelLocationCache.get(item));
-        }
+        ForgeRegistries.ITEMS.getKeys().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));
         this.dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {
             this.dependencyGraph.addNode(id);

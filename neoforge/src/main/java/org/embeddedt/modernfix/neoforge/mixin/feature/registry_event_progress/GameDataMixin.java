@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.neoforge.mixin.feature.registry_event_progress;
 
 import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.ModLoadingContext;
@@ -36,17 +37,25 @@ public class GameDataMixin {
     @Redirect(method = "postRegisterEvents", at = @At(value = "INVOKE", target = "Lnet/neoforged/fml/ModLoader;postEventWrapContainerInModOrder(Lnet/neoforged/bus/api/Event;)V"))
     private static <T extends Event & IModBusEvent> void swapThreadAndPost(ModLoader loader, T event) {
         RegisterEvent registryEvent = (RegisterEvent)event;
-        var pb = StartupMessageManager.addProgressBar(registryEvent.getRegistryKey().location().toString(), ModList.get().size());
-        try {
-            loader.postEventWithWrapInModOrder(event, (mc, e) -> {
-                ModLoadingContext.get().setActiveContainer(mc);
-                pb.label(pb.name() + " - " + mc.getModInfo().getDisplayName());
-                pb.increment();
-            }, (mc, e) -> {
-                ModLoadingContext.get().setActiveContainer(null);
-            });
-        } finally {
-            pb.complete();
+        // We control phases ourselves so we can make a separate progress bar for each phase.
+        String registryName = registryEvent.getRegistryKey().location().toString();
+        for(EventPriority phase : EventPriority.values()) {
+            var pb = StartupMessageManager.addProgressBar(registryName, ModList.get().size());
+            try {
+                ModList.get().forEachModInOrder(mc -> {
+                    ModLoadingContext.get().setActiveContainer(mc);
+                    pb.label(pb.name() + " - " + mc.getModInfo().getDisplayName());
+                    pb.increment();
+                    var bus = mc.getEventBus();
+                    if(bus != null) {
+                        bus.post(phase, event);
+                    }
+                    ModLoadingContext.get().setActiveContainer(null);
+                });
+            } finally {
+                pb.complete();
+            }
         }
+
     }
 }

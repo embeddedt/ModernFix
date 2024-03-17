@@ -1,4 +1,4 @@
-package org.embeddedt.modernfix.common.mixin.bugfix.chunk_deadlock;
+package org.embeddedt.modernfix.common.mixin.feature.stalled_chunk_load_detection;
 
 import com.mojang.datafixers.util.Either;
 import net.minecraft.core.Holder;

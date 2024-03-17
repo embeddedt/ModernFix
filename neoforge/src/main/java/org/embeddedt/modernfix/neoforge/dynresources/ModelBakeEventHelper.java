@@ -5,18 +5,18 @@ import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforgespi.language.IModInfo;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
@@ -43,12 +43,10 @@ public class ModelBakeEventHelper {
         this.topLevelModelLocations = new HashSet<>(modelRegistry.keySet());
         for(Block block : BuiltInRegistries.BLOCK) {
             for(BlockState state : block.getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(ModelLocationCache.get(state));
+                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(state));
             }
         }
-        for(Item item : BuiltInRegistries.ITEM) {
-            topLevelModelLocations.add(ModelLocationCache.get(item));
-        }
+        BuiltInRegistries.ITEM.keySet().forEach(location -> topLevelModelLocations.add(new ModelResourceLocation(location, "inventory")));
         this.dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {
             this.dependencyGraph.addNode(id);

@@ -31,6 +31,7 @@ import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.classloading.ModernFixResourceFinder;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
+import org.embeddedt.modernfix.forge.config.NightConfigWatchThrottler;
 import org.embeddedt.modernfix.forge.init.ModernFixForge;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.spark.SparkLaunchProfiler;
@@ -192,6 +193,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         }
 
         NightConfigFixer.monitorFileWatcher();
+        NightConfigWatchThrottler.throttle();
         MixinExtrasBootstrap.init();
     }
 

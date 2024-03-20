@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.fabric.mixin.perf.dynamic_resources;
 
+import com.google.common.collect.ImmutableList;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.fabricmc.loader.api.FabricLoader;
@@ -75,9 +76,19 @@ public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
             synchronized (this.field_40571) {
                 /* to emulate vanilla model loading, treat as top-level */
                 Optional<Block> blockOpt = Objects.equals(((ModelResourceLocation)arg).getVariant(), "inventory") ? Optional.empty() : BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(arg.getNamespace(), arg.getPath()));
+                boolean invalidMRL = false;
                 if(blockOpt.isPresent()) {
                     /* load via lambda for mods that expect blockstate to get loaded */
-                    for(BlockState state : extendedBakery.getBlockStatesForMRL(blockOpt.get().getStateDefinition(), (ModelResourceLocation)arg)) {
+                    ImmutableList<BlockState> states;
+                    try {
+                        states = extendedBakery.getBlockStatesForMRL(blockOpt.get().getStateDefinition(), (ModelResourceLocation)arg);
+                    } catch(RuntimeException e) {
+                        states = ImmutableList.of();
+                        invalidMRL = true;
+                        // Fall back to getModel
+                        cir.setReturnValue(this.field_40571.getModel(arg));
+                    }
+                    for(BlockState state : states) {
                         try {
                             blockStateLoaderHandle.invokeExact(this.field_40571, state);
                         } catch(Throwable e) {
@@ -87,9 +98,11 @@ public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
                 } else {
                     this.field_40571.loadTopLevel((ModelResourceLocation)arg);
                 }
-                cir.setReturnValue(this.field_40571.topLevelModels.getOrDefault(arg, extendedBakery.mfix$getUnbakedMissingModel()));
-                // avoid leaks
-                this.field_40571.topLevelModels.clear();
+                if(!invalidMRL) {
+                    cir.setReturnValue(this.field_40571.topLevelModels.getOrDefault(arg, extendedBakery.mfix$getUnbakedMissingModel()));
+                    // avoid leaks
+                    this.field_40571.topLevelModels.clear();
+                }
             }
         } else
             cir.setReturnValue(this.field_40571.getModel(arg));

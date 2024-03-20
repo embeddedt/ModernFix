@@ -5,7 +5,7 @@ import net.minecraft.util.random.WeightedRandomList;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.biome.MobSpawnSettings;
-import net.minecraftforge.event.world.WorldEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Mutable;
@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-@Mixin(WorldEvent.PotentialSpawns.class)
+@Mixin(LevelEvent.PotentialSpawns.class)
 public class PotentialSpawnsMixin {
     @Shadow(remap = false) @Final @Mutable private List<MobSpawnSettings.SpawnerData> view;
     @Shadow(remap = false) @Final @Mutable private List<MobSpawnSettings.SpawnerData> list;

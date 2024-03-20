@@ -55,6 +55,7 @@ import java.nio.file.Path;
 import java.util.Enumeration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 
@@ -214,6 +215,12 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         Field serviceLookupField = servicesHandler.getClass().getDeclaredField("serviceLookup");
         serviceLookupField.setAccessible(true);
         Map<String, TransformationServiceDecorator> serviceLookup = (Map<String, TransformationServiceDecorator>)serviceLookupField.get(servicesHandler);
+        for(String s : new String[] { "classPrefixes", "resourceNames" }) {
+            // Reset cache fields to avoid class prefixes, etc. being falsely flagged
+            Field cacheField = TransformationServiceDecorator.class.getDeclaredField(s);
+            cacheField.setAccessible(true);
+            ((Set<String>)cacheField.get(null)).clear();
+        }
         Method getClassLoaderMethod = TransformationServiceDecorator.class.getDeclaredMethod("getClassLoader");
         getClassLoaderMethod.setAccessible(true);
         Function<String, Enumeration<URL>> resourceEnumeratorLocator = ModernFixResourceFinder::findAllURLsForResource;

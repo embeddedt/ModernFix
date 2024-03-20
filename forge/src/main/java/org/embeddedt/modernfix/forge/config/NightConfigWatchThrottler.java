@@ -3,7 +3,7 @@ package org.embeddedt.modernfix.forge.config;
 import com.electronwill.nightconfig.core.file.FileWatcher;
 import com.google.common.collect.ForwardingCollection;
 import com.google.common.collect.ForwardingMap;
-import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
+import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 
 import java.util.Collection;
 import java.util.Iterator;

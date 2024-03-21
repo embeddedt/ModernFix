@@ -25,6 +25,7 @@ import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.classloading.ATInjector;
 import org.embeddedt.modernfix.forge.classloading.FastAccessTransformerList;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
+import org.embeddedt.modernfix.forge.config.NightConfigWatchThrottler;
 import org.embeddedt.modernfix.forge.init.ModernFixForge;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -112,6 +113,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         }
 
         NightConfigFixer.monitorFileWatcher();
+        NightConfigWatchThrottler.throttle();
     }
 
     public void applyASMTransformers(String mixinClassName, ClassNode targetClass) {

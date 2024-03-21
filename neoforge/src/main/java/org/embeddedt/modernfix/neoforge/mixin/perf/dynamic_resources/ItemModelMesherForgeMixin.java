@@ -4,7 +4,6 @@ import net.minecraft.client.renderer.ItemModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.neoforged.neoforge.client.model.RegistryAwareItemModelShaper;
@@ -23,11 +22,11 @@ import java.util.Map;
 @Mixin(RegistryAwareItemModelShaper.class)
 @ClientOnlyMixin
 public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
-    @Shadow(remap = false) @Final @Mutable private Map<Holder.Reference<Item>, ModelResourceLocation> locations;
+    @Shadow(remap = false) @Final @Mutable private Map<Item, ModelResourceLocation> locations;
 
-    private Map<Holder.Reference<Item>, ModelResourceLocation> overrideLocations;
+    private Map<Item, ModelResourceLocation> overrideLocations;
 
-    private final DynamicModelCache<Holder.Reference<Item>> mfix$modelCache = new DynamicModelCache<>(k -> this.mfix$getModelSlow((Holder.Reference<Item>)k), true);
+    private final DynamicModelCache<Item> mfix$modelCache = new DynamicModelCache<>(k -> this.mfix$getModelSlow((Item)k), true);
 
     public ItemModelMesherForgeMixin(ModelManager arg) {
         super(arg);
@@ -43,16 +42,16 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     }
 
     @Unique
-    private ModelResourceLocation mfix$getLocationForge(Holder.Reference<Item> item) {
+    private ModelResourceLocation mfix$getLocationForge(Item item) {
         ModelResourceLocation map = overrideLocations.getOrDefault(item, SENTINEL);
         if(map == SENTINEL) {
             /* generate the appropriate location from our cache */
-            map = ModelLocationCache.get(item.value());
+            map = ModelLocationCache.get(item);
         }
         return map;
     }
 
-    private BakedModel mfix$getModelSlow(Holder.Reference<Item> key) {
+    private BakedModel mfix$getModelSlow(Item key) {
         ModelResourceLocation map = mfix$getLocationForge(key);
         return map == null ? null : getModelManager().getModel(map);
     }
@@ -65,7 +64,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     @Overwrite
     @Override
     public BakedModel getItemModel(Item item) {
-        return this.mfix$modelCache.get(item.builtInRegistryHolder());
+        return this.mfix$modelCache.get(item);
     }
 
     /**
@@ -76,7 +75,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
     @Overwrite
     @Override
     public void register(Item item, ModelResourceLocation location) {
-        overrideLocations.put(item.builtInRegistryHolder(), location);
+        overrideLocations.put(item, location);
     }
 
     /**

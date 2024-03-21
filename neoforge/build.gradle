@@ -45,7 +45,7 @@ dependencies {
     modCompileOnly("me.shedaniel:RoughlyEnoughItems-forge:${rei_version}") { transitive false }
     modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
     //modRuntimeOnly("curse.maven:ferritecore-429235:4441949")
-    modCompileOnly("team.chisel.ctm:CTM:${ctm_version}")
+    modCompileOnly files("deps/ctm.jar")
 
     modCompileOnly("curse.maven:supermartijncore-454372:4455391")
     modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")

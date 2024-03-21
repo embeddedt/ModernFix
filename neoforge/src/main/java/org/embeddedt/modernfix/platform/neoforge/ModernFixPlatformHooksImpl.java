@@ -24,6 +24,7 @@ import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.neoforge.config.NightConfigFixer;
+import org.embeddedt.modernfix.neoforge.config.NightConfigWatchThrottler;
 import org.embeddedt.modernfix.neoforge.init.ModernFixForge;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
@@ -106,6 +107,7 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         }
 
         NightConfigFixer.monitorFileWatcher();
+        NightConfigWatchThrottler.throttle();
     }
 
     public void applyASMTransformers(String mixinClassName, ClassNode targetClass) {

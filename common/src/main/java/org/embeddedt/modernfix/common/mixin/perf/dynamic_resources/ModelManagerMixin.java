@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
+import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -13,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Mixin(ModelManager.class)
+@ClientOnlyMixin
 public class ModelManagerMixin {
     @Shadow private Map<ResourceLocation, BakedModel> bakedRegistry;
 

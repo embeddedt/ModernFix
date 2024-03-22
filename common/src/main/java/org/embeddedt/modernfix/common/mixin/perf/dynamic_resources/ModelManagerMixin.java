@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.client.renderer.block.model.BlockModel;
+import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
@@ -14,11 +15,15 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.util.LambdaMap;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -29,6 +34,15 @@ import java.util.stream.Collectors;
 @Mixin(ModelManager.class)
 @ClientOnlyMixin
 public class ModelManagerMixin {
+    @Shadow private Map<ResourceLocation, BakedModel> bakedRegistry;
+
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void injectDummyBakedRegistry(CallbackInfo ci) {
+        if(this.bakedRegistry == null) {
+            this.bakedRegistry = new HashMap<>();
+        }
+    }
+
     @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelManager;loadBlockModels(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
     private CompletableFuture<Map<ResourceLocation, BlockModel>> deferBlockModelLoad(ResourceManager manager, Executor executor) {
         return CompletableFuture.completedFuture(new LambdaMap<>(location -> loadSingleBlockModel(manager, location)));

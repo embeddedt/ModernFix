@@ -1,8 +1,10 @@
 package org.embeddedt.modernfix.common.mixin.perf.faster_texture_stitching;
 
+import com.google.common.collect.ImmutableList;
 import com.mojang.datafixers.util.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import net.minecraft.client.renderer.texture.Stitcher;
+import net.minecraft.client.renderer.texture.StitcherException;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -16,6 +18,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Mixin(Stitcher.class)
 @ClientOnlyMixin
@@ -25,6 +28,9 @@ public class StitcherMixin<T extends Stitcher.Entry> {
     @Shadow private int storageX;
 
     @Shadow private int storageY;
+
+    @Shadow @Final private int maxWidth;
+    @Shadow @Final private int maxHeight;
 
     @Shadow @Final private static Comparator<Stitcher.Holder<?>> HOLDER_COMPARATOR;
     private List<StbStitcher.LoadableSpriteInfo<T>> loadableSpriteInfos;
@@ -47,6 +53,13 @@ public class StitcherMixin<T extends Stitcher.Entry> {
         Pair<Pair<Integer, Integer>, List<StbStitcher.LoadableSpriteInfo<T>>> packingInfo = StbStitcher.packRects(aholder);
         this.storageX = packingInfo.getFirst().getFirst();
         this.storageY = packingInfo.getFirst().getSecond();
+
+        // Detect an oversized atlas generated in the previous step.
+        if(this.storageX > this.maxWidth || this.storageY > this.maxHeight) {
+            ModernFix.LOGGER.error("Requested atlas size {}x{} exceeds maximum of {}x{}", this.storageX, this.storageY, this.maxWidth, this.maxHeight);
+            throw new StitcherException(aholder[0].entry(), Stream.of(aholder).map(arg -> arg.entry()).collect(ImmutableList.toImmutableList()));
+        }
+
         this.loadableSpriteInfos = packingInfo.getSecond();
     }
 

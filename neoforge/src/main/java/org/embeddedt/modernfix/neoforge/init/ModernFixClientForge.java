@@ -61,7 +61,7 @@ public class ModernFixClientForge {
 
     @SubscribeEvent
     public void onConfigKey(TickEvent.ClientTickEvent event) {
-        if(event.phase == TickEvent.Phase.START && configKey.consumeClick()) {
+        if(event.phase == TickEvent.Phase.START && configKey != null && configKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new ModernFixConfigScreen(Minecraft.getInstance().screen));
         }
     }

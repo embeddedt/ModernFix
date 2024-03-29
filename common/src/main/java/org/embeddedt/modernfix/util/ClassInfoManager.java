@@ -12,7 +12,6 @@ import org.spongepowered.asm.service.MixinServiceAbstract;
 
 import java.lang.reflect.Field;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -54,15 +53,13 @@ public class ClassInfoManager {
 
     private static void doClear() {
         Map<String, ClassInfo> classInfoCache;
-        Field mixinField, stateField, classNodeField, methodsField, fieldsField;
+        Field mixinField, stateField, classNodeField;
         Class<?> stateClz;
         try {
             disableLoggers();
             Field field = accessible(ClassInfo.class.getDeclaredField("cache"));
             classInfoCache = (Map<String, ClassInfo>) field.get(null);
             mixinField = accessible(ClassInfo.class.getDeclaredField("mixin"));
-            methodsField = accessible(ClassInfo.class.getDeclaredField("methods"));
-            fieldsField = accessible(ClassInfo.class.getDeclaredField("fields"));
             stateClz = Class.forName("org.spongepowered.asm.mixin.transformer.MixinInfo$State");
             stateField = accessible(Class.forName("org.spongepowered.asm.mixin.transformer.MixinInfo").getDeclaredField("state"));
             classNodeField = accessible(stateClz.getDeclaredField("classNode"));
@@ -73,7 +70,8 @@ public class ClassInfoManager {
         MixinEnvironment.getDefaultEnvironment().audit();
         try {
             ClassNode emptyNode = new ClassNode();
-            classInfoCache.entrySet().removeIf(entry -> {
+            List<Map.Entry<String, ClassInfo>> entries = new ArrayList<>(classInfoCache.entrySet());
+            entries.stream().filter(entry -> {
                 if(entry.getKey().equals("java/lang/Object"))
                     return false;
                 ClassInfo mixinClz = entry.getValue();
@@ -87,14 +85,11 @@ public class ClassInfoManager {
                         if (state != null)
                             classNodeField.set(state, emptyNode);
                     }
-                    // clear fields, methods
-                    ((Collection<?>)methodsField.get(mixinClz)).clear();
-                    ((Collection<?>)fieldsField.get(mixinClz)).clear();
                 } catch (ReflectiveOperationException | RuntimeException e) {
                     e.printStackTrace();
                 }
                 return true;
-            });
+            }).forEach(entry -> classInfoCache.remove(entry.getKey()));
         } catch (RuntimeException e) {
             e.printStackTrace();
         }

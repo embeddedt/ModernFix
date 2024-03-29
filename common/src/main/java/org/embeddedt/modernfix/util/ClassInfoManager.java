@@ -70,7 +70,8 @@ public class ClassInfoManager {
         MixinEnvironment.getDefaultEnvironment().audit();
         try {
             ClassNode emptyNode = new ClassNode();
-            classInfoCache.entrySet().removeIf(entry -> {
+            List<Map.Entry<String, ClassInfo>> entries = new ArrayList<>(classInfoCache.entrySet());
+            entries.stream().filter(entry -> {
                 if(entry.getKey().equals("java/lang/Object"))
                     return false;
                 ClassInfo mixinClz = entry.getValue();
@@ -88,7 +89,7 @@ public class ClassInfoManager {
                     e.printStackTrace();
                 }
                 return true;
-            });
+            }).forEach(entry -> classInfoCache.remove(entry.getKey()));
         } catch (RuntimeException e) {
             e.printStackTrace();
         }

@@ -29,10 +29,9 @@ public class MinecraftMixin {
         ci.cancel();
         mfix$runItemFillingQuirk();
         if(ModList.get().getModFileById("jei") != null && ModList.get().getModFileById("roughlyenoughitems") == null) {
-            JEIBackedSearchTree mainTree = new JEIBackedSearchTree(false);
-            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, mainTree);
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
-            this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new RecipeBookSearchTree(mainTree));
+            this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new RecipeBookSearchTree(new JEIBackedSearchTree(false)));
         } else {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new DummySearchTree<>());
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new DummySearchTree<>());

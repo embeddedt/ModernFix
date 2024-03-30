@@ -29,7 +29,7 @@ public class MinecraftMixin {
         ModernFix.LOGGER.info("Replacing search trees with '{}' provider", provider.getName());
         this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, list -> provider.getSearchTree(false));
         this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, list -> provider.getSearchTree(true));
-        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new RecipeBookSearchTree(provider.getSearchTree(false)));
+        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new RecipeBookSearchTree(provider.getSearchTree(false), list));
         // grab components for all key mappings in order to prevent them from being loaded off-thread later
         // this populates the LazyLoadedValues
         // we also need to suppress GLFW errors to prevent crashes if a key is missing

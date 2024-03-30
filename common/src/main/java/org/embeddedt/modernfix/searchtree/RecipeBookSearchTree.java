@@ -15,10 +15,11 @@ import java.util.stream.Collectors;
 public class RecipeBookSearchTree extends DummySearchTree<RecipeCollection> {
     private final SearchTree<ItemStack> stackCollector;
     private Map<Item, List<RecipeCollection>> collectionsByItem = null;
-    private final List<RecipeCollection> allCollections = new ArrayList<>();
+    private final List<RecipeCollection> allCollections;
 
-    public RecipeBookSearchTree(SearchTree<ItemStack> stackCollector) {
+    public RecipeBookSearchTree(SearchTree<ItemStack> stackCollector, List<RecipeCollection> allCollections) {
         this.stackCollector = stackCollector;
+        this.allCollections = allCollections;
     }
 
     private Map<Item, List<RecipeCollection>> populateCollectionMap() {
@@ -34,16 +35,6 @@ public class RecipeBookSearchTree extends DummySearchTree<RecipeCollection> {
             this.collectionsByItem = collections;
         }
         return collections;
-    }
-
-    @Override
-    public void add(RecipeCollection pObj) {
-        this.allCollections.add(pObj);
-    }
-
-    @Override
-    public void clear() {
-        this.allCollections.clear();
     }
 
     @Override

@@ -9,6 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.fml.ModList;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.forge.searchtree.RecipeBookSearchTree;
 import org.embeddedt.modernfix.searchtree.DummySearchTree;
 import org.embeddedt.modernfix.forge.searchtree.JEIBackedSearchTree;
 import org.spongepowered.asm.mixin.Final;
@@ -28,13 +29,15 @@ public class MinecraftMixin {
         ci.cancel();
         mfix$runItemFillingQuirk();
         if(ModList.get().getModFileById("jei") != null && ModList.get().getModFileById("roughlyenoughitems") == null) {
-            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new JEIBackedSearchTree(false));
+            JEIBackedSearchTree mainTree = new JEIBackedSearchTree(false);
+            this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, mainTree);
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new JEIBackedSearchTree(true));
+            this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new RecipeBookSearchTree(mainTree));
         } else {
             this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, new DummySearchTree<>());
             this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, new DummySearchTree<>());
+            this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new DummySearchTree<>());
         }
-        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, new DummySearchTree<>());
     }
 
 

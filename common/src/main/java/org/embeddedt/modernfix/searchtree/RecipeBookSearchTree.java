@@ -28,7 +28,7 @@ public class RecipeBookSearchTree extends DummySearchTree<RecipeCollection> {
             collections = new Object2ObjectOpenHashMap<>();
             Map<Item, List<RecipeCollection>> finalCollection = collections;
             for(RecipeCollection collection : allCollections) {
-                collection.getRecipes().stream().map(recipe -> recipe.getResultItem(collection.registryAccess()).getItem()).distinct().forEach(item -> {
+                collection.getRecipes().stream().map(recipe -> recipe.value().getResultItem(collection.registryAccess()).getItem()).distinct().forEach(item -> {
                     finalCollection.computeIfAbsent(item, k -> new ArrayList<>()).add(collection);
                 });
             }

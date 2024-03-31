@@ -120,5 +120,16 @@
   "modernfix.option.mixin.perf.compact_mojang_registries": "(Fabric) Experimental option that reduces the memory usage of registries by roughly 50%. Not useful in most modpacks unless they contain millions of blocks and items.",
   "modernfix.option.mixin.perf.dynamic_block_codecs": "Avoids storing a codec for every block(state) and instead generates and caches it on the fly when needed. Generally not worth enabling unless you have a million blocks/items.",
   "modernfix.option.mixin.perf.faster_command_suggestions": "Mitigate lag when there are hundreds of thousands of suggestions while typing a command",
-  "modernfix.option.mixin.perf.mojang_registry_size": "Fixes an issue causing registration of blocks/items to slow down proportional to the number already registered. This improves startup time."
+  "modernfix.option.mixin.perf.mojang_registry_size": "Fixes an issue causing registration of blocks/items to slow down proportional to the number already registered. This improves startup time.",
+  "modernfix.option.mixin.bugfix.entity_pose_stack": "Fixes Forge issue #9118, where mods can cause undebuggable render crashes by pushing the matrix stack without popping it.",
+  "modernfix.option.mixin.bugfix.file_dialog_title": "Fixes a security issue with the worldgen settings file dialog",
+  "modernfix.option.mixin.bugfix.forge_vehicle_packets": "Fixes a bug introduced by a Forge patch that causes excessive amounts of chunk data packets to be sent to the player if they are riding a vehicle on a chunk border.",
+  "modernfix.option.mixin.bugfix.mantle_model_cme": "Fixes a bug in Mantle that can cause random ConcurrentModificationException crashes when rendering Tinkers Construct content.",
+  "modernfix.option.mixin.bugfix.model_data_manager_cme": "Works around design flaws in the Forge ModelDataManager system that can cause unexpected concurrency issues.",
+  "modernfix.option.mixin.bugfix.recipe_book_type_desync": "Fixes Forge clients being disconnected when connecting to a vanilla server if mods add custom recipe book entry types.",
+  "modernfix.option.mixin.bugfix.unsafe_modded_shape_caches": "Fixes various ConcurrentModificationExceptions that can occur in content mods when computing block shapes",
+  "modernfix.option.mixin.feature.stalled_chunk_load_detection": "This option may help to detect the cause of chunkloading freezes. However, leaving it enabled may cause slightly worse performance.",
+  "modernfix.option.mixin.perf.fix_loop_spin_waiting": "Fixes Minecraft's built-in wait function consuming excessive amounts of CPU resources.",
+  "modernfix.option.mixin.perf.forge_cap_retrieval": "Small micro-optimization that makes retrieving custom entity data slightly more efficient on Forge.",
+  "modernfix.option.mixin.perf.forge_registry_lambda": "Fixes oversights in Forge that lead to excessive allocation in hot registry methods."
 }

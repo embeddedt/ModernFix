@@ -21,6 +21,8 @@ public class SetNameFunctionMixin {
     public ItemStack deferSetName(ItemStack stack, Component name) {
         if (CommonLogic.isEmptyPendingMap(stack))
             ExplorationMapFunctionLogic.cacheName(stack, name);
+        else
+            stack.setHoverName(name);
         return stack;
     }
 }

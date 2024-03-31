@@ -38,43 +38,100 @@ archivesBaseName = rootProject.archives_base_name + '-' + project.name
 sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
 
 repositories {
-    maven { url 'https://modmaven.dev/' }
-    maven {
-        url "https://cursemaven.com"
-        content {
+    exclusiveContent {
+        forRepository {
+            maven {
+                url "https://modmaven.dev"
+            }
+        }
+        filter {
+            includeGroup "appeng"
+            includeGroup "vazkii.patchouli"
+            includeGroup "mezz.jei"
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                url "https://cursemaven.com"
+            }
+        }
+        filter {
             includeGroup "curse.maven"
         }
     }
-    maven {
-        name = 'ParchmentMC'
-        url = 'https://maven.parchmentmc.org'
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = 'ParchmentMC'
+                url = 'https://maven.parchmentmc.org'
+            }
+        }
+        filter {
+            includeGroup "org.parchmentmc.data"
+        }
     }
-    maven {
-        // Shedaniel's maven (Architectury API)
-        url = "https://maven.architectury.dev"
-        content {
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = 'https://maven.architectury.dev'
+            }
+        }
+        filter {
             includeGroup "me.shedaniel"
         }
     }
-
-    maven {
-        // saps.dev Maven (KubeJS and Rhino)
-        url = "https://maven.saps.dev/minecraft"
-        content {
+    exclusiveContent {
+        forRepository {
+            maven {
+                url = 'https://maven.saps.dev/minecraft'
+            }
+        }
+        filter {
             includeGroup "dev.latvian.mods"
         }
     }
-    maven { // CTM
-        url "https://maven.tterrag.com/"
-    }
-    maven { url 'https://maven.blamejared.com' }
-    repositories {
-        maven {
-            name = "Fuzs Mod Resources"
-            url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Fuzs Mod Resources"
+                url = "https://raw.githubusercontent.com/Fuzss/modresources/main/maven/"
+            }
+        }
+        filter {
+            includeGroup "fuzs"
         }
     }
-    maven {
-        url 'https://maven.terraformersmc.com/releases'
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Fabric maven"
+                url = "https://maven.fabricmc.net/"
+            }
+        }
+        filter {
+            includeGroup "net.fabricmc"
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                name = "Mod Menu"
+                url = "https://maven.terraformersmc.com/releases/"
+            }
+        }
+        filter {
+            includeGroup "com.terraformersmc"
+        }
+    }
+    exclusiveContent {
+        forRepository {
+            maven {
+                url "https://maven.tterrag.com"
+            }
+        }
+        filter {
+            includeGroup "team.chisel.ctm"
+        }
     }
 }

@@ -120,5 +120,16 @@
   "modernfix.option.mixin.perf.compact_mojang_registries": "（Fabric）实验性选项，可将注册表的内存占用减少约 50%。在大多数整合包中没什么用，除非它们包含数百万个方块和物品。",
   "modernfix.option.mixin.perf.dynamic_block_codecs": "不再给每个方块（状态）都存储一个编解码器，只在需要时动态生成、缓存它。通常不值得启用，除非你有一百万个方块/物品。",
   "modernfix.option.mixin.perf.faster_command_suggestions": "在输入命令时，若有数十万个建议，可以缓解卡顿。",
-  "modernfix.option.mixin.perf.mojang_registry_size": "修复了一个问题，它会导致方块/物品的注册速度减慢，减慢的程度与已注册的数量成正比。这缩短了启动时间。"
+  "modernfix.option.mixin.perf.mojang_registry_size": "修复了一个问题，它会导致方块/物品的注册速度减慢，减慢的程度与已注册的数量成正比。这缩短了启动时间。",
+  "modernfix.option.mixin.bugfix.entity_pose_stack": "修复了Forge的#9118号问题，这个问题会导致模组在不弹出已经推入的MatrixStack时有概率触发无法诊断的渲染侧崩溃。",
+  "modernfix.option.mixin.bugfix.file_dialog_title": "修复了在世界生成设置的文件选择对话框中的一个安全问题。",
+  "modernfix.option.mixin.bugfix.forge_vehicle_packets": "修复了一个Forge补丁引入的问题，此问题会导致玩家在区块边界上骑乘时，服务器会向该玩家发送非常大量的区块数据包。",
+  "modernfix.option.mixin.bugfix.mantle_model_cme": "修复了地幔（Mantle）的一个问题，此问题会导致渲染匠魂相关内容时毫无规律地触发并发修改异常（ConcurrentModificationException）崩溃。",
+  "modernfix.option.mixin.bugfix.model_data_manager_cme": "规避Forge的ModelDataManager的一些设计缺陷，这些缺陷可能导致突发性的并发问题。",
+  "modernfix.option.mixin.bugfix.recipe_book_type_desync": "修复具有模组额外添加的配方书条目类型的Forge客户端在连接到原版服务器时强制断连的问题。",
+  "modernfix.option.mixin.bugfix.unsafe_modded_shape_caches": "修复内容型模组在计算方块形状时可能发生的并发修改异常（ConcurrentModificationException）",
+  "modernfix.option.mixin.feature.stalled_chunk_load_detection": "此选项对检测区块加载冻结可能有所帮助。不过，开启此选项可能导致轻微性能下降。",
+  "modernfix.option.mixin.perf.fix_loop_spin_waiting": "修复Minecraft内置的wait函数（方法）消耗过量CPU资源的问题。",
+  "modernfix.option.mixin.perf.forge_cap_retrieval": "微优化，让Forge在获取自定义实体数据上更有效率一点。",
+  "modernfix.option.mixin.perf.forge_registry_lambda": "修复Forge注册系统的一些疏漏，其会使得其中的热点方法产生大量内存分配。"
 }

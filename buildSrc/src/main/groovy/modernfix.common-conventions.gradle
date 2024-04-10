@@ -35,7 +35,7 @@ def versionString = "${baseVersion}${preMarker}+mc${minecraft_version}${commitHa
 version = versionString
 archivesBaseName = rootProject.archives_base_name + '-' + project.name
 
-sourceCompatibility = targetCompatibility = JavaVersion.VERSION_17
+sourceCompatibility = targetCompatibility = JavaVersion.VERSION_21
 
 repositories {
     exclusiveContent {

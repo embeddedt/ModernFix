@@ -10,11 +10,11 @@ import net.minecraft.server.packs.VanillaPackResources;
 import net.minecraft.server.packs.metadata.pack.PackMetadataSection;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.FileWalker;
+import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.util.FileUtil;
 import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -86,14 +86,16 @@ public class VanillaPackMixin {
      * @reason avoid going through the module class loader when we know exactly what path this resource should come
      * from
      */
-    @Overwrite
-    protected InputStream getResourceAsStream(PackType type, ResourceLocation location) {
-        Path rootPath = ROOT_DIR_BY_TYPE.get(type);
-        Path targetPath = rootPath.resolve(location.getNamespace() + "/" + location.getPath());
-        try {
-            return Files.newInputStream(targetPath);
-        } catch(IOException e) {
-            return null;
+    @Inject(method = "getResourceAsStream(Lnet/minecraft/server/packs/PackType;Lnet/minecraft/resources/ResourceLocation;)Ljava/io/InputStream;", at = @At("HEAD"), cancellable = true)
+    private void getResourceAsStreamFast(PackType type, ResourceLocation location, CallbackInfoReturnable<InputStream> cir) {
+        if(!ModernFixEarlyConfig.OPTIFINE_PRESENT) {
+            Path rootPath = ROOT_DIR_BY_TYPE.get(type);
+            Path targetPath = rootPath.resolve(location.getNamespace() + "/" + location.getPath());
+            try {
+                cir.setReturnValue(Files.newInputStream(targetPath));
+            } catch(IOException e) {
+                cir.setReturnValue(null);
+            }
         }
     }
 }

@@ -27,7 +27,7 @@ import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 
-@Mixin(PathPackResources.class)
+@Mixin(value = PathPackResources.class, priority = 1100)
 public abstract class ForgePathPackResourcesMixin implements ICachingResourcePack {
     @Shadow(remap = false) protected abstract Path resolve(String... paths);
 
@@ -75,14 +75,15 @@ public abstract class ForgePathPackResourcesMixin implements ICachingResourcePac
         this.cacheEngine = null;
     }
 
-    @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
-    private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
+    @Redirect(method = "getNamespaces", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/resource/PathPackResources;getNamespacesFromDisk(Lnet/minecraft/server/packs/PackType;)Ljava/util/Set;"))
+    private Set<String> useCacheForNamespaces(PathPackResources instance, PackType type) {
         PackResourcesCacheEngine engine = cacheEngine;
         if(engine != null) {
             Set<String> namespaces = engine.getNamespaces(type);
             if(namespaces != null)
-                cir.setReturnValue(namespaces);
+                return namespaces;
         }
+        return this.getNamespacesFromDisk(type);
     }
 
     @Redirect(method = "getRootResource", at = @At(value = "INVOKE", target = "Ljava/nio/file/Files;exists(Ljava/nio/file/Path;[Ljava/nio/file/LinkOption;)Z"))

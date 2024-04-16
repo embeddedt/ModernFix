@@ -14,10 +14,13 @@ import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 
@@ -107,9 +110,22 @@ public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
                     throw new RuntimeException(e);
                 }
             };
-            return new AsyncSearchManager(stackListSupplier, () -> {
+            Supplier<Predicate<Boolean>> shouldShowStack = () -> {
                 return Predicates.alwaysTrue();
-            }, normalizeOperator);
+            };
+            try {
+                try {
+                    // Old constructor taking Supplier as first arg
+                    MethodHandle cn = MethodHandles.publicLookup().findConstructor(AsyncSearchManager.class, MethodType.methodType(void.class, Supplier.class, Supplier.class, UnaryOperator.class));
+                    return (AsyncSearchManager)cn.invoke(stackListSupplier, shouldShowStack, normalizeOperator);
+                } catch(NoSuchMethodException e) {
+                    // New constructor taking Function as first arg
+                    MethodHandle cn = MethodHandles.publicLookup().findConstructor(AsyncSearchManager.class, MethodType.methodType(void.class, Function.class, Supplier.class, UnaryOperator.class));
+                    return (AsyncSearchManager)cn.invoke((Function<?, ?>)o -> stackListSupplier.get(), shouldShowStack, normalizeOperator);
+                }
+            } catch(Throwable mhThrowable) {
+                throw new ReflectiveOperationException(mhThrowable);
+            }
         } catch(ReflectiveOperationException e) {
             throw new RuntimeException(e);
         }

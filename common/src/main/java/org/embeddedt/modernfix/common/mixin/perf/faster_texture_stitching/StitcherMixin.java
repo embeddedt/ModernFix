@@ -41,8 +41,14 @@ public class StitcherMixin {
      */
     @Inject(method = "stitch", at = @At("HEAD"), cancellable = true)
     private void stitchFast(CallbackInfo ci) {
+        this.loadableSpriteInfos = null;
         if(!ModernFixPlatformHooks.INSTANCE.isLoadingNormally()) {
             ModernFix.LOGGER.error("Using vanilla stitcher implementation due to invalid loading state");
+            return;
+        }
+        if(this.texturesToBeStitched.size() < 100) {
+            // The vanilla implementation is fine for small atlases, and using it allows mods like JEI that depend on
+            // precise texture alignments to avoid bugs.
             return;
         }
         ci.cancel();
@@ -69,7 +75,7 @@ public class StitcherMixin {
      */
     @Inject(method = "gatherSprites", at = @At("HEAD"), cancellable = true)
     private void gatherSpritesFast(Stitcher.SpriteLoader spriteLoader, CallbackInfo ci) {
-        if(!ModernFixPlatformHooks.INSTANCE.isLoadingNormally())
+        if(this.loadableSpriteInfos == null)
             return;
         ci.cancel();
         for(StbStitcher.LoadableSpriteInfo info : loadableSpriteInfos) {

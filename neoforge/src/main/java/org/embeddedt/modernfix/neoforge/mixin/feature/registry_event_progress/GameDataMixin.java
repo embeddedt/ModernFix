@@ -3,7 +3,6 @@ package org.embeddedt.modernfix.neoforge.mixin.feature.registry_event_progress;
 import net.neoforged.bus.api.Event;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.ModList;
-import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.event.IModBusEvent;
 import net.neoforged.fml.loading.progress.StartupNotificationManager;

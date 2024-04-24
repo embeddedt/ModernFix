@@ -7,18 +7,18 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
 import net.minecraft.commands.CommandSourceStack;
 import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.ModLoadingContext;
-import net.neoforged.fml.ModLoadingStage;
 import net.neoforged.fml.ModLoadingWarning;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
-import net.neoforged.neoforge.client.ConfigScreenHandler;
 import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.TickEvent;
@@ -34,14 +34,11 @@ import java.util.List;
 public class ModernFixClientForge {
     private static ModernFixClient commonMod;
 
-    public ModernFixClientForge() {
+    public ModernFixClientForge(ModContainer modContainer, IEventBus modBus) {
         commonMod = new ModernFixClient();
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::keyBindRegister);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::onClientSetup);
-        ModLoadingContext.get().registerExtensionPoint(
-                ConfigScreenHandler.ConfigScreenFactory.class,
-                () ->  new ConfigScreenHandler.ConfigScreenFactory((mc, screen) -> new ModernFixConfigScreen(screen))
-        );
+        modBus.addListener(this::keyBindRegister);
+        modBus.addListener(this::onClientSetup);
+        modContainer.registerExtensionPoint(IConfigScreenFactory.class, (mc, screen) -> new ModernFixConfigScreen(screen));
     }
 
     private KeyMapping configKey;
@@ -54,7 +51,7 @@ public class ModernFixClientForge {
     private void onClientSetup(FMLClientSetupEvent event) {
         if(false) {
             event.enqueueWork(() -> {
-                ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.SIDED_SETUP, "modernfix.connectedness_dynresoruces"));
+                ModLoader.addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), "modernfix.connectedness_dynresoruces"));
             });
         }
     }

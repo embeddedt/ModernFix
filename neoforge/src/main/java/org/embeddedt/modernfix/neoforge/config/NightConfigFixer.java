@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.neoforge.config;
 
 import com.electronwill.nightconfig.core.file.FileWatcher;
-import cpw.mods.modlauncher.api.LamdbaExceptionUtils;
+import cpw.mods.modlauncher.api.LambdaExceptionUtils;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
@@ -51,7 +51,7 @@ public class NightConfigFixer {
     }
 
     static class MonitoringMap extends ConcurrentHashMap<Path, Object> {
-        private static final Class<?> WATCHED_FILE = LamdbaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
+        private static final Class<?> WATCHED_FILE = LambdaExceptionUtils.uncheck(() -> Class.forName("com.electronwill.nightconfig.core.file.FileWatcher$WatchedFile"));
         private static final Field CHANGE_HANDLER = ObfuscationReflectionHelper.findField(WATCHED_FILE, "changeHandler");
 
         public MonitoringMap(ConcurrentHashMap<Path, ?> oldMap) {

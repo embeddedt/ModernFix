@@ -8,29 +8,25 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.*;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
-import net.neoforged.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.OnDatapackSyncEvent;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
-import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
-import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.neoforge.ModernFixConfig;
 import org.embeddedt.modernfix.neoforge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.neoforge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.neoforge.config.NightConfigFixer;
-import org.embeddedt.modernfix.neoforge.packet.PacketHandler;
 
 import java.util.List;
 
@@ -39,16 +35,14 @@ public class ModernFixForge {
     private static ModernFix commonMod;
     public static boolean launchDone = false;
 
-    public ModernFixForge() {
+    public ModernFixForge(ModContainer modContainer, IEventBus modBus) {
         commonMod = new ModernFix();
         // Register ourselves for server and other game events we are interested in
         NeoForge.EVENT_BUS.register(this);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::commonSetup);
-        FMLJavaModLoadingContext.get().getModEventBus().addListener(this::registerItems);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> NeoForge.EVENT_BUS.register(new ModernFixClientForge()));
-        ModLoadingContext.get().registerExtensionPoint(IExtensionPoint.DisplayTest.class, () -> new IExtensionPoint.DisplayTest(() -> IExtensionPoint.DisplayTest.IGNORESERVERONLY, (a, b) -> true));
-        ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
-        PacketHandler.register();
+        modBus.addListener(this::commonSetup);
+        modBus.addListener(this::registerItems);
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> NeoForge.EVENT_BUS.register(new ModernFixClientForge(modContainer, modBus)));
+        modContainer.registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         ModFileScanDataDeduplicator.deduplicate();
         ClassLoadHack.loadModClasses();
         //ConfigFixer.replaceConfigHandlers();
@@ -63,15 +57,6 @@ public class ModernFixForge {
                         NightConfigFixer.runReloads();
                         return 1;
                     }));
-        }
-    }
-
-    @SubscribeEvent
-    public void onDatapackSync(OnDatapackSyncEvent event) {
-        if(event.getPlayer() != null) {
-            if(!ServerLifecycleHooks.getCurrentServer().isDedicatedServer() && event.getPlayerList().getPlayerCount() == 0)
-                return;
-            EntityDataIDSyncHandler.onDatapackSyncEvent(event.getPlayer());
         }
     }
 
@@ -98,11 +83,11 @@ public class ModernFixForge {
                     boolean isPresent = !FMLLoader.isProduction() || warning.getLeft().stream().anyMatch(name -> ModList.get().isLoaded(name));
                     if(!isPresent) {
                         atLeastOneWarning = true;
-                        ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, warning.getRight()));
+                        ModLoader.addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), warning.getRight()));
                     }
                 }
                 if(atLeastOneWarning)
-                    ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, "modernfix.perf_mod_warning"));
+                    ModLoader.addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), "modernfix.perf_mod_warning"));
             });
         }
     }

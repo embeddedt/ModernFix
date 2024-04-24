@@ -13,7 +13,7 @@ import net.minecraft.server.packs.resources.MultiPackResourceManager;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModLoader;
-import net.neoforged.fml.common.Mod;
+import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.util.ObfuscationReflectionHelper;
 import net.neoforged.neoforge.client.event.ScreenEvent;
 import net.neoforged.neoforge.common.data.ExistingFileHelper;
@@ -27,7 +27,7 @@ import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
+@EventBusSubscriber(value = Dist.CLIENT)
 public class RuntimeDatagen {
     private static final String RESOURCES_OUT_DIR = getPropertyOrBlank("modernfix.datagen.output");
     private static final String RESOURCES_IN_DIR = getPropertyOrBlank("modernfix.datagen.existing");
@@ -67,7 +67,7 @@ public class RuntimeDatagen {
         List<PackResources> oldPacks = new ArrayList<>(manager.listPacks().collect(Collectors.toList()));
         oldPacks.add(Minecraft.getInstance().getVanillaPackResources());
         ObfuscationReflectionHelper.setPrivateValue(ExistingFileHelper.class, existingFileHelper, new MultiPackResourceManager(PackType.CLIENT_RESOURCES, oldPacks), "clientResources");
-        ModLoader.get().runEventGenerator(mc->new GatherDataEvent(mc, dataGeneratorConfig.makeGenerator(p->dataGeneratorConfig.isFlat() ? p : p.resolve(mc.getModId()), dataGeneratorConfig.getMods().contains(mc.getModId())), dataGeneratorConfig, existingFileHelper));
+        ModLoader.runEventGenerator(mc->new GatherDataEvent(mc, dataGeneratorConfig.makeGenerator(p->dataGeneratorConfig.isFlat() ? p : p.resolve(mc.getModId()), dataGeneratorConfig.getMods().contains(mc.getModId())), dataGeneratorConfig, existingFileHelper));
         dataGeneratorConfig.runAll();
         ObfuscationReflectionHelper.setPrivateValue(DatagenModLoader.class, null, false, "runningDataGen");
         ModernFix.LOGGER.info("Finished runtime datagen.");

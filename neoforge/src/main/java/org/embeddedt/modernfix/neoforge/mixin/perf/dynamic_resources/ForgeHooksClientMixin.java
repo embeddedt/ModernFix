@@ -26,7 +26,7 @@ public class ForgeHooksClientMixin {
      * Generate a more realistic keySet that contains every item and block model location, to help with mod compat.
      */
     @Redirect(method = "onModifyBakingResult", at = @At(value = "INVOKE", target = "Lnet/neoforged/fml/ModLoader;postEvent(Lnet/neoforged/bus/api/Event;)V"), remap = false)
-    private static void postNamespacedKeySetEvent(ModLoader loader, Event event) {
+    private static void postNamespacedKeySetEvent(Event event) {
         if(!ModLoader.isLoadingStateValid())
             return;
         ModelEvent.ModifyBakingResult bakeEvent = ((ModelEvent.ModifyBakingResult)event);

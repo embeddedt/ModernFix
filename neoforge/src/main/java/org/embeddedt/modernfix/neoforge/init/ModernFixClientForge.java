@@ -14,14 +14,15 @@ import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.ModLoadingContext;
 import net.neoforged.fml.ModLoadingWarning;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
 import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
 import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
 import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
-import net.neoforged.neoforge.event.TickEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import org.embeddedt.modernfix.ModernFixClient;
@@ -57,8 +58,8 @@ public class ModernFixClientForge {
     }
 
     @SubscribeEvent
-    public void onConfigKey(TickEvent.ClientTickEvent event) {
-        if(event.phase == TickEvent.Phase.START && configKey != null && configKey.consumeClick()) {
+    public void onConfigKey(ClientTickEvent.Pre event) {
+        if(configKey != null && configKey.consumeClick()) {
             Minecraft.getInstance().setScreen(new ModernFixConfigScreen(Minecraft.getInstance().screen));
         }
     }
@@ -110,9 +111,8 @@ public class ModernFixClientForge {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onRenderTickEnd(TickEvent.RenderTickEvent event) {
-        if(event.phase == TickEvent.Phase.END)
-            commonMod.onRenderTickEnd();
+    public void onRenderTickEnd(RenderFrameEvent.Post event) {
+        commonMod.onRenderTickEnd();
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

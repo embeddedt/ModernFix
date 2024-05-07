@@ -27,7 +27,7 @@ public class ForgeHooksClientMixin {
      */
     @Redirect(method = "onModifyBakingResult", at = @At(value = "INVOKE", target = "Lnet/neoforged/fml/ModLoader;postEvent(Lnet/neoforged/bus/api/Event;)V"), remap = false)
     private static void postNamespacedKeySetEvent(Event event) {
-        if(!ModLoader.isLoadingStateValid())
+        if(ModLoader.hasErrors())
             return;
         ModelEvent.ModifyBakingResult bakeEvent = ((ModelEvent.ModifyBakingResult)event);
         ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());

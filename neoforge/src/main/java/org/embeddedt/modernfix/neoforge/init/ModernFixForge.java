@@ -83,11 +83,11 @@ public class ModernFixForge {
                     boolean isPresent = !FMLLoader.isProduction() || warning.getLeft().stream().anyMatch(name -> ModList.get().isLoaded(name));
                     if(!isPresent) {
                         atLeastOneWarning = true;
-                        ModLoader.addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), warning.getRight()));
+                        ModLoader.addLoadingIssue(ModLoadingIssue.warning(warning.getRight()));
                     }
                 }
                 if(atLeastOneWarning)
-                    ModLoader.addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), "modernfix.perf_mod_warning"));
+                    ModLoader.addLoadingIssue(ModLoadingIssue.warning("modernfix.perf_mod_warning"));
             });
         }
     }

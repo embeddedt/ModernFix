@@ -11,8 +11,7 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModLoader;
-import net.neoforged.fml.ModLoadingContext;
-import net.neoforged.fml.ModLoadingWarning;
+import net.neoforged.fml.ModLoadingIssue;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
@@ -52,7 +51,7 @@ public class ModernFixClientForge {
     private void onClientSetup(FMLClientSetupEvent event) {
         if(false) {
             event.enqueueWork(() -> {
-                ModLoader.addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), "modernfix.connectedness_dynresoruces"));
+                ModLoader.addLoadingIssue(ModLoadingIssue.warning("modernfix.connectedness_dynresoruces"));
             });
         }
     }

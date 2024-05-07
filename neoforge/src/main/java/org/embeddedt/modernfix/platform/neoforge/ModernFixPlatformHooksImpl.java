@@ -71,11 +71,11 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public boolean isEarlyLoadingNormally() {
-        return LoadingModList.get().getErrors().isEmpty();
+        return !LoadingModList.get().hasErrors();
     }
 
     public boolean isLoadingNormally() {
-        return isEarlyLoadingNormally() && ModLoader.isLoadingStateValid();
+        return isEarlyLoadingNormally() && !ModLoader.hasErrors();
     }
 
     public Path getGameDirectory() {

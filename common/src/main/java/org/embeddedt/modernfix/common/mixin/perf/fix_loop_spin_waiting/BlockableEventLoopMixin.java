@@ -17,7 +17,7 @@ public class BlockableEventLoopMixin {
      * @reason yielding the thread is pretty pointless if we're about to park anyway
      */
     @Overwrite
-    protected void waitForTasks() {
+    public void waitForTasks() {
         LockSupport.parkNanos("waiting for tasks", MFIX$TICK_WAIT_TIME);
     }
 }

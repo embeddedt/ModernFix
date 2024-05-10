@@ -5,7 +5,7 @@ import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.gui.ingredients.IngredientFilter;
 import mezz.jei.gui.ingredients.IngredientFilterApi;
 import mezz.jei.library.runtime.JeiRuntime;
-import net.minecraft.client.searchtree.RefreshableSearchTree;
+import net.minecraft.client.searchtree.SearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -92,7 +92,7 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
 
     public static final SearchTreeProviderRegistry.Provider PROVIDER = new SearchTreeProviderRegistry.Provider() {
         @Override
-        public RefreshableSearchTree<ItemStack> getSearchTree(boolean tag) {
+        public SearchTree<ItemStack> getSearchTree(boolean tag) {
             return new JEIBackedSearchTree(tag);
         }
 

@@ -2,17 +2,13 @@ package org.embeddedt.modernfix.platform;
 
 import com.google.common.collect.Multimap;
 import com.mojang.brigadier.CommandDispatcher;
-import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.nio.file.Path;
-import java.util.List;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public interface ModernFixPlatformHooks {
@@ -47,8 +43,6 @@ public interface ModernFixPlatformHooks {
     void onServerCommandRegister(Consumer<CommandDispatcher<CommandSourceStack>> handler);
 
     void onLaunchComplete();
-
-    void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator);
 
     String getPlatformName();
 }

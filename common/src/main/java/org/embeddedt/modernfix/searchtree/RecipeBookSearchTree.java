@@ -38,11 +38,6 @@ public class RecipeBookSearchTree extends DummySearchTree<RecipeCollection> {
     }
 
     @Override
-    public void refresh() {
-        this.collectionsByItem = null;
-    }
-
-    @Override
     public List<RecipeCollection> search(String pSearchText) {
         // Avoid constructing the recipe collection map until the first real search
         if(pSearchText.trim().length() == 0) {

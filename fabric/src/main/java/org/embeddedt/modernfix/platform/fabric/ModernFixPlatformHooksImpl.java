@@ -9,13 +9,10 @@ import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.fabricmc.loader.api.metadata.CustomValue;
 import net.fabricmc.loader.api.metadata.ModMetadata;
-import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.CreativeModeTabs;
-import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFixFabric;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
@@ -25,9 +22,7 @@ import org.embeddedt.modernfix.util.CommonModUtil;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
@@ -107,13 +102,6 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
             }
         }
         return modOptions;
-    }
-
-    public void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
-        CreativeModeTabs.searchTab().setSearchTreeBuilder((list) -> {
-            populator.accept(SearchRegistry.CREATIVE_NAMES, list);
-            populator.accept(SearchRegistry.CREATIVE_TAGS, list);
-        });
     }
 
     public void onLaunchComplete() {

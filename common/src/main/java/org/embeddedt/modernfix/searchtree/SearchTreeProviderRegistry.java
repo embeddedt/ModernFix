@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.searchtree;
 
-import net.minecraft.client.searchtree.RefreshableSearchTree;
+import net.minecraft.client.searchtree.SearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.Option;
@@ -29,7 +29,7 @@ public class SearchTreeProviderRegistry {
     }
 
     public interface Provider {
-        RefreshableSearchTree<ItemStack> getSearchTree(boolean tag);
+        SearchTree<ItemStack> getSearchTree(boolean tag);
         boolean canUse();
         String getName();
     }

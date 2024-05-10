@@ -7,7 +7,7 @@ import me.shedaniel.rei.api.common.entry.type.VanillaEntryTypes;
 import me.shedaniel.rei.impl.client.search.AsyncSearchManager;
 import me.shedaniel.rei.impl.common.entry.type.EntryRegistryImpl;
 import me.shedaniel.rei.impl.common.util.HashedEntryStackWrapper;
-import net.minecraft.client.searchtree.RefreshableSearchTree;
+import net.minecraft.client.searchtree.SearchTree;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -133,7 +133,7 @@ public class REIBackedSearchTree extends DummySearchTree<ItemStack> {
 
     public static final SearchTreeProviderRegistry.Provider PROVIDER = new SearchTreeProviderRegistry.Provider() {
         @Override
-        public RefreshableSearchTree<ItemStack> getSearchTree(boolean tag) {
+        public SearchTree<ItemStack> getSearchTree(boolean tag) {
             return new REIBackedSearchTree(tag);
         }
 

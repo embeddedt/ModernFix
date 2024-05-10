@@ -9,6 +9,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraft.world.level.chunk.status.ChunkStatus;
 import net.minecraft.world.level.material.FluidState;
 import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.Nullable;
@@ -33,7 +34,7 @@ public class SafeBlockGetter implements BlockGetter {
         if(!(access instanceof ChunkAccess))
             return null;
         ChunkAccess chunk = (ChunkAccess)access;
-        if(chunk instanceof LevelChunk lChunk && lChunk.getFullStatus() == FullChunkStatus.INACCESSIBLE)
+        if(!chunk.getPersistedStatus().isOrAfter(ChunkStatus.FULL))
             return null;
         return chunk;
     }

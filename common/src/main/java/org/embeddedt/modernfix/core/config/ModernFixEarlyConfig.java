@@ -164,6 +164,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.dynamic_resources", false)
             .put("mixin.feature.direct_stack_trace", false)
             .put("mixin.feature.stalled_chunk_load_detection", false)
+            .put("mixin.perf.blast_search_trees.force", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.deduplicate_climate_parameters", false)
             .put("mixin.bugfix.packet_leak", false)

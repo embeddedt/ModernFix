@@ -228,7 +228,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.perf.faster_texture_stitching", "optifine");
         disableIfModPresent("mixin.bugfix.entity_pose_stack", "optifine");
         disableIfModPresent("mixin.perf.datapack_reload_exceptions", "cyanide");
-        disableIfModPresent("mixin.bugfix.buffer_builder_leak", "isometric-renders");
+        disableIfModPresent("mixin.bugfix.buffer_builder_leak", "isometric-renders", "witherstormmod");
         disableIfModPresent("mixin.perf.faster_texture_loading", "stitch", "optifine", "changed");
         if(isFabric) {
             disableIfModPresent("mixin.bugfix.packet_leak", "memoryleakfix");

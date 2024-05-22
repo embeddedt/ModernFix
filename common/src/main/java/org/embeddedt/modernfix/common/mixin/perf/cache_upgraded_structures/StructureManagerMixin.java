@@ -33,7 +33,7 @@ public class StructureManagerMixin {
      */
     @Overwrite
     private Optional<StructureTemplate> loadFromResource(ResourceLocation id) {
-        ResourceLocation arg = new ResourceLocation(id.getNamespace(), "structures/" + id.getPath() + ".nbt");
+        ResourceLocation arg = ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "structures/" + id.getPath() + ".nbt");
         try(InputStream stream = this.resourceManager.open(arg)) {
             return Optional.of(CachingStructureManager.readStructure(id, this.fixerUpper, stream, this.blockLookup));
         } catch(FileNotFoundException e) {

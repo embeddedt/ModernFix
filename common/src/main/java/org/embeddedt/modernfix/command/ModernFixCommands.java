@@ -39,7 +39,7 @@ public class ModernFixCommands {
                                 Matcher matcher = pathPattern.matcher(found.getPath());
                                 if(!matcher.matches())
                                     continue;
-                                ResourceLocation structureLocation = new ResourceLocation(found.getNamespace(), matcher.group(1));
+                                ResourceLocation structureLocation = ResourceLocation.fromNamespaceAndPath(found.getNamespace(), matcher.group(1));
                                 try(InputStream resource = entry.getValue().open()) {
                                     CachingStructureManager.readStructureTag(structureLocation, level.getServer().getFixerUpper(), resource);
                                     Component msg = Component.literal("checked " + structureLocation + " (" + upgradedNum + "/" + structures.size() + ")");

@@ -158,7 +158,7 @@ public class PackResourcesCacheEngine {
             if(!fullTestPath.startsWith(testPath)) {
                 continue;
             }
-            ResourceLocation foundResource = new ResourceLocation(resourceNamespace, fullPath);
+            ResourceLocation foundResource = ResourceLocation.fromNamespaceAndPath(resourceNamespace, fullPath);
             if(!filter.test(foundResource))
                 continue;
             resources.add(foundResource);

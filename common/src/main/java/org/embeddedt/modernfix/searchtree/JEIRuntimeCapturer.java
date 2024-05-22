@@ -19,7 +19,7 @@ public class JEIRuntimeCapturer implements IModPlugin {
 
     @Override
     public ResourceLocation getPluginUid() {
-        return new ResourceLocation(ModernFix.MODID, "capturer");
+        return ResourceLocation.fromNamespaceAndPath(ModernFix.MODID, "capturer");
     }
 
     @Override

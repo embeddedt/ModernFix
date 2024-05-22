@@ -25,7 +25,7 @@ public final class ModelHelpers {
      * @return a list of all blockstates related to the model
      */
     public static ImmutableList<BlockState> getBlockStateForLocation(ModelResourceLocation location) {
-        Optional<Block> blockOpt = BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(location.getNamespace(), location.getPath()));
+        Optional<Block> blockOpt = BuiltInRegistries.BLOCK.getOptional(ResourceLocation.fromNamespaceAndPath(location.getNamespace(), location.getPath()));
         if(blockOpt.isPresent())
             return ModelBakeryHelpers.getBlockStatesForMRL(blockOpt.get().getStateDefinition(), location);
         else

@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.resources;
 
+import net.minecraft.ReportType;
 import net.minecraft.ReportedException;
 import net.minecraft.server.Bootstrap;
 import org.embeddedt.modernfix.ModernFix;
@@ -39,7 +40,7 @@ public class ReloadExecutor {
         }
 
         if (throwable instanceof ReportedException) {
-            Bootstrap.realStdoutPrintln(((ReportedException)throwable).getReport().getFriendlyReport());
+            Bootstrap.realStdoutPrintln(((ReportedException)throwable).getReport().getFriendlyReport(ReportType.CRASH));
             System.exit(-1);
         }
 

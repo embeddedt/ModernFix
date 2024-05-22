@@ -34,7 +34,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
      * in the baked registry ahead of time.
      */
     private static final ImmutableSet<ResourceLocation> BAKE_SKIPPED_TOPLEVEL = ImmutableSet.<ResourceLocation>builder()
-            .add(new ResourceLocation("custommachinery", "block/custom_machine_block"))
+            .add(ResourceLocation.fromNamespaceAndPath("custommachinery", "block/custom_machine_block"))
             .build();
     public static DynamicBakedModelProvider currentInstance = null;
     private final ModelBakery bakery;
@@ -118,7 +118,7 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
         if(location instanceof ModelResourceLocation) {
             try {
                 ModelResourceLocation mrl = (ModelResourceLocation)location;
-                ResourceLocation registryKey = new ResourceLocation(mrl.getNamespace(), mrl.getPath());
+                ResourceLocation registryKey = ResourceLocation.fromNamespaceAndPath(mrl.getNamespace(), mrl.getPath());
                 // check for standard inventory model
                 if(mrl.getVariant().equals("inventory") && BuiltInRegistries.ITEM.containsKey(registryKey))
                     return true;

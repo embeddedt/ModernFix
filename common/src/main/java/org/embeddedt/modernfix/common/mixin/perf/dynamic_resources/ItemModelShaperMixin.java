@@ -33,7 +33,7 @@ public abstract class ItemModelShaperMixin {
         super();
     }
 
-    private static final ModelResourceLocation SENTINEL_VANILLA = new ModelResourceLocation(new ResourceLocation("modernfix", "sentinel"), "sentinel");
+    private static final ModelResourceLocation SENTINEL_VANILLA = new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath("modernfix", "sentinel"), "sentinel");
 
     private final DynamicModelCache<Item> mfix$itemModelCache = new DynamicModelCache<>(k -> this.mfix$getModelForItem((Item)k), true);
 

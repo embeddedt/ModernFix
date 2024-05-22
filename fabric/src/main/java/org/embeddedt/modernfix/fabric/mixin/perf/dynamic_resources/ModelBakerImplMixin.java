@@ -75,7 +75,7 @@ public abstract class ModelBakerImplMixin implements IExtendedModelBaker {
             // synchronized because we use topLevelModels
             synchronized (this.field_40571) {
                 /* to emulate vanilla model loading, treat as top-level */
-                Optional<Block> blockOpt = Objects.equals(((ModelResourceLocation)arg).getVariant(), "inventory") ? Optional.empty() : BuiltInRegistries.BLOCK.getOptional(new ResourceLocation(arg.getNamespace(), arg.getPath()));
+                Optional<Block> blockOpt = Objects.equals(((ModelResourceLocation)arg).getVariant(), "inventory") ? Optional.empty() : BuiltInRegistries.BLOCK.getOptional(ResourceLocation.fromNamespaceAndPath(arg.getNamespace(), arg.getPath()));
                 boolean invalidMRL = false;
                 if(blockOpt.isPresent()) {
                     /* load via lambda for mods that expect blockstate to get loaded */

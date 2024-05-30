@@ -20,7 +20,6 @@ accessible field net/minecraft/client/renderer/texture/Stitcher$Holder width I
 accessible field net/minecraft/client/renderer/texture/Stitcher$Holder height I
 accessible field net/minecraft/network/syncher/EntityDataAccessor id I
 mutable field net/minecraft/network/syncher/EntityDataAccessor id I
-accessible class net/minecraft/client/resources/model/ModelBakery$BlockStateDefinitionException
 accessible method net/minecraft/Util makeExecutor (Ljava/lang/String;)Ljava/util/concurrent/ExecutorService;
 accessible field net/minecraft/server/level/ChunkMap updatingChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
 accessible field net/minecraft/server/level/ChunkMap visibleChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
@@ -29,12 +28,6 @@ accessible method net/minecraft/resources/ResourceKey <init> (Lnet/minecraft/res
 accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
 accessible class net/minecraft/server/level/ChunkMap$DistanceManager
 accessible class net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
-accessible field net/minecraft/client/resources/model/ModelBakery bakedCache Ljava/util/Map;
-accessible field net/minecraft/client/resources/model/ModelBakery ITEM_MODEL_GENERATOR Lnet/minecraft/client/renderer/block/model/ItemModelGenerator;
-accessible method net/minecraft/client/resources/model/ModelBakery loadTopLevel (Lnet/minecraft/client/resources/model/ModelResourceLocation;)V
-accessible field net/minecraft/client/resources/model/ModelBakery topLevelModels Ljava/util/Map;
-accessible class net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl
-accessible method net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl <init> (Lnet/minecraft/client/resources/model/ModelBakery;Ljava/util/function/BiFunction;Lnet/minecraft/resources/ResourceLocation;)V
 accessible method net/minecraft/client/resources/model/ModelBakery$BakedCacheKey <init> (Lnet/minecraft/resources/ResourceLocation;Lcom/mojang/math/Transformation;Z)V
 accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
 accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/server/MinecraftServer$ReloadableResources;

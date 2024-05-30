@@ -4,9 +4,11 @@ import com.mojang.logging.LogUtils;
 import net.minecraft.DefaultUncaughtExceptionHandlerWithName;
 import net.minecraft.Util;
 import net.minecraft.server.MinecraftServer;
+import org.embeddedt.modernfix.duck.ITimeTrackingServer;
 import org.slf4j.Logger;
 
 import java.lang.ref.WeakReference;
+import java.util.OptionalLong;
 
 public class IntegratedWatchdog extends Thread {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -22,23 +24,27 @@ public class IntegratedWatchdog extends Thread {
         this.setName("ModernFix integrated server watchdog");
     }
 
+    private OptionalLong getLastTickStart() {
+        MinecraftServer server = this.server.get();
+        if(server == null || !server.isRunning())
+            return OptionalLong.empty();
+        return OptionalLong.of(((ITimeTrackingServer)server).mfix$getLastTickStartTime());
+    }
+
     public void run() {
         while(true) {
-            MinecraftServer server = this.server.get();
-            if(server == null || !server.isRunning())
+            OptionalLong lastTickStart = getLastTickStart();
+            if(!lastTickStart.isPresent()) {
                 return;
-            long nextTick = server.getNextTickTime();
+            }
             long curTime = Util.getMillis();
-            long delta = curTime - nextTick;
+            long delta = curTime - lastTickStart.getAsLong();
             if(delta > MAX_TICK_DELTA) {
                 LOGGER.error("A single server tick has taken {}, more than {} milliseconds", delta, MAX_TICK_DELTA);
                 LOGGER.error(ThreadDumper.obtainThreadDump());
-                nextTick = 0;
-                curTime = 0;
             }
-            server = null; /* allow GC */
             try {
-                Thread.sleep(nextTick + MAX_TICK_DELTA - curTime);
+                Thread.sleep(MAX_TICK_DELTA - delta);
             } catch(InterruptedException ignored) {
             }
         }

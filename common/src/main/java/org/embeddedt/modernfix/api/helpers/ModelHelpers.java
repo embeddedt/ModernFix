@@ -7,10 +7,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
-import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.dynamicresources.ModelBakeryHelpers;
 import org.embeddedt.modernfix.util.DynamicMap;
-import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.Optional;
@@ -25,7 +23,7 @@ public final class ModelHelpers {
      * @return a list of all blockstates related to the model
      */
     public static ImmutableList<BlockState> getBlockStateForLocation(ModelResourceLocation location) {
-        Optional<Block> blockOpt = BuiltInRegistries.BLOCK.getOptional(ResourceLocation.fromNamespaceAndPath(location.getNamespace(), location.getPath()));
+        Optional<Block> blockOpt = BuiltInRegistries.BLOCK.getOptional(location.id());
         if(blockOpt.isPresent())
             return ModelBakeryHelpers.getBlockStatesForMRL(blockOpt.get().getStateDefinition(), location);
         else
@@ -58,6 +56,8 @@ public final class ModelHelpers {
      * @return an appropriate ModelBaker
      */
     public static ModelBaker adaptBakery(ModelBakery bakery) {
+        throw new UnsupportedOperationException("TODO");
+        /*
         return new ModelBaker() {
             @Override
             public UnbakedModel getModel(ResourceLocation resourceLocation) {
@@ -70,5 +70,7 @@ public final class ModelHelpers {
                 return ((IExtendedModelBakery)bakery).bakeDefault(resourceLocation, modelState);
             }
         };
+
+         */
     }
 }

@@ -1,5 +1,5 @@
 package org.embeddedt.modernfix.duck;
 
-public interface IExtendedModelBakery {
+public interface IExtendedModelManager {
     void mfix$tick();
 }

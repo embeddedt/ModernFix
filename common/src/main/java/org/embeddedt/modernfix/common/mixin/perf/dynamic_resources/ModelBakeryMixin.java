@@ -53,6 +53,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final private UnbakedModel missingModel;
 
+    @Unique
+    private static final boolean DEBUG_MODEL_LOADS = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
+
     /**
      * Bake a model using the provided texture getter and location. The model is stored in {@link ModelBakeryMixin#bakedTopLevelModels}.
      */
@@ -74,10 +77,14 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private UnbakedModel loadUnbakedModelDynamic(ModelResourceLocation location) {
         if(location.equals(MISSING_MODEL_VARIANT)) {
             return missingModel;
-        } else if(location.variant().equals("inventory")) {
+        }
+        if(DEBUG_MODEL_LOADS) {
+            ModernFix.LOGGER.info("Loading model {}", location);
+        }
+        if(location.variant().equals("inventory")) {
             this.loadItemModelAndDependencies(location.id());
         } else {
-            ((IBlockStateModelLoader)dynamicLoader).loadSpecificBlock(location.id());
+            ((IBlockStateModelLoader)dynamicLoader).loadSpecificBlock(location);
         }
         return this.topLevelModels.getOrDefault(location, this.missingModel);
     }
@@ -94,6 +101,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             if(model == null) {
                 UnbakedModel prototype = loadUnbakedModelDynamic(location);
                 prototype.resolveParents(this::getModel);
+                if(DEBUG_MODEL_LOADS) {
+                    ModernFix.LOGGER.info("Baking model {}", location);
+                }
                 this.method_61072(this.textureGetter, location, prototype);
                 model = bakedTopLevelModels.remove(location);
                 if(model == null) {

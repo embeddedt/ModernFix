@@ -37,6 +37,9 @@ public class IntegratedWatchdog extends Thread {
             if(!lastTickStart.isPresent()) {
                 return;
             }
+            if(lastTickStart.getAsLong() < 0) {
+                continue;
+            }
             long curTime = Util.getMillis();
             long delta = curTime - lastTickStart.getAsLong();
             if(delta > MAX_TICK_DELTA) {

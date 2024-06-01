@@ -131,5 +131,6 @@
   "modernfix.option.mixin.feature.stalled_chunk_load_detection": "This option may help to detect the cause of chunkloading freezes. However, leaving it enabled may cause slightly worse performance.",
   "modernfix.option.mixin.perf.fix_loop_spin_waiting": "Fixes Minecraft's built-in wait function consuming excessive amounts of CPU resources.",
   "modernfix.option.mixin.perf.forge_cap_retrieval": "Small micro-optimization that makes retrieving custom entity data slightly more efficient on Forge.",
-  "modernfix.option.mixin.perf.forge_registry_lambda": "Fixes oversights in Forge that lead to excessive allocation in hot registry methods."
+  "modernfix.option.mixin.perf.forge_registry_lambda": "Fixes oversights in Forge that lead to excessive allocation in hot registry methods.",
+  "modernfix.option.mixin.bugfix.restore_old_dragon_movement": "Fixes MC-272431, which tracks the ender dragon being unable to dive to the portal as it did in 1.13 and older. This causes the dragon to fly quite a bit differently from what modern players are used to and also patches out one-cycling, so it's not enabled by default. Thanks to Jukitsu for identifying the regression in the vanilla code."
 }

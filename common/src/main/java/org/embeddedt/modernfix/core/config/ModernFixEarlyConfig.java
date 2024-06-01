@@ -170,6 +170,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.reuse_datapacks", false)
             .put("mixin.feature.direct_stack_trace", false)
             .put("mixin.feature.stalled_chunk_load_detection", false)
+            .put("mixin.bugfix.restore_old_dragon_movement", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.bugfix.packet_leak", false)
             .put("mixin.perf.deduplicate_location", false)

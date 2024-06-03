@@ -12,6 +12,7 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModLoader;
+import net.neoforged.fml.ModLoadingIssue;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.fml.loading.LoadingModList;
@@ -71,7 +72,11 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public boolean isEarlyLoadingNormally() {
-        return !LoadingModList.get().hasErrors();
+        var issues = LoadingModList.get().getModLoadingIssues();
+        if (issues.isEmpty()) {
+            return true;
+        }
+        return issues.stream().noneMatch(issue -> issue.severity() == ModLoadingIssue.Severity.ERROR);
     }
 
     public boolean isLoadingNormally() {

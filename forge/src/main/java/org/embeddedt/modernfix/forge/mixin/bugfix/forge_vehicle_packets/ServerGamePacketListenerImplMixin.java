@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public class ServerGamePacketListenerImplMixin {
     @Shadow public ServerPlayer player;
 
-    @Redirect(method = "handleMoveVehicle", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;absMoveTo(DDDFF)V"))
+    @Redirect(method = "handleMoveVehicle", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/level/ServerPlayer;absMoveTo(DDDFF)V"), require = 0)
     private void movePlayerUsingPositionRider(ServerPlayer player, double x, double y, double z, float yRot, float xRot, ServerboundMoveVehiclePacket packet) {
         if(player == this.player) {
             // use positionRider

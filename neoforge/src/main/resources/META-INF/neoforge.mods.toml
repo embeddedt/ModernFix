@@ -47,7 +47,7 @@ modId = "neoforge" #mandatory
 # Does this dependency have to exist - if not, ordering below must be specified
 type = "required" #mandatory
 # The version range of the dependency
-versionRange = "[20.6.42-beta,)" #mandatory
+versionRange = "[20.6.100-beta,)" #mandatory
 # An ordering relationship for the dependency - BEFORE or AFTER required if the relationship is not mandatory
 ordering = "NONE"
 # Side this dependency is applied on - BOTH, CLIENT or SERVER

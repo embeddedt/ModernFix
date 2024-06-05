@@ -44,6 +44,7 @@ shadowJar {
     // shadowJar bug
     include '*.jar'
     include 'META-INF/services/javax.annotation.processing.Processor'
+    include 'META-INF/gradle/incremental.annotation.processors'
     include 'org/spongepowered/asm/mixin/Mixin.class'
     include 'org/fury_phoenix/**/*'
     include {it.getName() == 'OnlyIn.class'}

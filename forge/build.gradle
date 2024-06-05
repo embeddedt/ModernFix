@@ -17,7 +17,6 @@ loom {
         mixinConfig "modernfix-common.mixins.json"
         mixinConfig "modernfix-forge.mixins.json"
     }
-    mixin.defaultRefmapName = "modernfix.refmap.json"
 }
 
 configurations {

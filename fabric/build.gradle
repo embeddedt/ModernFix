@@ -26,18 +26,6 @@ configurations {
     }
 }
 
-// TODO remove
-
-repositories {
-    maven {
-        name = "Technici4n"
-        url = "https://raw.githubusercontent.com/Technici4n/Technici4n-maven/master/"
-        content {
-            includeGroup "net.fabricmc.fabric-api"
-        }
-    }
-}
-
 dependencies {
     modImplementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
     testImplementation "net.fabricmc:fabric-loader-junit:${rootProject.fabric_loader_version}"
@@ -77,7 +65,7 @@ dependencies {
     testAgent(project("path": ":test_agent", "configuration": "agentJar"))
 }
 
-test {
+tasks.named("test") {
     useJUnitPlatform()
     def runDir = file('test_run')
     doFirst() {

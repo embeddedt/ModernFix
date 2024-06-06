@@ -6,6 +6,9 @@ plugins {
 loom {
     silentMojangMappingsLicense()
     accessWidenerPath = file("${rootDir}/common/src/main/resources/modernfix.accesswidener")
+    mixin {
+        useLegacyMixinAp = false
+    }
 }
 
 dependencies {
@@ -31,7 +34,6 @@ tasks {
 }
 
 tasks.withType(JavaCompile) {
-    options.fork = true
     configure(options) {
         if (!name.toLowerCase().contains('test')) {
         options.compilerArgs << "-ArootProject.name=${rootProject.name}" << "-Aproject.name=${project.name}"

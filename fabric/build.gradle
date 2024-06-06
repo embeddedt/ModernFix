@@ -33,8 +33,7 @@ dependencies {
     modCompileOnly(fabricApi.module("fabric-api-base", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modCompileOnly(fabricApi.module("fabric-screen-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modCompileOnly(fabricApi.module("fabric-command-api-v2", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modCompileOnly(fabricApi.module("fabric-model-loading-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
-    modCompileOnly(fabricApi.module("fabric-models-v0", "0.84.0+1.20.1")) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
+    //modCompileOnly(fabricApi.module("fabric-model-loading-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modCompileOnly(fabricApi.module("fabric-resource-loader-v0", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     modCompileOnly(fabricApi.module("fabric-data-generation-api-v1", rootProject.fabric_api_version)) { exclude group: 'net.fabricmc', module: 'fabric-loader' }
     if(project.use_fabric_api_at_runtime.toBoolean()) {

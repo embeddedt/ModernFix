@@ -26,7 +26,6 @@ import org.fury_phoenix.mixinAp.config.MixinConfig;
 
 @SupportedAnnotationTypes({"org.spongepowered.asm.mixin.Mixin", "org.embeddedt.modernfix.annotation.ClientOnlyMixin"})
 @SupportedOptions({"rootProject.name", "project.name", "org.fury_phoenix.mixinAp.validator.debug"})
-@SupportedSourceVersion(SourceVersion.RELEASE_17)
 @AutoService(Processor.class)
 public class MixinProcessor extends AbstractProcessor {
 
@@ -37,6 +36,11 @@ public class MixinProcessor extends AbstractProcessor {
     );
 
     private final Map<String, List<String>> mixinConfigList = new HashMap<>();
+
+    @Override
+    public SourceVersion getSupportedSourceVersion() {
+        return SourceVersion.latest();
+    }
 
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {

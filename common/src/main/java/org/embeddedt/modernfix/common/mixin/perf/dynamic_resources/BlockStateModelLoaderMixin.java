@@ -56,8 +56,11 @@ public abstract class BlockStateModelLoaderMixin implements IBlockStateModelLoad
                 ModernFix.LOGGER.error("Exception filtering states on {}", location, e);
                 filteredStates = null;
             }
-            this.loadBlockStateDefinitions(location.id(), optionalBlock.get().getStateDefinition());
-            filteredStates = null;
+            try {
+                this.loadBlockStateDefinitions(location.id(), optionalBlock.get().getStateDefinition());
+            } finally {
+                filteredStates = null;
+            }
         }
     }
 

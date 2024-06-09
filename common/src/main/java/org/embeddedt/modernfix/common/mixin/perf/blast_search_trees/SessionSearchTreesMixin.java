@@ -13,6 +13,7 @@ import org.embeddedt.modernfix.searchtree.RecipeBookSearchTree;
 import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 import org.lwjgl.glfw.GLFW;
 import org.lwjgl.glfw.GLFWErrorCallback;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
@@ -28,6 +29,8 @@ import java.util.concurrent.CompletableFuture;
 public abstract class SessionSearchTreesMixin {
     @Shadow private CompletableFuture<SearchTree<RecipeCollection>> recipeSearch;
     @Shadow private CompletableFuture<SearchTree<ItemStack>> creativeByNameSearch;
+    @Shadow @Final private static SessionSearchTrees.Key CREATIVE_NAMES;
+    @Shadow @Final private static SessionSearchTrees.Key CREATIVE_TAGS;
     private SearchTreeProviderRegistry.Provider mfix$provider;
 
     @Inject(method = "<init>", at = @At("RETURN"))
@@ -63,11 +66,12 @@ public abstract class SessionSearchTreesMixin {
         }
     }
 
-    @ModifyArg(method = "updateCreativeTooltips", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/SessionSearchTrees;register(Lnet/minecraft/client/multiplayer/SessionSearchTrees$Key;Ljava/lang/Runnable;)V"), index = 1)
-    private Runnable useSearchModItems(Runnable r) {
+    @ModifyArg(method = "*", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/SessionSearchTrees;register(Lnet/minecraft/client/multiplayer/SessionSearchTrees$Key;Ljava/lang/Runnable;)V"), index = 1)
+    private Runnable useOverridenSearchTreeLogic(SessionSearchTrees.Key key, Runnable r) {
         if(mfix$provider == null) {
             return r;
-        } else {
+        }
+        if(key == CREATIVE_NAMES) {
             return () -> {
                 CompletableFuture<?> old = this.creativeByNameSearch;
                 this.creativeByNameSearch = CompletableFuture.supplyAsync(() -> {
@@ -76,13 +80,7 @@ public abstract class SessionSearchTreesMixin {
                 old.cancel(true);
             };
         }
-    }
-
-    @ModifyArg(method = "updateCreativeTags", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/multiplayer/SessionSearchTrees;register(Lnet/minecraft/client/multiplayer/SessionSearchTrees$Key;Ljava/lang/Runnable;)V"), index = 1)
-    private Runnable useSearchModTags(Runnable r) {
-        if(mfix$provider == null) {
-            return r;
-        } else {
+        if(key == CREATIVE_TAGS) {
             return () -> {
                 CompletableFuture<?> old = this.creativeByNameSearch;
                 this.creativeByNameSearch = CompletableFuture.supplyAsync(() -> {
@@ -91,5 +89,6 @@ public abstract class SessionSearchTreesMixin {
                 old.cancel(true);
             };
         }
+        return r;
     }
 }

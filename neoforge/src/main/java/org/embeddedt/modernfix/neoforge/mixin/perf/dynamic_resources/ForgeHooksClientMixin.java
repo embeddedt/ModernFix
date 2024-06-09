@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.neoforge.mixin.perf.dynamic_resources;
 
 import com.google.common.base.Stopwatch;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.neoforged.bus.api.Event;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -33,7 +33,7 @@ public class ForgeHooksClientMixin {
         ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
         Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
         ModList.get().forEachModContainer((id, mc) -> {
-            Map<ResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
+            Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
             ModelEvent.ModifyBakingResult postedEvent = new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getTextureGetter(), bakeEvent.getModelBakery());
             Stopwatch timer = Stopwatch.createStarted();
             try {

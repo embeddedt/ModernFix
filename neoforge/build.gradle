@@ -31,6 +31,15 @@ repositories {
         }
     }
     maven { url "https://maven.neoforged.net" }
+    if(rootProject.hasProperty("neoforge_pr")) {
+        maven {
+            url 'https://prmaven.neoforged.net/NeoForge/pr' + rootProject.neoforge_pr
+            content {
+                includeModule('net.neoforged', 'neoforge')
+                includeModule('net.neoforged', 'testframework')
+            }
+        }
+    }
 }
 
 dependencies {

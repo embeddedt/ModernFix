@@ -65,7 +65,7 @@ public class ModernFixForge {
             event.register(Registries.ITEM, helper -> {
                 Item.Properties props = new Item.Properties();
                 for(int i = 0; i < 1000000; i++) {
-                    helper.register(new ResourceLocation("modernfix", "item_" + i), new Item(props));
+                    helper.register(ResourceLocation.fromNamespaceAndPath("modernfix", "item_" + i), new Item(props));
                 }
             });
         }

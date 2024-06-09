@@ -32,7 +32,7 @@ public abstract class ItemModelMesherForgeMixin extends ItemModelShaper {
         super(arg);
     }
 
-    private static final ModelResourceLocation SENTINEL = new ModelResourceLocation(new ResourceLocation("modernfix", "sentinel"), "sentinel");
+    private static final ModelResourceLocation SENTINEL = new ModelResourceLocation(ResourceLocation.fromNamespaceAndPath("modernfix", "sentinel"), "sentinel");
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void replaceLocationMap(CallbackInfo ci) {

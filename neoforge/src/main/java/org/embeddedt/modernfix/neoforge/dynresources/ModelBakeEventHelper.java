@@ -34,10 +34,10 @@ public class ModelBakeEventHelper {
             "vampirism",
             "elevatorid",
             "embers");
-    private final Map<ResourceLocation, BakedModel> modelRegistry;
-    private final Set<ResourceLocation> topLevelModelLocations;
+    private final Map<ModelResourceLocation, BakedModel> modelRegistry;
+    private final Set<ModelResourceLocation> topLevelModelLocations;
     private final MutableGraph<String> dependencyGraph;
-    public ModelBakeEventHelper(Map<ResourceLocation, BakedModel> modelRegistry) {
+    public ModelBakeEventHelper(Map<ModelResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
         this.topLevelModelLocations = new HashSet<>(modelRegistry.keySet());
         // Skip going through ModelLocationCache because most of the accesses will be misses
@@ -74,10 +74,10 @@ public class ModelBakeEventHelper {
      * @param modId the mod that the event is being fired for
      * @return a wrapper around the model registry
      */
-    private Map<ResourceLocation, BakedModel> createWarningRegistry(String modId) {
-        return new ForwardingInclDefaultsMap<ResourceLocation, BakedModel>() {
+    private Map<ModelResourceLocation, BakedModel> createWarningRegistry(String modId) {
+        return new ForwardingInclDefaultsMap<ModelResourceLocation, BakedModel>() {
             @Override
-            protected Map<ResourceLocation, BakedModel> delegate() {
+            protected Map<ModelResourceLocation, BakedModel> delegate() {
                 return modelRegistry;
             }
 
@@ -89,13 +89,13 @@ public class ModelBakeEventHelper {
             }
 
             @Override
-            public Set<ResourceLocation> keySet() {
+            public Set<ModelResourceLocation> keySet() {
                 logWarning();
                 return super.keySet();
             }
 
             @Override
-            public Set<Entry<ResourceLocation, BakedModel>> entrySet() {
+            public Set<Entry<ModelResourceLocation, BakedModel>> entrySet() {
                 logWarning();
                 return super.entrySet();
             }
@@ -107,14 +107,14 @@ public class ModelBakeEventHelper {
             }
 
             @Override
-            public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
+            public void replaceAll(BiFunction<? super ModelResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
                 logWarning();
                 super.replaceAll(function);
             }
         };
     }
 
-    public Map<ResourceLocation, BakedModel> wrapRegistry(String modId) {
+    public Map<ModelResourceLocation, BakedModel> wrapRegistry(String modId) {
         final Set<String> modIdsToInclude = new HashSet<>();
         modIdsToInclude.add(modId);
         try {
@@ -123,11 +123,11 @@ public class ModelBakeEventHelper {
         modIdsToInclude.remove("minecraft");
         if(modIdsToInclude.stream().noneMatch(INCOMPATIBLE_MODS::contains))
             return createWarningRegistry(modId);
-        Set<ResourceLocation> ourModelLocations = Sets.filter(this.topLevelModelLocations, loc -> modIdsToInclude.contains(loc.getNamespace()));
+        Set<ModelResourceLocation> ourModelLocations = Sets.filter(this.topLevelModelLocations, loc -> modIdsToInclude.contains(loc.id().getNamespace()));
         BakedModel missingModel = modelRegistry.get(ModelBakery.MISSING_MODEL_LOCATION);
-        return new ForwardingMap<ResourceLocation, BakedModel>() {
+        return new ForwardingMap<ModelResourceLocation, BakedModel>() {
             @Override
-            protected Map<ResourceLocation, BakedModel> delegate() {
+            protected Map<ModelResourceLocation, BakedModel> delegate() {
                 return modelRegistry;
             }
 
@@ -142,7 +142,7 @@ public class ModelBakeEventHelper {
             }
 
             @Override
-            public Set<ResourceLocation> keySet() {
+            public Set<ModelResourceLocation> keySet() {
                 return ourModelLocations;
             }
 
@@ -152,10 +152,10 @@ public class ModelBakeEventHelper {
             }
 
             @Override
-            public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
+            public void replaceAll(BiFunction<? super ModelResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
                 ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. Some hacks will be used to keep this fast, but they may not be 100% compatible.", modId);
-                List<ResourceLocation> locations = new ArrayList<>(keySet());
-                for(ResourceLocation location : locations) {
+                List<ModelResourceLocation> locations = new ArrayList<>(keySet());
+                for(ModelResourceLocation location : locations) {
                     /*
                      * Fetching every model is insanely slow. So we call the function with a null object first, since it
                      * probably isn't expecting that. If we get an exception thrown, or it returns nonnull, then we know

@@ -32,7 +32,7 @@ public class ModernFixConfig {
 
     public static Set<ResourceLocation> getJeiPluginBlacklist() {
         if(jeiPluginBlacklist == null) {
-            jeiPluginBlacklist = BLACKLIST_ASYNC_JEI_PLUGINS.get().stream().map(ResourceLocation::new).collect(Collectors.toSet());
+            jeiPluginBlacklist = BLACKLIST_ASYNC_JEI_PLUGINS.get().stream().map(ResourceLocation::parse).collect(Collectors.toSet());
         }
         return jeiPluginBlacklist;
     }

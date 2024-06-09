@@ -3,13 +3,10 @@ package org.embeddedt.modernfix.platform.neoforge;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import com.mojang.brigadier.CommandDispatcher;
-import net.minecraft.client.searchtree.SearchRegistry;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.protocol.common.custom.CustomPacketPayload;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.CreativeModeTab;
-import net.minecraft.world.item.ItemStack;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.ModLoadingIssue;
@@ -17,7 +14,6 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.fml.loading.LoadingModList;
 import net.neoforged.fml.loading.moddiscovery.ModInfo;
-import net.neoforged.neoforge.client.CreativeModeTabSearchRegistry;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.network.PacketDistributor;
@@ -143,23 +139,6 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
             }
         }
         return modOptions;
-    }
-
-    public void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
-        for (SearchRegistry.Key<ItemStack> nameKey : CreativeModeTabSearchRegistry.getNameSearchKeys().values()) {
-            registry.register(nameKey, nameSupplier);
-        }
-        for (SearchRegistry.Key<ItemStack> tagKey : CreativeModeTabSearchRegistry.getTagSearchKeys().values()) {
-            registry.register(tagKey, tagSupplier);
-        }
-        Map<CreativeModeTab, SearchRegistry.Key<ItemStack>> tagSearchKeys = CreativeModeTabSearchRegistry.getTagSearchKeys();
-        CreativeModeTabSearchRegistry.getNameSearchKeys().forEach((tab, nameSearchKey) -> {
-            SearchRegistry.Key<ItemStack> tagSearchKey = tagSearchKeys.get(tab);
-            tab.setSearchTreeBuilder((contents) -> {
-                populator.accept(nameSearchKey, contents);
-                populator.accept(tagSearchKey, contents);
-            });
-        });
     }
 
     public void onLaunchComplete() {

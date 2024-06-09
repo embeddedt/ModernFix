@@ -2,17 +2,13 @@ package org.embeddedt.modernfix.dynamicresources;
 
 import com.google.common.base.Splitter;
 import com.google.common.collect.ImmutableList;
-import com.mojang.datafixers.util.Pair;
 import net.minecraft.client.resources.model.*;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.Property;
-import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 
 import java.util.*;
-import java.util.function.BiFunction;
 
 public class ModelBakeryHelpers {
     /**
@@ -107,14 +103,5 @@ public class ModelBakeryHelpers {
             finalList = newPermutations;
         }
         return ImmutableList.copyOf(finalList);
-    }
-
-    public static ModernFixClientIntegration bakedModelWrapper(BiFunction<ResourceLocation, Pair<UnbakedModel, BakedModel>, BakedModel> consumer) {
-        return new ModernFixClientIntegration() {
-            @Override
-            public BakedModel onBakedModelLoad(ResourceLocation location, UnbakedModel baseModel, BakedModel originalModel, ModelState state, ModelBakery bakery) {
-                return consumer.apply(location, Pair.of(baseModel, originalModel));
-            }
-        };
     }
 }

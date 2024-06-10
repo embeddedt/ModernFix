@@ -4,7 +4,6 @@ import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.ModifyVariable;
 
 import java.util.concurrent.Executor;

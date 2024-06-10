@@ -1,12 +1,14 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
-import it.unimi.dsi.fastutil.objects.Reference2ReferenceLinkedOpenHashMap;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.duck.IModelHoldingBlockState;
 import org.embeddedt.modernfix.dynamicresources.ModelLocationCache;
 import org.embeddedt.modernfix.util.DynamicOverridableMap;
 import org.spongepowered.asm.mixin.*;
@@ -24,13 +26,18 @@ public class BlockModelShaperMixin {
     @Shadow
     private Map<BlockState, BakedModel> modelByStateCache;
 
-    private ThreadLocal<Reference2ReferenceLinkedOpenHashMap<BlockState, BakedModel>> mfix$modelCache = ThreadLocal.withInitial(Reference2ReferenceLinkedOpenHashMap::new);
-
     @Inject(method = { "<init>", "replaceCache" }, at = @At("RETURN"))
     private void replaceModelMap(CallbackInfo ci) {
         // replace the backing map for mods which will access it
         this.modelByStateCache = new DynamicOverridableMap<>(state -> modelManager.getModel(ModelLocationCache.get(state)));
-        this.mfix$modelCache = ThreadLocal.withInitial(Reference2ReferenceLinkedOpenHashMap::new);
+        // Clear the cached models on blockstate objects
+        for(Block block : BuiltInRegistries.BLOCK) {
+            for(BlockState state : block.getStateDefinition().getPossibleStates()) {
+                if(state instanceof IModelHoldingBlockState modelHolder) {
+                    modelHolder.mfix$setModel(null);
+                }
+            }
+        }
     }
 
     private BakedModel cacheBlockModel(BlockState state) {
@@ -50,18 +57,18 @@ public class BlockModelShaperMixin {
      */
     @Overwrite
     public BakedModel getBlockModel(BlockState state) {
-        Reference2ReferenceLinkedOpenHashMap<BlockState, BakedModel> map = this.mfix$modelCache.get();
-        BakedModel model = map.get(state);
+        if(state instanceof IModelHoldingBlockState modelHolder) {
+            BakedModel model = modelHolder.mfix$getModel();
 
-        if(model != null) {
+            if(model != null) {
+                return model;
+            }
+
+            model = this.cacheBlockModel(state);
+            modelHolder.mfix$setModel(model);
             return model;
+        } else {
+            return this.cacheBlockModel(state);
         }
-
-        model = this.cacheBlockModel(state);
-        map.putAndMoveToFirst(state, model);
-        if(map.size() > 500) {
-            map.removeLast();
-        }
-        return model;
     }
 }

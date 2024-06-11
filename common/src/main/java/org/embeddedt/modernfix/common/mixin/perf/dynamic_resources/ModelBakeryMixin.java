@@ -144,12 +144,21 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedMissingModel = this.bakedTopLevelModels.get(MISSING_MODEL_VARIANT);
     }
 
+    private boolean inInitialLoad = true;
+
+    @Inject(method = "bakeModels", at = @At("RETURN"))
+    private void onInitialBakeFinish(ModelBakery.TextureGetter textureGetter, CallbackInfo ci) {
+        inInitialLoad = false;
+        var permanentMRLs = new ObjectOpenHashSet<>(this.bakedTopLevelModels.keySet());
+        ((LRUMap<ModelResourceLocation, BakedModel>)this.bakedTopLevelModels).setPermanentEntries(permanentMRLs);
+        ModernFix.LOGGER.info("Dynamic model bakery initial baking finished, with {} permanent top level baked models", this.bakedTopLevelModels.size());
+    }
+
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInitialLoadFinish(BlockColors blockColors, ProfilerFiller profilerFiller, Map map, Map map2, CallbackInfo ci) {
         var permanentMRLs = new ObjectOpenHashSet<>(this.topLevelModels.keySet());
         ((LRUMap<ModelResourceLocation, UnbakedModel>)this.topLevelModels).setPermanentEntries(permanentMRLs);
-        ((LRUMap<ModelResourceLocation, BakedModel>)this.bakedTopLevelModels).setPermanentEntries(permanentMRLs);
-        ModernFix.LOGGER.info("Dynamic model bakery initialized, with {} permanent top level models", this.topLevelModels.size());
+        ModernFix.LOGGER.info("Dynamic model bakery loading finished, with {} permanent top level models", this.topLevelModels.size());
     }
 
     @Unique
@@ -167,6 +176,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Override
     public void mfix$tick() {
+        if(inInitialLoad) {
+            return;
+        }
         tickCount++;
         if((tickCount % 200) == 0) {
             if(modelBakeryLock.tryLock()) {

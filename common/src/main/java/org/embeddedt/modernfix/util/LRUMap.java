@@ -28,6 +28,8 @@ public class LRUMap<K, V> extends Object2ObjectLinkedOpenHashMap<K, V> {
     }
 
     public void dropEntriesToMeetSize(int size) {
+        // Increase allowed size quota to include permanent entries
+        size += permanentEntries.size();
         int prevSize = size();
         if(size() > size) {
             var iterator = entrySet().iterator();

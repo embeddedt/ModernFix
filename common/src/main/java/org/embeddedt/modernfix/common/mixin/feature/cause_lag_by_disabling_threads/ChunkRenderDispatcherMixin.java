@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.feature.cause_lag_by_disabling_threads;
 
-import net.minecraft.client.renderer.chunk.ChunkRenderDispatcher;
+import net.minecraft.client.renderer.chunk.SectionRenderDispatcher;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -11,7 +11,7 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
-@Mixin(ChunkRenderDispatcher.class)
+@Mixin(SectionRenderDispatcher.class)
 @ClientOnlyMixin
 public class ChunkRenderDispatcherMixin {
     private static final Executor MFIX_CHUNK_BUILD_EXECUTOR = new ThreadPoolExecutor(1, computeNumThreads(), 0L, TimeUnit.SECONDS, new LinkedBlockingQueue<>());

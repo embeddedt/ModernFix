@@ -11,6 +11,18 @@ accessible field net/minecraft/world/level/Level blockEntityTickers Ljava/util/L
 accessible class net/minecraft/client/renderer/RenderType$CompositeRenderType
 accessible method net/minecraft/nbt/CompoundTag <init> (Ljava/util/Map;)V
 
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$SequenceRule
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Marker
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Marker$Type
+accessible method net/minecraft/world/level/levelgen/DensityFunctions$Marker <init> (Lnet/minecraft/world/level/levelgen/DensityFunctions$Marker$Type;Lnet/minecraft/world/level/levelgen/DensityFunction;)V
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Mapped
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Mapped$Type
+accessible method net/minecraft/world/level/levelgen/DensityFunctions$Mapped <init> (Lnet/minecraft/world/level/levelgen/DensityFunctions$Mapped$Type;Lnet/minecraft/world/level/levelgen/DensityFunction;DD)V
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$MulOrAdd
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$MulOrAdd$Type
+accessible method net/minecraft/world/level/levelgen/DensityFunctions$MulOrAdd <init> (Lnet/minecraft/world/level/levelgen/DensityFunctions$MulOrAdd$Type;Lnet/minecraft/world/level/levelgen/DensityFunction;DDD)V
+
 accessible class net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase$Cache
 accessible class net/minecraft/server/level/ServerChunkCache$MainThreadExecutor
 accessible field net/minecraft/world/level/block/state/BlockBehaviour properties Lnet/minecraft/world/level/block/state/BlockBehaviour$Properties;

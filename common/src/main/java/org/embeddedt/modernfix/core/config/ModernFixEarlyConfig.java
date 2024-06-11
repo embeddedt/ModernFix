@@ -139,7 +139,7 @@ public class ModernFixEarlyConfig {
                     mixinOptions.add(mixinCategoryName);
                 }
             } catch(IOException e) {
-                ModernFix.LOGGER.error("Error scanning file " + mixinPath, e);
+                LOGGER.error("Error scanning file " + mixinPath, e);
             }
         }
     }
@@ -166,6 +166,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.stalled_chunk_load_detection", false)
             .put("mixin.perf.blast_search_trees.force", false)
             .put("mixin.bugfix.restore_old_dragon_movement", false)
+            .put("mixin.feature.cause_lag_by_disabling_threads", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.deduplicate_climate_parameters", false)
             .put("mixin.bugfix.packet_leak", false)

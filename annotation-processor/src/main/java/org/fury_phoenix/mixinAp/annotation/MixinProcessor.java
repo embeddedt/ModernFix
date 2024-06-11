@@ -19,6 +19,7 @@ import javax.annotation.processing.SupportedOptions;
 import javax.lang.model.SourceVersion;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
+import javax.lang.model.util.Elements;
 import javax.tools.Diagnostic;
 
 import org.fury_phoenix.mixinAp.config.MixinConfig;
@@ -80,7 +81,7 @@ public class MixinProcessor extends AbstractProcessor {
             List<String> mixins =
             annotatedMixins.stream()
             .map(TypeElement.class::cast)
-            .map(TypeElement::toString)
+            .map(e -> processingEnv.getElementUtils().getBinaryName(e).toString())
             .collect(Collectors.toList());
 
             mixinConfigList.putIfAbsent(aliases.get(annotation.getSimpleName().toString()), mixins);

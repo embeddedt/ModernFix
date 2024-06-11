@@ -17,7 +17,7 @@ public record MixinConfig(
     @SerializedName("package")
     String packageName,
     String plugin,
-    String compatabilityLevel,
+    String compatibilityLevel,
     @SerializedName("mixins")
     List<String> commonMixins,
     @SerializedName("client")
@@ -25,7 +25,7 @@ public record MixinConfig(
     InjectorOptions injectors, OverwriteOptions overwrites
     ) {
     public MixinConfig(String packageName, List<String> commonMixins, List<String> clientMixins) {
-        this(true, "0.8", packageName, "org.embeddedt.modernfix.core.ModernFixMixinPlugin", "JAVA_8",
+        this(true, "0.8", packageName, "org.embeddedt.modernfix.core.ModernFixMixinPlugin", "JAVA_17",
         commonMixins, clientMixins, InjectorOptions.DEFAULT, OverwriteOptions.DEFAULT);
     }
     public record InjectorOptions(int defaultRequire) {

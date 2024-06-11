@@ -139,7 +139,7 @@ public class ModernFixEarlyConfig {
                     mixinOptions.add(mixinCategoryName);
                 }
             } catch(IOException e) {
-                ModernFix.LOGGER.error("Error scanning file " + mixinPath, e);
+                LOGGER.error("Error scanning file " + mixinPath, e);
             }
         }
     }

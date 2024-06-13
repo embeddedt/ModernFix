@@ -7,7 +7,7 @@ loom {
     silentMojangMappingsLicense()
     accessWidenerPath = file("${rootDir}/common/src/main/resources/modernfix.accesswidener")
     mixin {
-        useLegacyMixinAp = false
+        useLegacyMixinAp = true
     }
 }
 

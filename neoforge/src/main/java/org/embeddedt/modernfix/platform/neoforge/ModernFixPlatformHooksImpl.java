@@ -32,10 +32,8 @@ import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
 
 import java.lang.reflect.Field;
 import java.nio.file.Path;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {

@@ -14,6 +14,7 @@ import net.neoforged.fml.*;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
+import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -41,7 +42,9 @@ public class ModernFixForge {
         NeoForge.EVENT_BUS.register(this);
         modBus.addListener(this::commonSetup);
         modBus.addListener(this::registerItems);
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> NeoForge.EVENT_BUS.register(new ModernFixClientForge(modContainer, modBus)));
+        if(FMLEnvironment.dist == Dist.CLIENT) {
+            NeoForge.EVENT_BUS.register(new ModernFixClientForge(modContainer, modBus));
+        }
         modContainer.registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         ModFileScanDataDeduplicator.deduplicate();
         ClassLoadHack.loadModClasses();

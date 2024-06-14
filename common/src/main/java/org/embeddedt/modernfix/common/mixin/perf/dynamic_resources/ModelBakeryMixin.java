@@ -1,6 +1,8 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.resources.model.BakedModel;
@@ -126,9 +128,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         return original;
     }
 
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/BlockStateModelLoader;loadAllBlockStates()V"))
-    private void noInitialBlockStateLoad(BlockStateModelLoader instance) {
+    @WrapOperation(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/BlockStateModelLoader;loadAllBlockStates()V"))
+    private void noInitialBlockStateLoad(BlockStateModelLoader instance, Operation<Void> original) {
         dynamicLoader = instance;
+        original.call(instance);
     }
 
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/DefaultedRegistry;keySet()Ljava/util/Set;"))

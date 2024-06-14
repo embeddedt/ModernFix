@@ -61,7 +61,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     /**
      * Bake a model using the provided texture getter and location. The model is stored in {@link ModelBakeryMixin#bakedTopLevelModels}.
      */
-    @Shadow protected abstract void method_61072(ModelBakery.TextureGetter getter, ModelResourceLocation location, UnbakedModel model);
+    @Shadow(aliases = "lambda$bakeModels$6") protected abstract void method_61072(ModelBakery.TextureGetter getter, ModelResourceLocation location, UnbakedModel model);
 
     @Shadow @Mutable @Final private Map<ModelResourceLocation, BakedModel> bakedTopLevelModels;
     @Shadow @Mutable @Final public Map<ModelResourceLocation, UnbakedModel> topLevelModels;

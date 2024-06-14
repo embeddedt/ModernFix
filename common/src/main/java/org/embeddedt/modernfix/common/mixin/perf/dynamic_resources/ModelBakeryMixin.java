@@ -151,7 +151,6 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Inject(method = "bakeModels", at = @At("RETURN"))
     private void onInitialBakeFinish(ModelBakery.TextureGetter textureGetter, CallbackInfo ci) {
-        inInitialLoad = false;
         var permanentMRLs = new ObjectOpenHashSet<>(this.bakedTopLevelModels.keySet());
         ((LRUMap<ModelResourceLocation, BakedModel>)this.bakedTopLevelModels).setPermanentEntries(permanentMRLs);
         ModernFix.LOGGER.info("Dynamic model bakery initial baking finished, with {} permanent top level baked models", this.bakedTopLevelModels.size());
@@ -175,6 +174,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         ((LRUMap<?, ?>)this.bakedCache).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
         ((LRUMap<?, ?>)this.topLevelModels).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
         ((LRUMap<?, ?>)this.bakedTopLevelModels).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
+    }
+
+    @Override
+    public void mfix$finishLoading() {
+        inInitialLoad = false;
     }
 
     @Override

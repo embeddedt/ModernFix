@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.google.common.collect.ImmutableList;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.AtlasSet;
 import net.minecraft.client.resources.model.BakedModel;
@@ -23,6 +24,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Coerce;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
@@ -93,6 +95,11 @@ public class ModelManagerMixin implements IExtendedModelManager {
     @Inject(method = "loadModels", at = @At("RETURN"))
     private void storeTicker(ProfilerFiller profilerFiller, Map<ResourceLocation, AtlasSet.StitchResult> map, ModelBakery modelBakery, CallbackInfoReturnable<?> cir) {
         tickHandler = ((IExtendedModelBakery)modelBakery)::mfix$tick;
+    }
+
+    @Inject(method = "apply", at = @At("RETURN"))
+    private void freezeBakery(@Coerce Object reloadState, ProfilerFiller profilerFiller, CallbackInfo ci, @Local(ordinal = 0) ModelBakery bakery) {
+        ((IExtendedModelBakery)bakery).mfix$finishLoading();
     }
 
     @Override

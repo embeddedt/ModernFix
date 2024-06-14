@@ -124,7 +124,7 @@ public class ModelBakeEventHelper {
         if(modIdsToInclude.stream().noneMatch(INCOMPATIBLE_MODS::contains))
             return createWarningRegistry(modId);
         Set<ModelResourceLocation> ourModelLocations = Sets.filter(this.topLevelModelLocations, loc -> modIdsToInclude.contains(loc.id().getNamespace()));
-        BakedModel missingModel = modelRegistry.get(ModelBakery.MISSING_MODEL_LOCATION);
+        BakedModel missingModel = modelRegistry.get(ModelBakery.MISSING_MODEL_VARIANT);
         return new ForwardingMap<ModelResourceLocation, BakedModel>() {
             @Override
             protected Map<ModelResourceLocation, BakedModel> delegate() {

@@ -15,15 +15,15 @@ public class MixinResourceLocation {
     @Mutable
     @Shadow
     @Final
-    protected String namespace;
+    private String namespace;
 
     @Mutable
     @Shadow
     @Final
-    protected String path;
+    private String path;
 
-    @Inject(method = "<init>([Ljava/lang/String;)V", at = @At("RETURN"))
-    private void reinit(String[] id, CallbackInfo ci) {
+    @Inject(method = "<init>", at = @At("RETURN"))
+    private void reinit(String string, String string2, CallbackInfo ci) {
         this.namespace = IdentifierCaches.NAMESPACES.deduplicate(this.namespace);
         this.path = IdentifierCaches.PATH.deduplicate(this.path);
     }

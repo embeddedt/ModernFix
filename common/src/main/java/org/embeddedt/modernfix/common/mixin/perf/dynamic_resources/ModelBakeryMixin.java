@@ -75,20 +75,34 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     private final Map<ModelResourceLocation, BakedModel> mfix$emulatedBakedRegistry = new DynamicOverridableMap<>(this::loadBakedModelDynamic);
 
-    @Unique
-    private UnbakedModel loadUnbakedModelDynamic(ModelResourceLocation location) {
+    @Override
+    public UnbakedModel mfix$loadUnbakedModelDynamic(ModelResourceLocation location) {
         if(location.equals(MISSING_MODEL_VARIANT)) {
             return missingModel;
         }
-        if(DEBUG_MODEL_LOADS) {
-            ModernFix.LOGGER.info("Loading model {}", location);
+        modelBakeryLock.lock();
+        try {
+            UnbakedModel existing = this.topLevelModels.get(location);
+            if (existing != null) {
+                return existing;
+            }
+            if(DEBUG_MODEL_LOADS) {
+                ModernFix.LOGGER.info("Loading model {}", location);
+            }
+            if(location.variant().equals("inventory")) {
+                this.loadItemModelAndDependencies(location.id());
+            } else {
+                ((IBlockStateModelLoader)dynamicLoader).loadSpecificBlock(location);
+            }
+            return this.topLevelModels.getOrDefault(location, this.missingModel);
+        } finally {
+            modelBakeryLock.unlock();
         }
-        if(location.variant().equals("inventory")) {
-            this.loadItemModelAndDependencies(location.id());
-        } else {
-            ((IBlockStateModelLoader)dynamicLoader).loadSpecificBlock(location);
-        }
-        return this.topLevelModels.getOrDefault(location, this.missingModel);
+    }
+
+    @Override
+    public UnbakedModel mfix$getMissingModel() {
+        return missingModel;
     }
 
     @Unique
@@ -101,7 +115,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         try {
             model = bakedTopLevelModels.get(location);
             if(model == null) {
-                UnbakedModel prototype = loadUnbakedModelDynamic(location);
+                UnbakedModel prototype = mfix$loadUnbakedModelDynamic(location);
                 prototype.resolveParents(this::getModel);
                 if(DEBUG_MODEL_LOADS) {
                     ModernFix.LOGGER.info("Baking model {}", location);

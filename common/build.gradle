@@ -6,8 +6,6 @@ architectury {
     common(rootProject.enabled_platforms.split(","))
 }
 
-ext.jei_minecraft_version = "1.20.2" /* temporary, till 1.20 releases */
-
 dependencies {
     // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies
     // Do NOT use other classes from fabric loader
@@ -20,18 +18,8 @@ dependencies {
     modApi("dev.latvian.mods:rhino:${rhino_version}") {
         transitive = false
     }
-    modApi("me.shedaniel:RoughlyEnoughItems-api:${rei_version}") {
-        transitive = false
-    }
-    modCompileOnly("me.shedaniel:RoughlyEnoughItems-fabric:${rei_version}") {
-        transitive = false
-    }
 
     modCompileOnly "curse.maven:spark-361579:${rootProject.spark_version}"
-    // compile against the JEI API but do not include it at runtime
-    modCompileOnly("mezz.jei:jei-${jei_minecraft_version}-common:${jei_version}")
-    modCompileOnly("mezz.jei:jei-${jei_minecraft_version}-gui:${jei_version}")
-    modCompileOnly("mezz.jei:jei-${jei_minecraft_version}-lib:${jei_version}")
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury:${rootProject.architectury_version}"
 }

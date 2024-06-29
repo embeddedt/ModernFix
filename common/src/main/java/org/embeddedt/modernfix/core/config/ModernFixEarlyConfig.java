@@ -163,7 +163,6 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.dynamic_resources", false)
             .put("mixin.feature.direct_stack_trace", false)
             .put("mixin.feature.stalled_chunk_load_detection", false)
-            .put("mixin.perf.blast_search_trees.force", false)
             .put("mixin.bugfix.restore_old_dragon_movement", false)
             .put("mixin.perf.worldgen_allocation", false) // experimental
             .put("mixin.feature.cause_lag_by_disabling_threads", false)

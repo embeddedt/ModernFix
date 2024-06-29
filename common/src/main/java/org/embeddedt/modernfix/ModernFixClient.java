@@ -9,9 +9,6 @@ import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
-import org.embeddedt.modernfix.searchtree.JEIBackedSearchTree;
-import org.embeddedt.modernfix.searchtree.REIBackedSearchTree;
-import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 import org.embeddedt.modernfix.util.ClassInfoManager;
 import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
@@ -42,8 +39,6 @@ public class ModernFixClient {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
             brandingString = ModernFix.NAME + " " + ModernFixPlatformHooks.INSTANCE.getVersionString();
         }
-        SearchTreeProviderRegistry.register(JEIBackedSearchTree.PROVIDER);
-        SearchTreeProviderRegistry.register(REIBackedSearchTree.PROVIDER);
         for(String className : ModernFixPlatformHooks.INSTANCE.getCustomModOptions().get(IntegrationConstants.CLIENT_INTEGRATION_CLASS)) {
             try {
                 CLIENT_INTEGRATIONS.add((ModernFixClientIntegration)Class.forName(className).getDeclaredConstructor().newInstance());

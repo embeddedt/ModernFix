@@ -45,6 +45,7 @@ public class IntegratedWatchdog extends Thread {
             if(delta > MAX_TICK_DELTA) {
                 LOGGER.error("A single server tick has taken {}, more than {} milliseconds", delta, MAX_TICK_DELTA);
                 LOGGER.error(ThreadDumper.obtainThreadDump());
+                delta = 0;
             }
             try {
                 Thread.sleep(MAX_TICK_DELTA - delta);

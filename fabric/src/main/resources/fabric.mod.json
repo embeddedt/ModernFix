@@ -34,8 +34,7 @@
     "modmenu": [ "org.embeddedt.modernfix.fabric.modmenu.ModernFixModMenuApiImpl" ],
     "preLaunch": [
       "org.embeddedt.modernfix.ModernFixPreLaunchFabric"
-    ],
-    "jei_mod_plugin": [ "org.embeddedt.modernfix.searchtree.JEIRuntimeCapturer"]
+    ]
   },
   "mixins": [
     "modernfix-fabric.mixins.json",

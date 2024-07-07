@@ -25,7 +25,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.neoforge.ModernFixConfig;
-import org.embeddedt.modernfix.neoforge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.neoforge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.neoforge.config.NightConfigFixer;
 
@@ -47,7 +46,6 @@ public class ModernFixForge {
         }
         modContainer.registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         ModFileScanDataDeduplicator.deduplicate();
-        ClassLoadHack.loadModClasses();
         //ConfigFixer.replaceConfigHandlers();
     }
 

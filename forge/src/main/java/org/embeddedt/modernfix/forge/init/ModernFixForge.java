@@ -28,7 +28,6 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
-import org.embeddedt.modernfix.forge.classloading.ClassLoadHack;
 import org.embeddedt.modernfix.forge.classloading.ModFileScanDataDeduplicator;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
@@ -53,7 +52,6 @@ public class ModernFixForge {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         PacketHandler.register();
         ModFileScanDataDeduplicator.deduplicate();
-        ClassLoadHack.loadModClasses();
         ConfigFixer.replaceConfigHandlers();
     }
 

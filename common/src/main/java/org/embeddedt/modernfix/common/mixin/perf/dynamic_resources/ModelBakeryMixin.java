@@ -116,15 +116,19 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             model = bakedTopLevelModels.get(location);
             if(model == null) {
                 UnbakedModel prototype = mfix$loadUnbakedModelDynamic(location);
-                prototype.resolveParents(this::getModel);
-                if(DEBUG_MODEL_LOADS) {
-                    ModernFix.LOGGER.info("Baking model {}", location);
-                }
-                this.method_61072(this.textureGetter, location, prototype);
-                model = bakedTopLevelModels.remove(location);
-                if(model == null) {
-                    ModernFix.LOGGER.error("Failed to load model " + location);
+                if(prototype == missingModel) {
                     model = bakedMissingModel;
+                } else {
+                    prototype.resolveParents(this::getModel);
+                    if(DEBUG_MODEL_LOADS) {
+                        ModernFix.LOGGER.info("Baking model {}", location);
+                    }
+                    this.method_61072(this.textureGetter, location, prototype);
+                    model = bakedTopLevelModels.remove(location);
+                    if(model == null) {
+                        ModernFix.LOGGER.error("Failed to load model " + location);
+                        model = bakedMissingModel;
+                    }
                 }
             }
         } finally {

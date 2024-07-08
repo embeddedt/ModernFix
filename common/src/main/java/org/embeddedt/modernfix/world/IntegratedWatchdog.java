@@ -38,6 +38,9 @@ public class IntegratedWatchdog extends Thread {
                 return;
             }
             if(lastTickStart.getAsLong() < 0) {
+                try {
+                    Thread.sleep(10000);
+                } catch(InterruptedException ignored) {}
                 continue;
             }
             long curTime = Util.getMillis();

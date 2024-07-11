@@ -1,8 +1,6 @@
 package org.embeddedt.modernfix.neoforge.init;
 
 import com.google.common.collect.ImmutableList;
-import com.mojang.brigadier.builder.LiteralArgumentBuilder;
-import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -17,7 +15,6 @@ import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.common.NeoForge;
-import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.registries.RegisterEvent;
@@ -26,7 +23,6 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.neoforge.ModernFixConfig;
 import org.embeddedt.modernfix.neoforge.classloading.ModFileScanDataDeduplicator;
-import org.embeddedt.modernfix.neoforge.config.NightConfigFixer;
 
 import java.util.List;
 
@@ -46,19 +42,6 @@ public class ModernFixForge {
         }
         modContainer.registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         ModFileScanDataDeduplicator.deduplicate();
-        //ConfigFixer.replaceConfigHandlers();
-    }
-
-    @SubscribeEvent
-    public void onCommandRegister(RegisterCommandsEvent event) {
-        for(String name : new String[] { "mfsrc"}) {
-            event.getDispatcher().register(LiteralArgumentBuilder.<CommandSourceStack>literal(name)
-                    .requires(source -> source.hasPermission(3))
-                    .executes(context -> {
-                        NightConfigFixer.runReloads();
-                        return 1;
-                    }));
-        }
     }
 
     private void registerItems(RegisterEvent event) {

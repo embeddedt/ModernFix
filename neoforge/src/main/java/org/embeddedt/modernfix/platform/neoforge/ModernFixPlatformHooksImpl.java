@@ -20,17 +20,12 @@ import net.neoforged.neoforge.network.PacketDistributor;
 import net.neoforged.neoforge.server.ServerLifecycleHooks;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
-import org.embeddedt.modernfix.neoforge.config.NightConfigFixer;
-import org.embeddedt.modernfix.neoforge.config.NightConfigWatchThrottler;
 import org.embeddedt.modernfix.neoforge.init.ModernFixForge;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
-import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.tree.ClassNode;
-import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
 
-import java.lang.reflect.Field;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.Optional;
@@ -87,26 +82,10 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
 
     public void injectPlatformSpecificHacks() {
 
-        /* https://github.com/FabricMC/Mixin/pull/99 */
-        try {
-            Field groupMembersField = InjectorGroupInfo.class.getDeclaredField("members");
-            groupMembersField.setAccessible(true);
-            Field noGroupField = InjectorGroupInfo.Map.class.getDeclaredField("NO_GROUP");
-            noGroupField.setAccessible(true);
-            InjectorGroupInfo noGroup = (InjectorGroupInfo)noGroupField.get(null);
-            groupMembersField.set(noGroup, new DummyList<>());
-        } catch(NoSuchFieldException ignored) {
-            // Connector will replace FML's mixin with one which already has the fix, don't bother logging
-        } catch(RuntimeException | ReflectiveOperationException e) {
-            ModernFixMixinPlugin.instance.logger.error("Failed to patch mixin memory leak", e);
-        }
-
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnForge")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.start("launch"), "Failed to start profiler");
         }
 
-        NightConfigFixer.monitorFileWatcher();
-        NightConfigWatchThrottler.throttle();
     }
 
     public void applyASMTransformers(String mixinClassName, ClassNode targetClass) {

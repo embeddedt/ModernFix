@@ -1,6 +1,5 @@
 package org.embeddedt.modernfix.searchtree;
 
-import com.google.common.collect.ImmutableList;
 import mezz.jei.api.ingredients.ITypedIngredient;
 import mezz.jei.gui.ingredients.IngredientFilter;
 import mezz.jei.gui.ingredients.IngredientFilterApi;
@@ -18,6 +17,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Stream;
 
 /**
  * Uses JEI to handle search tree lookups.
@@ -72,19 +72,19 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
     private List<ItemStack> searchJEI(IngredientFilter filter, String pSearchText) {
         if(!pSearchText.equals(lastSearchText)) {
             listCache.clear();
-            List<ITypedIngredient<?>> ingredients;
+            Stream<ITypedIngredient<?>> ingredients;
             String finalSearchTerm = filteringByTag ? ("$" + pSearchText) : pSearchText;
             try {
-                ingredients = (List<ITypedIngredient<?>>)getIngredientListUncached.invokeExact(filter, finalSearchTerm);
+                ingredients = (Stream<ITypedIngredient<?>>)getIngredientListUncached.invokeExact(filter, finalSearchTerm);
             } catch(Throwable e) {
                 ModernFix.LOGGER.error("Error searching", e);
-                ingredients = ImmutableList.of();
+                ingredients = Stream.empty();
             }
-            for(ITypedIngredient<?> ingredient : ingredients) {
+            ingredients.forEach(ingredient -> {
                 if(ingredient.getIngredient() instanceof ItemStack) {
                     listCache.add((ItemStack)ingredient.getIngredient());
                 }
-            }
+            });
             lastSearchText = pSearchText;
         }
         return listCache;

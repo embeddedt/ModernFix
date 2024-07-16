@@ -6,7 +6,7 @@ architectury {
     common(rootProject.enabled_platforms.split(","))
 }
 
-ext.jei_minecraft_version = "1.19.4" /* temporary, till 1.20 releases */
+ext.jei_minecraft_version = "1.20.1" /* temporary, till 1.20 releases */
 
 dependencies {
     // We depend on fabric loader here to use the fabric @Environment annotations and get the mixin dependencies

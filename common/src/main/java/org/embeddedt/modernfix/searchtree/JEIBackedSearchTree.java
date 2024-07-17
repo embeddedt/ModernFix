@@ -80,7 +80,7 @@ public class JEIBackedSearchTree extends DummySearchTree<ItemStack> {
                 ModernFix.LOGGER.error("Error searching", e);
                 ingredients = Stream.empty();
             }
-            ingredients.forEach(ingredient -> {
+            ingredients.toList().forEach(ingredient -> {
                 if(ingredient.getIngredient() instanceof ItemStack) {
                     listCache.add((ItemStack)ingredient.getIngredient());
                 }

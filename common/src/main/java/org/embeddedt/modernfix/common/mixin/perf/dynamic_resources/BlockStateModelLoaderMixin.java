@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 import com.google.common.collect.ImmutableList;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMaps;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -51,7 +52,8 @@ public abstract class BlockStateModelLoaderMixin implements IBlockStateModelLoad
         var optionalBlock = BuiltInRegistries.BLOCK.getOptional(location.id());
         if(optionalBlock.isPresent()) {
             try {
-                filteredStates = ModelBakeryHelpers.getBlockStatesForMRL(optionalBlock.get().getStateDefinition(), location);
+                // Only filter states if we are not in the loading overlay
+                filteredStates = Minecraft.getInstance().getOverlay() == null ? ModelBakeryHelpers.getBlockStatesForMRL(optionalBlock.get().getStateDefinition(), location) : null;
             } catch(RuntimeException e) {
                 ModernFix.LOGGER.error("Exception filtering states on {}", location, e);
                 filteredStates = null;

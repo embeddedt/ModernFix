@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.neoforge.dynresources;
 
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableSet;
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
@@ -152,6 +153,11 @@ public class ModelBakeEventHelper {
             }
 
             @Override
+            public Set<Entry<ModelResourceLocation, BakedModel>> entrySet() {
+                return new DynamicModelEntrySet(this, ourModelLocations);
+            }
+
+            @Override
             public void replaceAll(BiFunction<? super ModelResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
                 ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. Some hacks will be used to keep this fast, but they may not be 100% compatible.", modId);
                 List<ModelResourceLocation> locations = new ArrayList<>(keySet());
@@ -177,5 +183,62 @@ public class ModelBakeEventHelper {
                 }
             }
         };
+    }
+
+    private static class DynamicModelEntrySet extends AbstractSet<Map.Entry<ModelResourceLocation, BakedModel>> {
+        private final Map<ModelResourceLocation, BakedModel> modelRegistry;
+        private final Set<ModelResourceLocation> modelLocations;
+
+        private DynamicModelEntrySet(Map<ModelResourceLocation, BakedModel> modelRegistry, Set<ModelResourceLocation> modelLocations) {
+            this.modelRegistry = modelRegistry;
+            this.modelLocations = modelLocations;
+        }
+
+        @Override
+        public Iterator<Map.Entry<ModelResourceLocation, BakedModel>> iterator() {
+            return Iterators.transform(Iterators.unmodifiableIterator(this.modelLocations.iterator()), DynamicModelEntry::new);
+        }
+
+        @Override
+        public boolean contains(Object o) {
+            if(o instanceof Map.Entry entry) {
+                return modelRegistry.containsKey(entry.getKey());
+            } else {
+                return false;
+            }
+        }
+
+        @Override
+        public int size() {
+            return modelRegistry.size();
+        }
+
+        @Override
+        public boolean removeAll(Collection<?> c) {
+            throw new UnsupportedOperationException();
+        }
+
+        private class DynamicModelEntry implements Map.Entry<ModelResourceLocation, BakedModel> {
+            private final ModelResourceLocation location;
+
+            private DynamicModelEntry(ModelResourceLocation location) {
+                this.location = location;
+            }
+
+            @Override
+            public ModelResourceLocation getKey() {
+                return this.location;
+            }
+
+            @Override
+            public BakedModel getValue() {
+                return modelRegistry.get(this.location);
+            }
+
+            @Override
+            public BakedModel setValue(BakedModel value) {
+                return modelRegistry.put(this.location, value);
+            }
+        }
     }
 }

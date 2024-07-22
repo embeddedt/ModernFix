@@ -57,7 +57,7 @@ dependencies {
     modCompileOnly files("deps/ctm.jar")
 
     modCompileOnly("curse.maven:supermartijncore-454372:4455391")
-    modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
+    modCompileOnly("vazkii.patchouli:Patchouli:1.20.6-86")
 
     // runtime remapping at home
     for (extraModJar in fileTree(dir: extraModsDir, include: '*.jar')) {

@@ -14,20 +14,20 @@ dependencies {
     annotationProcessor 'com.google.auto.service:auto-service:1.1.1'
     compileOnly 'com.google.auto.service:auto-service:1.1.1'
 
-    implementation 'com.google.code.gson:gson:2.10.1'
-    shadow 'com.google.code.gson:gson:2.10.1'
-    implementation 'com.google.auto:auto-common:1.2.1'
-    shadow 'com.google.auto:auto-common:1.2.1'
-    implementation 'com.google.guava:guava:21.0'
-    shadow 'com.google.guava:guava:21.0'
+    implementation 'com.google.code.gson:gson:2.11.0'
+    shadow 'com.google.code.gson:gson:2.11.0'
+    implementation 'com.google.auto:auto-common:1.2.2'
+    shadow 'com.google.auto:auto-common:1.2.2'
+    implementation 'com.google.guava:guava:33.2.1-jre'
+    shadow 'com.google.guava:guava:33.2.1-jre'
 
     implementation project(":annotations")
     shadow project(":annotations")
     // Shadow annotations
-    implementation 'net.fabricmc:sponge-mixin:0.12.5+'
+    implementation 'net.fabricmc:sponge-mixin:0.15.0+'
     implementation "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
-    implementation 'net.minecraftforge:mergetool:1.1.7'
-    implementation 'net.neoforged:mergetool:2.0.2'
+    implementation 'net.minecraftforge:mergetool:1.2.3'
+    implementation 'net.neoforged:mergetool:2.0.5'
 }
 
 tasks.withType(JavaCompile) {

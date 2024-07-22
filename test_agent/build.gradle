@@ -8,8 +8,8 @@ group 'org.embeddedt'
 archivesBaseName = 'modernfix-test-agent'
 version '1.0'
 
-sourceCompatibility = '1.8'
-targetCompatibility = '1.8'
+sourceCompatibility = '21'
+targetCompatibility = '21'
 
 repositories {
     mavenCentral()
@@ -36,9 +36,9 @@ shadowJar {
  */
 dependencies {
     compileOnly "net.fabricmc:fabric-loader:${rootProject.fabric_loader_version}"
-    implementation "org.ow2.asm:asm-tree:9.1"
-    implementation "org.ow2.asm:asm-commons:9.1"
-    implementation "org.ow2.asm:asm-util:9.1"
+    implementation "org.ow2.asm:asm-tree:9.7"
+    implementation "org.ow2.asm:asm-commons:9.7"
+    implementation "org.ow2.asm:asm-util:9.7"
 
     //implementation('net.bytebuddy:byte-buddy-agent:1.12.22')
 }

@@ -1,11 +1,11 @@
 plugins {
     id "architectury-plugin" version "3.4-SNAPSHOT"
-    id "dev.architectury.loom" version "1.6.396" apply false
+    id "dev.architectury.loom" version "1.7.410" apply false
     id "maven-publish"
     id 'com.matthewprenger.cursegradle' version '1.4.0' apply false
-    id 'com.palantir.git-version' version '1.0.0'
-    id 'org.ajoberstar.grgit' version '5.2.0'
-    id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '1.79.0'
+    id 'com.palantir.git-version' version '3.1.0'
+    id 'org.ajoberstar.grgit' version '5.2.2'
+    id 'se.bjurr.gitchangelog.git-changelog-gradle-plugin' version '2.1.2'
     id "com.modrinth.minotaur" version "2.+" apply false
     id("com.diffplug.spotless") version "6.25.0" apply false
     id 'modernfix.common-conventions' apply false
@@ -29,7 +29,7 @@ tasks.withType(JavaCompile).configureEach {
     // The Minecraft launcher currently installs Java 8 for users, so your mod probably wants to target Java 8 too
     // JDK 9 introduced a new way of specifying this that will make sure no newer classes or methods are used.
     // We'll use that if it's available, but otherwise we'll use the older option.
-    def targetVersion = 8
+    def targetVersion = 21
     /*
     if (JavaVersion.current().isJava9Compatible()) {
         options.release = targetVersion

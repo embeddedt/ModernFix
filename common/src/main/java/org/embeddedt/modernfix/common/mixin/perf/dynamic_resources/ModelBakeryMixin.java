@@ -6,6 +6,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.BlockModelRotation;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -14,7 +15,9 @@ import net.minecraft.core.DefaultedRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IBlockStateModelLoader;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.util.DynamicOverridableMap;
@@ -128,6 +131,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                     if(model == null) {
                         ModernFix.LOGGER.error("Failed to load model " + location);
                         model = bakedMissingModel;
+                    }
+                    for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
+                        model = integration.onBakedModelLoad(location, prototype, model, BlockModelRotation.X0_Y0, (ModelBakery)(Object)this, this.textureGetter);
                     }
                 }
             }

@@ -13,6 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.util.CacheUtil;
 import org.embeddedt.modernfix.util.LambdaMap;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -45,12 +46,14 @@ public class ModelManagerMixin {
 
     @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelManager;loadBlockModels(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
     private CompletableFuture<Map<ResourceLocation, BlockModel>> deferBlockModelLoad(ResourceManager manager, Executor executor) {
-        return CompletableFuture.completedFuture(new LambdaMap<>(location -> loadSingleBlockModel(manager, location)));
+        var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, location), 100L);
+        return CompletableFuture.completedFuture(new LambdaMap<>(location -> cache.getUnchecked(location)));
     }
 
     @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelManager;loadBlockStates(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
     private CompletableFuture<Map<ResourceLocation, List<ModelBakery.LoadedJson>>> deferBlockStateLoad(ResourceManager manager, Executor executor) {
-        return CompletableFuture.completedFuture(new LambdaMap<>(location -> loadSingleBlockState(manager, location)));
+        var cache = CacheUtil.<ResourceLocation, List<ModelBakery.LoadedJson>>simpleCacheForLambda(location -> loadSingleBlockState(manager, location), 100L);
+        return CompletableFuture.completedFuture(new LambdaMap<>(location -> cache.getUnchecked(location)));
     }
 
     @Redirect(method = "loadModels", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))

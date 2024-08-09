@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.blockstate;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.world.level.block.state.properties.Property;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -14,6 +15,7 @@ import java.util.*;
  */
 public class FakeStateMap<S> implements Map<Map<Property<?>, Comparable<?>>, S> {
     private final Map<Property<?>, Comparable<?>>[] keys;
+    private Map<Map<Property<?>, Comparable<?>>, S> fastLookup;
     private final Object[] values;
     private int usedSlots;
     public FakeStateMap(int numStates) {
@@ -34,22 +36,39 @@ public class FakeStateMap<S> implements Map<Map<Property<?>, Comparable<?>>, S> 
 
     @Override
     public boolean containsKey(Object o) {
-        throw new UnsupportedOperationException();
+        return getFastLookup().containsKey(o);
     }
 
     @Override
     public boolean containsValue(Object o) {
-        throw new UnsupportedOperationException();
+        return getFastLookup().containsValue(o);
+    }
+
+    @SuppressWarnings("unchecked")
+    private Map<Map<Property<?>, Comparable<?>>, S> getFastLookup() {
+        if(fastLookup == null) {
+            var map = new Object2ObjectOpenHashMap<Map<Property<?>, Comparable<?>>, S>(usedSlots);
+            Map<Property<?>, Comparable<?>>[] keys = this.keys;
+            Object[] values = this.values;
+            for(int i = 0; i < usedSlots; i++) {
+                map.put(keys[i], (S)values[i]);
+            }
+            fastLookup = map;
+        }
+        return fastLookup;
     }
 
     @Override
     public S get(Object o) {
-        throw new UnsupportedOperationException();
+        return getFastLookup().get(o);
     }
 
     @Nullable
     @Override
     public S put(Map<Property<?>, Comparable<?>> propertyComparableMap, S s) {
+        if(fastLookup != null) {
+            throw new IllegalStateException("Cannot populate map after fast lookup is built");
+        }
         keys[usedSlots] = propertyComparableMap;
         values[usedSlots] = s;
         usedSlots++;
@@ -70,7 +89,7 @@ public class FakeStateMap<S> implements Map<Map<Property<?>, Comparable<?>>, S> 
 
     @Override
     public void clear() {
-        for(int i = 0; i < this.keys.length; i++) {
+        for(int i = 0; i < usedSlots; i++) {
             this.keys[i] = null;
             this.values[i] = null;
         }

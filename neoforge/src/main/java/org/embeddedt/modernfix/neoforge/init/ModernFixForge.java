@@ -22,7 +22,6 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.neoforge.ModernFixConfig;
-import org.embeddedt.modernfix.neoforge.classloading.ModFileScanDataDeduplicator;
 
 import java.util.List;
 
@@ -41,7 +40,6 @@ public class ModernFixForge {
             NeoForge.EVENT_BUS.register(new ModernFixClientForge(modContainer, modBus));
         }
         modContainer.registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
-        ModFileScanDataDeduplicator.deduplicate();
     }
 
     private void registerItems(RegisterEvent event) {

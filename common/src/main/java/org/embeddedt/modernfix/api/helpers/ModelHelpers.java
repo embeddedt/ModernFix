@@ -47,7 +47,7 @@ public final class ModelHelpers {
      * @return a fake map of the top-level models
      */
     public static Map<ResourceLocation, BakedModel> createFakeTopLevelMap(BiFunction<ResourceLocation, ModelState, BakedModel> modelGetter) {
-        return new DynamicMap<>(location -> modelGetter.apply(location, BlockModelRotation.X0_Y0));
+        return new DynamicMap<>(ResourceLocation.class, location -> modelGetter.apply(location, BlockModelRotation.X0_Y0));
     }
 
     /**

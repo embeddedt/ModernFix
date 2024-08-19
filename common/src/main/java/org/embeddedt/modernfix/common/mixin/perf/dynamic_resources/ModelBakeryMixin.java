@@ -76,7 +76,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow @Final public static ModelResourceLocation MISSING_MODEL_VARIANT;
 
-    private final Map<ModelResourceLocation, BakedModel> mfix$emulatedBakedRegistry = new DynamicOverridableMap<>(this::loadBakedModelDynamic);
+    private final Map<ModelResourceLocation, BakedModel> mfix$emulatedBakedRegistry = new DynamicOverridableMap<>(ModelResourceLocation.class, this::loadBakedModelDynamic);
 
     @Override
     public UnbakedModel mfix$loadUnbakedModelDynamic(ModelResourceLocation location) {

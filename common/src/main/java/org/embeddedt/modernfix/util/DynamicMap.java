@@ -11,8 +11,10 @@ import java.util.function.Function;
 
 public class DynamicMap<K, V> implements Map<K, V> {
     protected final Function<K, V> function;
+    private final Class<K> keyClass;
 
-    public DynamicMap(Function<K, V> function) {
+    public DynamicMap(Class<K> keyClass, Function<K, V> function) {
+        this.keyClass = keyClass;
         this.function = function;
     }
 
@@ -38,6 +40,9 @@ public class DynamicMap<K, V> implements Map<K, V> {
 
     @Override
     public V get(Object o) {
+        if(!keyClass.isInstance(o)) {
+            return null;
+        }
         return function.apply((K)o);
     }
 

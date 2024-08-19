@@ -13,7 +13,7 @@ import java.util.function.Function;
 
 public class DynamicInt2ObjectMap<V> extends DynamicMap<Integer, V> implements Int2ObjectMap<V> {
     public DynamicInt2ObjectMap(Function<Integer, V> function) {
-        super(function);
+        super(Integer.class, function);
     }
 
     @Override

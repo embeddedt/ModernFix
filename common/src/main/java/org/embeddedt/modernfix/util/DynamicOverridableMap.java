@@ -10,8 +10,8 @@ import java.util.function.Function;
 public class DynamicOverridableMap<K, V> extends DynamicMap<K, V> {
     private final Map<K, V> overrideMap;
 
-    public DynamicOverridableMap(Function<K, V> function) {
-        super(function);
+    public DynamicOverridableMap(Class<K> keyClass, Function<K, V> function) {
+        super(keyClass, function);
         overrideMap = new Object2ObjectOpenHashMap<>();
     }
 

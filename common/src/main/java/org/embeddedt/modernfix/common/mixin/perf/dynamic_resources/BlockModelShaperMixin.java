@@ -29,7 +29,7 @@ public class BlockModelShaperMixin {
     @Inject(method = { "<init>", "replaceCache" }, at = @At("RETURN"))
     private void replaceModelMap(CallbackInfo ci) {
         // replace the backing map for mods which will access it
-        this.modelByStateCache = new DynamicOverridableMap<>(state -> modelManager.getModel(ModelLocationCache.get(state)));
+        this.modelByStateCache = new DynamicOverridableMap<>(BlockState.class, state -> modelManager.getModel(ModelLocationCache.get(state)));
         // Clear the cached models on blockstate objects
         for(Block block : BuiltInRegistries.BLOCK) {
             for(BlockState state : block.getStateDefinition().getPossibleStates()) {

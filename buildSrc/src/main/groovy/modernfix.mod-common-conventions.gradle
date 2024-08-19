@@ -16,7 +16,7 @@ dependencies {
     mappings loom.layered() {
         officialMojangMappings()
         if(rootProject.hasProperty("parchment_version")) {
-            parchment("org.parchmentmc.data:parchment-${minecraft_version}:${parchment_version}@zip")
+            parchment("org.parchmentmc.data:parchment-${parchment_mc_version}:${parchment_version}@zip")
         }
     }
     implementation project(":annotations")

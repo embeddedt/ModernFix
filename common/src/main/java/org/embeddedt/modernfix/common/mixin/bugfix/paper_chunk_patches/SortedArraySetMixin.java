@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.bugfix.paper_chunk_patches;
 
 import net.minecraft.util.SortedArraySet;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 
@@ -9,6 +10,7 @@ import java.util.Arrays;
 import java.util.function.Predicate;
 
 @Mixin(SortedArraySet.class)
+@RequiresMod("!moonrise")
 public abstract class SortedArraySetMixin<T> extends AbstractSet<T> {
     @Shadow private int size;
 

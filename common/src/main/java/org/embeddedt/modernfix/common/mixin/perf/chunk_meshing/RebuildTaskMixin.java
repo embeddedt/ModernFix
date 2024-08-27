@@ -5,6 +5,7 @@ import net.minecraft.client.renderer.chunk.RenderChunkRegion;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.util.blockpos.SectionBlockPosIterator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -12,6 +13,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(targets = { "net/minecraft/client/renderer/chunk/ChunkRenderDispatcher$RenderChunk$RebuildTask"}, priority = 2000)
 @ClientOnlyMixin
+@RequiresMod("!fluidlogged")
 public class RebuildTaskMixin {
     /**
      * @author embeddedt

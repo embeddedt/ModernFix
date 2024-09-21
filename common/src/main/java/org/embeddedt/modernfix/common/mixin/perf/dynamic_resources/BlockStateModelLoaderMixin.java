@@ -52,8 +52,8 @@ public abstract class BlockStateModelLoaderMixin implements IBlockStateModelLoad
         var optionalBlock = BuiltInRegistries.BLOCK.getOptional(location.id());
         if(optionalBlock.isPresent()) {
             try {
-                // Only filter states if we are not in the loading overlay
-                filteredStates = Minecraft.getInstance().getOverlay() == null ? ModelBakeryHelpers.getBlockStatesForMRL(optionalBlock.get().getStateDefinition(), location) : null;
+                // Only filter states if we are in a world and not in the loading overlay
+                filteredStates = (Minecraft.getInstance().getOverlay() == null && Minecraft.getInstance().level != null) ? ModelBakeryHelpers.getBlockStatesForMRL(optionalBlock.get().getStateDefinition(), location) : null;
             } catch(RuntimeException e) {
                 ModernFix.LOGGER.error("Exception filtering states on {}", location, e);
                 filteredStates = null;

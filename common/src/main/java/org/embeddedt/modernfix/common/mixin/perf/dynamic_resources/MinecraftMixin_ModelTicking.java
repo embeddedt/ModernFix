@@ -15,7 +15,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class MinecraftMixin_ModelTicking {
     @Shadow public abstract ModelManager getModelManager();
 
-    @Inject(method = "tick", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/tutorial/Tutorial;tick()V"))
+    @Inject(method = "tick", at = @At(value = "RETURN"))
     private void tickModels(CallbackInfo ci) {
         ((IExtendedModelManager)this.getModelManager()).mfix$tick();
     }

@@ -28,6 +28,7 @@ public class LRUMap<K, V> extends Object2ObjectLinkedOpenHashMap<K, V> {
     }
 
     public void dropEntriesToMeetSize(int size) {
+        int expectedQuota = size;
         // Increase allowed size quota to include permanent entries
         size += permanentEntries.size();
         int prevSize = size();
@@ -39,6 +40,7 @@ public class LRUMap<K, V> extends Object2ObjectLinkedOpenHashMap<K, V> {
                     iterator.remove();
                 }
             }
+            trim(size() + expectedQuota);
             if(ModernFixPlatformHooks.INSTANCE.isDevEnv()) {
                 ModernFix.LOGGER.warn("Trimmed map from {} to {} entries", prevSize, size);
             }

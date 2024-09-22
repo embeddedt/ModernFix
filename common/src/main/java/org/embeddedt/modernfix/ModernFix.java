@@ -63,14 +63,19 @@ public class ModernFix {
         ClassInfoManager.clear();
     }
 
+    @SuppressWarnings("ConstantValue")
     public void onServerDead(MinecraftServer server) {
         /* Clear as much data from the integrated server as possible, in case a mod holds on to it */
         try {
             for(ServerLevel level : server.getAllLevels()) {
                 ChunkMap chunkMap = level.getChunkSource().chunkMap;
-                chunkMap.updatingChunkMap.clear();
-                chunkMap.visibleChunkMap.clear();
-                chunkMap.pendingUnloads.clear();
+                // Null check for mods that replace chunk system
+                if(chunkMap.updatingChunkMap != null)
+                    chunkMap.updatingChunkMap.clear();
+                if(chunkMap.visibleChunkMap != null)
+                    chunkMap.visibleChunkMap.clear();
+                if(chunkMap.pendingUnloads != null)
+                    chunkMap.pendingUnloads.clear();
             }
         } catch(RuntimeException e) {
             ModernFix.LOGGER.error("Couldn't clear chunk data", e);

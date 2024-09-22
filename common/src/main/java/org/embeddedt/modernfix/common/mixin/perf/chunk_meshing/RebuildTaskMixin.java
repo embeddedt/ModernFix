@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.common.mixin.perf.chunk_meshing;
 import net.minecraft.client.renderer.chunk.SectionCompiler;
 import net.minecraft.core.BlockPos;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.util.blockpos.SectionBlockPosIterator;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -10,6 +11,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 @Mixin(value = SectionCompiler.class, priority = 2000)
 @ClientOnlyMixin
+@RequiresMod("!fluidlogged")
 public class RebuildTaskMixin {
     /**
      * @author embeddedt

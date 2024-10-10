@@ -9,7 +9,7 @@ import org.spongepowered.asm.mixin.Shadow;
 /* Idea from Lithium for 1.19.3 */
 @Mixin(Biome.class)
 public abstract class BiomeMixin {
-    @Shadow protected abstract float getHeightAdjustedTemperature(BlockPos pos);
+    @Shadow protected abstract float getHeightAdjustedTemperature(BlockPos pos, int i);
 
     /**
      * @author 2No2Name
@@ -18,7 +18,7 @@ public abstract class BiomeMixin {
      * @return
      */
     @Overwrite
-    private float getTemperature(BlockPos pos) {
-        return this.getHeightAdjustedTemperature(pos);
+    private float getTemperature(BlockPos pos, int i) {
+        return this.getHeightAdjustedTemperature(pos, i);
     }
 }

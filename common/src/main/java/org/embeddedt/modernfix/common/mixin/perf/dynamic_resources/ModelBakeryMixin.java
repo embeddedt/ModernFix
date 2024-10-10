@@ -122,7 +122,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                 if(prototype == missingModel) {
                     model = bakedMissingModel;
                 } else {
-                    prototype.resolveParents(this::getModel);
+                    prototype.resolveDependencies(this::getModel);
                     if(DEBUG_MODEL_LOADS) {
                         ModernFix.LOGGER.info("Baking model {}", location);
                     }

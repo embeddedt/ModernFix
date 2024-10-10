@@ -5,18 +5,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.client.renderer.entity.state.EntityRenderState;
 import net.minecraft.world.entity.Entity;
 
-public class ErroredEntityRenderer<T extends Entity> extends EntityRenderer<T> {
+public class ErroredEntityRenderer<T extends Entity> extends EntityRenderer<T, EntityRenderState> {
     public ErroredEntityRenderer(EntityRendererProvider.Context arg) {
         super(arg);
-    }
-
-    @Override
-    public ResourceLocation getTextureLocation(T entity) {
-        return TextureAtlas.LOCATION_BLOCKS;
     }
 
     @Override
@@ -25,6 +19,11 @@ public class ErroredEntityRenderer<T extends Entity> extends EntityRenderer<T> {
     }
 
     @Override
-    public void render(T entity, float entityYaw, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
+    public EntityRenderState createRenderState() {
+        return null;
+    }
+
+    @Override
+    public void render(EntityRenderState entityRenderState, PoseStack poseStack, MultiBufferSource multiBufferSource, int i) {
     }
 }

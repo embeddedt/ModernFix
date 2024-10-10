@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.resources;
 
 import net.minecraft.ReportType;
 import net.minecraft.ReportedException;
+import net.minecraft.TracingExecutor;
 import net.minecraft.server.Bootstrap;
 import org.embeddedt.modernfix.ModernFix;
 
@@ -12,10 +13,10 @@ import java.util.concurrent.ForkJoinWorkerThread;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class ReloadExecutor {
-    public static ExecutorService createCustomResourceReloadExecutor() {
+    public static TracingExecutor createCustomResourceReloadExecutor() {
         ClassLoader loader = ReloadExecutor.class.getClassLoader();
         AtomicInteger workerCount = new AtomicInteger(0);
-        return new ForkJoinPool(ForkJoinPool.getCommonPoolParallelism(), (forkJoinPool) -> {
+        return new TracingExecutor(new ForkJoinPool(ForkJoinPool.getCommonPoolParallelism(), (forkJoinPool) -> {
             ForkJoinWorkerThread forkJoinWorkerThread = new ForkJoinWorkerThread(forkJoinPool) {
                 protected void onTermination(Throwable throwOnTermination) {
                     if (throwOnTermination != null) {
@@ -31,7 +32,7 @@ public class ReloadExecutor {
             forkJoinWorkerThread.setContextClassLoader(loader);
             forkJoinWorkerThread.setName("Worker-ResourceReload-" + workerCount.getAndIncrement());
             return forkJoinWorkerThread;
-        }, ReloadExecutor::handleException, true);
+        }, ReloadExecutor::handleException, true));
     }
 
     private static void handleException(Thread thread, Throwable throwable) {

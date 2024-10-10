@@ -38,18 +38,13 @@ public class SafeBlockGetter implements BlockGetter {
     }
 
     @Override
-    public int getMaxBuildHeight() {
-        return this.wrapped.getMaxBuildHeight();
+    public int getMaxY() {
+        return this.wrapped.getMaxY();
     }
 
     @Override
-    public int getMaxLightLevel() {
-        return this.wrapped.getMaxLightLevel();
-    }
-
-    @Override
-    public int getMinBuildHeight() {
-        return this.wrapped.getMinBuildHeight();
+    public int getMinY() {
+        return this.wrapped.getMinY();
     }
 
     @Override

@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix;
 
 import net.minecraft.SharedConstants;
+import net.minecraft.TracingExecutor;
 import net.minecraft.Util;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
@@ -14,7 +15,6 @@ import org.embeddedt.modernfix.resources.ReloadExecutor;
 import org.embeddedt.modernfix.util.ClassInfoManager;
 
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.ExecutorService;
 
 // The value here should match an entry in the META-INF/mods.toml file
 public class ModernFix {
@@ -31,7 +31,7 @@ public class ModernFix {
     // Used to skip computing the blockstate caches twice
     public static boolean runningFirstInjection = false;
 
-    private static ExecutorService resourceReloadService = null;
+    private static TracingExecutor resourceReloadService = null;
 
     static {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.dedicated_reload_executor.ReloadExecutor")) {
@@ -41,7 +41,7 @@ public class ModernFix {
         }
     }
 
-    public static ExecutorService resourceReloadExecutor() {
+    public static TracingExecutor resourceReloadExecutor() {
         return resourceReloadService;
     }
 

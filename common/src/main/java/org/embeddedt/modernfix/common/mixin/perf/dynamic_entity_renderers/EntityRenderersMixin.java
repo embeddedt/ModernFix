@@ -22,7 +22,7 @@ public class EntityRenderersMixin {
     @Shadow @Final private static Map<EntityType<?>, EntityRendererProvider<?>> PROVIDERS;
 
     @Inject(method = "createEntityRenderers", at = @At("HEAD"), cancellable = true)
-    private static void createDynamicRendererLoader(EntityRendererProvider.Context context, CallbackInfoReturnable<Map<EntityType<?>, EntityRenderer<?>>> cir) {
+    private static void createDynamicRendererLoader(EntityRendererProvider.Context context, CallbackInfoReturnable<Map<EntityType<?>, EntityRenderer<?, ?>>> cir) {
         cir.setReturnValue(new EntityRendererMap(PROVIDERS, context));
         ModernFix.LOGGER.info("Dynamic entity renderer hook setup");
     }

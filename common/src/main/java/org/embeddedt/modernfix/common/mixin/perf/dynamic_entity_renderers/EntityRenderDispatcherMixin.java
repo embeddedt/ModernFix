@@ -19,19 +19,19 @@ import java.util.Map;
 @Mixin(EntityRenderDispatcher.class)
 @ClientOnlyMixin
 public class EntityRenderDispatcherMixin {
-    @Shadow private Map<EntityType<?>, EntityRenderer<?>> renderers;
+    @Shadow private Map<EntityType<?>, EntityRenderer<?, ?>> renderers;
 
     private EntityRendererMap mfix$dynamicRenderers;
 
     @Inject(method = "getRenderer", at = @At("RETURN"), cancellable = true)
-    private <T extends Entity> void checkNullness(T entity, CallbackInfoReturnable<EntityRenderer<? super T>> cir) {
+    private <T extends Entity> void checkNullness(T entity, CallbackInfoReturnable<EntityRenderer<? super T, ?>> cir) {
         // apparently some mods yeet the renderers map and cause issues
         if(cir.getReturnValue() == null)
-            cir.setReturnValue((EntityRenderer<? super T>)mfix$dynamicRenderers.get(entity.getType()));
+            cir.setReturnValue((EntityRenderer<? super T, ?>)mfix$dynamicRenderers.get(entity.getType()));
     }
 
     @Redirect(method = "onResourceManagerReload", at = @At(value = "FIELD", opcode = Opcodes.PUTFIELD, target = "Lnet/minecraft/client/renderer/entity/EntityRenderDispatcher;renderers:Ljava/util/Map;"))
-    private void setRendererField(EntityRenderDispatcher instance, Map<EntityType<?>, EntityRenderer<?>> incomingMap) {
+    private void setRendererField(EntityRenderDispatcher instance, Map<EntityType<?>, EntityRenderer<?, ?>> incomingMap) {
         this.renderers = incomingMap;
         this.mfix$dynamicRenderers = (EntityRendererMap)incomingMap;
     }

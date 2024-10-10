@@ -17,9 +17,9 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ExecutionException;
 
-public class EntityRendererMap implements Map<EntityType<?>, EntityRenderer<?>> {
+public class EntityRendererMap implements Map<EntityType<?>, EntityRenderer<?, ?>> {
     private final Map<EntityType<?>, EntityRendererProvider<?>> rendererProviders;
-    private final LoadingCache<EntityType<?>, EntityRenderer<?>> rendererMap;
+    private final LoadingCache<EntityType<?>, EntityRenderer<?, ?>> rendererMap;
     private final EntityRendererProvider.Context context;
 
     public EntityRendererMap(Map<EntityType<?>, EntityRendererProvider<?>> rendererProviders, EntityRendererProvider.Context context) {
@@ -28,12 +28,12 @@ public class EntityRendererMap implements Map<EntityType<?>, EntityRenderer<?>> 
         this.rendererMap = CacheBuilder.newBuilder().build(new RenderConstructor());
     }
 
-    class RenderConstructor extends CacheLoader<EntityType<?>, EntityRenderer<?>> {
+    class RenderConstructor extends CacheLoader<EntityType<?>, EntityRenderer<?, ?>> {
         @Override
-        public EntityRenderer<?> load(EntityType<?> key) throws Exception {
+        public EntityRenderer<?, ?> load(EntityType<?> key) throws Exception {
             EntityRendererProvider<?> provider = rendererProviders.get(key);
             synchronized(EntityRenderers.class) {
-                EntityRenderer<?> renderer;
+                EntityRenderer<?, ?> renderer;
                 try {
                     if(provider == null)
                         throw new RuntimeException("Provider not registered");
@@ -69,9 +69,9 @@ public class EntityRendererMap implements Map<EntityType<?>, EntityRenderer<?>> 
     }
 
     @Override
-    public EntityRenderer<?> get(Object o) {
+    public EntityRenderer<?, ?> get(Object o) {
         try {
-            EntityRenderer<?> renderer = rendererMap.get((EntityType<?>)o);
+            EntityRenderer<?, ?> renderer = rendererMap.get((EntityType<?>)o);
             if(renderer == null)
                 throw new AssertionError("Returned entity renderer should never be null");
             return renderer;
@@ -84,21 +84,21 @@ public class EntityRendererMap implements Map<EntityType<?>, EntityRenderer<?>> 
 
     @Nullable
     @Override
-    public EntityRenderer<?> put(EntityType<?> entityType, EntityRenderer<?> entityRenderer) {
-        EntityRenderer<?> old = rendererMap.getIfPresent(entityType);
+    public EntityRenderer<?, ?> put(EntityType<?> entityType, EntityRenderer<?, ?> entityRenderer) {
+        EntityRenderer<?, ?> old = rendererMap.getIfPresent(entityType);
         rendererMap.put(entityType, entityRenderer);
         return old;
     }
 
     @Override
-    public EntityRenderer<?> remove(Object o) {
-        EntityRenderer<?> r = rendererMap.getIfPresent(o);
+    public EntityRenderer<?, ?> remove(Object o) {
+        EntityRenderer<?, ?> r = rendererMap.getIfPresent(o);
         rendererMap.invalidate(o);
         return r;
     }
 
     @Override
-    public void putAll(@NotNull Map<? extends EntityType<?>, ? extends EntityRenderer<?>> map) {
+    public void putAll(@NotNull Map<? extends EntityType<?>, ? extends EntityRenderer<?, ?>> map) {
         rendererMap.putAll(map);
     }
 
@@ -115,13 +115,13 @@ public class EntityRendererMap implements Map<EntityType<?>, EntityRenderer<?>> 
 
     @NotNull
     @Override
-    public Collection<EntityRenderer<?>> values() {
+    public Collection<EntityRenderer<?, ?>> values() {
         return rendererMap.asMap().values();
     }
 
     @NotNull
     @Override
-    public Set<Map.Entry<EntityType<?>, EntityRenderer<?>>> entrySet() {
+    public Set<Map.Entry<EntityType<?>, EntityRenderer<?, ?>>> entrySet() {
         return rendererMap.asMap().entrySet();
     }
 }

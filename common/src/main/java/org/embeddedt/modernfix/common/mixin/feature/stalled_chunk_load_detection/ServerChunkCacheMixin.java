@@ -37,7 +37,7 @@ public abstract class ServerChunkCacheMixin {
             if(debugDeadServerAccess) {
                 new Exception().printStackTrace();
             }
-            Holder<Biome> plains = this.level.registryAccess().registryOrThrow(Registries.BIOME).getHolderOrThrow(Biomes.PLAINS);
+            Holder<Biome> plains = this.level.registryAccess().lookupOrThrow(Registries.BIOME).getOrThrow(Biomes.PLAINS);
             cir.setReturnValue(new EmptyLevelChunk(this.level, new ChunkPos(chunkX, chunkZ), plains));
         } else if(Thread.currentThread() != this.mainThread) {
             CompletableFuture<ChunkResult<ChunkAccess>> future = CompletableFuture.supplyAsync(() -> this.getChunkFutureMainThread(chunkX, chunkZ, requiredStatus, false), this.mainThreadProcessor).join();

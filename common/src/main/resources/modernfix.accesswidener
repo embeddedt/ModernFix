@@ -32,7 +32,6 @@ accessible field net/minecraft/client/renderer/texture/Stitcher$Holder width I
 accessible field net/minecraft/client/renderer/texture/Stitcher$Holder height I
 accessible field net/minecraft/network/syncher/EntityDataAccessor id I
 mutable field net/minecraft/network/syncher/EntityDataAccessor id I
-accessible method net/minecraft/Util makeExecutor (Ljava/lang/String;)Ljava/util/concurrent/ExecutorService;
 accessible field net/minecraft/server/level/ChunkMap updatingChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
 accessible field net/minecraft/server/level/ChunkMap visibleChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
 accessible field net/minecraft/server/level/ChunkMap pendingUnloads Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
@@ -43,15 +42,10 @@ accessible class net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
 accessible method net/minecraft/client/resources/model/ModelBakery$BakedCacheKey <init> (Lnet/minecraft/resources/ResourceLocation;Lcom/mojang/math/Transformation;Z)V
 accessible class net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl
 accessible method net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl <init> (Lnet/minecraft/client/resources/model/ModelBakery;Lnet/minecraft/client/resources/model/ModelBakery$TextureGetter;Lnet/minecraft/client/resources/model/ModelResourceLocation;)V
-accessible method net/minecraft/client/resources/model/ModelBakery getModel (Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/UnbakedModel;
 accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
 accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/server/MinecraftServer$ReloadableResources;
 accessible class net/minecraft/server/MinecraftServer$ReloadableResources
 accessible method net/minecraft/client/gui/screens/Screen addRenderableWidget (Lnet/minecraft/client/gui/components/events/GuiEventListener;)Lnet/minecraft/client/gui/components/events/GuiEventListener;
 accessible field net/minecraft/client/KeyMapping ALL Ljava/util/Map;
-accessible field net/minecraft/client/renderer/block/model/multipart/MultiPart definition Lnet/minecraft/world/level/block/state/StateDefinition;
-accessible field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
-mutable field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
-accessible field net/minecraft/client/renderer/entity/EnderDragonRenderer$DragonModel entity Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;
 accessible method net/minecraft/world/level/block/state/StateDefinition appendPropertyCodec (Lcom/mojang/serialization/MapCodec;Ljava/util/function/Supplier;Ljava/lang/String;Lnet/minecraft/world/level/block/state/properties/Property;)Lcom/mojang/serialization/MapCodec;
 accessible class net/minecraft/client/multiplayer/SessionSearchTrees$Key

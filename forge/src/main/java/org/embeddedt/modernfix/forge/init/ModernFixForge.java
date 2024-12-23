@@ -24,6 +24,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.apache.commons.lang3.tuple.Pair;
+import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
@@ -89,6 +90,28 @@ public class ModernFixForge {
             Pair.of(ImmutableList.of("ferritecore"), "modernfix.no_ferritecore")
     );
 
+    /**
+     * Redirector 5.0 redirects ALL Enum.values() calls to use a cached array, which breaks any code that mutates
+     * the given array, and causes all sorts of impossible to debug issues in mods. We complain loudly when it is
+     * installed now.
+     */
+    private static boolean hasDangerousRedirectorInstalled() {
+        try {
+            var clz = Class.forName("com.teampotato.redirector.RedirectorLaunchPluginService");
+            var pkg = clz.getPackage();
+            if (pkg != null) {
+                String implVer = pkg.getImplementationVersion();
+                var artifactVer = new DefaultArtifactVersion(implVer);
+                return artifactVer.getMajorVersion() == 5;
+            }
+        } catch(Exception e) {
+            if (!(e instanceof ClassNotFoundException)) {
+                ModernFix.LOGGER.error("Error detecting Redirector", e);
+            }
+        }
+        return false;
+    }
+
     @SubscribeEvent
     public void commonSetup(FMLCommonSetupEvent event) {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.warn_missing_perf_mods.Warnings")) {
@@ -100,6 +123,11 @@ public class ModernFixForge {
                         atLeastOneWarning = true;
                         ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, warning.getRight()));
                     }
+                }
+                if (hasDangerousRedirectorInstalled()) {
+                    ModernFix.LOGGER.fatal("Redirector 5.x is detected, it is known to cause extremely hard-to-debug issues in other mods");
+                    ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, "modernfix.redirector_installed"));
+                    atLeastOneWarning = true;
                 }
                 if(atLeastOneWarning)
                     ModLoader.get().addWarning(new ModLoadingWarning(ModLoadingContext.get().getActiveContainer().getModInfo(), ModLoadingStage.COMMON_SETUP, "modernfix.perf_mod_warning"));

@@ -134,7 +134,7 @@ public class DynamicModelProvider {
         this.resourceManager = resourceManager;
         this.resolver = new DynamicResolver();
         this.itemModelGenerator = new ItemModelGenerator();
-        this.missingModel = this.bakeModel(this.unbakedMissingModel, () -> "missing");
+        this.missingModel = this.bakeMissingModel();
         this.missingItemModel = new MissingItemModel(this.missingModel);
         try {
             Class.forName("net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin");
@@ -372,27 +372,48 @@ public class DynamicModelProvider {
         return Optional.of(new BlockStateModelLoader.LoadedModels(loadedModels));
     }
 
-    private BakedModel bakeModel(UnbakedModel model, ModelDebugName name) {
+    private BakedModel bakeMissingModel() {
+        this.resolver.clearResolver();
+        this.unbakedMissingModel.resolveDependencies(this.resolver);
+        var modelBaker = new DynamicBaker(() -> "missing");
+        return UnbakedModel.bakeWithTopModelValues(this.unbakedMissingModel, modelBaker, BlockModelRotation.X0_Y0);
+    }
+
+    private BakedModel bakeModel(UnbakedModel model, ResourceLocation location) {
         if (DEBUG_DYNAMIC_MODEL_LOADING) {
-            ModernFix.LOGGER.info("Baking model '{}'", name.get());
+            ModernFix.LOGGER.info("Baking model '{}'", location);
         }
         synchronized (this) {
             this.resolver.clearResolver();
             model.resolveDependencies(this.resolver);
-            var modelBaker = new DynamicBaker(name);
-            return UnbakedModel.bakeWithTopModelValues(model, modelBaker, BlockModelRotation.X0_Y0);
+            var modelBaker = new DynamicBaker(location::toString);
+            for (var plugin : pluginList) {
+                model = plugin.modifyModelBeforeBake(model, location, BlockModelRotation.X0_Y0, modelBaker);
+            }
+            var bakedModel = UnbakedModel.bakeWithTopModelValues(model, modelBaker, BlockModelRotation.X0_Y0);
+            for (var plugin : pluginList) {
+                bakedModel = plugin.modifyModelAfterBake(bakedModel, model, location, BlockModelRotation.X0_Y0, modelBaker);
+            }
+            return bakedModel;
         }
     }
 
-    private BakedModel bakeModel(UnbakedBlockStateModel model, ModelDebugName name) {
+    private BakedModel bakeModel(UnbakedBlockStateModel model, ModelResourceLocation mrl) {
         if (DEBUG_DYNAMIC_MODEL_LOADING) {
-            ModernFix.LOGGER.info("Baking model '{}'", name.get());
+            ModernFix.LOGGER.info("Baking model '{}'", mrl);
         }
         synchronized (this) {
             this.resolver.clearResolver();
             model.resolveDependencies(this.resolver);
-            var modelBaker = new DynamicBaker(name);
-            return model.bake(modelBaker);
+            var modelBaker = new DynamicBaker(mrl::toString);
+            for (var plugin : pluginList) {
+                model = plugin.modifyBlockModelBeforeBake(model, mrl, modelBaker);
+            }
+            var bakedModel = model.bake(modelBaker);
+            for (var plugin : pluginList) {
+                bakedModel = plugin.modifyBlockModelAfterBake(bakedModel, model, mrl, modelBaker);
+            }
+            return bakedModel;
         }
     }
 
@@ -417,7 +438,7 @@ public class DynamicModelProvider {
                 });
             }
             return unbakedModelOpt.map(unbakedModel -> {
-                return this.bakeModel(unbakedModel, location::toString);
+                return this.bakeModel(unbakedModel, location);
             });
         }
     }
@@ -428,7 +449,7 @@ public class DynamicModelProvider {
             return Optional.of(override);
         }
         return this.loadedBlockModels.getUnchecked(location).map(unbakedModel -> {
-            return this.bakeModel(unbakedModel, location::toString);
+            return this.bakeModel(unbakedModel, location);
         });
     }
 
@@ -588,5 +609,11 @@ public class DynamicModelProvider {
     public interface DynamicModelPlugin {
         Optional<UnbakedModel> modifyModelOnLoad(Optional<UnbakedModel> model, ResourceLocation id);
         UnbakedBlockStateModel modifyBlockModelOnLoad(UnbakedBlockStateModel model, ModelResourceLocation id, BlockState state);
+
+        UnbakedModel modifyModelBeforeBake(UnbakedModel model, ResourceLocation id, ModelState state, ModelBaker baker);
+        BakedModel modifyModelAfterBake(BakedModel bakedModel, UnbakedModel model, ResourceLocation id, ModelState state, ModelBaker baker);
+
+        UnbakedBlockStateModel modifyBlockModelBeforeBake(UnbakedBlockStateModel model, ModelResourceLocation id, ModelBaker baker);
+        BakedModel modifyBlockModelAfterBake(BakedModel bakedModel, UnbakedBlockStateModel model, ModelResourceLocation id, ModelBaker baker);
     }
 }

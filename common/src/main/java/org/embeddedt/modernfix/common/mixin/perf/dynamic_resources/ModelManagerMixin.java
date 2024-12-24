@@ -25,8 +25,10 @@ import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.lang.ref.WeakReference;
 import java.util.Map;
@@ -36,7 +38,10 @@ import java.util.concurrent.Executor;
 @Mixin(ModelManager.class)
 @ClientOnlyMixin
 public class ModelManagerMixin implements DynamicModelProvider.ModelManagerExtension {
-    @Shadow private BakedModel missingModel;
+    @Shadow private Map<ModelResourceLocation, BakedModel> bakedBlockStateModels;
+    @Shadow private Map<ResourceLocation, ItemModel> bakedItemStackModels;
+    @Shadow private Map<ResourceLocation, ClientItem.Properties> itemProperties;
+
     @Unique
     private DynamicModelProvider mfix$modelProvider;
 
@@ -79,35 +84,11 @@ public class ModelManagerMixin implements DynamicModelProvider.ModelManagerExten
         return ArrayUtils.add(cfs, makeModelProviderFuture);
     }
 
-    /**
-     * @author embeddedt
-     * @reason use dynamic model system
-     */
-    @Overwrite
-    public BakedModel getModel(ModelResourceLocation modelLocation) {
-        if(this.mfix$modelProvider != null) {
-            return this.mfix$modelProvider.getModel(modelLocation);
-        } else {
-            return this.missingModel;
-        }
-    }
-
-    /**
-     * @author embeddedt
-     * @reason use dynamic model system
-     */
-    @Overwrite
-    public ItemModel getItemModel(ResourceLocation resourceLocation) {
-        return this.mfix$modelProvider.getItemModel(resourceLocation);
-    }
-
-    /**
-     * @author embeddedt
-     * @reason use dynamic model system
-     */
-    @Overwrite
-    public ClientItem.Properties getItemProperties(ResourceLocation resourceLocation) {
-        return this.mfix$modelProvider.getClientItemProperties(resourceLocation);
+    @Inject(method = "apply", at = @At("RETURN"))
+    private void setModelRegistries(CallbackInfo ci) {
+        this.bakedBlockStateModels = this.mfix$modelProvider.getTopLevelEmulatedRegistry();
+        this.bakedItemStackModels = this.mfix$modelProvider.getItemModelEmulatedRegistry();
+        this.itemProperties = this.mfix$modelProvider.getItemPropertiesEmulatedRegistry();
     }
 
     @Override

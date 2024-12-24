@@ -1,8 +1,10 @@
 package org.embeddedt.modernfix.dynamicresources;
 
+import com.google.common.base.Suppliers;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonObject;
@@ -61,6 +63,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -149,28 +152,32 @@ public class DynamicModelProvider {
         return this.missingItemModel;
     }
 
-    public Map<ModelResourceLocation, BakedModel> getTopLevelEmulatedRegistry() {
-        Set<ModelResourceLocation> topLevelModelLocations = new HashSet<>();
+    private static final Supplier<Set<ModelResourceLocation>> TOP_LEVEL_LOCATIONS_SUPPLIER = Suppliers.memoizeWithExpiration(() -> {
+        Set<ModelResourceLocation> set = new HashSet<>();
         // Skip going through ModelLocationCache because most of the accesses will be misses
         BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
             var location = entry.getKey().location();
             for(BlockState state : entry.getValue().getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(location, state));
+                set.add(BlockModelShaper.stateToModelLocation(location, state));
             }
         });
-        return new EmulatedRegistry<>(ModelResourceLocation.class, this.loadedBakedModels, topLevelModelLocations, this.mrlModelOverrides);
+        return Collections.unmodifiableSet(set);
+    }, 2, TimeUnit.MINUTES);
+
+    public Map<ModelResourceLocation, BakedModel> getTopLevelEmulatedRegistry() {
+        return new EmulatedRegistry<>(ModelResourceLocation.class, this.loadedBakedModels, TOP_LEVEL_LOCATIONS_SUPPLIER, this.mrlModelOverrides);
     }
 
     public Map<ResourceLocation, BakedModel> getStandaloneEmulatedRegistry() {
-        return new EmulatedRegistry<>(ResourceLocation.class, this.loadedStandaloneModels, Set.of(), this.standaloneModelOverrides);
+        return new EmulatedRegistry<>(ResourceLocation.class, this.loadedStandaloneModels, Set::of, this.standaloneModelOverrides);
     }
 
     public Map<ResourceLocation, ItemModel> getItemModelEmulatedRegistry() {
-        return new EmulatedRegistry<>(ResourceLocation.class, this.loadedItemModels, BuiltInRegistries.ITEM.keySet(), this.itemStackModelOverrides);
+        return new EmulatedRegistry<>(ResourceLocation.class, this.loadedItemModels, BuiltInRegistries.ITEM::keySet, this.itemStackModelOverrides);
     }
 
     public Map<ResourceLocation, ClientItem.Properties> getItemPropertiesEmulatedRegistry() {
-        return Maps.transformValues(new EmulatedRegistry<>(ResourceLocation.class, this.loadedClientItemProperties, BuiltInRegistries.ITEM.keySet(), Map.of()), ClientItem::properties);
+        return Maps.transformValues(new EmulatedRegistry<>(ResourceLocation.class, this.loadedClientItemProperties, BuiltInRegistries.ITEM::keySet, Map.of()), ClientItem::properties);
     }
 
     private <K, V> LoadingCache<K, Optional<V>> makeLoadingCache(Function<K, Optional<V>> loadingFunction) {
@@ -189,14 +196,14 @@ public class DynamicModelProvider {
 
     private static class EmulatedRegistry<K, V> implements Map<K, V> {
         private final LoadingCache<K, Optional<V>> realCache;
-        private final Set<K> keys;
+        private final Supplier<Set<K>> keys;
         private final Map<K, V> overrides;
         private final Class<K> keyClass;
 
-        public EmulatedRegistry(Class<K> keyClass, LoadingCache<K, Optional<V>> realCache, Set<K> keys, Map<K, V> overrides) {
+        public EmulatedRegistry(Class<K> keyClass, LoadingCache<K, Optional<V>> realCache, Supplier<Set<K>> keys, Map<K, V> overrides) {
             this.keyClass = keyClass;
             this.realCache = realCache;
-            this.keys = Collections.unmodifiableSet(keys);
+            this.keys = keys;
             this.overrides = overrides;
         }
 
@@ -206,6 +213,15 @@ public class DynamicModelProvider {
                 return this.realCache.getUnchecked((K)key).orElse(null);
             } else {
                 return null;
+            }
+        }
+
+        @Override
+        public V getOrDefault(Object key, V defaultValue) {
+            if (this.keyClass.isAssignableFrom(key.getClass())) {
+                return this.realCache.getUnchecked((K)key).orElse(defaultValue);
+            } else {
+                return defaultValue;
             }
         }
 
@@ -237,17 +253,17 @@ public class DynamicModelProvider {
 
         @Override
         public @NotNull Set<K> keySet() {
-            return keys;
+            return keys.get();
         }
 
         @Override
         public @NotNull Collection<V> values() {
-            return List.of();
+            return Collections2.transform(this.realCache.asMap().values(), v -> v.orElse(null));
         }
 
         @Override
         public int size() {
-            return keys.size();
+            return keys.get().size();
         }
 
         @Override
@@ -257,7 +273,7 @@ public class DynamicModelProvider {
 
         @Override
         public boolean containsKey(Object key) {
-            return keys.contains(key);
+            return keys.get().contains(key);
         }
 
         @Override
@@ -270,7 +286,7 @@ public class DynamicModelProvider {
             return new AbstractSet<>() {
                 @Override
                 public Iterator<Entry<K, V>> iterator() {
-                    return Iterators.transform(keys.iterator(), key -> new Entry<>() {
+                    return Iterators.transform(keys.get().iterator(), key -> new Entry<>() {
                         @Override
                         public K getKey() {
                             return key;
@@ -290,14 +306,14 @@ public class DynamicModelProvider {
 
                 @Override
                 public int size() {
-                    return keys.size();
+                    return keys.get().size();
                 }
             };
         }
 
         @Override
         public void replaceAll(BiFunction<? super K, ? super V, ? extends V> function) {
-            for(K location : keys) {
+            for(K location : keys.get()) {
                 /*
                  * Fetching every model is insanely slow. So we call the function with a null object first, since it
                  * probably isn't expecting that. If we get an exception thrown, or it returns nonnull, then we know

@@ -35,7 +35,7 @@ public class SurfaceRulesContextMixin {
      * @reason Reuse supplier object instead of creating new ones every time
      */
     @Overwrite
-    protected void updateY(int stoneDepthAbove, int stoneDepthBelow, int waterHeight, int blockX, int blockY, int blockZ) {
+    public void updateY(int stoneDepthAbove, int stoneDepthBelow, int waterHeight, int blockX, int blockY, int blockZ) {
         ++this.lastUpdateY;
         var getter = this.biome;
         if(getter == null) {

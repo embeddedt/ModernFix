@@ -4,7 +4,6 @@ import com.google.common.base.Suppliers;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.gson.JsonObject;
@@ -258,7 +257,7 @@ public class DynamicModelProvider {
 
         @Override
         public @NotNull Collection<V> values() {
-            return Collections2.transform(this.realCache.asMap().values(), v -> v.orElse(null));
+            return Collections.emptyList();
         }
 
         @Override

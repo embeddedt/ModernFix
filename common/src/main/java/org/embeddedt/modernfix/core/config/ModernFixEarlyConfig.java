@@ -166,6 +166,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.bugfix.restore_old_dragon_movement", false)
             .put("mixin.perf.worldgen_allocation", false) // experimental
             .put("mixin.feature.cause_lag_by_disabling_threads", false)
+            .put("mixin.bugfix.missing_block_entities", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.deduplicate_climate_parameters", false)
             .put("mixin.bugfix.packet_leak", false)

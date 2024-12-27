@@ -19,7 +19,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 @Mixin(value = ItemStackRenderState.LayerRenderState.class, priority = 600)
 @ClientOnlyMixin
 public abstract class LayerRenderStateMixin {
-    @Shadow @Final private ItemStackRenderState field_55345;
+    @Shadow(aliases = {"this$0"}) @Final private ItemStackRenderState field_55345;
 
     @Shadow abstract ItemTransform transform();
 

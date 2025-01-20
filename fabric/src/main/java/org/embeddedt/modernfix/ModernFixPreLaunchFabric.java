@@ -5,7 +5,6 @@ import net.fabricmc.loader.api.entrypoint.PreLaunchEntrypoint;
 import net.fabricmc.loader.impl.gui.FabricGuiEntry;
 import net.fabricmc.loader.impl.gui.FabricStatusTree;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
-import org.embeddedt.modernfix.fabric.mappings.MappingsClearer;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
 
@@ -18,9 +17,6 @@ public class ModernFixPreLaunchFabric implements PreLaunchEntrypoint {
         }
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnFabric")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.start("launch"), "Failed to start profiler");
-        }
-        if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.clear_fabric_mapping_tables.MappingsClearer")) {
-            MappingsClearer.clear();
         }
 
         // Prevent launching with Continuity when dynamic resources is on

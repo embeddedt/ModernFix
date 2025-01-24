@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
@@ -108,6 +109,16 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         }
     }
 
+    @WrapMethod(method = "getModel")
+    private UnbakedModel mfix$lockWhenGettingModel(ResourceLocation modelLocation, Operation<UnbakedModel> original) {
+        modelBakeryLock.lock();
+        try {
+            return original.call(modelLocation);
+        } finally {
+            modelBakeryLock.unlock();
+        }
+    }
+
     @Override
     public UnbakedModel mfix$getMissingModel() {
         return missingModel;
@@ -199,10 +210,26 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private static final int MAXIMUM_CACHE_SIZE = 1000;
 
     private void runCleanup() {
-        ((LRUMap<?, ?>)this.unbakedCache).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
-        ((LRUMap<?, ?>)this.bakedCache).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
-        ((LRUMap<?, ?>)this.topLevelModels).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
-        ((LRUMap<?, ?>)this.bakedTopLevelModels).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
+        try {
+            ((LRUMap<?, ?>)this.unbakedCache).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
+        } catch(RuntimeException e) {
+            throw new IllegalStateException("Exception dropping entries in unbaked cache", e);
+        }
+        try {
+            ((LRUMap<?, ?>)this.bakedCache).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
+        } catch(RuntimeException e) {
+            throw new IllegalStateException("Exception dropping entries in baked cache", e);
+        }
+        try {
+            ((LRUMap<?, ?>)this.topLevelModels).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
+        } catch(RuntimeException e) {
+            throw new IllegalStateException("Exception dropping entries in top level models", e);
+        }
+        try {
+            ((LRUMap<?, ?>)this.bakedTopLevelModels).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
+        } catch(RuntimeException e) {
+            throw new IllegalStateException("Exception dropping entries in baked top level models", e);
+        }
     }
 
     @Override
@@ -234,5 +261,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Overwrite
     public Map<ModelResourceLocation, BakedModel> getBakedTopLevelModels() {
         return this.mfix$emulatedBakedRegistry;
+    }
+
+    @Override
+    public ReentrantLock mfix$getLock() {
+        return this.modelBakeryLock;
     }
 }

@@ -22,7 +22,7 @@ import org.spongepowered.asm.mixin.injection.At;
 public abstract class ModelBakerImplMixin {
     @Shadow public abstract UnbakedModel getModel(ResourceLocation location);
 
-    @Shadow @Final private ModelBakery field_40571;
+    @Shadow(aliases = {"this$0"}) @Final private ModelBakery field_40571;
     @Unique
     private int mfix$getDepth = 0;
 

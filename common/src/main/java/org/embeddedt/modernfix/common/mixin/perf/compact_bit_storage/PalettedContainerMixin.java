@@ -30,8 +30,15 @@ public abstract class PalettedContainerMixin<T> {
             }
         }
         if(empty && storArray.length > 0) {
+            T value;
             /* it means the chunk is oversized and wasting memory, take the ID out of the palette and recreate a smaller chunk */
-            T value = this.data.palette().valueFor(0);
+            try {
+                value = this.data.palette().valueFor(0);
+            } catch (RuntimeException e) {
+                // Some mods/servers seem to generate buggy palettes. This is not our fault (the game will likely crash later),
+                // but we catch it here to avoid receiving bug reports for an issue we didn't cause.
+                return;
+            }
             this.data = this.createOrReuseData(null, 0);
             this.data.palette().idFor(value);
         }

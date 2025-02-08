@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.dynamicresources;
 import net.fabricmc.fabric.api.client.model.loading.v1.BlockStateResolver;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelModifier;
+import net.fabricmc.fabric.api.client.model.loading.v1.PreparableModelLoadingPlugin;
 import net.fabricmc.fabric.api.event.Event;
 import net.fabricmc.fabric.api.event.EventFactory;
 import net.minecraft.client.renderer.block.BlockModelShaper;
@@ -13,19 +14,20 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.ModernFix;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 
 public class FabricDynamicModelHandler implements DynamicModelProvider.DynamicModelPlugin {
-    private final List<ModelLoadingPlugin> pluginList;
-
     // Borrowed from Fabric API, this dispatching logic is extremely trivial
 
     private static final ResourceLocation[] MODEL_MODIFIER_PHASES = new ResourceLocation[] { ModelModifier.OVERRIDE_PHASE, ModelModifier.DEFAULT_PHASE, ModelModifier.WRAP_PHASE, ModelModifier.WRAP_LAST_PHASE };
@@ -99,11 +101,30 @@ public class FabricDynamicModelHandler implements DynamicModelProvider.DynamicMo
         return model;
     }, MODEL_MODIFIER_PHASES);
 
-    public FabricDynamicModelHandler(DynamicModelProvider provider) {
-        this.pluginList = ModelLoadingPlugin.getAll();
+    record PreparablePluginData<T>(CompletableFuture<T> data, PreparableModelLoadingPlugin.Holder<T> plugin) {
+        void initialize(ModelLoadingPlugin.Context context) {
+            plugin.plugin().initialize(data.join(), context);
+        }
+    }
+
+    private <T> PreparablePluginData<T> makeDataRecord(ResourceManager manager, PreparableModelLoadingPlugin.Holder<T> holder) {
+        return new PreparablePluginData<>(holder.loader().load(manager, ModernFix.resourceReloadExecutor()), holder);
+    }
+
+    public FabricDynamicModelHandler(DynamicModelProvider provider, ResourceManager manager) {
+        List<ModelLoadingPlugin> pluginList = new ArrayList<>(ModelLoadingPlugin.getAll());
+        var preparablePluginData = new ArrayList<PreparablePluginData<?>>();
+        for (var holder : PreparableModelLoadingPlugin.getAll()) {
+            preparablePluginData.add(makeDataRecord(manager, holder));
+        }
+        // Wait for all the preparable plugins to finish loading
+        CompletableFuture.allOf(preparablePluginData.stream().map(PreparablePluginData::data).toArray(CompletableFuture[]::new)).join();
         var context = new PluginContext(provider);
-        for (var plugin : this.pluginList) {
+        for (var plugin : pluginList) {
             plugin.initialize(context);
+        }
+        for (var data : preparablePluginData) {
+            data.initialize(context);
         }
         context.fireResolvers();
     }

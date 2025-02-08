@@ -137,7 +137,7 @@ public class DynamicModelProvider {
         this.missingItemModel = new MissingItemModel(this.missingModel);
         try {
             Class.forName("net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin");
-            pluginList.add(new FabricDynamicModelHandler(this));
+            pluginList.add(new FabricDynamicModelHandler(this, this.resourceManager));
         } catch(Exception ignored) {
             // Fabric API likely not present
         }

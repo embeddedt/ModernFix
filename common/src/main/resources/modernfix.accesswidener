@@ -38,11 +38,8 @@ accessible field net/minecraft/server/level/ChunkMap pendingUnloads Lit/unimi/ds
 accessible method net/minecraft/resources/ResourceKey <init> (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;)V
 accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
 accessible class net/minecraft/server/level/ChunkMap$DistanceManager
-accessible class net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
-accessible method net/minecraft/client/resources/model/ModelBakery$BakedCacheKey <init> (Lnet/minecraft/resources/ResourceLocation;Lcom/mojang/math/Transformation;Z)V
 accessible class net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl
 accessible class net/minecraft/client/resources/model/ModelManager$ReloadState
-accessible method net/minecraft/client/resources/model/BlockStateModelLoader definitionLocationToBlockMapper ()Ljava/util/function/Function;
 accessible method net/minecraft/client/resources/model/BlockStateModelLoader loadBlockStateDefinitionStack (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/world/level/block/state/StateDefinition;Ljava/util/List;)Lnet/minecraft/client/resources/model/BlockStateModelLoader$LoadedModels;
 accessible class net/minecraft/client/resources/model/BlockStateModelLoader$LoadedBlockModelDefinition
 accessible method net/minecraft/client/resources/model/BlockStateModelLoader$LoadedBlockModelDefinition <init> (Ljava/lang/String;Lnet/minecraft/client/renderer/block/model/BlockModelDefinition;)V

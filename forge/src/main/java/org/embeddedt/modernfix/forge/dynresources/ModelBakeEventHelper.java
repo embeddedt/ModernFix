@@ -45,7 +45,10 @@ public class ModelBakeEventHelper {
             "elevatorid",
             "cfm",
             "refinedstorage",
-            "embers");
+            "embers",
+            "buildcraftsilicon",
+            "buildcrafttransport",
+            "buildcraftfactory");
     private final Map<ResourceLocation, BakedModel> modelRegistry;
     private final Set<ResourceLocation> topLevelModelLocations;
     private final MutableGraph<String> dependencyGraph;

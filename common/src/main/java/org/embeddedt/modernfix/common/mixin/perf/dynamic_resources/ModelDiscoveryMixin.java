@@ -15,7 +15,7 @@ public class ModelDiscoveryMixin {
      * @reason We will show the warning ourselves later when loading the model dynamically, this is just spam since
      * the models don't exist during early loading
      */
-    @Redirect(method = "loadBlockModel", at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;warn(Ljava/lang/String;Ljava/lang/Object;)V"))
+    @Redirect(method = "method_68027", at = @At(value = "INVOKE", target = "Lorg/slf4j/Logger;warn(Ljava/lang/String;Ljava/lang/Object;)V"))
     private void disableMissingModelWarning(Logger instance, String s, Object o) {
 
     }

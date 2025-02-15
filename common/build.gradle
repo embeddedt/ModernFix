@@ -21,7 +21,11 @@ dependencies {
 
     modCompileOnly "curse.maven:spark-361579:${rootProject.spark_version}"
 
-    modCompileOnly fabricApi.module("fabric-model-loading-api-v1", rootProject.fabric_api_version)
+    try {
+        modCompileOnly fabricApi.module("fabric-model-loading-api-v1", rootProject.fabric_api_version)
+    } catch(ignored) {
+        println "Model Loading API not found for this Minecraft version!"
+    }
     // Remove the next line if you don't want to depend on the API
     // modApi "me.shedaniel:architectury:${rootProject.architectury_version}"
 }

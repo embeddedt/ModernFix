@@ -1,5 +1,7 @@
 package org.embeddedt.modernfix.world;
 
+import com.mojang.serialization.Codec;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import net.minecraft.core.Holder;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.nbt.CompoundTag;
@@ -9,6 +11,7 @@ import net.minecraft.util.datafix.DataFixTypes;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.dimension.DimensionType;
 import net.minecraft.world.level.saveddata.SavedData;
+import net.minecraft.world.level.saveddata.SavedDataType;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -20,10 +23,21 @@ public class StrongholdLocationCache extends SavedData {
         chunkPosList = new ArrayList<>();
     }
 
-    public static SavedData.Factory<StrongholdLocationCache> factory(ServerLevel serverLevel) {
-        // FIXME datafixer will probably throw on update
-        return new SavedData.Factory<>(StrongholdLocationCache::new, StrongholdLocationCache::load, DataFixTypes.SAVED_DATA_FORCED_CHUNKS);
+    private StrongholdLocationCache(List<ChunkPos> list) {
+        this.chunkPosList = new ArrayList<>(list);
     }
+
+    public static final Codec<StrongholdLocationCache> CODEC = RecordCodecBuilder.create(instance ->
+       instance.group(ChunkPos.CODEC.listOf().optionalFieldOf("stronghold_positions", List.of()).forGetter(StrongholdLocationCache::getChunkPosList))
+               .apply(instance, StrongholdLocationCache::new)
+    );
+
+    public static final SavedDataType<StrongholdLocationCache> TYPE = new SavedDataType<>(
+            "modernfix_stronghold_cache",
+            StrongholdLocationCache::new,
+            CODEC,
+            DataFixTypes.SAVED_DATA_FORCED_CHUNKS
+    );
 
     public List<ChunkPos> getChunkPosList() {
         return new ArrayList<>(chunkPosList);
@@ -32,31 +46,5 @@ public class StrongholdLocationCache extends SavedData {
     public void setChunkPosList(List<ChunkPos> positions) {
         this.chunkPosList = new ArrayList<>(positions);
         this.setDirty();
-    }
-
-    public static StrongholdLocationCache load(CompoundTag arg, HolderLookup.Provider provider) {
-        StrongholdLocationCache cache = new StrongholdLocationCache();
-        if(arg.contains("Positions", Tag.TAG_LONG_ARRAY)) {
-            long[] positions = arg.getLongArray("Positions");
-            for(long position : positions) {
-                cache.chunkPosList.add(new ChunkPos(position));
-            }
-        }
-        return cache;
-    }
-
-    @Override
-    public CompoundTag save(CompoundTag compoundTag, HolderLookup.Provider provider) {
-        long[] serialized = new long[chunkPosList.size()];
-        for(int i = 0; i < chunkPosList.size(); i++) {
-            ChunkPos thePos = chunkPosList.get(i);
-            serialized[i] = thePos.toLong();
-        }
-        compoundTag.putLongArray("Positions", serialized);
-        return compoundTag;
-    }
-
-    public static String getFileId(Holder<DimensionType> dimensionType) {
-        return "mfix_strongholds";
     }
 }

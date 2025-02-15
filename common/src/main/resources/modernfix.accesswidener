@@ -43,7 +43,7 @@ accessible method net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
 accessible class net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl
 accessible class net/minecraft/client/resources/model/ModelManager$ReloadState
 accessible method net/minecraft/client/resources/model/BlockStateModelLoader definitionLocationToBlockMapper ()Ljava/util/function/Function;
-accessible method net/minecraft/client/resources/model/BlockStateModelLoader loadBlockStateDefinitionStack (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/world/level/block/state/StateDefinition;Ljava/util/List;Lnet/minecraft/client/resources/model/UnbakedModel;)Lnet/minecraft/client/resources/model/BlockStateModelLoader$LoadedModels;
+accessible method net/minecraft/client/resources/model/BlockStateModelLoader loadBlockStateDefinitionStack (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/world/level/block/state/StateDefinition;Ljava/util/List;)Lnet/minecraft/client/resources/model/BlockStateModelLoader$LoadedModels;
 accessible class net/minecraft/client/resources/model/BlockStateModelLoader$LoadedBlockModelDefinition
 accessible method net/minecraft/client/resources/model/BlockStateModelLoader$LoadedBlockModelDefinition <init> (Ljava/lang/String;Lnet/minecraft/client/renderer/block/model/BlockModelDefinition;)V
 accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
@@ -53,3 +53,8 @@ accessible method net/minecraft/client/gui/screens/Screen addRenderableWidget (L
 accessible field net/minecraft/client/KeyMapping ALL Ljava/util/Map;
 accessible method net/minecraft/world/level/block/state/StateDefinition appendPropertyCodec (Lcom/mojang/serialization/MapCodec;Ljava/util/function/Supplier;Ljava/lang/String;Lnet/minecraft/world/level/block/state/properties/Property;)Lcom/mojang/serialization/MapCodec;
 accessible class net/minecraft/client/multiplayer/SessionSearchTrees$Key
+
+accessible class net/minecraft/client/resources/model/ModelDiscovery$ModelWrapper
+accessible method net/minecraft/client/resources/model/ModelDiscovery$ModelWrapper <init> (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/UnbakedModel;Z)V
+accessible field net/minecraft/client/resources/model/ModelDiscovery$ModelWrapper parent Lnet/minecraft/client/resources/model/ModelDiscovery$ModelWrapper;
+accessible method net/minecraft/client/resources/model/BlockStateDefinitions definitionLocationToBlockStateMapper ()Ljava/util/function/Function;

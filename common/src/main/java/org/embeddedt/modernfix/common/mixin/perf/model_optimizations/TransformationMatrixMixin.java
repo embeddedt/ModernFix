@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.common.mixin.perf.model_optimizations;
 
 import com.mojang.math.Transformation;
-import org.joml.Matrix4f;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.joml.Matrix4fc;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -13,7 +13,7 @@ import java.util.Objects;
 @Mixin(Transformation.class)
 @ClientOnlyMixin
 public class TransformationMatrixMixin {
-    @Shadow @Final private Matrix4f matrix;
+    @Shadow @Final private Matrix4fc matrix;
     private Integer cachedHashCode = null;
     /**
      * @author embeddedt

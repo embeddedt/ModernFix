@@ -41,7 +41,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         String friendlyKey = "modernfix.option.name." + option.getName();
         MutableComponent baseComponent = Component.literal(option.getSelfName());
         if(I18n.exists(friendlyKey))
-            return Component.translatable(friendlyKey).withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, baseComponent)));
+            return Component.translatable(friendlyKey).withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(baseComponent)));
         else
             return baseComponent;
     }
@@ -78,7 +78,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         for(String category : theCategories) {
             String categoryTranslationKey = "modernfix.option.category." + category;
             this.addEntry(new CategoryEntry(Component.translatable(categoryTranslationKey)
-                    .withStyle(Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(categoryTranslationKey + ".description"))))
+                    .withStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Component.translatable(categoryTranslationKey + ".description"))))
             ));
             optionsByCategory.get(category).stream().filter(key -> {
                 int dotCount = 0;

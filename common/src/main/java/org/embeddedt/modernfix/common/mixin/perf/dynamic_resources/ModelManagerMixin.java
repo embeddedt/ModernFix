@@ -1,24 +1,26 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
+import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.Maps;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.geom.EntityModelSet;
 import net.minecraft.client.renderer.block.model.BlockModel;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.resources.model.AtlasSet;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
 import net.minecraft.client.resources.model.ModelManager;
-import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.apache.commons.lang3.ArrayUtils;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.duck.IModelHoldingBlockState;
 import org.embeddedt.modernfix.dynamicresources.DynamicModelProvider;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -32,13 +34,13 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.lang.ref.WeakReference;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
 @Mixin(ModelManager.class)
 @ClientOnlyMixin
 public class ModelManagerMixin implements DynamicModelProvider.ModelManagerExtension {
-    @Shadow private Map<ModelResourceLocation, BakedModel> bakedBlockStateModels;
     @Shadow private Map<ResourceLocation, ItemModel> bakedItemStackModels;
     @Shadow private Map<ResourceLocation, ClientItem.Properties> itemProperties;
 
@@ -50,18 +52,43 @@ public class ModelManagerMixin implements DynamicModelProvider.ModelManagerExten
         return CompletableFuture.completedFuture(Map.of());
     }
 
-    @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/BlockStateModelLoader;loadBlockStates(Lnet/minecraft/client/resources/model/UnbakedModel;Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
-    private CompletableFuture<BlockStateModelLoader.LoadedModels> deferBlockStateLoad(UnbakedModel unbakedModel, ResourceManager resourceManager, Executor executor) {
+    @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/BlockStateModelLoader;loadBlockStates(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
+    private CompletableFuture<BlockStateModelLoader.LoadedModels> deferBlockStateLoad(ResourceManager resourceManager, Executor executor) {
         return CompletableFuture.completedFuture(new BlockStateModelLoader.LoadedModels(Map.of()));
     }
 
     /**
      * @author embeddedt
-     * @reason disable map creation
+     * @reason disable map creation, use dynamic dispatch
      */
     @Overwrite
-    private static Map<BlockState, BakedModel> createBlockStateToModelDispatch(Map<ModelResourceLocation, BakedModel> map, BakedModel bakedModel) {
-        return Map.of();
+    private static Map<BlockState, BlockStateModel> createBlockStateToModelDispatch(Map<BlockState, BlockStateModel> map, BlockStateModel missingModel) {
+        var dynamicProvider = Objects.requireNonNull(DynamicModelProvider.currentReloadingModelProvider.get());
+
+        var dynamicRegistry = dynamicProvider.getTopLevelEmulatedRegistry();
+
+        return new ForwardingMap<>() {
+            @Override
+            protected Map<BlockState, BlockStateModel> delegate() {
+                return dynamicRegistry;
+            }
+
+            @Override
+            public BlockStateModel get(Object key) {
+                BlockStateModel result;
+                if (key instanceof IModelHoldingBlockState state) {
+                    result = state.mfix$getModel();
+                    if (result != null) {
+                        return result;
+                    }
+                }
+                result = dynamicRegistry.getOrDefault(key, dynamicProvider.getMissingBakedModel());
+                if (key instanceof IModelHoldingBlockState state) {
+                    state.mfix$setModel(result);
+                }
+                return result;
+            }
+        };
     }
 
     @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ClientItemInfoLoader;scheduleLoad(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
@@ -86,9 +113,15 @@ public class ModelManagerMixin implements DynamicModelProvider.ModelManagerExten
 
     @Inject(method = "apply", at = @At("RETURN"))
     private void setModelRegistries(CallbackInfo ci) {
-        this.bakedBlockStateModels = this.mfix$modelProvider.getTopLevelEmulatedRegistry();
         this.bakedItemStackModels = this.mfix$modelProvider.getItemModelEmulatedRegistry();
         this.itemProperties = this.mfix$modelProvider.getItemPropertiesEmulatedRegistry();
+        for(Block block : BuiltInRegistries.BLOCK) {
+            for(BlockState state : block.getStateDefinition().getPossibleStates()) {
+                if(state instanceof IModelHoldingBlockState modelHolder) {
+                    modelHolder.mfix$setModel(null);
+                }
+            }
+        }
     }
 
     @Override

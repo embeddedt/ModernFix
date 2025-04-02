@@ -23,7 +23,7 @@ public class CrashReportAnalyserMixin {
      *
      * It seems unlikely ModernFix will simultaneously cause a crash while it's not obvious it caused it.
      */
-    @Inject(method = "buildSuspectedModsSection", at = @At("HEAD"), require = 0)
+    @Inject(method = "buildSuspectedModsSection", at = @At("HEAD"), require = 0, remap = false)
     private static void removeOurselvesFromSuspectedMods(StringBuilder stringBuilder, CallbackInfo ci) {
         SUSPECTED_MODS.keySet().removeIf(iModInfo -> iModInfo.getModId().equals("modernfix"));
     }

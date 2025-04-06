@@ -24,7 +24,8 @@ public class JEIRuntimeCapturer implements IModPlugin {
 
     @Override
     public void onRuntimeAvailable(IJeiRuntime jeiRuntime) {
-        runtimeHandle = (JeiRuntime)jeiRuntime;
+        if (jeiRuntime instanceof JeiRuntime)
+            runtimeHandle = (JeiRuntime)jeiRuntime;
     }
 
     @Override

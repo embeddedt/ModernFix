@@ -41,14 +41,14 @@ public class SparkLaunchProfiler {
     public static void start(String key) {
         if (!ongoingSamplers.containsKey(key)) {
             Sampler sampler;
-            SamplerSettings settings = new SamplerSettings(4000, ThreadDumper.ALL, ThreadGrouper.BY_NAME.get(), -1, false);
+            SamplerSettings settings = new SamplerSettings(4000, ThreadDumper.ALL, ThreadGrouper.BY_NAME.get(), -1, false, true);
             try {
                 if(USE_JAVA_SAMPLER_FOR_LAUNCH) {
                     throw new UnsupportedOperationException();
                 }
                 sampler = new AsyncSampler(platform, settings, new SampleCollector.Execution(4000));
             } catch (UnsupportedOperationException e) {
-                sampler = new JavaSampler(platform, settings, true, true);
+                sampler = new JavaSampler(platform, settings);
             }
             ongoingSamplers.put(key, sampler);
             ModernFixMixinPlugin.instance.logger.warn("Profiler has started for stage [{}]...", key);
@@ -171,6 +171,11 @@ public class SparkLaunchProfiler {
         @Override
         public void log(Level level, String s) {
             ModernFixMixinPlugin.instance.logger.warn(s);
+        }
+
+        @Override
+        public void log(Level level, String s, Throwable t) {
+            ModernFixMixinPlugin.instance.logger.warn(s, t);
         }
 
         @Override

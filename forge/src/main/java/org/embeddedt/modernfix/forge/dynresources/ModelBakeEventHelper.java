@@ -6,6 +6,7 @@ import com.google.common.collect.Iterators;
 import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
+import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
@@ -54,7 +55,7 @@ public class ModelBakeEventHelper {
     private final MutableGraph<String> dependencyGraph;
     public ModelBakeEventHelper(Map<ResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
-        this.topLevelModelLocations = new HashSet<>(modelRegistry.keySet());
+        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>();
         // Skip going through ModelLocationCache because most of the accesses will be misses
         ForgeRegistries.BLOCKS.getEntries().forEach(entry -> {
             var location = entry.getKey().location();
@@ -63,6 +64,7 @@ public class ModelBakeEventHelper {
             }
         });
         ForgeRegistries.ITEMS.getKeys().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));
+        this.topLevelModelLocations.addAll(modelRegistry.keySet());
         this.dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {
             this.dependencyGraph.addNode(id);

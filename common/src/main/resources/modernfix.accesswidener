@@ -58,4 +58,3 @@ accessible class net/minecraft/client/multiplayer/SessionSearchTrees$Key
 
 accessible class net/minecraft/world/item/crafting/Ingredient$Value
 accessible class net/minecraft/world/item/crafting/Ingredient$ItemValue
-accessible class net/minecraft/client/searchtree/SearchRegistry$TreeEntry

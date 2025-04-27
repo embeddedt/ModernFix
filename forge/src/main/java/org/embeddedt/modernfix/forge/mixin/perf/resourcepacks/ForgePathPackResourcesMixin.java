@@ -8,7 +8,6 @@ import net.minecraftforge.resource.PathPackResources;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.forge.load.ModResourcePackPathFixer;
 import org.embeddedt.modernfix.resources.ICachingResourcePack;
-import org.embeddedt.modernfix.resources.NewResourcePackAdapter;
 import org.embeddedt.modernfix.resources.PackResourcesCacheEngine;
 import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.jetbrains.annotations.NotNull;
@@ -23,7 +22,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.nio.file.Files;
 import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Set;
 
@@ -51,7 +49,6 @@ public abstract class ForgePathPackResourcesMixin implements ICachingResourcePac
         if(this.mfix$resolveFileOverride != null)
             ModernFix.LOGGER.warn("PathResourcePack base class instantiated with root path of mod file {}. This probably means a mod should be calling ResourcePackLoader.createPackForMod instead. Applying workaround.", mfix$resolveFileOverride.getFileName());
         invalidateCache();
-        PackResourcesCacheEngine.track(this);
     }
 
     @Inject(method = "resolve", at = @At("HEAD"), cancellable = true, remap = false)
@@ -65,7 +62,7 @@ public abstract class ForgePathPackResourcesMixin implements ICachingResourcePac
             PackResourcesCacheEngine engine = this.cacheEngine;
             if(engine != null)
                 return engine;
-            this.cacheEngine = engine = new PackResourcesCacheEngine(this::getNamespacesFromDisk, (type, namespace) -> this.resolve(type.getDirectory(), namespace));
+            this.cacheEngine = engine = new PackResourcesCacheEngine((type) -> this.resolve(type.getDirectory()));
             return engine;
         }
     }
@@ -105,10 +102,6 @@ public abstract class ForgePathPackResourcesMixin implements ICachingResourcePac
         if(!PackTypeHelper.isVanillaPackType(type))
             return;
         ci.cancel();
-        Collection<ResourceLocation> allPossibleResources = this.generateResourceCache().getResources(type, namespace, path, Integer.MAX_VALUE, p -> true);
-        NewResourcePackAdapter.sendToOutput(location -> {
-            Path target = resolve(getPathFromLocation(location.getPath().startsWith("lang/") ? PackType.CLIENT_RESOURCES : type, location));
-            return () -> Files.newInputStream(target);
-        }, resourceOutput, allPossibleResources);
+        this.generateResourceCache().collectResources(type, namespace, path.split("/"), Integer.MAX_VALUE, resourceOutput);
     }
 }

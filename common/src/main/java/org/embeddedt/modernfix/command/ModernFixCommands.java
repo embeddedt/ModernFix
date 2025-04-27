@@ -8,6 +8,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.duck.IProfilingServerFunctionManager;
 import org.embeddedt.modernfix.structure.CachingStructureManager;
 
 import java.io.InputStream;
@@ -53,6 +54,25 @@ public class ModernFixCommands {
                             context.getSource().sendSuccess(() -> Component.literal("All structures upgraded"), false);
 
                             return 1;
+                        }))
+                .then(literal("mcfunctions").requires(source -> source.hasPermission(3))
+                        .executes(context -> {
+                            ServerLevel level = context.getSource().getLevel();
+                            if(level == null) {
+                                context.getSource().sendFailure(Component.literal("Couldn't find server level"));
+                                return 0;
+                            }
+                            if (level.getServer().getFunctions() instanceof IProfilingServerFunctionManager profiler) {
+                                context.getSource().sendSuccess(() -> Component.literal("mcfunction runtime breakdown:"), false);
+                                for(String line : profiler.mfix$getProfilingResults().split("\n")) {
+                                    context.getSource().sendSuccess(() -> Component.literal(line), false);
+                                }
+
+                                return 1;
+                            } else {
+                                context.getSource().sendFailure(Component.literal("ModernFix mcfunction profiling is not enabled on this server."));
+                                return 0;
+                            }
                         }))
         );
     }

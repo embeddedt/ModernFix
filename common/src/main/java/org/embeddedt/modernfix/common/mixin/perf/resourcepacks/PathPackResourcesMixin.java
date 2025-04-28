@@ -1,26 +1,17 @@
 package org.embeddedt.modernfix.common.mixin.perf.resourcepacks;
 
 import net.minecraft.server.packs.PackLocationInfo;
-import net.minecraft.server.packs.PackResources;
-import net.minecraft.server.packs.PackType;
 import net.minecraft.server.packs.PathPackResources;
 import org.embeddedt.modernfix.resources.ICachingResourcePack;
 import org.embeddedt.modernfix.resources.PackResourcesCacheEngine;
-import org.embeddedt.modernfix.util.PackTypeHelper;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
-import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
-import java.util.Objects;
-import java.util.Set;
 
 @Mixin(value = PathPackResources.class, priority = 1100)
 public abstract class PathPackResourcesMixin implements ICachingResourcePack {
@@ -48,6 +39,8 @@ public abstract class PathPackResourcesMixin implements ICachingResourcePack {
         this.cacheEngine = null;
     }
 
+    /*
+
     @Inject(method = "getNamespaces", at = @At("HEAD"), cancellable = true)
     private void useCacheForNamespaces(PackType type, CallbackInfoReturnable<Set<String>> cir) {
         PackResourcesCacheEngine engine = cacheEngine;
@@ -67,10 +60,6 @@ public abstract class PathPackResourcesMixin implements ICachingResourcePack {
             return this.generateResourceCache().hasResource(originalPaths);
     }
 
-    /**
-     * @author embeddedt
-     * @reason Use cached listing of mod resources
-     */
     @Inject(method = "listResources", at = @At("HEAD"), cancellable = true)
     private void fastGetResources(PackType type, String namespace, String path, PackResources.ResourceOutput resourceOutput, CallbackInfo ci)
     {
@@ -79,4 +68,6 @@ public abstract class PathPackResourcesMixin implements ICachingResourcePack {
         ci.cancel();
         this.generateResourceCache().collectResources(type, namespace, path.split("/"), Integer.MAX_VALUE, resourceOutput);
     }
+
+     */
 }

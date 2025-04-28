@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.neoforge.mixin.perf.dynamic_resources;
 
 import com.google.common.base.Stopwatch;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.neoforged.bus.api.Event;
@@ -17,6 +18,8 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.lang.reflect.Method;
+import java.time.Duration;
+import java.util.Comparator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -32,19 +35,28 @@ public class ForgeHooksClientMixin {
         ModelEvent.ModifyBakingResult bakeEvent = ((ModelEvent.ModifyBakingResult)event);
         ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
         Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
+        Stopwatch globalTimer = Stopwatch.createStarted();
+        Map<String, Stopwatch> times = new Object2ObjectOpenHashMap<>();
         ModList.get().forEachModContainer((id, mc) -> {
             Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
             ModelEvent.ModifyBakingResult postedEvent = new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getTextureGetter(), bakeEvent.getModelBakery());
-            Stopwatch timer = Stopwatch.createStarted();
+            Stopwatch timer = times.computeIfAbsent(id, $ -> Stopwatch.createStarted());
             try {
                 acceptEv.invoke(mc, postedEvent);
             } catch(ReflectiveOperationException e) {
                 e.printStackTrace();
             }
             timer.stop();
-            if(timer.elapsed(TimeUnit.SECONDS) >= 1) {
-                ModernFix.LOGGER.warn("Mod '{}' took {} in the model bake event", id, timer);
-            }
         });
+        globalTimer.stop();
+        if (globalTimer.elapsed(TimeUnit.SECONDS) >= 1) {
+            ModernFix.LOGGER.warn("Posting dynamic ModelEvent.ModifyBakingResult to mods took {}, breakdown below:", globalTimer);
+            times.entrySet().stream()
+                    .sorted(Comparator.<Map.Entry<String, Stopwatch>, Duration>comparing(e -> e.getValue().elapsed()).reversed())
+                    .filter(e -> e.getValue().elapsed(TimeUnit.MILLISECONDS) > 50)
+                    .forEach(entry -> {
+                        ModernFix.LOGGER.warn("    {}: {}", entry.getKey(), entry.getValue().toString());
+                    });
+        }
     }
 }

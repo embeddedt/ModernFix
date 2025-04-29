@@ -182,6 +182,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.snapshot_easter_egg", true)
             .put("mixin.feature.warn_missing_perf_mods", true)
             .put("mixin.feature.spark_profile_launch", false)
+            .put("mixin.feature.log_stdout_in_log_files", true)
             .put("mixin.devenv", isDevEnv)
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)

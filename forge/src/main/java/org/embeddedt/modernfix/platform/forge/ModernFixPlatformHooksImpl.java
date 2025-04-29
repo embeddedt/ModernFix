@@ -17,6 +17,7 @@ import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.fml.loading.FMLPaths;
 import net.minecraftforge.fml.loading.LoadingModList;
+import net.minecraftforge.fml.loading.TracingPrintStream;
 import net.minecraftforge.fml.loading.moddiscovery.ModInfo;
 import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.server.ServerLifecycleHooks;
@@ -33,6 +34,7 @@ import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
 import org.embeddedt.modernfix.util.DummyList;
 import org.objectweb.asm.tree.ClassNode;
+import org.slf4j.LoggerFactory;
 import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
 
 import java.lang.reflect.Field;
@@ -110,6 +112,11 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
 
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_launch.OnForge")) {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.start("launch"), "Failed to start profiler");
+        }
+
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.log_stdout_in_log_files.PrintStreamReplacement")) {
+            System.setOut(new TracingPrintStream(LoggerFactory.getLogger("STDOUT"), System.out));
+            System.setErr(new TracingPrintStream(LoggerFactory.getLogger("STDERR"), System.err));
         }
 
         NightConfigFixer.monitorFileWatcher();

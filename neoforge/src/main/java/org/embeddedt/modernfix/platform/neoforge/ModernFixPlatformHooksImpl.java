@@ -13,6 +13,7 @@ import net.neoforged.fml.ModLoadingIssue;
 import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.fml.loading.FMLPaths;
 import net.neoforged.fml.loading.LoadingModList;
+import net.neoforged.fml.loading.TracingPrintStream;
 import net.neoforged.fml.loading.moddiscovery.ModInfo;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.RegisterCommandsEvent;
@@ -25,6 +26,7 @@ import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
 import org.objectweb.asm.tree.ClassNode;
+import org.slf4j.LoggerFactory;
 
 import java.nio.file.Path;
 import java.util.Map;
@@ -86,6 +88,10 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
             CommonModUtil.runWithoutCrash(() -> SparkLaunchProfiler.start("launch"), "Failed to start profiler");
         }
 
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.log_stdout_in_log_files.PrintStreamReplacement")) {
+            System.setOut(new TracingPrintStream(LoggerFactory.getLogger("STDOUT"), System.out));
+            System.setErr(new TracingPrintStream(LoggerFactory.getLogger("STDERR"), System.err));
+        }
     }
 
     public void applyASMTransformers(String mixinClassName, ClassNode targetClass) {

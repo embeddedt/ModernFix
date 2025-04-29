@@ -184,7 +184,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.log_stdout_in_log_files", true)
             .put("mixin.devenv", isDevEnv)
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
-            .putConditionally(() -> !isFabric, "mixin.feature.registry_event_progress", false)
+            .putConditionally(() -> !isFabric, "mixin.feature.registry_event_progress", true)
             .putConditionally(() -> isFabric, "mixin.perf.clear_fabric_mapping_tables", false)
             .build();
 

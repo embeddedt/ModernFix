@@ -66,5 +66,6 @@ accessible field net/minecraft/server/packs/resources/ProfiledReloadInstance$Sta
 accessible field net/minecraft/server/packs/resources/ProfiledReloadInstance$State reloadNanos Ljava/util/concurrent/atomic/AtomicLong;
 
 accessible class net/minecraft/world/item/crafting/Ingredient$Value
+accessible field net/minecraft/world/item/crafting/Ingredient$TagValue tag Lnet/minecraft/tags/TagKey;
 accessible class net/minecraft/world/item/crafting/Ingredient$ItemValue
 accessible class net/minecraft/client/searchtree/SearchRegistry$TreeEntry

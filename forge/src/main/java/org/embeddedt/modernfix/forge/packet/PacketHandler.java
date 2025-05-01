@@ -13,17 +13,21 @@ import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 import java.util.function.Supplier;
 
 public class PacketHandler {
-    private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            new ResourceLocation(ModernFix.MODID, "main"),
-            () -> PROTOCOL_VERSION,
-            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION),
-            NetworkRegistry.acceptMissingOr(PROTOCOL_VERSION)
-    );
+    public static final SimpleChannel INSTANCE = buildChannel("main", "1");
+    public static final SimpleChannel INGREDIENT_SYNC = buildChannel("ingredient_sync", "1");
+    public static final ThreadLocal<Boolean> CLIENT_HAS_SMART_INGREDIENT_SYNC = ThreadLocal.withInitial(() -> false);
+
+    private static SimpleChannel buildChannel(String name, String version) {
+        return NetworkRegistry.newSimpleChannel(
+                new ResourceLocation(ModernFix.MODID, name),
+                () -> version,
+                NetworkRegistry.acceptMissingOr(version),
+                NetworkRegistry.acceptMissingOr(version)
+        );
+    }
 
     public static void register() {
-        int id = 1;
-        INSTANCE.registerMessage(id++, EntityIDSyncPacket.class, EntityIDSyncPacket::serialize, EntityIDSyncPacket::deserialize, PacketHandler::handleSyncPacket);
+        INSTANCE.registerMessage(1, EntityIDSyncPacket.class, EntityIDSyncPacket::serialize, EntityIDSyncPacket::deserialize, PacketHandler::handleSyncPacket);
     }
 
     private static void handleSyncPacket(EntityIDSyncPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {

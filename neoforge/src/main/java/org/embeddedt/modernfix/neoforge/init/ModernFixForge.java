@@ -17,11 +17,14 @@ import net.neoforged.fml.loading.FMLLoader;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
+import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.neoforge.ModernFixConfig;
+import org.embeddedt.modernfix.neoforge.packet.SmartIngredientSyncPayload;
 
 import java.util.List;
 
@@ -36,6 +39,7 @@ public class ModernFixForge {
         NeoForge.EVENT_BUS.register(this);
         modBus.addListener(this::commonSetup);
         modBus.addListener(this::registerItems);
+        modBus.addListener(this::registerNetworkChannel);
         if(FMLEnvironment.dist == Dist.CLIENT) {
             NeoForge.EVENT_BUS.register(new ModernFixClientForge(modContainer, modBus));
         }
@@ -72,6 +76,16 @@ public class ModernFixForge {
                     ModLoader.addLoadingIssue(ModLoadingIssue.warning("modernfix.perf_mod_warning"));
             });
         }
+    }
+
+    private void registerNetworkChannel(final RegisterPayloadHandlersEvent event) {
+        // Sets the current network version
+        final PayloadRegistrar registrar = event.registrar("1").optional();
+        registrar.playToClient(
+                SmartIngredientSyncPayload.TYPE,
+                SmartIngredientSyncPayload.STREAM_CODEC,
+                (payload, ctx) -> {}
+        );
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

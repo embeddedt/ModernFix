@@ -67,5 +67,6 @@ accessible field net/minecraft/server/packs/resources/ProfiledReloadInstance$Sta
 
 accessible class net/minecraft/world/item/crafting/Ingredient$Value
 accessible field net/minecraft/world/item/crafting/Ingredient$TagValue tag Lnet/minecraft/tags/TagKey;
+accessible field net/minecraft/world/item/crafting/Ingredient$ItemValue item Lnet/minecraft/world/item/ItemStack;
 accessible class net/minecraft/world/item/crafting/Ingredient$ItemValue
 accessible class net/minecraft/client/searchtree/SearchRegistry$TreeEntry

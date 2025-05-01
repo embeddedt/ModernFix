@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.reduce_blockstate_cache_rebuilds;
 
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.blockstate.BlockStateCacheHandler;
@@ -22,6 +23,8 @@ public class BlocksMixin {
     // require = 0 due to Forge removing the BLOCK_STATE_REGISTRY init here
     @Redirect(method = "<clinit>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/BlockState;initCache()V"), require = 0)
     private static void skipCacheInit(BlockState state) {
+        // Trigger classloading of Items in case a mod expects it.
+        Items.AIR.asItem();
         // Mark the cache as invalid
         ((IBlockState)state).clearCache();
     }

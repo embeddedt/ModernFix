@@ -106,7 +106,7 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
                     // Clear the baked cache as upstream CTM does
                     ((CTMModelBakeryAccessor)bakery).mfix$getBakedCache().clear();
                     ModelBakery.ModelBakerImpl baker = bakery.new ModelBakerImpl(spriteGetter, key);
-                    ctmModel.bake(baker, Material::sprite, BlockModelRotation.X0_Y0);
+                    ctmModel.bake(baker, m -> spriteGetter.get(key, m), BlockModelRotation.X0_Y0);
                 }
             }
         }

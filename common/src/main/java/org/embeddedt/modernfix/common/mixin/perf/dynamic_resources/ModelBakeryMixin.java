@@ -149,7 +149,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
                         model = bakedMissingModel;
                     }
                     for(ModernFixClientIntegration integration : ModernFixClient.CLIENT_INTEGRATIONS) {
-                        model = integration.onBakedModelLoad(location, prototype, model, BlockModelRotation.X0_Y0, (ModelBakery)(Object)this, this.textureGetter);
+                        try {
+                            model = integration.onBakedModelLoad(location, prototype, model, BlockModelRotation.X0_Y0, (ModelBakery)(Object)this, this.textureGetter);
+                        } catch (RuntimeException e) {
+                            ModernFix.LOGGER.error("Exception encountered running dynamic resources integration", e);
+                        }
                     }
                 }
             }

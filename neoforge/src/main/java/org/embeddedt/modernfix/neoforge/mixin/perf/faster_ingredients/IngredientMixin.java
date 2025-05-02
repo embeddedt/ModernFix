@@ -5,7 +5,9 @@ import it.unimi.dsi.fastutil.ints.IntComparators;
 import it.unimi.dsi.fastutil.ints.IntList;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ItemStackLinkedSet;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.neoforged.neoforge.common.crafting.ICustomIngredient;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -17,6 +19,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
+import java.util.stream.Collectors;
 
 @Mixin(value = Ingredient.class, priority = 700)
 public abstract class IngredientMixin {
@@ -29,6 +32,8 @@ public abstract class IngredientMixin {
 
     @Shadow public abstract boolean isCustom();
 
+    @Shadow private ICustomIngredient customIngredient;
+
     @Unique
     private boolean isVanilla() {
         return !this.isCustom();
@@ -40,7 +45,7 @@ public abstract class IngredientMixin {
      */
     @Inject(method = "test(Lnet/minecraft/world/item/ItemStack;)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/crafting/Ingredient;getItems()[Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
     private void modernfix$fasterTagIngredientTest(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
-        if (this.isCustom() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue) {
+        if (this.isVanilla() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue) {
             cir.setReturnValue(stack.getItemHolder().is(tagValue.tag()));
         }
     }
@@ -49,9 +54,11 @@ public abstract class IngredientMixin {
      * @author embeddedt
      * @reason exploding the stack list is unnecessary
      */
-    @Overwrite(remap = false)
-    public boolean hasNoItems() {
-        return !this.containsItems();
+    @Inject(method = "hasNoItems", at = @At("HEAD"), cancellable = true, remap = false)
+    public void hasNoItems(CallbackInfoReturnable<Boolean> cir) {
+        if (this.isVanilla()) {
+            cir.setReturnValue(!this.containsItems());
+        }
     }
 
     @Unique
@@ -110,6 +117,11 @@ public abstract class IngredientMixin {
     public ItemStack[] getItems() {
         // For compatibility if mods explicitly force a set of item stacks to be used
         if (this.itemStacks != null) {
+            return this.itemStacks;
+        }
+        if (this.customIngredient != null) {
+            // We probably have to cache this as mods won't make it fast if they expect Neo to cache it
+            this.itemStacks = this.customIngredient.getItems().collect(Collectors.toCollection(ItemStackLinkedSet::createTypeAndComponentsSet)).toArray(ItemStack[]::new);
             return this.itemStacks;
         }
         // Fast path for case with one item

@@ -6,11 +6,13 @@ import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -70,6 +72,13 @@ public class ModelBakeEventHelper {
         });
         BuiltInRegistries.ITEM.keySet().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));
         this.topLevelModelLocations.addAll(modelRegistry.keySet());
+        // We add all standard item model locations here so that mods like JAOPCA that assume their remapping logic
+        // triggers loading of them (which it doesn't with dynamic resources on), will still detect the presence
+        // of their extra models in the emulated registry.
+        var itemModelLister = FileToIdConverter.json("models/item");
+        itemModelLister.listMatchingResources(Minecraft.getInstance().getResourceManager()).keySet().forEach(itemModel -> {
+            this.topLevelModelLocations.add(ModelResourceLocation.inventory(itemModelLister.fileToId(itemModel)));
+        });
         this.dependencyGraph = buildDependencyGraph();
     }
 

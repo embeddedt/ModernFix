@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.AtlasSet;
@@ -39,6 +40,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
@@ -64,14 +66,15 @@ public class ModelManagerMixin implements IExtendedModelManager {
     private static Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> deferBlockModelLoad(Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> fn, @Local(ordinal = 0, argsOnly = true) ResourceManager manager) {
         return resourceMap -> {
             var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, location), 100L);
-            return CompletableFuture.completedFuture(new LambdaMap<>(location -> cache.getUnchecked(location)));
+            return CompletableFuture.completedFuture(Maps.asMap(Set.copyOf(resourceMap.keySet()), location -> cache.getUnchecked(location)));
         };
     }
 
     @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelManager;loadBlockStates(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
     private CompletableFuture<Map<ResourceLocation, List<BlockStateModelLoader.LoadedJson>>> deferBlockStateLoad(ResourceManager manager, Executor executor) {
         var cache = CacheUtil.<ResourceLocation, List<BlockStateModelLoader.LoadedJson>>simpleCacheForLambda(location -> loadSingleBlockState(manager, location), 100L);
-        return CompletableFuture.completedFuture(new LambdaMap<>(location -> cache.getUnchecked(location)));
+        var blockStateKeys = Set.copyOf(BlockStateModelLoader.BLOCKSTATE_LISTER.listMatchingResourceStacks(manager).keySet());
+        return CompletableFuture.completedFuture(Maps.asMap(blockStateKeys, location -> cache.getUnchecked(location)));
     }
 
     @Redirect(method = "loadModels", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))

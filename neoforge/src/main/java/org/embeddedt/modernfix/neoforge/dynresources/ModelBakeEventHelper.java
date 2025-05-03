@@ -55,6 +55,7 @@ public class ModelBakeEventHelper {
         EVERYTHING
     }
     private static final Map<String, UniverseVisibility> MOD_VISIBILITY_CONFIGURATION = ImmutableMap.<String, UniverseVisibility>builder()
+            .put("eternal_starlight", UniverseVisibility.SELF_AND_DEPS) // needed as a mitigation until https://github.com/LeoMinecraftModding/eternal-starlight/pull/82 is merged
             .build();
     private final Map<ModelResourceLocation, BakedModel> modelRegistry;
     private final Set<ModelResourceLocation> topLevelModelLocations;

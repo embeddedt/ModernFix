@@ -7,6 +7,7 @@ import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.embeddedt.modernfix.forge.recipe.ExtendedIngredient;
+import org.embeddedt.modernfix.forge.recipe.IngredientItemStacksSoftReference;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -30,6 +31,8 @@ public abstract class IngredientMixin implements ExtendedIngredient {
     @Shadow private @Nullable IntList stackingIds;
 
     @Shadow @Nullable private ItemStack[] itemStacks;
+
+    private volatile IngredientItemStacksSoftReference mfix$cachedItemStacks;
 
     /**
      * @author embeddedt
@@ -95,9 +98,8 @@ public abstract class IngredientMixin implements ExtendedIngredient {
 
     /**
      * @author embeddedt
-     * @reason remove caching of the item stacks, it won't deduplicate anything with tags (since each Ingredient
-     * instance would make new item stacks anyway, and storing them permanently takes up a lot of memory).
-     * We implement an optimized version of some functions that avoids needing to call this entirely.
+     * @reason Change caching of item stacks to use a soft reference, which allows the GC to evict the array under
+     * memory pressure/when it hasn't been used.
      */
     @Overwrite
     public ItemStack[] getItems() {
@@ -105,6 +107,19 @@ public abstract class IngredientMixin implements ExtendedIngredient {
         if (this.itemStacks != null) {
             return this.itemStacks;
         }
+        var cache = this.mfix$cachedItemStacks;
+        if (cache != null) {
+            var stacks = cache.get();
+            if (stacks != null) {
+                return stacks;
+            }
+        }
+        ItemStack[] result = computeItemsArray();
+        this.mfix$cachedItemStacks = new IngredientItemStacksSoftReference((Ingredient)(Object)this, result);
+        return result;
+    }
+
+    private ItemStack[] computeItemsArray() {
         // Fast path for case with one item
         if (this.values.length == 1) {
             if (this.values[0] instanceof Ingredient.ItemValue itemValue) {
@@ -130,5 +145,10 @@ public abstract class IngredientMixin implements ExtendedIngredient {
             }
         }
         return itemList.toArray(ItemStack[]::new);
+    }
+
+    @Override
+    public void mfix$clearReference() {
+        this.mfix$cachedItemStacks = null;
     }
 }

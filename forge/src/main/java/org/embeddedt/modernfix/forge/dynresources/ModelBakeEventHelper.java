@@ -12,6 +12,7 @@ import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
@@ -59,7 +60,7 @@ public class ModelBakeEventHelper {
     private final MutableGraph<String> dependencyGraph;
     public ModelBakeEventHelper(Map<ResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
-        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>();
+        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(Block.BLOCK_STATE_REGISTRY.size() + BuiltInRegistries.ITEM.size());
         // Skip going through ModelLocationCache because most of the accesses will be misses
         BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
             var location = entry.getKey().location();

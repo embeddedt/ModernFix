@@ -13,6 +13,7 @@ import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
@@ -63,7 +64,7 @@ public class ModelBakeEventHelper {
 
     public ModelBakeEventHelper(Map<ModelResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
-        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>();
+        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(Block.BLOCK_STATE_REGISTRY.size() + BuiltInRegistries.ITEM.size());
         // Skip going through ModelLocationCache because most of the accesses will be misses
         BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
             var location = entry.getKey().location();

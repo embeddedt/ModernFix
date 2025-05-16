@@ -14,4 +14,5 @@ public interface IExtendedModelBakery {
     ImmutableList<BlockState> getBlockStatesForMRL(StateDefinition<Block, BlockState> stateDefinition, ModelResourceLocation location);
     BakedModel bakeDefault(ResourceLocation modelLocation, ModelState state);
     UnbakedModel mfix$getUnbakedMissingModel();
+    void mfix$clearModels();
 }

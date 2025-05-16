@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.forge.mixin.perf.dynamic_resources;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
@@ -128,6 +129,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {
         if(!debugDynamicModelLoading)
             return;
+        // If the entry was replaced (happens because of the Minecraft model loading code structure), or
+        // was explicitly removed, we don't really care.
+        var reason = notification.getCause();
+        if (reason == RemovalCause.REPLACED || reason == RemovalCause.EXPLICIT) {
+            return;
+        }
         Object k = notification.getKey();
         if(k == null)
             return;
@@ -340,5 +347,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     public UnbakedModel mfix$getUnbakedMissingModel() {
         return missingModel;
+    }
+
+    @Override
+    public void mfix$clearModels() {
+        loadedModels.invalidateAll();
+        loadedBakedModels.invalidateAll();
     }
 }

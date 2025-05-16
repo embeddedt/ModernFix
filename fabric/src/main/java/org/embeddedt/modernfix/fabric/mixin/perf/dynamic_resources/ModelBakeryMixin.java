@@ -325,4 +325,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     public UnbakedModel mfix$getUnbakedMissingModel() {
         return missingModel;
     }
+
+    @Override
+    public void mfix$clearModels() {
+        loadedModels.invalidateAll();
+        loadedBakedModels.invalidateAll();
+    }
 }

@@ -19,6 +19,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -194,7 +195,14 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
 
     @Override
     public void clear() {
-        throw new UnsupportedOperationException();
+        if (ModernFixPlatformHooks.INSTANCE.isDevEnv()) {
+            ModernFix.LOGGER.warn("Clearing model registry");
+            permanentOverrides.clear();
+            bakedCache.clear();
+            ((IExtendedModelBakery)bakery).mfix$clearModels();
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
 
     @NotNull

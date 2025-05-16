@@ -84,7 +84,7 @@ repositories {
     exclusiveContent {
         forRepository {
             maven {
-                url = 'https://maven.saps.dev/minecraft'
+                url = 'https://maven.latvian.dev/releases'
             }
         }
         filter {

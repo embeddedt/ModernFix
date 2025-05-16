@@ -165,6 +165,7 @@ public class ModelBakeEventHelper {
         modIdsToInclude.remove("minecraft");
         Set<ModelResourceLocation> ourModelLocations;
         if (config == UniverseVisibility.SELF_AND_DEPS) {
+            ModernFix.LOGGER.debug("Mod {} is restricted to seeing models from mods: [{}]", modId, String.join(", ", modIdsToInclude));
             ourModelLocations = Sets.filter(this.topLevelModelLocations, loc -> modIdsToInclude.contains(loc.id().getNamespace()));
         } else {
             ourModelLocations = this.topLevelModelLocations;

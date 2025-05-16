@@ -89,6 +89,7 @@ repositories {
         }
         filter {
             includeGroup "dev.latvian.mods"
+            includeGroup "dev.latvian.apps"
         }
     }
     exclusiveContent {

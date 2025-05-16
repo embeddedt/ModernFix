@@ -52,7 +52,9 @@ dependencies {
 
     modCompileOnly("curse.maven:jeresources-240630:3951643")
     modCompileOnly("me.shedaniel:RoughlyEnoughItems-forge:${rei_version}") { transitive false }
-    modCompileOnly("dev.latvian.mods:kubejs-forge:${kubejs_version}")
+    modCompileOnly("dev.latvian.mods:kubejs-neoforge:${kubejs_version}") {
+        transitive = false
+    }
     //modRuntimeOnly("curse.maven:ferritecore-429235:4441949")
     modCompileOnly("curse.maven:CTM-267602:${ctm_version}")
     modCompileOnly("curse.maven:ldlib-626676:${ldlib_version}")

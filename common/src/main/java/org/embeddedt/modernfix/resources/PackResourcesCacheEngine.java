@@ -147,9 +147,17 @@ public class PackResourcesCacheEngine {
 
     public Set<String> getNamespaces(PackType type) {
         awaitLoad();
-        if(PackTypeHelper.isVanillaPackType(type))
-            return this.root.getChild(type.getDirectory()).children.keySet();
-        else
+        if(PackTypeHelper.isVanillaPackType(type)) {
+            var namespaceToNodeMap = this.root.getChild(type.getDirectory()).children;
+            var results = new ObjectOpenHashSet<String>();
+            for (var entry : namespaceToNodeMap.entrySet()) {
+                // Entries without children are files, not folders
+                if (!entry.getValue().children.isEmpty()) {
+                    results.add(entry.getKey());
+                }
+            }
+            return results;
+        } else
             return null;
     }
 

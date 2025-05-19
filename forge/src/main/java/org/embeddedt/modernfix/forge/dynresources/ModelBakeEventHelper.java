@@ -6,14 +6,11 @@ import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
-import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.fml.ModContainer;
 import net.minecraftforge.fml.ModList;
 import net.minecraftforge.forgespi.language.IModInfo;
@@ -60,13 +57,15 @@ public class ModelBakeEventHelper {
     private final MutableGraph<String> dependencyGraph;
     public ModelBakeEventHelper(Map<ResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
-        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(Block.BLOCK_STATE_REGISTRY.size() + BuiltInRegistries.ITEM.size());
-        // Skip going through ModelLocationCache because most of the accesses will be misses
+        int blockStateCount = 0;
+        for (var b : BuiltInRegistries.BLOCK) {
+            blockStateCount += b.getStateDefinition().getPossibleStates().size();
+        }
+        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(blockStateCount + BuiltInRegistries.ITEM.size());
+        var modelLocationBuilder = new ModelLocationBuilder();
         BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
             var location = entry.getKey().location();
-            for(BlockState state : entry.getValue().getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(location, state));
-            }
+            modelLocationBuilder.generateForBlock(topLevelModelLocations, entry.getValue(), location);
         });
         BuiltInRegistries.ITEM.keySet().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));
         this.topLevelModelLocations.addAll(modelRegistry.keySet());

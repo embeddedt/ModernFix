@@ -51,6 +51,9 @@ public class ModelBakeEventHelper {
         EVERYTHING
     }
     private static final Map<String, UniverseVisibility> MOD_VISIBILITY_CONFIGURATION = ImmutableMap.<String, UniverseVisibility>builder()
+            .put("alexscaves", UniverseVisibility.SELF_AND_DEPS)
+            .put("refinedstorage", UniverseVisibility.SELF_AND_DEPS)
+            .put("cabletiers", UniverseVisibility.SELF_AND_DEPS)
             .build();
     private final Map<ResourceLocation, BakedModel> modelRegistry;
     private final Set<ResourceLocation> topLevelModelLocations;

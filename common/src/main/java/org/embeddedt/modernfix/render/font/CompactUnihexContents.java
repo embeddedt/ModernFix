@@ -2,16 +2,20 @@ package org.embeddedt.modernfix.render.font;
 
 import net.minecraft.client.gui.font.providers.UnihexProvider;
 
+import java.lang.reflect.Array;
+
 /**
  * Implements more compact storage for LineData contents.
  *
  * Credit for the idea of using flattened fields rather than a backing array goes to @AnAwesomGuy.
  */
 public class CompactUnihexContents {
+    private static final boolean TEST_ROUNDTRIP = false;
+
     private static long extract8Bytes(byte[] arr, int off) {
         long l = 0;
         for (int i = 0; i < 8; i++) {
-            l |= ((long)arr[off + i] << (i * 8));
+            l |= (((long)arr[off + i] & 0xFF) << (i * 8));
         }
         return l;
     }
@@ -23,13 +27,23 @@ public class CompactUnihexContents {
     private static long extract4Shorts(short[] arr, int off) {
         long l = 0;
         for (int i = 0; i < 4; i++) {
-            l |= ((long)arr[off + i] << (i * 16));
+            l |= (((long)arr[off + i] & 0xFFFF) << (i * 16));
         }
         return l;
     }
 
     private static short extractShort(long compressed, int off) {
         return (short)((compressed >> (off * 16)) & 0xFFFF);
+    }
+
+    private static void verifyRoundTrip(Object originalArray, UnihexProvider.LineData data, int shift) {
+        for(int i = 0; i < 16; i++) {
+            int val = Array.getInt(originalArray, i) << shift;
+            int actualVal = data.line(i);
+            if (val != actualVal) {
+                throw new AssertionError("Value at index %d differs. Expected %08x, got %08x".formatted(i, val, actualVal));
+            }
+        }
     }
 
     public static class Bytes implements UnihexProvider.LineData {
@@ -39,6 +53,9 @@ public class CompactUnihexContents {
         public Bytes(byte[] contents) {
             this.b0 = extract8Bytes(contents, 0);
             this.b8 = extract8Bytes(contents, 8);
+            if (TEST_ROUNDTRIP) {
+                verifyRoundTrip(contents, this, 24);
+            }
         }
 
         @Override
@@ -70,6 +87,9 @@ public class CompactUnihexContents {
             this.b4 = extract4Shorts(contents, 4);
             this.b8 = extract4Shorts(contents, 8);
             this.b12 = extract4Shorts(contents, 12);
+            if (TEST_ROUNDTRIP) {
+                verifyRoundTrip(contents, this, 16);
+            }
         }
 
         @Override

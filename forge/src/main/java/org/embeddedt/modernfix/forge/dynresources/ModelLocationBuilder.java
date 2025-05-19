@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.forge.dynresources;
 
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -17,11 +18,11 @@ public class ModelLocationBuilder {
     private final Map<Property<?>, PropertyData> propertyToOptionStrings = new Object2ObjectOpenHashMap<>();
     private final StringBuilder builder = new StringBuilder();
 
-    private record PropertyData(List<String> nameValuePairs, int maxPairLength) {}
+    private record PropertyData(ImmutableList<String> nameValuePairs, int maxPairLength) {}
 
     public void generateForBlock(Set<ResourceLocation> destinationSet, Block block, ResourceLocation baseLocation) {
         var props = block.getStateDefinition().getProperties();
-        List<List<String>> optionsList = new ArrayList<>(props.size());
+        List<ImmutableList<String>> optionsList = new ArrayList<>(props.size());
         int requiredBuilderSize = Math.max(0, props.size() - 1); // commas
         for (var prop : props) {
             var data = propertyToOptionStrings.computeIfAbsent(prop, ModelLocationBuilder::computePropertyOptions);
@@ -47,14 +48,14 @@ public class ModelLocationBuilder {
     }
 
     private static PropertyData computePropertyOptions(Property<?> prop) {
-        List<String> valuesList = new ArrayList<>(prop.getPossibleValues().size());
+        ImmutableList.Builder<String> valuesList = ImmutableList.builderWithExpectedSize(prop.getPossibleValues().size());
         int maxLength = 0;
         for (var val : prop.getPossibleValues()) {
             String pair = prop.getName() + "=" + getValueName(prop, val);
             valuesList.add(pair.toLowerCase(Locale.ROOT));
             maxLength = Math.max(pair.length(), maxLength);
         }
-        return new PropertyData(List.copyOf(valuesList), maxLength);
+        return new PropertyData(valuesList.build(), maxLength);
     }
 
     private static <T extends Comparable<T>> String getValueName(Property<T> property, Comparable<?> value) {

@@ -16,6 +16,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
@@ -24,6 +25,8 @@ import java.util.stream.Stream;
  */
 public class PackResourcesCacheEngine {
     private static final Joiner SLASH_JOINER = Joiner.on('/');
+    private static final ConcurrentHashMap<String, String> PATH_COMPONENT_INTERNER = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, String[]> CACHED_SPLIT_PATHS = new ConcurrentHashMap<>();
 
     static class Node {
         Map<String, Node> children;
@@ -100,7 +103,6 @@ public class PackResourcesCacheEngine {
         // used for log message
         this.debugPath = basePathRetriever.apply(PackType.CLIENT_RESOURCES).toAbsolutePath();
         this.root.children = new Object2ObjectOpenHashMap<>();
-        ObjectOpenHashSet<String> pathKeys = new ObjectOpenHashSet<>();
         for(PackType type : PackType.values()) {
             var typeRoot = new Node();
             this.root.children.put(type.getDirectory(), typeRoot);
@@ -114,8 +116,12 @@ public class PackResourcesCacheEngine {
                                 .filter(PackResourcesCacheEngine::isValidCachedResourcePath)
                                 .forEach(path -> {
                                     var node = typeRoot;
-                                    for (Path component : path) {
-                                        String key = pathKeys.addOrGet(component.toString());
+                                    int nameCount = path.getNameCount();
+                                    for (int i = 0; i < nameCount; i++) {
+                                        String key = path.getName(i).toString();
+                                        if (i < (nameCount - 1)) {
+                                            key = PATH_COMPONENT_INTERNER.computeIfAbsent(key, Function.identity());
+                                        }
                                         if (node.children == null) {
                                             node.children = new Object2ObjectOpenHashMap<>();
                                         }
@@ -212,5 +218,17 @@ public class PackResourcesCacheEngine {
             return;
         }
         node.collectResources(resourceNamespace, this.rootPathsByType.get(type).resolve(resourceNamespace), components, 0, maxDepth, output);
+    }
+
+    private static String[] decompose(String path) {
+        String[] components = path.split("/");
+        for (int i = 0; i < components.length; i++) {
+            components[i] = PATH_COMPONENT_INTERNER.computeIfAbsent(components[i], Function.identity());
+        }
+        return components;
+    }
+
+    public static String[] decomposeCached(String path) {
+        return CACHED_SPLIT_PATHS.computeIfAbsent(path, PackResourcesCacheEngine::decompose);
     }
 }

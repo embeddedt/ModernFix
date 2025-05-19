@@ -6,6 +6,7 @@ import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -57,6 +58,7 @@ public class ModelBakeEventHelper {
             .build();
     private final Map<ResourceLocation, BakedModel> modelRegistry;
     private final Set<ResourceLocation> topLevelModelLocations;
+    private final Set<String> namespacesWithModels;
     private final MutableGraph<String> dependencyGraph;
     public ModelBakeEventHelper(Map<ResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
@@ -65,17 +67,25 @@ public class ModelBakeEventHelper {
             blockStateCount += b.getStateDefinition().getPossibleStates().size();
         }
         this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(blockStateCount + BuiltInRegistries.ITEM.size());
+        this.namespacesWithModels = new ObjectOpenHashSet<>(ModList.get().size());
         var modelLocationBuilder = new ModelLocationBuilder();
         BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
             var location = entry.getKey().location();
             modelLocationBuilder.generateForBlock(topLevelModelLocations, entry.getValue(), location);
+            namespacesWithModels.add(location.getNamespace());
         });
-        BuiltInRegistries.ITEM.keySet().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));
+        BuiltInRegistries.ITEM.keySet().forEach(key -> {
+            topLevelModelLocations.add(new ModelResourceLocation(key, "inventory"));
+            namespacesWithModels.add(key.getNamespace());
+        });
         this.topLevelModelLocations.addAll(modelRegistry.keySet());
+        for (var loc : modelRegistry.keySet()) {
+            this.namespacesWithModels.add(loc.getNamespace());
+        }
         this.dependencyGraph = buildDependencyGraph();
     }
 
-    private static MutableGraph<String> buildDependencyGraph() {
+    private MutableGraph<String> buildDependencyGraph() {
         MutableGraph<String> dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {
             dependencyGraph.addNode(id);
@@ -88,7 +98,7 @@ public class ModelBakeEventHelper {
             if(mContainer.isPresent()) {
                 for(IModInfo.ModVersion version : mContainer.get().getModInfo().getDependencies()) {
                     // avoid self-loops
-                    if(!Objects.equals(id, version.getModId()))
+                    if(!Objects.equals(id, version.getModId()) && !version.getModId().equals("minecraft") && namespacesWithModels.contains(version.getModId()))
                         dependencyGraph.putEdge(id, version.getModId());
                 }
             }
@@ -143,17 +153,29 @@ public class ModelBakeEventHelper {
         };
     }
 
+    private Set<String> computeVisibleModIds(String modId) {
+        Set<String> deps;
+        try {
+            deps = this.dependencyGraph.adjacentNodes(modId);
+        } catch (IllegalArgumentException e) {
+            deps = Set.of();
+        }
+        if (deps.isEmpty()) {
+            // avoid extra work below
+            return Set.of(modId);
+        }
+        var set = new ObjectOpenHashSet<String>();
+        set.add(modId);
+        set.addAll(deps);
+        return Set.copyOf(set);
+    }
+
     public Map<ResourceLocation, BakedModel> wrapRegistry(String modId) {
         var config = MOD_VISIBILITY_CONFIGURATION.getOrDefault(modId, UniverseVisibility.EVERYTHING);
         if (config == UniverseVisibility.NONE) {
             return createWarningRegistry(modId);
         }
-        final Set<String> modIdsToInclude = new HashSet<>();
-        modIdsToInclude.add(modId);
-        try {
-            modIdsToInclude.addAll(this.dependencyGraph.adjacentNodes(modId));
-        } catch(IllegalArgumentException ignored) { /* sanity check */ }
-        modIdsToInclude.remove("minecraft");
+        final Set<String> modIdsToInclude = computeVisibleModIds(modId);
         Set<ResourceLocation> ourModelLocations;
         if (config == UniverseVisibility.SELF_AND_DEPS) {
             ModernFix.LOGGER.debug("Mod {} is restricted to seeing models from mods: [{}]", modId, String.join(", ", modIdsToInclude));

@@ -8,6 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.ItemStackLinkedSet;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.neoforged.neoforge.common.crafting.ICustomIngredient;
+import org.embeddedt.modernfix.neoforge.load.MinecraftServerReloadTracker;
 import org.embeddedt.modernfix.neoforge.recipe.ExtendedIngredient;
 import org.embeddedt.modernfix.neoforge.recipe.IngredientItemStacksSoftReference;
 import org.jetbrains.annotations.Nullable;
@@ -44,12 +45,31 @@ public abstract class IngredientMixin implements ExtendedIngredient {
     private volatile IngredientItemStacksSoftReference mfix$cachedItemStacks;
 
     /**
+     * Minecraft's server resource loading process has a design flaw in that tags are loaded, recipes are loaded,
+     * then tags are bound to the server registries. This results in recipe modification mods like KubeJS/CraftTweaker
+     * not being able to use Ingredient.test reliably as the TagValue will not find any contents for the given tag.
+     * To work around this issue these mods track tag context themselves and then patch TagValue.getItems to use it
+     * during the resource reload process. We often bypass Value.getItems, so we must disable that bypass
+     * whenever a server reload is in progress.
+     * <p>
+     * An alternative fix would be to bind tags ourselves when the recipe manager reload begins, before control is
+     * handed to these mods. However, it's unclear if there would be any negative side effects from binding tags early
+     * like this. Moreover, this fix would only work if the mod-provided patches to getItems read exactly what the
+     * registry would normally contain, rather than a modified version.
+     * <p>
+     * Note: this is a separate problem from the issue where clients may receive recipes before tags in 1.21.
+     */
+    private boolean mfix$areTagsAvailable() {
+        return !MinecraftServerReloadTracker.isReloadActive();
+    }
+
+    /**
      * @author embeddedt
      * @reason tag ingredients can be tested without iterating over all items
      */
     @Inject(method = "test(Lnet/minecraft/world/item/ItemStack;)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/crafting/Ingredient;getItems()[Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
     private void modernfix$fasterTagIngredientTest(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
-        if (this.isVanilla() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue) {
+        if (this.isVanilla() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
             cir.setReturnValue(stack.getItemHolder().is(tagValue.tag()));
         }
     }
@@ -75,7 +95,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
         for (Ingredient.Value value : this.values) {
             if (value instanceof Ingredient.ItemValue) {
                 return true;
-            } else if (value instanceof Ingredient.TagValue tagValue) {
+            } else if (value instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
                 var holderSetOpt = BuiltInRegistries.ITEM.getTag(tagValue.tag());
                 if (holderSetOpt.isPresent() && holderSetOpt.get().size() > 0) {
                     return true;
@@ -99,7 +119,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
      */
     @Inject(method = "getStackingIds", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/crafting/Ingredient;getItems()[Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
     private void modernfix$fasterTagIngredientStacking(CallbackInfoReturnable<IntList> cir) {
-        if (this.isVanilla() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue) {
+        if (this.isVanilla() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
             var tag = BuiltInRegistries.ITEM.getTag(tagValue.tag());
             if (!tag.isPresent() || tag.get().size() == 0) {
                 return;
@@ -144,7 +164,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
         if (this.values.length == 1) {
             if (this.values[0] instanceof Ingredient.ItemValue itemValue) {
                 return new ItemStack[] { itemValue.item() };
-            } else if (this.values[0] instanceof Ingredient.TagValue tagValue) {
+            } else if (this.values[0] instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
                 var tag = BuiltInRegistries.ITEM.getTag(tagValue.tag());
                 if (tag.isPresent() && tag.get().size() > 0) {
                     var holderSet = tag.get();

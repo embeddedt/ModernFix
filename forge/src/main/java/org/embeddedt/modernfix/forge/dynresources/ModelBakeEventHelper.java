@@ -20,12 +20,10 @@ import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractSet;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -233,8 +231,7 @@ public class ModelBakeEventHelper {
         @Override
         public void replaceAll(BiFunction<? super ResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
             ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. Some hacks will be used to keep this fast, but they may not be 100% compatible.", modId);
-            List<ResourceLocation> locations = new ArrayList<>(ourModelLocations);
-            for(ResourceLocation location : locations) {
+            for(ResourceLocation location : ourModelLocations) {
                 /*
                  * Fetching every model is insanely slow. So we call the function with a null object first, since it
                  * probably isn't expecting that. If we get an exception thrown, or it returns nonnull, then we know

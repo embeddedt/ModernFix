@@ -6,15 +6,13 @@ import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
 import it.unimi.dsi.fastutil.objects.ObjectLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.block.BlockModelShaper;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.FileToIdConverter;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.neoforgespi.language.IModInfo;
@@ -23,12 +21,10 @@ import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.AbstractSet;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -57,22 +53,34 @@ public class ModelBakeEventHelper {
     }
     private static final Map<String, UniverseVisibility> MOD_VISIBILITY_CONFIGURATION = ImmutableMap.<String, UniverseVisibility>builder()
             .put("eternal_starlight", UniverseVisibility.SELF_AND_DEPS) // needed as a mitigation until https://github.com/LeoMinecraftModding/eternal-starlight/pull/82 is merged
+            .put("alexscaves", UniverseVisibility.SELF_AND_DEPS)
+            .put("refinedstorage", UniverseVisibility.SELF_AND_DEPS)
+            .put("cabletiers", UniverseVisibility.SELF_AND_DEPS)
             .build();
     private final Map<ModelResourceLocation, BakedModel> modelRegistry;
     private final Set<ModelResourceLocation> topLevelModelLocations;
+
+    private final Set<String> namespacesWithModels;
     private final MutableGraph<String> dependencyGraph;
 
     public ModelBakeEventHelper(Map<ModelResourceLocation, BakedModel> modelRegistry) {
         this.modelRegistry = modelRegistry;
-        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(Block.BLOCK_STATE_REGISTRY.size() + BuiltInRegistries.ITEM.size());
-        // Skip going through ModelLocationCache because most of the accesses will be misses
+        int blockStateCount = 0;
+        for (var b : BuiltInRegistries.BLOCK) {
+            blockStateCount += b.getStateDefinition().getPossibleStates().size();
+        }
+        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(blockStateCount + BuiltInRegistries.ITEM.size());
+        this.namespacesWithModels = new ObjectOpenHashSet<>(ModList.get().size());
+        var modelLocationBuilder = new ModelLocationBuilder();
         BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
             var location = entry.getKey().location();
-            for(BlockState state : entry.getValue().getStateDefinition().getPossibleStates()) {
-                topLevelModelLocations.add(BlockModelShaper.stateToModelLocation(location, state));
-            }
+            modelLocationBuilder.generateForBlock(topLevelModelLocations, entry.getValue(), location);
+            namespacesWithModels.add(location.getNamespace());
         });
-        BuiltInRegistries.ITEM.keySet().forEach(key -> topLevelModelLocations.add(new ModelResourceLocation(key, "inventory")));
+        BuiltInRegistries.ITEM.keySet().forEach(key -> {
+            topLevelModelLocations.add(new ModelResourceLocation(key, "inventory"));
+            namespacesWithModels.add(key.getNamespace());
+        });
         this.topLevelModelLocations.addAll(modelRegistry.keySet());
         // We add all standard item model locations here so that mods like JAOPCA that assume their remapping logic
         // triggers loading of them (which it doesn't with dynamic resources on), will still detect the presence
@@ -80,11 +88,15 @@ public class ModelBakeEventHelper {
         var itemModelLister = FileToIdConverter.json("models/item");
         itemModelLister.listMatchingResources(Minecraft.getInstance().getResourceManager()).keySet().forEach(itemModel -> {
             this.topLevelModelLocations.add(ModelResourceLocation.inventory(itemModelLister.fileToId(itemModel)));
+            this.namespacesWithModels.add(itemModel.getNamespace());
         });
+        for (var loc : modelRegistry.keySet()) {
+            this.namespacesWithModels.add(loc.id().getNamespace());
+        }
         this.dependencyGraph = buildDependencyGraph();
     }
 
-    private static MutableGraph<String> buildDependencyGraph() {
+    private MutableGraph<String> buildDependencyGraph() {
         MutableGraph<String> dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {
             dependencyGraph.addNode(id);
@@ -97,7 +109,7 @@ public class ModelBakeEventHelper {
             if(mContainer.isPresent()) {
                 for(IModInfo.ModVersion version : mContainer.get().getModInfo().getDependencies()) {
                     // avoid self-loops
-                    if(!Objects.equals(id, version.getModId()))
+                    if(!Objects.equals(id, version.getModId()) && !version.getModId().equals("minecraft") && namespacesWithModels.contains(version.getModId()))
                         dependencyGraph.putEdge(id, version.getModId());
                 }
             }
@@ -152,17 +164,29 @@ public class ModelBakeEventHelper {
         };
     }
 
+    private Set<String> computeVisibleModIds(String modId) {
+        Set<String> deps;
+        try {
+            deps = this.dependencyGraph.adjacentNodes(modId);
+        } catch (IllegalArgumentException e) {
+            deps = Set.of();
+        }
+        if (deps.isEmpty()) {
+            // avoid extra work below
+            return Set.of(modId);
+        }
+        var set = new ObjectOpenHashSet<String>();
+        set.add(modId);
+        set.addAll(deps);
+        return Set.copyOf(set);
+    }
+
     public Map<ModelResourceLocation, BakedModel> wrapRegistry(String modId) {
         var config = MOD_VISIBILITY_CONFIGURATION.getOrDefault(modId, UniverseVisibility.EVERYTHING);
         if (config == UniverseVisibility.NONE) {
             return createWarningRegistry(modId);
         }
-        final Set<String> modIdsToInclude = new HashSet<>();
-        modIdsToInclude.add(modId);
-        try {
-            modIdsToInclude.addAll(this.dependencyGraph.adjacentNodes(modId));
-        } catch(IllegalArgumentException ignored) { /* sanity check */ }
-        modIdsToInclude.remove("minecraft");
+        final Set<String> modIdsToInclude = computeVisibleModIds(modId);
         Set<ModelResourceLocation> ourModelLocations;
         if (config == UniverseVisibility.SELF_AND_DEPS) {
             ModernFix.LOGGER.debug("Mod {} is restricted to seeing models from mods: [{}]", modId, String.join(", ", modIdsToInclude));
@@ -220,8 +244,7 @@ public class ModelBakeEventHelper {
         @Override
         public void replaceAll(BiFunction<? super ModelResourceLocation, ? super BakedModel, ? extends BakedModel> function) {
             ModernFix.LOGGER.warn("Mod '{}' is calling replaceAll on the model registry. Some hacks will be used to keep this fast, but they may not be 100% compatible.", modId);
-            List<ModelResourceLocation> locations = new ArrayList<>(ourModelLocations);
-            for(ModelResourceLocation location : locations) {
+            for(ModelResourceLocation location : ourModelLocations) {
                 /*
                  * Fetching every model is insanely slow. So we call the function with a null object first, since it
                  * probably isn't expecting that. If we get an exception thrown, or it returns nonnull, then we know

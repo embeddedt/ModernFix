@@ -33,14 +33,18 @@ public class ForgeHooksClientMixin {
         if(ModLoader.hasErrors())
             return;
         ModelEvent.ModifyBakingResult bakeEvent = ((ModelEvent.ModifyBakingResult)event);
-        ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
-        Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
         Stopwatch globalTimer = Stopwatch.createStarted();
+        Stopwatch selfTimer = Stopwatch.createStarted();
+        ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
+        selfTimer.stop();
+        Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
         Map<String, Stopwatch> times = new Object2ObjectOpenHashMap<>();
+        times.put("modernfix", selfTimer);
         ModList.get().forEachModContainer((id, mc) -> {
             Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
             ModelEvent.ModifyBakingResult postedEvent = new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getTextureGetter(), bakeEvent.getModelBakery());
-            Stopwatch timer = times.computeIfAbsent(id, $ -> Stopwatch.createStarted());
+            Stopwatch timer = times.computeIfAbsent(id, $ -> Stopwatch.createUnstarted());
+            timer.start();
             try {
                 acceptEv.invoke(mc, postedEvent);
             } catch(ReflectiveOperationException e) {

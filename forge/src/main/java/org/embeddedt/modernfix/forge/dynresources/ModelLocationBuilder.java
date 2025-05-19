@@ -9,17 +9,19 @@ import net.minecraft.world.level.block.state.properties.Property;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
 
 public class ModelLocationBuilder {
-    private final Object2ObjectOpenHashMap<Property<?>, PropertyData> propertyToOptionStrings = new Object2ObjectOpenHashMap<>();
+    private final Map<Property<?>, PropertyData> propertyToOptionStrings = new Object2ObjectOpenHashMap<>();
     private final StringBuilder builder = new StringBuilder();
 
     private record PropertyData(List<String> nameValuePairs, int maxPairLength) {}
 
     public void generateForBlock(Set<ResourceLocation> destinationSet, Block block, ResourceLocation baseLocation) {
         var props = block.getStateDefinition().getProperties();
-        List<List<String>> optionsList = new ArrayList<>();
+        List<List<String>> optionsList = new ArrayList<>(props.size());
         int requiredBuilderSize = Math.max(0, props.size() - 1); // commas
         for (var prop : props) {
             var data = propertyToOptionStrings.computeIfAbsent(prop, ModelLocationBuilder::computePropertyOptions);
@@ -49,7 +51,7 @@ public class ModelLocationBuilder {
         int maxLength = 0;
         for (var val : prop.getPossibleValues()) {
             String pair = prop.getName() + "=" + getValueName(prop, val);
-            valuesList.add(pair);
+            valuesList.add(pair.toLowerCase(Locale.ROOT));
             maxLength = Math.max(pair.length(), maxLength);
         }
         return new PropertyData(List.copyOf(valuesList), maxLength);

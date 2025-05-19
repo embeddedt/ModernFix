@@ -102,6 +102,6 @@ public abstract class ForgePathPackResourcesMixin implements ICachingResourcePac
         if(!PackTypeHelper.isVanillaPackType(type))
             return;
         ci.cancel();
-        this.generateResourceCache().collectResources(type, namespace, path.split("/"), Integer.MAX_VALUE, resourceOutput);
+        this.generateResourceCache().collectResources(type, namespace, PackResourcesCacheEngine.decomposeCached(path), Integer.MAX_VALUE, resourceOutput);
     }
 }

@@ -29,7 +29,7 @@ public class CompactUnihexContents {
     }
 
     private static short extractShort(long compressed, int off) {
-        return (byte)((compressed >> (off * 16)) & 0xFF);
+        return (short)((compressed >> (off * 16)) & 0xFFFF);
     }
 
     public static class Bytes implements UnihexProvider.LineData {

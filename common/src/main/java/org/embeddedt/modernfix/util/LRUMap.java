@@ -36,7 +36,8 @@ public class LRUMap<K, V> extends Object2ObjectLinkedOpenHashMap<K, V> {
             var iterator = entrySet().iterator();
             while(size() > size && iterator.hasNext()) {
                 var entry = iterator.next();
-                if(!this.permanentEntries.contains(entry.getKey())) {
+                var key = entry.getKey();
+                if(key != null && !this.permanentEntries.contains(key)) {
                     iterator.remove();
                 }
             }

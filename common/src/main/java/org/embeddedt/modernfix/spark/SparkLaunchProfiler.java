@@ -37,7 +37,7 @@ public class SparkLaunchProfiler {
     private static ExecutorService executor = Executors.newSingleThreadScheduledExecutor((new ThreadFactoryBuilder()).setNameFormat("spark-modernfix-async-worker").build());
     private static final SparkPlatform platform = new SparkPlatform(new ModernFixSparkPlugin());
 
-    private static final boolean USE_JAVA_SAMPLER_FOR_LAUNCH = true; //Boolean.getBoolean("modernfix.profileLaunchWithJavaSampler");
+    private static final boolean USE_JAVA_SAMPLER_FOR_LAUNCH = !Boolean.getBoolean("modernfix.profileWithAsyncSampler");
 
     public static void start(String key) {
         if (!ongoingSamplers.containsKey(key)) {

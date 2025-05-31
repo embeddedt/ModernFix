@@ -38,16 +38,18 @@ public class SparkLaunchProfiler {
     private static final SparkPlatform platform = new SparkPlatform(new ModernFixSparkPlugin());
 
     private static final boolean USE_JAVA_SAMPLER_FOR_LAUNCH = !Boolean.getBoolean("modernfix.profileWithAsyncSampler");
+    private static final int SAMPLING_INTERVAL = Integer.getInteger("modernfix.profileSamplingIntervalMicroseconds", 4000);
+    private static final String THREAD_GROUPER = System.getProperty("modernfix.profileSamplingThreadGrouper", "by-pool");
 
     public static void start(String key) {
         if (!ongoingSamplers.containsKey(key)) {
             Sampler sampler;
-            SamplerSettings settings = new SamplerSettings(4000, ThreadDumper.ALL, ThreadGrouper.BY_NAME, -1, false);
+            SamplerSettings settings = new SamplerSettings(SAMPLING_INTERVAL, ThreadDumper.ALL, ThreadGrouper.parseConfigSetting(THREAD_GROUPER), -1, false);
             try {
                 if(USE_JAVA_SAMPLER_FOR_LAUNCH) {
                     throw new UnsupportedOperationException();
                 }
-                sampler = new AsyncSampler(platform, settings, new SampleCollector.Execution(4000));
+                sampler = new AsyncSampler(platform, settings, new SampleCollector.Execution(SAMPLING_INTERVAL));
             } catch (UnsupportedOperationException e) {
                 sampler = new JavaSampler(platform, settings, true, true);
             }

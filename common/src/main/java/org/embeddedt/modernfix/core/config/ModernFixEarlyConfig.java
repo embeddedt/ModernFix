@@ -241,6 +241,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.buffer_builder_leak", "isometric-renders", "witherstormmod");
         disableIfModPresent("mixin.feature.remove_chat_signing", "nochatreports");
         disableIfModPresent("mixin.perf.faster_texture_loading", "stitch", "optifine", "changed");
+        disableIfModPresent("mixin.perf.faster_ingredients", "vmp");
         if(isFabric) {
             disableIfModPresent("mixin.bugfix.packet_leak", "memoryleakfix");
         }

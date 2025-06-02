@@ -181,6 +181,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.snapshot_easter_egg", true)
             .put("mixin.feature.warn_missing_perf_mods", true)
             .put("mixin.feature.spark_profile_launch", false)
+            .put("mixin.feature.spark_profile_world_join", false)
             .put("mixin.feature.log_stdout_in_log_files", true)
             .put("mixin.devenv", isDevEnv)
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
@@ -237,6 +238,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.buffer_builder_leak", "isometric-renders", "witherstormmod");
         disableIfModPresent("mixin.feature.remove_chat_signing", "nochatreports");
         disableIfModPresent("mixin.perf.faster_texture_loading", "stitch", "optifine", "changed");
+        disableIfModPresent("mixin.perf.faster_ingredients", "vmp");
         if(isFabric) {
             disableIfModPresent("mixin.bugfix.packet_leak", "memoryleakfix");
         }

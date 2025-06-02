@@ -9,6 +9,7 @@ import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
+import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.ClassInfoManager;
 import org.embeddedt.modernfix.world.IntegratedWatchdog;
 
@@ -89,6 +90,9 @@ public class ModernFixClient {
             if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.measure_time.WorldLoad")) {
                 ModernFix.LOGGER.warn("Time from main menu to in-game was " + timeSpentLoading + " seconds");
                 ModernFix.LOGGER.warn("Total time to load game and open world was " + (timeSpentLoading + gameStartTimeSeconds) + " seconds");
+            }
+            if (ModernFixPlatformHooks.INSTANCE.modPresent("spark") && ModernFixMixinPlugin.instance.isOptionEnabled("feature.spark_profile_world_join.WorldJoin")) {
+                SparkLaunchProfiler.stop("world_join");
             }
             resetWorldLoadStateMachine();
         }

@@ -43,7 +43,7 @@ public class DFUBlaster {
     }
 
     public static void kick() {
-        NEXT_WAKE_TIME.getAndAdd(DELAY_TIME);
+        NEXT_WAKE_TIME.set(System.nanoTime() + DELAY_TIME);
     }
 
     static class CleanerThread extends Thread {

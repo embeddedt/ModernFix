@@ -1,48 +1,49 @@
 package org.embeddedt.modernfix.dfu;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.mojang.datafixers.RewriteResult;
-import com.mojang.datafixers.TypeRewriteRule;
-import com.mojang.datafixers.functions.PointFreeRule;
-import com.mojang.datafixers.types.Type;
-import com.mojang.datafixers.util.Pair;
-import org.apache.commons.lang3.tuple.Triple;
 import org.embeddedt.modernfix.ModernFix;
-import sun.misc.Unsafe;
 
 import java.lang.reflect.Field;
-import java.util.Optional;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
-import java.util.function.IntFunction;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.locks.LockSupport;
 
 public class DFUBlaster {
-    private static final Cache<Pair<IntFunction<RewriteResult<?, ?>>, Integer>, RewriteResult<?, ?>> hmapApplyCache = CacheBuilder.newBuilder()
-            .expireAfterAccess(3, TimeUnit.MINUTES)
-            .build();
-    private static final Cache<Triple<Type<?>, TypeRewriteRule, PointFreeRule>, Optional<? extends RewriteResult<?, ?>>> rewriteCache = CacheBuilder.newBuilder()
-            .expireAfterAccess(3, TimeUnit.MINUTES)
-            .build();
-    public static void blastMaps() {
+    private static final List<Map<?, ?>> TRACKED_MAPS = buildTrackedMaps();
+    private static final long DELAY_TIME = TimeUnit.SECONDS.toNanos(60);
+    private static final AtomicLong NEXT_WAKE_TIME = new AtomicLong(System.nanoTime() + DELAY_TIME);
+
+    private static List<Map<?, ?>> buildTrackedMaps() {
+        var list = new ArrayList<Map<?, ?>>();
+        tryAdd(list, "com.mojang.datafixers.DSL$Instances", "TAGGED_CHOICE_TYPE_CACHE");
+        tryAdd(list, "com.mojang.datafixers.functions.Fold", "HMAP_APPLY_CACHE");
+        tryAdd(list, "com.mojang.datafixers.types.Type", "REWRITE_CACHE");
+        return list;
+    }
+
+    private static void tryAdd(List<Map<?, ?>> list, String className, String fieldName) {
         try {
-            Class<?> FOLD_CLASS = Class.forName("com.mojang.datafixers.functions.Fold");
-            Field hmapField = FOLD_CLASS.getDeclaredField("HMAP_APPLY_CACHE");
-            hmapField.setAccessible(true);
-            final Field theUnsafe = Unsafe.class.getDeclaredField("theUnsafe");
-            theUnsafe.setAccessible(true);
-            Unsafe unsafe = (Unsafe)theUnsafe.get(null);
-            Object base = unsafe.staticFieldBase(hmapField);
-            long offset = unsafe.staticFieldOffset(hmapField);
-            unsafe.putObject(base, offset, hmapApplyCache.asMap());
-            Field rewriteCacheField = Type.class.getDeclaredField("REWRITE_CACHE");
-            rewriteCacheField.setAccessible(true);
-            base = unsafe.staticFieldBase(rewriteCacheField);
-            offset = unsafe.staticFieldOffset(rewriteCacheField);
-            unsafe.putObject(base, offset, rewriteCache.asMap());
-            new CleanerThread().start();
-        } catch(Throwable e) {
-            ModernFix.LOGGER.error("Could not replace DFU map", e);
+            Class<?> clz = Class.forName(className);
+            Field field = clz.getDeclaredField(fieldName);
+            field.setAccessible(true);
+            if (Map.class.isAssignableFrom(field.getType())) {
+                list.add((Map<?, ?>)field.get(null));
+            } else {
+                ModernFix.LOGGER.error("Field {} on class {} is not a map", field, className);
+            }
+        } catch (ReflectiveOperationException e) {
+            ModernFix.LOGGER.error("Error tracking DFU field {} on class {}", fieldName, className, e);
         }
+    }
+
+    public static void blastMaps() {
+        new CleanerThread().start();
+    }
+
+    public static void kick() {
+        NEXT_WAKE_TIME.getAndAdd(DELAY_TIME);
     }
 
     static class CleanerThread extends Thread {
@@ -55,13 +56,18 @@ public class DFUBlaster {
         @Override
         public void run() {
             while(true) {
-                try {
-                    Thread.sleep(15000);
-                } catch(InterruptedException e){
-                    return;
+                long waitTime = NEXT_WAKE_TIME.get() - System.nanoTime();
+                if (waitTime > 0) {
+                    LockSupport.parkNanos(waitTime);
                 }
-                rewriteCache.cleanUp();
-                hmapApplyCache.cleanUp();
+
+                long lastStamp = NEXT_WAKE_TIME.get();
+                if (System.nanoTime() >= lastStamp) {
+                    // Nobody kicked the watchdog again, we should clear the maps
+                    TRACKED_MAPS.forEach(Map::clear);
+                    NEXT_WAKE_TIME.compareAndSet(lastStamp, System.nanoTime() + DELAY_TIME);
+                }
+                // Otherwise, we were told to wait for longer, so don't do anything
             }
         }
     }

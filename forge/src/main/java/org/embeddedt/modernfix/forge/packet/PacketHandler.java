@@ -8,13 +8,25 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.packet.EntityIDSyncPacket;
 
 import java.util.function.Supplier;
 
 public class PacketHandler {
     public static final SimpleChannel INSTANCE = buildChannel("main", "1");
-    public static final SimpleChannel INGREDIENT_SYNC = buildChannel("ingredient_sync", "1");
+    public static final SimpleChannel INGREDIENT_SYNC;
+
+    static {
+        SimpleChannel ingredientChannel;
+        if (ModernFixMixinPlugin.instance.isOptionEnabled("perf.smart_ingredient_sync.Channel")) {
+            ingredientChannel = buildChannel("ingredient_sync", "1");
+        } else {
+            ingredientChannel = null;
+        }
+        INGREDIENT_SYNC = ingredientChannel;
+    }
+
     public static final ThreadLocal<Boolean> CLIENT_HAS_SMART_INGREDIENT_SYNC = ThreadLocal.withInitial(() -> false);
 
     private static SimpleChannel buildChannel(String name, String version) {

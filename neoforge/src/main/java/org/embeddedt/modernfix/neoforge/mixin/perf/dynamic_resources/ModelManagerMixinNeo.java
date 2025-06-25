@@ -14,7 +14,7 @@ import org.spongepowered.asm.mixin.injection.ModifyArg;
 @Mixin(ModelManager.class)
 @ClientOnlyMixin
 public class ModelManagerMixinNeo {
-    @ModifyArg(method = "loadModels", at = @At(value = "INVOKE", target = "Lnet/neoforged/neoforge/client/ClientHooks;onModifyBakingResult(Lnet/minecraft/client/resources/model/ModelBakery$BakingResult;Ljava/util/Map;Lnet/minecraft/client/resources/model/ModelBakery;)V"), remap = false, index = 0)
+    @ModifyArg(method = "lambda$loadModels$18", at = @At(value = "INVOKE", target = "Lnet/neoforged/neoforge/client/ClientHooks;onModifyBakingResult(Lnet/minecraft/client/resources/model/ModelBakery$BakingResult;Ljava/util/Map;Lnet/minecraft/client/resources/model/ModelBakery;)V"), remap = false, index = 0)
     private static ModelBakery.BakingResult useDynamicBakingResult(ModelBakery.BakingResult bakingResult) {
         var currentReloadingProvider = DynamicModelProvider.currentReloadingModelProvider.get();
         if(ModLoader.hasErrors() || currentReloadingProvider == null) {

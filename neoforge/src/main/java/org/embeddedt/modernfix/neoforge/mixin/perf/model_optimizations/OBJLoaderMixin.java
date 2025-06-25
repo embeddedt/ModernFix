@@ -19,6 +19,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @Mixin(ObjLoader.class)
 @ClientOnlyMixin
 public class OBJLoaderMixin {
+    /* TODO: Remove if unnecessary
     @Final
     @Mutable
     @Shadow(remap = false) private Map<ResourceLocation, ObjMaterialLibrary> materialCache;
@@ -36,4 +37,5 @@ public class OBJLoaderMixin {
     private void useConcMap2(ObjLoader instance, Map<ResourceLocation, ObjMaterialLibrary> value) {
         this.modelCache = new ConcurrentHashMap<>();
     }
+    */
 }

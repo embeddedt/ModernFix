@@ -5,11 +5,11 @@ import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Accessor;
 
-import java.util.Deque;
+import java.util.List;
 
 @Mixin(PoseStack.class)
 @ClientOnlyMixin
 public interface PoseStackAccessor {
-    @Accessor
-    Deque<PoseStack.Pose> getPoseStack();
+    @Accessor("poses")
+    List<PoseStack.Pose> getPoseStack();
 }

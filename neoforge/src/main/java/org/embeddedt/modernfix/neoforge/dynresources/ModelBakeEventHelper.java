@@ -40,12 +40,14 @@ public class ModelBakeEventHelper {
 
     public ModelBakery.BakingResult createDynamicResult() {
         return new ModelBakery.BakingResult(
-                this.modelRegistry.getMissingBakedModel(),
+                new ModelBakery.MissingModels(
+                        this.modelRegistry.getMissingBakedModel(),
+                        this.modelRegistry.getMissingItemModel()
+                ),
                 this.modelRegistry.getTopLevelEmulatedRegistry(),
-                this.modelRegistry.getMissingItemModel(),
                 this.modelRegistry.getItemModelEmulatedRegistry(),
-                this.modelRegistry.getItemPropertiesEmulatedRegistry(),
-                this.modelRegistry.getStandaloneEmulatedRegistry()
+                this.modelRegistry.getItemPropertiesEmulatedRegistry()
+                // TODO: Supply the StandaloneModelLoader.BakedModels?
         );
     }
 }

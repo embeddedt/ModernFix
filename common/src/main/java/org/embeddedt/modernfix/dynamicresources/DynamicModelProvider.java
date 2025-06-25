@@ -9,11 +9,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.JsonOps;
 import net.minecraft.client.model.geom.EntityModelSet;
-import net.minecraft.client.renderer.block.model.BlockModel;
-import net.minecraft.client.renderer.block.model.BlockModelDefinition;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
-import net.minecraft.client.renderer.block.model.ItemModelGenerator;
-import net.minecraft.client.renderer.block.model.SimpleModelWrapper;
+import net.minecraft.client.renderer.block.model.*;
 import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.renderer.item.MissingItemModel;
@@ -33,16 +29,19 @@ import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.SpriteGetter;
 import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import org.embeddedt.modernfix.ModernFix;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import java.io.Reader;
 import java.lang.ref.WeakReference;
@@ -146,16 +145,46 @@ public class DynamicModelProvider {
             public SpriteGetter sprites() {
                 return DynamicModelProvider.this.textureGetter;
             }
+
+            @Override
+            public <T> T compute(SharedOperationKey<T> key) {
+                return key.compute(this);
+            }
         };
         var textureSlots = this.resolvedMissingModel.getTopTextureSlots();
         var quadCollection = this.resolvedMissingModel.bakeTopGeometry(textureSlots, missingModelBaker, BlockModelRotation.X0_Y0);
         var particleSprite = this.resolvedMissingModel.resolveParticleSprite(textureSlots, missingModelBaker);
-        this.missingModel = new SimpleModelWrapper(quadCollection, resolvedMissingModel.getTopAmbientOcclusion(), particleSprite);
+        this.missingModel = new BlockStateModel() {
+            @Override
+            public void collectParts(RandomSource random, List<BlockModelPart> output) {
+                output.add(new BlockModelPart() {
+                    @Override
+                    public List<BakedQuad> getQuads(@Nullable Direction direction) {
+                        return quadCollection.getQuads(direction);
+                    }
+
+                    @Override
+                    public boolean useAmbientOcclusion() {
+                        return resolvedMissingModel.getTopAmbientOcclusion();
+                    }
+
+                    @Override
+                    public TextureAtlasSprite particleIcon() {
+                        return particleSprite;
+                    }
+                });
+            }
+
+            @Override
+            public TextureAtlasSprite particleIcon() {
+                return particleSprite;
+            }
+        }; //SimpleModelWrapper(quadCollection, resolvedMissingModel.getTopAmbientOcclusion(), particleSprite);
         this.missingItemModel = new MissingItemModel(quadCollection.getAll(), new ModelRenderProperties(resolvedMissingModel.getTopGuiLight().lightLikeBlock(), particleSprite, resolvedMissingModel.getTopTransforms()));
         try {
             Class.forName("net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin");
             // TODO
-            //pluginList.add(new FabricDynamicModelHandler(this, this.resourceManager));
+            // pluginList.add(new FabricDynamicModelHandler(this, this.resourceManager));
         } catch(Exception ignored) {
             // Fabric API likely not present
         }
@@ -365,7 +394,7 @@ public class DynamicModelProvider {
         var loadedModels = new HashMap<>(BlockStateModelLoader.loadBlockStateDefinitionStack(location, stateDefinition, loadedDefinitions).models());
         if (!pluginList.isEmpty()) {
             loadedModels.replaceAll((mrl, oldModel) -> {
-                BlockStateModel.Unbaked ubm = oldModel;
+                BlockStateModel.UnbakedRoot ubm = oldModel;
                 for (var plugin : pluginList) {
                     ubm = plugin.modifyBlockModelOnLoad(oldModel, mrl);
                 }
@@ -375,7 +404,7 @@ public class DynamicModelProvider {
         return Optional.of(new BlockStateModelLoader.LoadedModels(loadedModels));
     }
 
-    private BlockStateModel bakeModel(BlockStateModel.Unbaked model, BlockState mrl) {
+    private BlockStateModel bakeModel(BlockStateModel.UnbakedRoot model, BlockState mrl) {
         if (DEBUG_DYNAMIC_MODEL_LOADING) {
             ModernFix.LOGGER.info("Baking model '{}'", mrl);
         }
@@ -385,7 +414,7 @@ public class DynamicModelProvider {
             for (var plugin : pluginList) {
                 model = plugin.modifyBlockModelBeforeBake(model, mrl, modelBaker);
             }
-            var bakedModel = model.bake(modelBaker);
+            var bakedModel = model.bake(mrl, modelBaker);
             for (var plugin : pluginList) {
                 bakedModel = plugin.modifyBlockModelAfterBake(bakedModel, model, mrl, modelBaker);
             }
@@ -401,7 +430,8 @@ public class DynamicModelProvider {
         if (false) { //location.variant().equals("standalone") || location.variant().equals("fabric_resource")) {
             throw new UnsupportedOperationException(); //return this.loadStandaloneModel(location.id());
         } else {
-            Optional<BlockStateModel.Unbaked> unbakedModelOpt = Optional.ofNullable(this.unbakedBlockStateModelOverrides.get(state));
+            Optional<BlockStateModel.UnbakedRoot> unbakedModelOpt = Optional.ofNullable(this.unbakedBlockStateModelOverrides.get(state))
+                    .map(BlockStateModel.Unbaked::asRoot);
             if (unbakedModelOpt.isEmpty()) {
                 var optLoadedModels = this.loadedStateDefinitions.getUnchecked(state.getBlock().builtInRegistryHolder().key().location());
                 unbakedModelOpt = optLoadedModels.map(loadedModels -> loadedModels.models().get(state));
@@ -552,6 +582,11 @@ public class DynamicModelProvider {
         public SpriteGetter sprites() {
             return DynamicModelProvider.this.textureGetter;
         }
+
+        @Override
+        public <T> T compute(SharedOperationKey<T> key) {
+            return key.compute(this);
+        }
     }
 
     public static WeakReference<DynamicModelProvider> currentReloadingModelProvider = new WeakReference<>(null);
@@ -562,12 +597,12 @@ public class DynamicModelProvider {
 
     public interface DynamicModelPlugin {
         Optional<UnbakedModel> modifyModelOnLoad(Optional<UnbakedModel> model, ResourceLocation id);
-        BlockStateModel.Unbaked modifyBlockModelOnLoad(BlockStateModel.Unbaked model, BlockState state);
+        BlockStateModel.UnbakedRoot modifyBlockModelOnLoad(BlockStateModel.UnbakedRoot model, BlockState state);
 
         UnbakedModel modifyModelBeforeBake(UnbakedModel model, ResourceLocation id, ModelState state, ModelBaker baker);
         //BakedModel modifyModelAfterBake(BakedModel bakedModel, UnbakedModel model, ResourceLocation id, ModelState state, ModelBaker baker);
 
-        BlockStateModel.Unbaked modifyBlockModelBeforeBake(BlockStateModel.Unbaked model, BlockState state, ModelBaker baker);
-        BlockStateModel modifyBlockModelAfterBake(BlockStateModel bakedModel, BlockStateModel.Unbaked unbaked, BlockState state, ModelBaker baker);
+        BlockStateModel.UnbakedRoot modifyBlockModelBeforeBake(BlockStateModel.UnbakedRoot model, BlockState state, ModelBaker baker);
+        BlockStateModel modifyBlockModelAfterBake(BlockStateModel bakedModel, BlockStateModel.UnbakedRoot unbaked, BlockState state, ModelBaker baker);
     }
 }

@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.neoforge.mixin.perf.ingredient_item_deduplication;
 
+/* FIXME: Ingredient rework
 import net.minecraft.world.item.crafting.Ingredient;
 import org.embeddedt.modernfix.neoforge.recipe.IngredientValueDeduplicator;
 import org.spongepowered.asm.mixin.Mixin;
@@ -15,3 +16,4 @@ public class IngredientMixin {
         return stream.map(IngredientValueDeduplicator::deduplicate);
     }
 }
+*/

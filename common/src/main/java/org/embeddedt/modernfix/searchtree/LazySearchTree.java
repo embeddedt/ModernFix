@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.searchtree;
 
+/* TODO: Remove or reimplement
 import com.google.common.base.Stopwatch;
 import net.minecraft.client.searchtree.RefreshableSearchTree;
 import net.minecraft.client.searchtree.SearchRegistry;
@@ -58,3 +59,4 @@ public class LazySearchTree<T> implements RefreshableSearchTree<T> {
         return list -> new LazySearchTree<>(list, originalSupplier);
     }
 }
+*/

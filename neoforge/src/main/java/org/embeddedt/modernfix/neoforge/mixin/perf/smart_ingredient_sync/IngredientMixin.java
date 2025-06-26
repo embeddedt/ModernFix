@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.neoforge.mixin.perf.smart_ingredient_sync;
 
+/* FIXME: Ingredient rework
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -52,3 +53,4 @@ public abstract class IngredientMixin {
         }
     }
 }
+*/

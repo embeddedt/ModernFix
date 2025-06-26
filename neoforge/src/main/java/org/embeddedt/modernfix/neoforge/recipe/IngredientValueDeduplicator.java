@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.neoforge.recipe;
 
+/* FIXME: Ingredient rework
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 import net.minecraft.world.item.ItemStackLinkedSet;
@@ -7,7 +8,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 /**
  * @author embeddedt (original inspiration from Uncandango's AllTheLeaks mod)
- */
+ *
 public class IngredientValueDeduplicator {
     private static final ObjectOpenCustomHashSet<Ingredient.ItemValue> VALUES = new ObjectOpenCustomHashSet<>(new Hash.Strategy<>() {
         @Override
@@ -31,3 +32,4 @@ public class IngredientValueDeduplicator {
         }
     }
 }
+*/

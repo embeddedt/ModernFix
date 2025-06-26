@@ -75,7 +75,7 @@ public class PackResourcesCacheEngine {
         void outputResources(String namespace, Path baseNioPath, String path, PackResources.ResourceOutput output) {
             if (children.isEmpty()) {
                 // This is a terminal node.
-                ResourceLocation location = new ResourceLocation(namespace, path);
+                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(namespace, path);
                 output.accept(location, () -> Files.newInputStream(baseNioPath.resolve(path)));
             } else {
                 for (var entry : children.entrySet()) {

@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.lazy_search_tree_registry;
 
+/* TODO: Remove or reimplement
 import net.minecraft.client.searchtree.SearchRegistry;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.searchtree.LazySearchTree;
@@ -15,3 +16,4 @@ public class SearchRegistryMixin {
         return LazySearchTree.decorate(supplier);
     }
 }
+*/

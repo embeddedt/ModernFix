@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.feature.mcfunction_profiling;
 
+/* TODO: Remove or reimplement
 import com.google.common.base.Stopwatch;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.Share;
@@ -70,3 +71,4 @@ public class ServerFunctionManagerMixin implements IProfilingServerFunctionManag
         return sb.toString();
     }
 }
+*/

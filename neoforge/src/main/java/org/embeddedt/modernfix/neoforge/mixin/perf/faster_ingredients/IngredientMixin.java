@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.neoforge.mixin.perf.faster_ingredients;
 
+/* FIXME: Ingredient rework
 import it.unimi.dsi.fastutil.ints.IntArrayList;
 import it.unimi.dsi.fastutil.ints.IntComparators;
 import it.unimi.dsi.fastutil.ints.IntList;
@@ -58,7 +59,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
      * registry would normally contain, rather than a modified version.
      * <p>
      * Note: this is a separate problem from the issue where clients may receive recipes before tags in 1.21.
-     */
+     *
     private boolean mfix$areTagsAvailable() {
         return !MinecraftServerReloadTracker.isReloadActive();
     }
@@ -66,7 +67,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
     /**
      * @author embeddedt
      * @reason tag ingredients can be tested without iterating over all items
-     */
+     *
     @Inject(method = "test(Lnet/minecraft/world/item/ItemStack;)Z", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/crafting/Ingredient;getItems()[Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
     private void modernfix$fasterTagIngredientTest(ItemStack stack, CallbackInfoReturnable<Boolean> cir) {
         if (this.isVanilla() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
@@ -77,7 +78,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
     /**
      * @author embeddedt
      * @reason exploding the stack list is unnecessary
-     */
+     *
     @Inject(method = "hasNoItems", at = @At("HEAD"), cancellable = true, remap = false)
     public void hasNoItems(CallbackInfoReturnable<Boolean> cir) {
         if (this.isVanilla()) {
@@ -116,7 +117,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
      * @author embeddedt
      * @reason tag ingredients can be converted to stacking IDs without expanding into stacks, since stacking only
      * goes by item ID
-     */
+     *
     @Inject(method = "getStackingIds", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/item/crafting/Ingredient;getItems()[Lnet/minecraft/world/item/ItemStack;"), cancellable = true)
     private void modernfix$fasterTagIngredientStacking(CallbackInfoReturnable<IntList> cir) {
         if (this.isVanilla() && this.values.length == 1 && this.values[0] instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
@@ -135,7 +136,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
      * @author embeddedt
      * @reason Change caching of item stacks to use a soft reference, which allows the GC to evict the array under
      * memory pressure/when it hasn't been used.
-     */
+     *
     @Overwrite
     public ItemStack[] getItems() {
         // For compatibility if mods explicitly force a set of item stacks to be used
@@ -192,3 +193,4 @@ public abstract class IngredientMixin implements ExtendedIngredient {
         this.mfix$cachedItemStacks = null;
     }
 }
+*/

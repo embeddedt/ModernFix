@@ -81,7 +81,7 @@ public class DynamicModelProvider {
             this.makeLoadingCache(this::loadClientItemProperties);
 
     private final LoadingCache<ResourceLocation, Optional<ItemModel>> loadedItemModels =
-           this.makeLoadingCache(this::loadItemModel);
+            this.makeLoadingCache(this::loadItemModel);
 
     /*
     private final LoadingCache<ResourceLocation, Optional<BakedModel>> loadedStandaloneModels =

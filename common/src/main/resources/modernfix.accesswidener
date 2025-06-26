@@ -32,32 +32,57 @@ accessible field net/minecraft/client/renderer/texture/Stitcher$Holder width I
 accessible field net/minecraft/client/renderer/texture/Stitcher$Holder height I
 accessible field net/minecraft/network/syncher/EntityDataAccessor id I
 mutable field net/minecraft/network/syncher/EntityDataAccessor id I
-accessible method net/minecraft/Util makeExecutor (Ljava/lang/String;)Ljava/util/concurrent/ExecutorService;
 accessible field net/minecraft/server/level/ChunkMap updatingChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
 accessible field net/minecraft/server/level/ChunkMap visibleChunkMap Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
 accessible field net/minecraft/server/level/ChunkMap pendingUnloads Lit/unimi/dsi/fastutil/longs/Long2ObjectLinkedOpenHashMap;
 accessible method net/minecraft/resources/ResourceKey <init> (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/resources/ResourceLocation;)V
 accessible field net/minecraft/client/renderer/block/model/BlockModel GSON Lcom/google/gson/Gson;
 accessible class net/minecraft/server/level/ChunkMap$DistanceManager
-accessible class net/minecraft/client/resources/model/ModelBakery$BakedCacheKey
-accessible method net/minecraft/client/resources/model/ModelBakery$BakedCacheKey <init> (Lnet/minecraft/resources/ResourceLocation;Lcom/mojang/math/Transformation;Z)V
 accessible class net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl
-accessible method net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl <init> (Lnet/minecraft/client/resources/model/ModelBakery;Lnet/minecraft/client/resources/model/ModelBakery$TextureGetter;Lnet/minecraft/client/resources/model/ModelResourceLocation;)V
-accessible method net/minecraft/client/resources/model/ModelBakery getModel (Lnet/minecraft/resources/ResourceLocation;)Lnet/minecraft/client/resources/model/UnbakedModel;
+accessible class net/minecraft/client/resources/model/ModelManager$ReloadState
+accessible method net/minecraft/client/resources/model/BlockStateModelLoader loadBlockStateDefinitionStack (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/world/level/block/state/StateDefinition;Ljava/util/List;)Lnet/minecraft/client/resources/model/BlockStateModelLoader$LoadedModels;
+accessible class net/minecraft/client/resources/model/BlockStateModelLoader$LoadedBlockModelDefinition
+accessible method net/minecraft/client/resources/model/BlockStateModelLoader$LoadedBlockModelDefinition <init> (Ljava/lang/String;Lnet/minecraft/client/renderer/block/model/BlockModelDefinition;)V
 accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
 accessible field net/minecraft/server/MinecraftServer resources Lnet/minecraft/server/MinecraftServer$ReloadableResources;
 accessible class net/minecraft/server/MinecraftServer$ReloadableResources
 accessible method net/minecraft/client/gui/screens/Screen addRenderableWidget (Lnet/minecraft/client/gui/components/events/GuiEventListener;)Lnet/minecraft/client/gui/components/events/GuiEventListener;
 accessible field net/minecraft/client/KeyMapping ALL Ljava/util/Map;
-accessible field net/minecraft/client/renderer/block/model/multipart/MultiPart definition Lnet/minecraft/world/level/block/state/StateDefinition;
-accessible field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
-mutable field net/minecraft/client/renderer/block/model/ItemOverrides$BakedOverride model Lnet/minecraft/client/resources/model/BakedModel;
-accessible field net/minecraft/client/renderer/entity/EnderDragonRenderer$DragonModel entity Lnet/minecraft/world/entity/boss/enderdragon/EnderDragon;
 accessible method net/minecraft/world/level/block/state/StateDefinition appendPropertyCodec (Lcom/mojang/serialization/MapCodec;Ljava/util/function/Supplier;Ljava/lang/String;Lnet/minecraft/world/level/block/state/properties/Property;)Lcom/mojang/serialization/MapCodec;
 accessible class net/minecraft/client/multiplayer/SessionSearchTrees$Key
 
+accessible class net/minecraft/client/resources/model/ModelDiscovery$ModelWrapper
+accessible method net/minecraft/client/resources/model/ModelDiscovery$ModelWrapper <init> (Lnet/minecraft/resources/ResourceLocation;Lnet/minecraft/client/resources/model/UnbakedModel;Z)V
+accessible field net/minecraft/client/resources/model/ModelDiscovery$ModelWrapper parent Lnet/minecraft/client/resources/model/ModelDiscovery$ModelWrapper;
+accessible method net/minecraft/client/resources/model/BlockStateDefinitions definitionLocationToBlockStateMapper ()Ljava/util/function/Function;
+
+accessible class net/minecraft/client/multiplayer/ClientChunkCache$Storage
+
+accessible class net/minecraft/client/renderer/RenderType$CompositeRenderType
+
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$SequenceRule
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Marker
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Marker$Type
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Mapped
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$Mapped$Type
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$MulOrAdd
+accessible class net/minecraft/world/level/levelgen/DensityFunctions$MulOrAdd$Type
+
+accessible class net/minecraft/world/level/block/state/BlockBehaviour$BlockStateBase$Cache
+accessible class net/minecraft/server/level/ServerChunkCache$MainThreadExecutor
+accessible class net/minecraft/client/renderer/block/model/BlockElementFace$Deserializer
+accessible class net/minecraft/client/renderer/texture/Stitcher$Holder
+
+accessible class net/minecraft/server/level/ChunkMap$DistanceManager
+accessible class net/minecraft/client/resources/model/ModelBakery$ModelBakerImpl
+accessible class net/minecraft/client/resources/model/ModelManager$ReloadState
+accessible class net/minecraft/client/resources/model/BlockStateModelLoader$LoadedBlockModelDefinition
+accessible class net/minecraft/world/level/chunk/PalettedContainer$Data
+accessible class net/minecraft/server/MinecraftServer$ReloadableResources
+accessible class net/minecraft/client/multiplayer/SessionSearchTrees$Key
+
+accessible class net/minecraft/client/resources/model/ModelDiscovery$ModelWrapper
+
 accessible field net/minecraft/server/packs/resources/ProfiledReloadInstance$State preparationNanos Ljava/util/concurrent/atomic/AtomicLong;
 accessible field net/minecraft/server/packs/resources/ProfiledReloadInstance$State reloadNanos Ljava/util/concurrent/atomic/AtomicLong;
-
-accessible class net/minecraft/world/item/crafting/Ingredient$Value
-accessible class net/minecraft/world/item/crafting/Ingredient$ItemValue

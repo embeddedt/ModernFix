@@ -22,7 +22,7 @@ public class SessionSearchTreesMixin {
     @Shadow private CompletableFuture<SearchTree<RecipeCollection>> recipeSearch;
     private Supplier<SearchTree<RecipeCollection>> mfix$deferredSearchTreeSupplier;
 
-    @ModifyArg(method = { "method_60367", "lambda$updateRecipes$8" }, at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;supplyAsync(Ljava/util/function/Supplier;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
+    @ModifyArg(method = { "method_64911(Lnet/minecraft/client/ClientRecipeBook;Lnet/minecraft/world/level/Level;)V", "lambda$updateRecipes$9(Lnet/minecraft/client/ClientRecipeBook;Lnet/minecraft/world/level/Level;)V" }, at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;supplyAsync(Ljava/util/function/Supplier;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
     private Supplier<SearchTree<RecipeCollection>> mfix$deferProcessing(Supplier<SearchTree<RecipeCollection>> supplier) {
         this.mfix$deferredSearchTreeSupplier = supplier;
         return SearchTree::empty;

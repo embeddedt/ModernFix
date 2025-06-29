@@ -93,7 +93,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
     @Override
     protected int scrollBarY() {
-        return super.scrollBarY() + 15 + 20;
+        return super.scrollBarY();
     }
 
     public int getRowWidth() {

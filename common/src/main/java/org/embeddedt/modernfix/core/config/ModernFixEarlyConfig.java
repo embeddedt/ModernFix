@@ -176,6 +176,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.dynamic_entity_renderers", false)
             .put("mixin.feature.integrated_server_watchdog", true)
             .put("mixin.perf.faster_item_rendering", false)
+            .put("mixin.perf.ingredient_item_deduplication", false)
             .put("mixin.feature.spam_thread_dump", false)
             .put("mixin.feature.disable_unihex_font", false)
             .put("mixin.feature.remove_chat_signing", false)

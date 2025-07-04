@@ -70,7 +70,7 @@ public class IngredientValueDeduplicator {
     });
 
     public static Ingredient.Value deduplicate(Ingredient.Value value) {
-        if (value.getClass() == Ingredient.ItemValue.class) {
+        if (value != null && value.getClass() == Ingredient.ItemValue.class) {
             synchronized (VALUES) {
                 return VALUES.addOrGet((Ingredient.ItemValue)value);
             }

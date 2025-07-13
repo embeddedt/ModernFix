@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Mixin(targets = {"net/minecraftforge/registries/NamespacedWrapper"}, priority = 500)
 public abstract class NamespacedWrapperMixin<T> {
-    @Shadow private volatile Map<TagKey<T>, HolderSet.Named<T>> tags;
+    @Shadow(aliases = {"tags"}) private volatile Map<TagKey<T>, HolderSet.Named<T>> tags;
 
     @Shadow(aliases = {"createTag"}) protected abstract HolderSet.Named<T> m_211067_(TagKey<T> key);
 

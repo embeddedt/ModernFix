@@ -162,9 +162,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
     private ItemStack[] computeItemsArray() {
         // Fast path for case with one item
         if (this.values.length == 1) {
-            if (this.values[0] instanceof Ingredient.ItemValue itemValue) {
-                return new ItemStack[] { itemValue.item() };
-            } else if (this.values[0] instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
+            if (this.values[0] instanceof Ingredient.TagValue tagValue && mfix$areTagsAvailable()) {
                 var tag = BuiltInRegistries.ITEM.getTag(tagValue.tag());
                 if (tag.isPresent() && tag.get().size() > 0) {
                     var holderSet = tag.get();

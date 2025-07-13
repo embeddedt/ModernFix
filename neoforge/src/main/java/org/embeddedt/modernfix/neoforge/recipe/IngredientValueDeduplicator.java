@@ -35,11 +35,11 @@ public class IngredientValueDeduplicator {
         }
 
         private boolean areComponentsSame(ItemStack a, ItemStack b) {
-            // Compare using stricter logic than vanilla: require the prototype maps to be identity-equal, and require
+            // Compare using stricter logic than vanilla: require the prototype maps to be equal, and require
             // the values in the patch to also be identity-equal. This works around Neo allowing Holder.Reference objects
             // made with the server & client registries to be considered equal.
             if (a.getComponents() instanceof PatchedDataComponentMapAccessor aComps && b.getComponents() instanceof PatchedDataComponentMapAccessor bComps) {
-                if (aComps.mfix$getPrototype() != bComps.mfix$getPrototype()) {
+                if (!aComps.mfix$getPrototype().equals(bComps.mfix$getPrototype())) {
                     return false;
                 }
                 var aPatch = aComps.mfix$getPatch();

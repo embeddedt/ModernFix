@@ -1,10 +1,10 @@
 package org.embeddedt.modernfix.neoforge.recipe;
 
+import com.google.common.math.IntMath;
 import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMaps;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.ItemStackLinkedSet;
 import net.minecraft.world.item.crafting.Ingredient;
 import org.embeddedt.modernfix.neoforge.mixin.perf.ingredient_item_deduplication.PatchedDataComponentMapAccessor;
 
@@ -15,7 +15,23 @@ public class IngredientValueDeduplicator {
     private static final ObjectOpenCustomHashSet<Ingredient.ItemValue> VALUES = new ObjectOpenCustomHashSet<>(new Hash.Strategy<>() {
         @Override
         public int hashCode(Ingredient.ItemValue o) {
-            return o == null ? 0 : ItemStackLinkedSet.TYPE_AND_TAG.hashCode(o.item());
+            if (o == null) {
+                return 0;
+            }
+            var stack = o.item();
+            int hash = 31 * stack.getItem().hashCode();
+            if (stack.getComponents() instanceof PatchedDataComponentMapAccessor comps) {
+                var patch = comps.mfix$getPatch();
+                for (var entry : Reference2ObjectMaps.fastIterable(patch)) {
+                    int keyHash = System.identityHashCode(entry.getKey()) & 0xff;
+                    var value = entry.getValue();
+                    int valueHash = value.isPresent() ? System.identityHashCode(value.get()) : 0;
+                    hash += IntMath.pow(31, keyHash) * valueHash;
+                }
+            } else {
+                hash += System.identityHashCode(stack.getComponents());
+            }
+            return hash;
         }
 
         private boolean areComponentsSame(ItemStack a, ItemStack b) {

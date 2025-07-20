@@ -11,8 +11,30 @@ accessible field net/minecraft/world/level/Level blockEntityTickers Ljava/util/L
 accessible class net/minecraft/client/renderer/RenderType$CompositeRenderType
 accessible method net/minecraft/nbt/CompoundTag <init> (Ljava/util/Map;)V
 
+# Non-context access necessary
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$Condition
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$LazyYCondition
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$StoneDepthCheck
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$WaterConditionSource
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$VerticalGradientConditionSource
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$YConditionSource
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$BiomeConditionSource
 accessible class net/minecraft/world/level/levelgen/SurfaceRules$SequenceRule
 accessible class net/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule
+# Access to allow working with Context
+accessible class net/minecraft/world/level/levelgen/SurfaceRules$Context
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context context Lnet/minecraft/world/level/levelgen/SurfaceRules$Context;
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context biome Ljava/util/function/Supplier;
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context blockX I
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context blockY I
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context blockZ I
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context stoneDepthBelow I
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context randomState Lnet/minecraft/world/level/levelgen/RandomState;
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context waterHeight I
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context stoneDepthAbove I
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context surfaceDepth I
+accessible method net/minecraft/world/level/levelgen/SurfaceRules$Context getSurfaceSecondary ()D
+# Density function access
 accessible class net/minecraft/world/level/levelgen/DensityFunctions$Marker
 accessible class net/minecraft/world/level/levelgen/DensityFunctions$Marker$Type
 accessible method net/minecraft/world/level/levelgen/DensityFunctions$Marker <init> (Lnet/minecraft/world/level/levelgen/DensityFunctions$Marker$Type;Lnet/minecraft/world/level/levelgen/DensityFunction;)V

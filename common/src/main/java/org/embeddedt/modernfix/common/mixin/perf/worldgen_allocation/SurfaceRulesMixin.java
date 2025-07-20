@@ -20,12 +20,11 @@ import java.util.function.Predicate;
 public class SurfaceRulesMixin {
     @Mixin(value = SurfaceRules.BiomeConditionSource.class, priority = 100)
     public static final class BiomeConditionSource {
-        @Final
-        @Shadow
-        Predicate<ResourceKey<Biome>> biomeNameTest;
+        @Final @Shadow Predicate<ResourceKey<Biome>> biomeNameTest;
         /**
          * @author VoidsongDragonfly
-         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior
+         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior.
+         * This is an exact reimplementation of the surface rule, without the caching; check code and effect are identical.
          */
         @Overwrite
         public SurfaceRules.Condition apply(final SurfaceRules.Context pContext) {
@@ -41,10 +40,16 @@ public class SurfaceRulesMixin {
     }
 
     @Mixin(value = SurfaceRules.StoneDepthCheck.class, priority = 100)
-    public record StoneDepthCheck(int offset, boolean addSurfaceDepth, int secondaryDepthRange, CaveSurface surfaceType) {
+    public static final class StoneDepthCheck {
+        @Final @Shadow int offset;
+        @Final @Shadow boolean addSurfaceDepth;
+        @Final @Shadow int secondaryDepthRange;
+        @Final @Shadow private CaveSurface surfaceType;
+
         /**
          * @author VoidsongDragonfly
-         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior
+         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior.
+         * This is an exact reimplementation of the surface rule, without the caching; check code and effect are identical.
          */
         @Overwrite
         public SurfaceRules.Condition apply(final SurfaceRules.Context pContext) {
@@ -68,17 +73,22 @@ public class SurfaceRulesMixin {
     }
 
     @Mixin(value = SurfaceRules.VerticalGradientConditionSource.class, priority = 100)
-    public record VerticalGradientConditionSource(ResourceLocation randomName, VerticalAnchor trueAtAndBelow, VerticalAnchor falseAtAndAbove) {
+    public static final class VerticalGradientConditionSource {
+        @Final @Shadow private ResourceLocation randomName;
+        @Final @Shadow private VerticalAnchor trueAtAndBelow;
+        @Final @Shadow private VerticalAnchor falseAtAndAbove;
+
         /**
          * @author VoidsongDragonfly
-         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior
+         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior.
+         * This is an exact reimplementation of the surface rule, without the caching; check code and effect are identical.
          */
         @Overwrite
         public SurfaceRules.Condition apply(final SurfaceRules.Context pContext) {
             // Copied Vanilla variables
-            final int i = this.trueAtAndBelow().resolveY(pContext.context);
-            final int j = this.falseAtAndAbove().resolveY(pContext.context);
-            final PositionalRandomFactory positionalrandomfactory = pContext.randomState.getOrCreateRandomFactory(this.randomName());
+            final int i = trueAtAndBelow.resolveY(pContext.context);
+            final int j = falseAtAndAbove.resolveY(pContext.context);
+            final PositionalRandomFactory positionalrandomfactory = pContext.randomState.getOrCreateRandomFactory(randomName);
 
             class VerticalGradientCondition implements SurfaceRules.Condition {
                 @Override
@@ -101,10 +111,15 @@ public class SurfaceRulesMixin {
     }
 
     @Mixin(value = SurfaceRules.WaterConditionSource.class, priority = 100)
-    public record WaterConditionSource(int offset, int surfaceDepthMultiplier, boolean addStoneDepth) {
+    public static final class WaterConditionSource {
+        @Final @Shadow int offset;
+        @Final @Shadow int surfaceDepthMultiplier;
+        @Final @Shadow boolean addStoneDepth;
+
         /**
          * @author VoidsongDragonfly
-         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior
+         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior.
+         * This is an exact reimplementation of the surface rule, without the caching; check code and effect are identical.
          */
         @Overwrite
         public SurfaceRules.Condition apply(final SurfaceRules.Context pContext) {
@@ -125,10 +140,14 @@ public class SurfaceRulesMixin {
     }
 
     @Mixin(value = SurfaceRules.YConditionSource.class, priority = 100)
-    public record YConditionSource(VerticalAnchor anchor, int surfaceDepthMultiplier, boolean addStoneDepth) {
+    public static final class YConditionSource {
+        @Final @Shadow VerticalAnchor anchor;
+        @Final @Shadow int surfaceDepthMultiplier;
+        @Final @Shadow boolean addStoneDepth;
         /**
          * @author VoidsongDragonfly
-         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior
+         * @reason Replacing Vanilla's use of {@link SurfaceRules.LazyYCondition LazyYCondition} that causes performance detriments due to unused caching behavior.
+         * This is an exact reimplementation of the surface rule, without the caching; check code and effect are identical.
          */
         @Overwrite
         public SurfaceRules.Condition apply(final SurfaceRules.Context pContext) {

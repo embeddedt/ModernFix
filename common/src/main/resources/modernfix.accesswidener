@@ -23,7 +23,7 @@ accessible class net/minecraft/world/level/levelgen/SurfaceRules$SequenceRule
 accessible class net/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule
 # Access to allow working with Context
 accessible class net/minecraft/world/level/levelgen/SurfaceRules$Context
-accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context context Lnet/minecraft/world/level/levelgen/SurfaceRules$Context;
+accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context context Lnet/minecraft/world/level/levelgen/WorldGenerationContext;
 accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context biome Ljava/util/function/Supplier;
 accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context blockX I
 accessible field net/minecraft/world/level/levelgen/SurfaceRules$Context blockY I

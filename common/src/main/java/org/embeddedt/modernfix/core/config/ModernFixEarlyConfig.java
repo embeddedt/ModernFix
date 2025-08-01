@@ -5,6 +5,7 @@ import com.google.common.collect.*;
 import com.google.gson.*;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
+import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
@@ -21,6 +22,9 @@ import org.spongepowered.asm.mixin.Mixin;
 import java.io.*;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.BooleanSupplier;
 import java.util.regex.Pattern;
@@ -313,6 +317,32 @@ public class ModernFixEarlyConfig {
         }
     }
 
+    private void readGlobalProperties() {
+        Path minecraftFolder;
+        if (SystemUtils.IS_OS_MAC) {
+            minecraftFolder = Paths.get(System.getProperty("user.home"), "Library", "Application Support", "minecraft");
+        } else if (SystemUtils.IS_OS_WINDOWS) {
+            minecraftFolder = Paths.get(System.getenv("APPDATA"), ".minecraft");
+        } else {
+            minecraftFolder = Paths.get(System.getProperty("user.home"), ".minecraft");
+        }
+        Path globalPropsFile = minecraftFolder.resolve("global").resolve("modernfix-global-mixins.properties");
+        try {
+            if (Files.exists(globalPropsFile)) {
+                Properties properties = new Properties();
+                try (var is = Files.newInputStream(globalPropsFile)) {
+                    properties.load(is);
+                }
+                if (!properties.isEmpty()) {
+                    LOGGER.info("Global properties specified: [{}]", properties.entrySet().stream().map(e -> e.getKey() + "=" + e.getValue()).collect(Collectors.joining(", ")));
+                    readProperties(properties);
+                }
+            }
+        } catch (Exception e) {
+            LOGGER.error("Error reading global properties file", e);
+        }
+    }
+
     private void readProperties(Properties props) {
         if(ALLOW_OVERRIDE_OVERRIDES)
             LOGGER.fatal("JVM argument given to override mod overrides. Issues opened with this option present will be ignored unless they can be reproduced without.");
@@ -402,6 +432,7 @@ public class ModernFixEarlyConfig {
                 LOGGER.warn("Could not write configuration file", e);
             }
 
+            config.readGlobalProperties();
             config.readJVMProperties();
         }
 

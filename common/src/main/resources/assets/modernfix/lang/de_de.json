@@ -120,5 +120,6 @@
   "modernfix.option.mixin.perf.compact_mojang_registries": "(Fabric) Experimentelle Option, die die Speichernutzung von Registern um etwa 50 % reduziert. In den meisten Modpacks nicht nützlich, es sei denn, sie enthalten Millionen von Blöcken und Gegenständen.",
   "modernfix.option.mixin.perf.dynamic_block_codecs": "Vermeidet das Speichern eines Codecs für jeden Block (Zustand) und generiert und speichert ihn stattdessen bei Bedarf im laufenden Betrieb. Im Allgemeinen lohnt es sich nicht, es zu aktivieren, es sei denn, Sie haben eine Million Blöcke/Elemente.",
   "modernfix.option.mixin.perf.faster_command_suggestions": "Verringern Sie Verzögerungen, wenn beim Eingeben eines Befehls Hunderttausende Vorschläge eingehen",
-  "modernfix.option.mixin.perf.mojang_registry_size": "Behebt ein Problem, das dazu führt, dass sich die Registrierung von Blöcken/Elementen proportional zur bereits registrierten Anzahl verlangsamt. Dies verbessert die Startzeit."
+  "modernfix.option.mixin.perf.mojang_registry_size": "Behebt ein Problem, das dazu führt, dass sich die Registrierung von Blöcken/Elementen proportional zur bereits registrierten Anzahl verlangsamt. Dies verbessert die Startzeit.",
+  "modernfix.option.mixin.feature.suppress_narrator_stacktrace": "Hält das Spiel davon ab, einen sehr langen Stacktrace zu loggen, wenn der Erzähler auf Linux nicht erfolgreich lädt (oft verursacht dadurch, dass libflite nicht installiert ist)."
 }

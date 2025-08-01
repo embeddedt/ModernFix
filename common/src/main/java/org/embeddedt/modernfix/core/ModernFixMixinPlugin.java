@@ -95,6 +95,10 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     }
 
     private void computeBetterThreadCount() {
+        // Allow user-provided thread count to take precedence
+        if (System.getProperty("max.bg.threads") != null) {
+            return;
+        }
         // Server thread + client thread + GC thread
         int reservedCores = 3;
         int availableBackgroundCores = Math.max(1, Runtime.getRuntime().availableProcessors() - reservedCores);

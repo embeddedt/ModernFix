@@ -186,6 +186,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.log_stdout_in_log_files", true)
             .put("mixin.devenv", isDevEnv)
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)
+            .put("mixin.feature.suppress_narrator_stacktrace", !isDevEnv) // Not compatible with mixin.devenv
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
             .putConditionally(() -> !isFabric, "mixin.bugfix.forge_at_inject_error", true)
             .putConditionally(() -> !isFabric, "mixin.feature.registry_event_progress", false)

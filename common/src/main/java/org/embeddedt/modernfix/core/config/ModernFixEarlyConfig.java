@@ -165,7 +165,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.stalled_chunk_load_detection", false)
             .put("mixin.perf.blast_search_trees.force", false)
             .put("mixin.bugfix.restore_old_dragon_movement", false)
-            .put("mixin.perf.worldgen_allocation", false) // experimental
+            .put("mixin.perf.worldgen_allocation", true)
             .put("mixin.feature.cause_lag_by_disabling_threads", false)
             .put("mixin.bugfix.missing_block_entities", false)
             .put("mixin.feature.blockentity_incorrect_thread", false)

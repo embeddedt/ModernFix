@@ -61,6 +61,7 @@ dependencies {
     modCompileOnly("curse.maven:supermartijncore-454372:4455391")
     modCompileOnly("vazkii.patchouli:Patchouli:1.19.2-77")
     modCompileOnly("curse.maven:cofhcore-69162:5374122")
+    modCompileOnly("curse.maven:resourcefullib-570073:5659871")
 
     // runtime remapping at home
     for (extraModJar in fileTree(dir: extraModsDir, include: '*.jar')) {

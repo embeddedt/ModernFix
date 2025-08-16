@@ -37,12 +37,12 @@ public abstract class MinecraftServerMixin extends BlockableEventLoop<Runnable> 
         }
     }
 
-    @Override
-    public void waitForTasks() {
+    @WrapOperation(method = "waitForTasks", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/thread/ReentrantBlockableEventLoop;waitForTasks()V"))
+    private void waitLongerForTasks(MinecraftServer instance, Operation<Void> original) {
         if (this.mfix$isWaitingForNextTick) {
             LockSupport.parkNanos("waiting for tasks", this.nextTickTimeNanos - Util.getNanos());
         } else {
-            super.waitForTasks();
+            original.call(instance);
         }
     }
 }

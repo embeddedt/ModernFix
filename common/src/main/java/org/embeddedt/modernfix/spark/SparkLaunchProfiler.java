@@ -33,7 +33,7 @@ public class SparkLaunchProfiler {
     private static PlatformInfo platformInfo = new ModernFixPlatformInfo();
     private static CommandSender commandSender = new ModernFixCommandSender();
     private static Map<String, Sampler> ongoingSamplers = new Object2ReferenceOpenHashMap<>();
-    private static ExecutorService executor = Executors.newSingleThreadScheduledExecutor((new ThreadFactoryBuilder()).setNameFormat("spark-modernfix-async-worker").build());
+    private static ExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("spark-modernfix-async-worker").build());
     private static final SparkPlatform platform = new SparkPlatform(new ModernFixSparkPlugin());
 
     private static final boolean USE_JAVA_SAMPLER_FOR_LAUNCH = !Boolean.getBoolean("modernfix.profileWithAsyncSampler");

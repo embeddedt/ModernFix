@@ -152,5 +152,6 @@
   "modernfix.option.mixin.perf.memoize_creative_tab_build": "Improves on vanilla's existing caching for creative tab contents in a way that is compatible with the timing requirements of mods like JEI/EMI. This can reduce the lag spike when opening the creative inventory for the first time in a modpack.",
   "modernfix.option.mixin.perf.potential_spawns_alloc": "Optimizes the Forge event for finding potential mobs that can spawn. This reduces allocations and the overhead of rebuilding a weighted list when no mods modify the potential spawns.",
   "modernfix.option.mixin.perf.ticking_chunk_alloc": "Optimizes chunk ticking in vanilla to reduce allocations.",
-  "modernfix.option.mixin.perf.worldgen_allocation": "Optimizes some world generation logic in vanilla to reduce object allocations."
+  "modernfix.option.mixin.perf.worldgen_allocation": "Optimizes some world generation logic in vanilla to reduce object allocations.",
+  "modernfix.option.mixin.feature.suppress_narrator_stacktrace": "Prevents the game from logging a very long stacktrace when the narrator fails to load on Linux (usually caused by not having libflite installed)."
 }

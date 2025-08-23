@@ -87,7 +87,23 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                 t.setDaemon(true);
                 t.start();
             }
+
+            if (ModernFixPlatformHooks.INSTANCE.isClient() && ModernFixMixinPlugin.instance.isOptionEnabled("perf.thread_priorities.AdjustThreadCount")) {
+                computeBetterThreadCount();
+            }
         }
+    }
+
+    private void computeBetterThreadCount() {
+        // Allow user-provided thread count to take precedence
+        if (System.getProperty("max.bg.threads") != null) {
+            return;
+        }
+        // Server thread + client thread + GC thread
+        int reservedCores = 3;
+        int availableBackgroundCores = Math.max(1, Runtime.getRuntime().availableProcessors() - reservedCores);
+        logger.info("Configuring Minecraft's max.bg.threads option with {} threads", availableBackgroundCores);
+        System.setProperty("max.bg.threads", String.valueOf(availableBackgroundCores));
     }
 
 

@@ -19,6 +19,7 @@ import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.ArrayList;
@@ -188,5 +189,10 @@ public abstract class IngredientMixin implements ExtendedIngredient {
     @Override
     public void mfix$clearReference() {
         this.mfix$cachedItemStacks = null;
+    }
+
+    @Inject(method = "invalidate", at = @At("RETURN"), remap = false)
+    private void invalidateSoftReference(CallbackInfo ci) {
+        mfix$clearReference();
     }
 }

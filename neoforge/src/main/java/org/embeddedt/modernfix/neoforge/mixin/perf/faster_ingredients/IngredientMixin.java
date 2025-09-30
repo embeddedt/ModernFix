@@ -190,9 +190,4 @@ public abstract class IngredientMixin implements ExtendedIngredient {
     public void mfix$clearReference() {
         this.mfix$cachedItemStacks = null;
     }
-
-    @Inject(method = "invalidate", at = @At("RETURN"), remap = false)
-    private void invalidateSoftReference(CallbackInfo ci) {
-        mfix$clearReference();
-    }
 }

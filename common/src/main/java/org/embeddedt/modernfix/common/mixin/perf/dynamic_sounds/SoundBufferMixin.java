@@ -11,7 +11,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import javax.sound.sampled.AudioFormat;
 import java.nio.ByteBuffer;
-import java.util.concurrent.TimeUnit;
 
 @ClientOnlyMixin
 @Mixin(SoundBuffer.class)

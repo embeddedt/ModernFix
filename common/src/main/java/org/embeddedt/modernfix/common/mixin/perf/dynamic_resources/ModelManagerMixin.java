@@ -1,11 +1,14 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.google.common.collect.ImmutableList;
+import com.google.common.collect.Maps;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
 import net.minecraft.world.level.block.Block;
@@ -19,6 +22,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.ModifyArg;
 import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
@@ -28,8 +32,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionStage;
 import java.util.concurrent.Executor;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Mixin(ModelManager.class)
@@ -44,10 +51,12 @@ public class ModelManagerMixin {
         }
     }
 
-    @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelManager;loadBlockModels(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
-    private CompletableFuture<Map<ResourceLocation, BlockModel>> deferBlockModelLoad(ResourceManager manager, Executor executor) {
-        var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, location), 100L);
-        return CompletableFuture.completedFuture(new LambdaMap<>(location -> cache.getUnchecked(location)));
+    @ModifyArg(method = "loadBlockModels", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;thenCompose(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", ordinal = 0), index = 0)
+    private static Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> deferBlockModelLoad(Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> fn, @Local(ordinal = 0, argsOnly = true) ResourceManager manager) {
+        return resourceMap -> {
+            var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, location), 100L);
+            return CompletableFuture.completedFuture(Maps.asMap(Set.copyOf(resourceMap.keySet()), location -> cache.getUnchecked(location)));
+        };
     }
 
     @Redirect(method = "reload", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelManager;loadBlockStates(Lnet/minecraft/server/packs/resources/ResourceManager;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
@@ -61,7 +70,7 @@ public class ModelManagerMixin {
         return ImmutableList.of();
     }
 
-    private BlockModel loadSingleBlockModel(ResourceManager manager, ResourceLocation location) {
+    private static BlockModel loadSingleBlockModel(ResourceManager manager, ResourceLocation location) {
         return manager.getResource(location).map(resource -> {
             try (BufferedReader reader = resource.openAsReader()) {
                 return BlockModel.fromStream(reader);

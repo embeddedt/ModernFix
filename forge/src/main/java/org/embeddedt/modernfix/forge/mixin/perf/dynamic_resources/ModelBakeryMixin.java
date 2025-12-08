@@ -305,14 +305,46 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         }
     }
 
-    private <T extends Comparable<T>, V extends T> BlockState setPropertyGeneric(BlockState state, Property<T> prop, Object o) {
-        return state.setValue(prop, (V)o);
-    }
     @Redirect(method = "loadModel", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/block/state/StateDefinition;getPossibleStates()Lcom/google/common/collect/ImmutableList;"))
     private ImmutableList<BlockState> loadOnlyRelevantBlockState(StateDefinition<Block, BlockState> stateDefinition, ResourceLocation location) {
-        if(!(location instanceof ModelResourceLocation) || Minecraft.getInstance().getOverlay() != null || Minecraft.getInstance().level == null)
-            return stateDefinition.getPossibleStates();
-        return ModelBakeryHelpers.getBlockStatesForMRL(stateDefinition, (ModelResourceLocation)location);
+        var allStates = stateDefinition.getPossibleStates();
+
+        if(!(location instanceof ModelResourceLocation mrl)) {
+            return allStates;
+        }
+
+        // Load a batch of models at once in certain initialization phases to speed up the loading process.
+        // This is disabled when in-game as it will cause stutters when blocks are placed.
+        boolean shouldLoadBatch = (Minecraft.getInstance().getOverlay() != null || Minecraft.getInstance().level == null);
+        int batchSize = ModelBakeryHelpers.MAX_UNBAKED_MODEL_COUNT - 1000;
+
+        // If loading a batch and all the states are smaller than the max batch size, just use them
+        // This is hoisted above the computation of desiredStates for performance reasons
+        if (shouldLoadBatch && allStates.size() <= batchSize) {
+            return allStates;
+        }
+
+        var desiredStates = ModelBakeryHelpers.getBlockStatesForMRL(stateDefinition, mrl);
+
+        // If not loading a batch, load only the desired states
+        if (!shouldLoadBatch) {
+            return desiredStates;
+        }
+
+        // At this point we want to load a batch if possible, but loading every state is too much. If desiredStates
+        // is a single state (should almost always be the case), then we choose a sublist starting from it and extending
+        // batchSize entries (or less if the list ends). If it's multiple states, a single sublist may not include
+        // everything, so we bail.
+        if (desiredStates.size() != 1) {
+            return desiredStates;
+        }
+
+        var desiredState = desiredStates.get(0);
+        int indexInAllStates = allStates.indexOf(desiredState);
+        if (indexInAllStates == -1) {
+            return desiredStates;
+        }
+        return allStates.subList(indexInAllStates, Math.min(indexInAllStates + batchSize, allStates.size()));
     }
 
     @Override

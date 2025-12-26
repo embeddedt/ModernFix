@@ -22,6 +22,6 @@ public class BlockCallbacksMixin {
 
     @Inject(method = "onBake", at = @At(value = "TAIL"), remap = false)
     private void computeCaches(Registry<Block> registry, CallbackInfo ci) {
-        BlockStateCacheHandler.rebuildParallel(false);
+        BlockStateCacheHandler.invalidateCache();
     }
 }

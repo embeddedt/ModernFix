@@ -45,6 +45,8 @@ val versionString =
 
 version = versionString
 
+base.archivesName = "modernfix-forge"
+
 legacyForge {
     enable {
         forgeVersion = rootProject.properties["forge_version"].toString()
@@ -177,4 +179,22 @@ tasks.named<ProcessResources>("processResources") {
     filesMatching("META-INF/mods.toml") {
         expand("version" to project.version)
     }
+}
+
+val finalJarTask = "reobfJar"
+
+tasks.register<Copy>("copyJarNameConsistent") {
+    from(tasks.named<Jar>(finalJarTask).get().outputs.files)
+    into(project.file("build/libs"))
+    rename { name -> "modernfix-" + project.name + "-latest.jar" }
+}
+
+tasks.register<Copy>("copyJarToBin") {
+    from(tasks.named<Jar>(finalJarTask).get().outputs.files)
+    into(rootProject.file("bin"))
+    mustRunAfter(tasks.named("copyJarNameConsistent"))
+}
+
+tasks.named("build") {
+    dependsOn("copyJarToBin", "copyJarNameConsistent")
 }

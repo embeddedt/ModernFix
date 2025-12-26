@@ -16,7 +16,7 @@ import java.util.function.Consumer;
 public class BlocksMixin {
     @ModifyArg(method = "rebuildCache", at = @At(value = "INVOKE", target = "Lnet/minecraft/core/IdMapper;forEach(Ljava/util/function/Consumer;)V"), index = 0)
     private static Consumer getEmptyConsumer(Consumer original) {
-        BlockStateCacheHandler.rebuildParallel(true);
+        BlockStateCacheHandler.invalidateCache();
         return o -> {};
     }
 

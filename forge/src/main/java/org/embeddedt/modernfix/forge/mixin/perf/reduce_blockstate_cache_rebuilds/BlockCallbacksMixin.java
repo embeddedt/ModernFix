@@ -20,6 +20,6 @@ public class BlockCallbacksMixin {
 
     @Inject(method = "onBake", at = @At(value = "TAIL"), remap = false)
     private void computeCaches(IForgeRegistryInternal<Block> owner, RegistryManager stage, CallbackInfo ci) {
-        BlockStateCacheHandler.rebuildParallel(false);
+        BlockStateCacheHandler.invalidateCache();
     }
 }

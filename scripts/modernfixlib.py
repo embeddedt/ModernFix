@@ -5,7 +5,7 @@ import re
 def get_valid_mixin_options():
     all_mixin_options = set()
     # gather all mixins in mixin folders
-    for platform in [ "common", "fabric", "forge" ]:
+    for platform in [ "common", "forge" ]:
         base_path = f"{platform}/src/main/java/org/embeddedt/modernfix/{platform}/mixin"
         for root, dirs, files in os.walk(base_path):
             for file in files:

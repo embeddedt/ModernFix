@@ -15,7 +15,7 @@ def get_valid_mixin_options():
                         mixin_name = mixin_name[1:]
                     all_mixin_options.add("mixin." + mixin_name)
     # gather any mixin strings referenced in ModernFixEarlyConfig
-    with open('common/src/main/java/org/embeddedt/modernfix/core/config/ModernFixEarlyConfig.java') as config_java:
+    with open('src/main/java/org/embeddedt/modernfix/core/config/ModernFixEarlyConfig.java') as config_java:
         for line in config_java:
             for option in re.findall(r"\.put[A-Za-z_]*\(.*\"(mixin(?:\.[a-z_]+)+)\"", line):
                 all_mixin_options.add(option)

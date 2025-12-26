@@ -7,7 +7,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.OnDatapackSyncEvent;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.server.ServerStartedEvent;
 import net.minecraftforge.event.server.ServerStoppedEvent;
@@ -22,12 +21,10 @@ import net.minecraftforge.fml.loading.FMLLoader;
 import net.minecraftforge.network.NetworkConstants;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
-import net.minecraftforge.server.ServerLifecycleHooks;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
-import org.embeddedt.modernfix.entity.EntityDataIDSyncHandler;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
@@ -63,15 +60,6 @@ public class ModernFixForge {
                         NightConfigFixer.runReloads();
                         return 1;
                     }));
-        }
-    }
-
-    @SubscribeEvent
-    public void onDatapackSync(OnDatapackSyncEvent event) {
-        if(event.getPlayer() != null) {
-            if(!ServerLifecycleHooks.getCurrentServer().isDedicatedServer() && event.getPlayerList().getPlayerCount() == 0)
-                return;
-            EntityDataIDSyncHandler.onDatapackSyncEvent(event.getPlayer());
         }
     }
 

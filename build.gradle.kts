@@ -83,7 +83,10 @@ mixin {
 
 tasks.named<Jar>("jar") {
     manifest.attributes(mapOf(
-        "MixinConfigs" to "modernfix-modernfix.mixins.json"
+        "MixinConfigs" to "modernfix-modernfix.mixins.json",
+        "Specification-Version" to "1",
+        "Implementation-Title" to project.name,
+        "Implementation-Version" to version
     ))
 }
 
@@ -127,8 +130,15 @@ repositories {
     }
 }
 
+val embed by configurations.creating {
+    isCanBeConsumed = false
+    isCanBeResolved = true
+    isTransitive = true
+}
+
 dependencies {
     implementation(project(":annotations"))
+    embed(project(":annotations"))
     "additionalRuntimeClasspath"(project(":annotations"))
     annotationProcessor(project(path = ":annotation-processor", configuration = "shadow"))
 
@@ -149,6 +159,10 @@ dependencies {
     modCompileOnly("curse.maven:cofhcore-69162:5374122")
     modCompileOnly("curse.maven:resourcefullib-570073:5659871")
     modCompileOnly("curse.maven:kubejs-238086:5853326")
+}
+
+tasks.named<Jar>("jar") {
+    from(embed.map { if (it.isDirectory) it else zipTree(it) })
 }
 
 // For the AP
@@ -186,7 +200,7 @@ val finalJarTask = "reobfJar"
 tasks.register<Copy>("copyJarNameConsistent") {
     from(tasks.named<Jar>(finalJarTask).get().outputs.files)
     into(project.file("build/libs"))
-    rename { name -> "modernfix-" + project.name + "-latest.jar" }
+    rename { _ -> "modernfix-" + project.name + "-latest.jar" }
 }
 
 tasks.register<Copy>("copyJarToBin") {

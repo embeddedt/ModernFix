@@ -114,7 +114,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public String getRefMapperConfig() {
-        return null;
+        return "modernfix.refmap.json";
     }
 
     @Override

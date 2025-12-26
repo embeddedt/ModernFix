@@ -1,10 +1,8 @@
 package org.embeddedt.modernfix;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.MemoryReserve;
-import net.minecraft.world.entity.Entity;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
@@ -95,25 +93,6 @@ public class ModernFixClient {
                 SparkLaunchProfiler.stop("world_join");
             }
             resetWorldLoadStateMachine();
-        }
-    }
-
-    /**
-     * Check if the IDs match and remap them if not.
-     * @return true if ID remap was needed
-     */
-    private static boolean compareAndSwitchIds(Class<? extends Entity> eClass, String fieldName, EntityDataAccessor<?> accessor, int newId) {
-        if(accessor.id != newId) {
-            ModernFix.LOGGER.warn("Corrected ID mismatch on {} field {}. Client had {} but server wants {}.",
-                    eClass,
-                    fieldName,
-                    accessor.id,
-                    newId);
-            accessor.id = newId;
-            return true;
-        } else {
-            ModernFix.LOGGER.debug("{} {} ID fine: {}", eClass, fieldName, newId);
-            return false;
         }
     }
 

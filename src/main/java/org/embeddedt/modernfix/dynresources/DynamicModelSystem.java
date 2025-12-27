@@ -4,7 +4,14 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
+import net.minecraft.client.renderer.block.model.ItemModelGenerator;
+import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
+import net.minecraft.client.resources.model.ClientItemInfoLoader;
+import net.minecraft.client.resources.model.MissingBlockModel;
+import net.minecraft.client.resources.model.ModelDiscovery;
+import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
@@ -12,8 +19,10 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.UnbakedModelParser;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.IdMapperAccessor;
+import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.ModelDiscoveryAccessor;
 
 import java.io.Reader;
 import java.util.List;
@@ -69,5 +78,38 @@ public class DynamicModelSystem {
             var loadedModels = definitionCache.getUnchecked(identifier);
             return loadedModels.models().get(state);
         }));
+    }
+
+    public record DynamicResolver(Map<Identifier, UnbakedModel> inputModels,
+                                          BlockStateModelLoader.LoadedModels loadedModels,
+                                          ClientItemInfoLoader.LoadedClientInfos loadedClientInfos,
+                                          StandaloneModelLoader.LoadedModels standaloneModels) {
+
+        private ResolvedModel resolveModel(Identifier id) {
+            var discovery = new ModelDiscovery(inputModels, MissingBlockModel.missingModel());
+            discovery.addSpecialModel(ItemModelGenerator.GENERATED_ITEM_MODEL_ID, new ItemModelGenerator());
+            if (!id.equals(ItemModelGenerator.GENERATED_ITEM_MODEL_ID)) {
+                UnbakedModel unbaked = inputModels.get(id);
+                if (unbaked != null) {
+                    var wrapper = discovery.createAndQueueWrapper(id, unbaked);
+                    ((ModelDiscoveryAccessor)discovery).mfix$getModelWrappers().put(id, wrapper);
+                } else {
+                    ModernFix.LOGGER.warn("Cannot find the root model for {}", id);
+                }
+            }
+            var resolved = discovery.resolve();
+            return resolved.getOrDefault(id, discovery.missingModel());
+        }
+
+        public ModelManager.ResolvedModels resolvedModels() {
+            var resolvedMissingModel = new ModelDiscovery(inputModels, MissingBlockModel.missingModel()).missingModel();
+            LoadingCache<Identifier, ResolvedModel> resolvedModelCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
+                @Override
+                public ResolvedModel load(Identifier key) {
+                    return resolveModel(key);
+                }
+            });
+            return new ModelManager.ResolvedModels(resolvedMissingModel, Maps.asMap(inputModels.keySet(), resolvedModelCache::getUnchecked));
+        }
     }
 }

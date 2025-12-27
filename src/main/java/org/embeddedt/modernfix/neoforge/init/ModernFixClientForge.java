@@ -1,9 +1,14 @@
 package org.embeddedt.modernfix.neoforge.init;
 
-import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.components.DebugScreenOverlay;
+import net.minecraft.client.gui.components.debug.DebugScreenDisplayer;
+import net.minecraft.client.gui.components.debug.DebugScreenEntry;
+import net.minecraft.client.gui.components.debug.DebugScreenEntryStatus;
+import net.minecraft.client.gui.components.debug.DebugScreenProfile;
+import net.minecraft.resources.Identifier;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -11,37 +16,26 @@ import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModLoader;
 import net.neoforged.fml.ModLoadingIssue;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
-import net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent;
-import net.neoforged.neoforge.client.event.RecipesUpdatedEvent;
-import net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent;
+import net.neoforged.neoforge.client.event.RecipesReceivedEvent;
+import net.neoforged.neoforge.client.event.RegisterDebugEntriesEvent;
 import net.neoforged.neoforge.client.event.RenderFrameEvent;
 import net.neoforged.neoforge.client.gui.IConfigScreenFactory;
-import net.neoforged.neoforge.client.settings.KeyConflictContext;
 import net.neoforged.neoforge.event.TagsUpdatedEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
+import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.ModernFixClient;
 import org.embeddedt.modernfix.screen.ModernFixConfigScreen;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.jspecify.annotations.Nullable;
 
 public class ModernFixClientForge {
     private static ModernFixClient commonMod;
 
     public ModernFixClientForge(ModContainer modContainer, IEventBus modBus) {
         commonMod = new ModernFixClient();
-        modBus.addListener(this::keyBindRegister);
         modBus.addListener(this::onClientSetup);
+        modBus.addListener(this::onRenderOverlay);
         modContainer.registerExtensionPoint(IConfigScreenFactory.class, (mc, screen) -> new ModernFixConfigScreen(screen));
-    }
-
-    private KeyMapping configKey;
-
-    private void keyBindRegister(RegisterKeyMappingsEvent event) {
-        configKey = new KeyMapping("key.modernfix.config", KeyConflictContext.UNIVERSAL, InputConstants.UNKNOWN, "key.modernfix");
-        event.register(configKey);
     }
 
     private void onClientSetup(FMLClientSetupEvent event) {
@@ -52,42 +46,25 @@ public class ModernFixClientForge {
         }
     }
 
-    @SubscribeEvent
-    public void onConfigKey(ClientTickEvent.Pre event) {
-        if(configKey != null && configKey.consumeClick()) {
-            Minecraft.getInstance().setScreen(new ModernFixConfigScreen(Minecraft.getInstance().screen));
-        }
-    }
+    private static final Identifier MODERNFIX_VERSION = Identifier.fromNamespaceAndPath(ModernFix.MODID, "version");
 
-    private static final List<String> brandingList = new ArrayList<>();
-
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public void onRenderOverlay(CustomizeGuiOverlayEvent.DebugText event) {
-        if(commonMod.brandingString != null && Minecraft.getInstance().getDebugOverlay().showDebugScreen()) {
-            if(brandingList.size() == 0) {
-                brandingList.add("");
-                brandingList.add(commonMod.brandingString);
-            }
-            int targetIdx = 0, numSeenBlanks = 0;
-            List<String> right = event.getRight();
-            while(targetIdx < right.size()) {
-                String s = right.get(targetIdx);
-                if(s == null || s.length() == 0) {
-                    numSeenBlanks++;
+    private void onRenderOverlay(RegisterDebugEntriesEvent event) {
+        event.register(MODERNFIX_VERSION, new DebugScreenEntry() {
+            @Override
+            public void display(DebugScreenDisplayer displayer, @Nullable Level level, @Nullable LevelChunk clientChunk, @Nullable LevelChunk serverChunk) {
+                if (commonMod.brandingString != null) {
+                    displayer.addToGroup(MODERNFIX_VERSION, commonMod.brandingString);
                 }
-                if(numSeenBlanks == 3)
-                    break;
-                targetIdx++;
             }
-            right.addAll(targetIdx, brandingList);
-        }
+        });
+        event.includeInProfile(MODERNFIX_VERSION, DebugScreenProfile.DEFAULT, DebugScreenEntryStatus.IN_OVERLAY);
     }
 
     @SubscribeEvent
     public void onDisconnect(LevelEvent.Unload event) {
         if(event.getLevel().isClientSide()) {
             DebugScreenOverlay overlay = Minecraft.getInstance().getDebugOverlay();
-            Minecraft.getInstance().tell(overlay::clearChunkCache);
+            Minecraft.getInstance().schedule(overlay::clearChunkCache);
         }
     }
 
@@ -102,7 +79,7 @@ public class ModernFixClientForge {
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onRecipes(RecipesUpdatedEvent e) {
+    public void onRecipes(RecipesReceivedEvent e) {
         commonMod.onRecipesUpdated();
     }
 

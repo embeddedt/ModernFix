@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.common.mixin.perf.compact_bit_storage;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.level.chunk.PaletteResize;
 import net.minecraft.world.level.chunk.PalettedContainer;
 import org.jetbrains.annotations.Nullable;
 import org.objectweb.asm.Opcodes;
@@ -40,7 +41,7 @@ public abstract class PalettedContainerMixin<T> {
                 return;
             }
             this.data = this.createOrReuseData(null, 0);
-            this.data.palette().idFor(value);
+            this.data.palette().idFor(value, (PaletteResize<T>)this);
         }
     }
 }

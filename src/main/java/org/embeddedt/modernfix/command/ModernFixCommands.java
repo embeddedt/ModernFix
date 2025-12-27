@@ -4,6 +4,7 @@ import com.mojang.brigadier.CommandDispatcher;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.permissions.Permissions;
 import org.embeddedt.modernfix.duck.IProfilingServerFunctionManager;
 
 import static net.minecraft.commands.Commands.literal;
@@ -11,7 +12,7 @@ import static net.minecraft.commands.Commands.literal;
 public class ModernFixCommands {
     public static void register(CommandDispatcher<CommandSourceStack> dispatcher) {
         dispatcher.register(literal("modernfix")
-                .then(literal("mcfunctions").requires(source -> source.hasPermission(3))
+                .then(literal("mcfunctions").requires(source -> source.permissions().hasPermission(Permissions.COMMANDS_ADMIN))
                         .executes(context -> {
                             ServerLevel level = context.getSource().getLevel();
                             if(level == null) {

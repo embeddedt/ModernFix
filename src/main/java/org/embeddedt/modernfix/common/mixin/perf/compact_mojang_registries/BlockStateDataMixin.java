@@ -22,6 +22,7 @@ public class BlockStateDataMixin {
      * @author embeddedt
      * @reason Reduce memory use of these constant CompoundTags via aggressive interning.
      */
+    /*
     @ModifyExpressionValue(method = "parse", at = @At(value = "INVOKE", target = "Lnet/minecraft/nbt/TagParser;parseTag(Ljava/lang/String;)Lnet/minecraft/nbt/CompoundTag;"))
     private static CompoundTag compactTag(CompoundTag tag) {
         if (TAG_INTERNER == null) {
@@ -39,6 +40,8 @@ public class BlockStateDataMixin {
         }
         return new CompoundTag(Map.ofEntries(entries));
     }
+
+     */
 
     @Inject(method = "<clinit>", at = @At("RETURN"))
     private static void clearInterner(CallbackInfo ci) {

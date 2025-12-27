@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.neoforge.init;
 
 import com.google.common.collect.ImmutableList;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
 import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.EventPriority;
@@ -10,7 +10,6 @@ import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.*;
 import net.neoforged.fml.common.Mod;
-import net.neoforged.fml.config.ModConfig;
 import net.neoforged.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLLoader;
@@ -18,13 +17,10 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
-import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
-import org.embeddedt.modernfix.neoforge.ModernFixConfig;
-import org.embeddedt.modernfix.neoforge.packet.SmartIngredientSyncPayload;
 
 import java.util.List;
 
@@ -40,10 +36,9 @@ public class ModernFixForge {
         modBus.addListener(this::commonSetup);
         modBus.addListener(this::registerItems);
         modBus.addListener(this::registerNetworkChannel);
-        if(FMLEnvironment.dist == Dist.CLIENT) {
+        if(FMLEnvironment.getDist() == Dist.CLIENT) {
             NeoForge.EVENT_BUS.register(new ModernFixClientForge(modContainer, modBus));
         }
-        modContainer.registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
     }
 
     private void registerItems(RegisterEvent event) {
@@ -51,7 +46,7 @@ public class ModernFixForge {
             event.register(Registries.ITEM, helper -> {
                 Item.Properties props = new Item.Properties();
                 for(int i = 0; i < 1000000; i++) {
-                    helper.register(ResourceLocation.fromNamespaceAndPath("modernfix", "item_" + i), new Item(props));
+                    helper.register(Identifier.fromNamespaceAndPath("modernfix", "item_" + i), new Item(props));
                 }
             });
         }
@@ -66,7 +61,7 @@ public class ModernFixForge {
             event.enqueueWork(() -> {
                 boolean atLeastOneWarning = false;
                 for(Pair<List<String>, String> warning : MOD_WARNINGS) {
-                    boolean isPresent = !FMLLoader.isProduction() || warning.getLeft().stream().anyMatch(name -> ModList.get().isLoaded(name));
+                    boolean isPresent = !FMLLoader.getCurrent().isProduction() || warning.getLeft().stream().anyMatch(name -> ModList.get().isLoaded(name));
                     if(!isPresent) {
                         atLeastOneWarning = true;
                         ModLoader.addLoadingIssue(ModLoadingIssue.warning(warning.getRight()));
@@ -79,15 +74,7 @@ public class ModernFixForge {
     }
 
     private void registerNetworkChannel(final RegisterPayloadHandlersEvent event) {
-        if (ModernFixMixinPlugin.instance.isOptionEnabled("perf.smart_ingredient_sync.Channel")) {
-            // Sets the current network version
-            final PayloadRegistrar registrar = event.registrar("1").optional();
-            registrar.playToClient(
-                    SmartIngredientSyncPayload.TYPE,
-                    SmartIngredientSyncPayload.STREAM_CODEC,
-                    (payload, ctx) -> {}
-            );
-        }
+
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

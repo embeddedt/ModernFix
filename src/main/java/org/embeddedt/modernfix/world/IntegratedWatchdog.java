@@ -2,7 +2,7 @@ package org.embeddedt.modernfix.world;
 
 import com.mojang.logging.LogUtils;
 import net.minecraft.DefaultUncaughtExceptionHandlerWithName;
-import net.minecraft.Util;
+import net.minecraft.util.Util;
 import net.minecraft.server.MinecraftServer;
 import org.embeddedt.modernfix.duck.ITimeTrackingServer;
 import org.slf4j.Logger;

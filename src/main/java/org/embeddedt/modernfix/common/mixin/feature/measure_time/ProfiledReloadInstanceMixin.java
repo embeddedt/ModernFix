@@ -39,7 +39,7 @@ public class ProfiledReloadInstanceMixin {
     @ModifyVariable(method = "finish", ordinal = 0, argsOnly = true, at = @At("HEAD"))
     private List<ProfiledReloadInstance.State> sortStates(List<ProfiledReloadInstance.State> datapoints) {
         datapoints = new ArrayList<>(datapoints);
-        datapoints.sort(Comparator.<ProfiledReloadInstance.State>comparingLong(s -> s.preparationNanos.get() + s.reloadNanos.get()).reversed());
+        datapoints.sort(Comparator.<ProfiledReloadInstance.State>comparingLong(s -> s.preparationNanos().get() + s.reloadNanos().get()).reversed());
         return datapoints;
     }
 }

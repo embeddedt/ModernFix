@@ -11,6 +11,7 @@ import net.minecraft.client.gui.components.ContainerObjectSelectionList;
 import net.minecraft.client.gui.components.Tooltip;
 import net.minecraft.client.gui.components.events.GuiEventListener;
 import net.minecraft.client.gui.narration.NarratableEntry;
+import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.client.resources.language.I18n;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.HoverEvent;
@@ -41,7 +42,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         String friendlyKey = "modernfix.option.name." + option.getName();
         MutableComponent baseComponent = Component.literal(option.getSelfName());
         if(I18n.exists(friendlyKey))
-            return Component.translatable(friendlyKey).withStyle(style -> style.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, baseComponent)));
+            return Component.translatable(friendlyKey).withStyle(style -> style.withHoverEvent(new HoverEvent.ShowText(baseComponent)));
         else
             return baseComponent;
     }
@@ -78,7 +79,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         for(String category : theCategories) {
             String categoryTranslationKey = "modernfix.option.category." + category;
             this.addEntry(new CategoryEntry(Component.translatable(categoryTranslationKey)
-                    .withStyle(Style.EMPTY.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, Component.translatable(categoryTranslationKey + ".description"))))
+                    .withStyle(Style.EMPTY.withHoverEvent(new HoverEvent.ShowText(Component.translatable(categoryTranslationKey + ".description"))))
             ));
             optionsByCategory.get(category).stream().filter(key -> {
                 int dotCount = 0;
@@ -89,10 +90,6 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                 return dotCount >= 2;
             }).sorted(Comparator.comparing(Option::getName)).forEach(this::addOption);
         }
-    }
-
-    protected int getScrollbarPosition() {
-        return super.getScrollbarPosition() + 15 + 20;
     }
 
     public int getRowWidth() {
@@ -108,10 +105,10 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             this.width = OptionList.this.minecraft.font.width(this.name);
         }
 
-        public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
+        public void renderContent(GuiGraphics guiGraphics, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
             Font var10000 = OptionList.this.minecraft.font;
             float x = (float)(OptionList.this.minecraft.screen.width / 2 - this.width / 2);
-            int y = top + height - 10;
+            int y = 0 + height - 10;
             guiGraphics.drawString(var10000, this.name, (int)x, y, 16777215);
             /*
             if(mouseX >= x && mouseY >= y && mouseX <= (x + this.width) && mouseY <= (y + OptionList.this.minecraft.font.lineHeight))
@@ -166,7 +163,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             }).tooltip(toggleTooltip).pos(0, 0).size(55, 20).build();
             updateStatus();
             this.helpButton = new Button.Builder(Component.literal("?"), (arg) -> {
-                mainScreen.setLastScrollAmount(getScrollAmount());
+                mainScreen.setLastScrollAmount(scrollAmount());
                 Minecraft.getInstance().setScreen(new ModernFixOptionInfoScreen(mainScreen, optionName));
             }).pos(75, 0).size(20, 20).build();
             if(!I18n.exists("modernfix.option." + optionName)) {
@@ -181,7 +178,8 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         }
 
         @Override
-        public void render(GuiGraphics guiGraphics, int index, int top, int left, int width, int height, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
+        public void renderContent(GuiGraphics guiGraphics, int mouseX, int mouseY, boolean isHovering, float partialTicks) {
+            int left = 0, top = 0;
             MutableComponent nameComponent = getOptionComponent(option);
             if(this.option.isUserDefined())
                 nameComponent = nameComponent.withStyle(style -> style.withItalic(true)).append(Component.translatable("modernfix.config.not_default"));
@@ -209,17 +207,17 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
             return ImmutableList.of(this.toggleButton, this.helpButton);
         }
 
-        public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        public boolean mouseClicked(MouseButtonEvent event, boolean isDoubleClick) {
             for(GuiEventListener listener : children()) {
-                if(listener.mouseClicked(mouseX, mouseY, button))
+                if(listener.mouseClicked(event, isDoubleClick))
                     return true;
             }
             return false;
         }
 
-        public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        public boolean mouseReleased(MouseButtonEvent event) {
             for(GuiEventListener listener : children()) {
-                if(listener.mouseReleased(mouseX, mouseY, button))
+                if(listener.mouseReleased(event))
                     return true;
             }
             return false;

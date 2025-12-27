@@ -1,8 +1,8 @@
 package org.embeddedt.modernfix.duck;
 
-import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 
 public interface IModelHoldingBlockState {
-    BakedModel mfix$getModel();
-    void mfix$setModel(BakedModel model);
+    BlockStateModel mfix$getModel();
+    void mfix$setModel(BlockStateModel model);
 }

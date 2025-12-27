@@ -13,9 +13,15 @@ public class NamedPreparableResourceListener implements PreparableReloadListener
         this.delegate = delegate;
     }
 
+
     @Override
-    public CompletableFuture<Void> reload(PreparationBarrier stage, ResourceManager resourceManager, ProfilerFiller preparationsProfiler, ProfilerFiller reloadProfiler, Executor backgroundExecutor, Executor gameExecutor) {
-        return this.delegate.reload(stage, resourceManager, preparationsProfiler, reloadProfiler, backgroundExecutor, gameExecutor);
+    public CompletableFuture<Void> reload(SharedState sharedState, Executor exectutor, PreparationBarrier barrier, Executor applyExectutor) {
+        return this.delegate.reload(sharedState, exectutor, barrier, applyExectutor);
+    }
+
+    @Override
+    public void prepareSharedState(SharedState sharedState) {
+        this.delegate.prepareSharedState(sharedState);
     }
 
     @Override

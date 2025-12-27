@@ -4,7 +4,7 @@ import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.core.HolderGetter;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureTemplate;
@@ -24,12 +24,12 @@ import java.util.Optional;
 @Mixin(StructureTemplateManager.class)
 public class StructureManagerMixin {
     @Shadow @Final @Mutable
-    private Map<ResourceLocation, Optional<StructureTemplate>> structureRepository;
+    private Map<Identifier, Optional<StructureTemplate>> structureRepository;
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void makeStructuresSafe(ResourceManager arg, LevelStorageSource.LevelStorageAccess arg2, DataFixer dataFixer, HolderGetter<Block> arg3, CallbackInfo ci) {
         /* Structures needing to be reloaded is not a huge issue since we optimize loading them already */
-        Cache<ResourceLocation, Optional<StructureTemplate>> structureCache = CacheBuilder.newBuilder()
+        Cache<Identifier, Optional<StructureTemplate>> structureCache = CacheBuilder.newBuilder()
                 .softValues()
                 .build();
         this.structureRepository = structureCache.asMap();

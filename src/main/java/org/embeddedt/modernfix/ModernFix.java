@@ -1,7 +1,8 @@
 package org.embeddedt.modernfix;
 
 import net.minecraft.SharedConstants;
-import net.minecraft.Util;
+import net.minecraft.TracingExecutor;
+import net.minecraft.util.Util;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
@@ -14,7 +15,6 @@ import org.embeddedt.modernfix.resources.ReloadExecutor;
 import org.embeddedt.modernfix.util.ClassInfoManager;
 
 import java.lang.management.ManagementFactory;
-import java.util.concurrent.ExecutorService;
 
 // The value here should match an entry in the META-INF/mods.toml file
 public class ModernFix {
@@ -31,24 +31,24 @@ public class ModernFix {
     // Used to skip computing the blockstate caches twice
     public static boolean runningFirstInjection = false;
 
-    private static ExecutorService resourceReloadService = null;
+    private static TracingExecutor resourceReloadService = null;
 
     static {
         if(ModernFixMixinPlugin.instance.isOptionEnabled("perf.dedicated_reload_executor.ReloadExecutor")) {
-            resourceReloadService = ReloadExecutor.createCustomResourceReloadExecutor();
+            resourceReloadService = new TracingExecutor(ReloadExecutor.createCustomResourceReloadExecutor());
         } else {
             resourceReloadService = Util.backgroundExecutor();
         }
     }
 
-    public static ExecutorService resourceReloadExecutor() {
+    public static TracingExecutor resourceReloadExecutor() {
         return resourceReloadService;
     }
 
 
     public ModernFix() {
         INSTANCE = this;
-        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.snapshot_easter_egg.NameChange") && !SharedConstants.getCurrentVersion().isStable())
+        if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.snapshot_easter_egg.NameChange") && !SharedConstants.getCurrentVersion().stable())
             NAME = "PreemptiveFix";
         ModernFixPlatformHooks.INSTANCE.onServerCommandRegister(ModernFixCommands::register);
     }

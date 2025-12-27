@@ -61,6 +61,9 @@ neoForge {
     }
 
     runs {
+        configureEach {
+            systemProperty("modernfix.auditMixinsAtStart", "true")
+        }
         create("client") {
             client()
         }
@@ -133,7 +136,6 @@ val embed by configurations.creating {
 dependencies {
     implementation(project(":annotations"))
     embed(project(":annotations"))
-    "additionalRuntimeClasspath"(project(":annotations"))
     annotationProcessor(project(path = ":annotation-processor", configuration = "shadow"))
 
     val jei_version = rootProject.properties["jei_version"].toString()
@@ -142,7 +144,6 @@ dependencies {
     compileOnly("curse.maven:ctm-267602:${rootProject.properties["ctm_version"].toString()}")
     compileOnly("curse.maven:ldlib-626676:${rootProject.properties["ldlib_version"].toString()}")
     compileOnly("curse.maven:supermartijncore-454372:4455391")
-    compileOnly("curse.maven:patchouli-306770:6164575")
     compileOnly("curse.maven:cofhcore-69162:5374122")
     compileOnly("curse.maven:resourcefullib-570073:5659871")
     compileOnly("curse.maven:kubejs-238086:5853326")
@@ -162,6 +163,8 @@ tasks.withType<JavaCompile>().configureEach {
             )
         )
     }
+    // Show more errors when porting
+    options.compilerArgs.addAll(listOf("-Xmaxerrs", "1000"))
 }
 
 sourceSets {

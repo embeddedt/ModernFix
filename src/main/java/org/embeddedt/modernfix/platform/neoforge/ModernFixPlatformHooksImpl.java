@@ -35,11 +35,11 @@ import java.util.function.Consumer;
 
 public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     public boolean isClient() {
-        return FMLLoader.getDist() == Dist.CLIENT;
+        return FMLLoader.getCurrent().getDist() == Dist.CLIENT;
     }
 
     public boolean isDedicatedServer() {
-        return FMLLoader.getDist().isDedicatedServer();
+        return FMLLoader.getCurrent().getDist().isDedicatedServer();
     }
 
     private static final String verString = Optional.ofNullable(
@@ -51,11 +51,11 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
     }
 
     public boolean modPresent(String modId) {
-        return FMLLoader.getLoadingModList().getModFileById(modId) != null;
+        return FMLLoader.getCurrent().getLoadingModList().getModFileById(modId) != null;
     }
 
     public boolean isDevEnv() {
-        return !FMLLoader.isProduction();
+        return !FMLLoader.getCurrent().isProduction();
     }
 
     public MinecraftServer getCurrentServer() {

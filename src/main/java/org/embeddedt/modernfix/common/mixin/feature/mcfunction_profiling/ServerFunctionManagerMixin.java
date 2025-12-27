@@ -7,7 +7,7 @@ import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.functions.CommandFunction;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.ServerFunctionManager;
 import org.embeddedt.modernfix.duck.IProfilingServerFunctionManager;
 import org.spongepowered.asm.mixin.Final;
@@ -25,17 +25,17 @@ import java.util.Map;
 
 @Mixin(ServerFunctionManager.class)
 public class ServerFunctionManagerMixin implements IProfilingServerFunctionManager {
-    @Shadow @Final private static ResourceLocation TICK_FUNCTION_TAG;
+    @Shadow @Final private static Identifier TICK_FUNCTION_TAG;
 
-    private final Map<ResourceLocation, Stopwatch> mfix$functionWatches = new Object2ObjectOpenHashMap<>();
+    private final Map<Identifier, Stopwatch> mfix$functionWatches = new Object2ObjectOpenHashMap<>();
 
     @Inject(method = "executeTagFunctions", at = @At("HEAD"))
-    private void resetWatches(Collection<CommandFunction<CommandSourceStack>> functionObjects, ResourceLocation identifier, CallbackInfo ci) {
+    private void resetWatches(Collection<CommandFunction<CommandSourceStack>> functionObjects, Identifier identifier, CallbackInfo ci) {
         mfix$functionWatches.values().forEach(Stopwatch::reset);
     }
 
     @Inject(method = "executeTagFunctions", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/ServerFunctionManager;execute(Lnet/minecraft/commands/functions/CommandFunction;Lnet/minecraft/commands/CommandSourceStack;)V"))
-    private void startWatch(Collection<CommandFunction<CommandSourceStack>> functionObjects, ResourceLocation identifier, CallbackInfo ci, @Local(ordinal = 0) CommandFunction<CommandSourceStack> function, @Share("stopwatch") LocalRef<Stopwatch> watchRef) {
+    private void startWatch(Collection<CommandFunction<CommandSourceStack>> functionObjects, Identifier identifier, CallbackInfo ci, @Local(ordinal = 0) CommandFunction<CommandSourceStack> function, @Share("stopwatch") LocalRef<Stopwatch> watchRef) {
         watchRef.set(null);
         if (identifier == TICK_FUNCTION_TAG) {
             var watch = mfix$functionWatches.computeIfAbsent(function.id(), i -> Stopwatch.createUnstarted());
@@ -45,7 +45,7 @@ public class ServerFunctionManagerMixin implements IProfilingServerFunctionManag
     }
 
     @Inject(method = "executeTagFunctions", at = @At(value = "INVOKE", target = "Lnet/minecraft/server/ServerFunctionManager;execute(Lnet/minecraft/commands/functions/CommandFunction;Lnet/minecraft/commands/CommandSourceStack;)V", shift = At.Shift.AFTER))
-    private void stopWatch(Collection<CommandFunction<CommandSourceStack>> functionObjects, ResourceLocation identifier, CallbackInfo ci, @Share("stopwatch") LocalRef<Stopwatch> watchRef) {
+    private void stopWatch(Collection<CommandFunction<CommandSourceStack>> functionObjects, Identifier identifier, CallbackInfo ci, @Share("stopwatch") LocalRef<Stopwatch> watchRef) {
         var watch = watchRef.get();
         if (watch != null && watch.isRunning()) {
             watch.stop();
@@ -53,14 +53,14 @@ public class ServerFunctionManagerMixin implements IProfilingServerFunctionManag
     }
 
     @Inject(method = "executeTagFunctions", at = @At("RETURN"))
-    private void pruneUnusedWatches(Collection<CommandFunction<CommandSourceStack>> functionObjects, ResourceLocation identifier, CallbackInfo ci) {
+    private void pruneUnusedWatches(Collection<CommandFunction<CommandSourceStack>> functionObjects, Identifier identifier, CallbackInfo ci) {
         mfix$functionWatches.values().removeIf(watch -> watch.elapsed().isZero());
     }
 
     @Override
     public String mfix$getProfilingResults() {
         var list = new ArrayList<>(mfix$functionWatches.entrySet());
-        list.sort(Comparator.<Map.Entry<ResourceLocation, Stopwatch>, Duration>comparing(e -> e.getValue().elapsed()).reversed());
+        list.sort(Comparator.<Map.Entry<Identifier, Stopwatch>, Duration>comparing(e -> e.getValue().elapsed()).reversed());
         StringBuilder sb = new StringBuilder();
         for (var entry : list) {
             sb.append(entry.getKey().toString());

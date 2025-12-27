@@ -5,7 +5,7 @@ import com.google.common.base.Stopwatch;
 import com.google.common.collect.ImmutableList;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
 import org.embeddedt.modernfix.ModernFix;
@@ -75,7 +75,7 @@ public class PackResourcesCacheEngine {
         void outputResources(String namespace, Path baseNioPath, String path, PackResources.ResourceOutput output) {
             if (children.isEmpty()) {
                 // This is a terminal node.
-                ResourceLocation location = ResourceLocation.fromNamespaceAndPath(namespace, path);
+                Identifier location = Identifier.fromNamespaceAndPath(namespace, path);
                 output.accept(location, () -> Files.newInputStream(baseNioPath.resolve(path)));
             } else {
                 for (var entry : children.entrySet()) {
@@ -144,7 +144,7 @@ public class PackResourcesCacheEngine {
         if(str.length() == 0)
             return false;
         for(int i = 0; i < str.length(); i++) {
-            if(!ResourceLocation.validPathChar(str.charAt(i))) {
+            if(!Identifier.validPathChar(str.charAt(i))) {
                 return false;
             }
         }

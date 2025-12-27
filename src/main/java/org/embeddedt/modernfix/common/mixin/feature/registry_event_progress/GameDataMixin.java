@@ -25,7 +25,7 @@ public class GameDataMixin {
         }
         RegisterEvent registryEvent = (RegisterEvent)event;
         // We control phases ourselves so we can make a separate progress bar for each phase.
-        String registryName = registryEvent.getRegistryKey().location().toString();
+        String registryName = registryEvent.getRegistryKey().identifier().toString();
         for(EventPriority phase : EventPriority.values()) {
             // FIXME need to use prepend rather than append for it to be visible for now
             var pb = StartupNotificationManager.prependProgressBar(registryName, ModList.get().size());

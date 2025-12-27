@@ -45,7 +45,7 @@ val versionString =
 
 version = versionString
 
-base.archivesName = "modernfix-forge"
+base.archivesName = "modernfix-neoforge"
 
 neoForge {
     enable {

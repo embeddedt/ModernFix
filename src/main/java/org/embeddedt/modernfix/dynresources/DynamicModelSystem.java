@@ -32,7 +32,9 @@ import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.ModelDiscover
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
+import java.util.function.BiFunction;
 import java.util.stream.Collectors;
 
 public class DynamicModelSystem {
@@ -65,6 +67,10 @@ public class DynamicModelSystem {
         BlockStateModelLoader.LoadedModels loadEntry(Identifier identifier, List<Resource> blockstateResources);
     }
 
+    public static Set<BlockState> getAllBlockStates() {
+        return ((IdMapperAccessor<BlockState>)Block.BLOCK_STATE_REGISTRY).getReferenceMap().keySet();
+    }
+
     public static BlockStateModelLoader.LoadedModels createDynamicBlockStateLoadedModels(Map<Identifier, List<Resource>> resourceMap, SingleBlockStateEntryLoader entryLoader) {
         LoadingCache<Identifier, BlockStateModelLoader.LoadedModels> definitionCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
             @Override
@@ -77,8 +83,7 @@ public class DynamicModelSystem {
                 return entryLoader.loadEntry(file, resources);
             }
         });
-        Set<BlockState> allStates = ((IdMapperAccessor<BlockState>)Block.BLOCK_STATE_REGISTRY).getReferenceMap().keySet();
-        return new BlockStateModelLoader.LoadedModels(Maps.asMap(allStates, state -> {
+        return new BlockStateModelLoader.LoadedModels(Maps.asMap(getAllBlockStates(), state -> {
             var identifier = state.getBlock().builtInRegistryHolder().getKey().identifier();
             var loadedModels = definitionCache.getUnchecked(identifier);
             return loadedModels.models().get(state);
@@ -147,5 +152,24 @@ public class DynamicModelSystem {
             // TODO: Implement
             return -1;
         }
+    }
+
+    public static <K, U, V> Map<K, V> createDynamicBakedRegistry(Map<K, U> input, BiFunction<K, U, V> baker) {
+        // TODO: support persistence of overrides
+        LoadingCache<K, Optional<V>> bakedCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
+            @Override
+            public Optional<V> load(K key) throws Exception {
+                var unbaked = input.get(key);
+                if (unbaked != null) {
+                    if (DEBUG_DYNAMIC_MODEL_LOADING) {
+                        ModernFix.LOGGER.info("Baking {}", key);
+                    }
+                    return Optional.ofNullable(baker.apply(key, unbaked));
+                } else {
+                    return Optional.empty();
+                }
+            }
+        });
+        return Maps.asMap(input.keySet(), k -> k != null ? bakedCache.getUnchecked(k).orElse(null) : null);
     }
 }

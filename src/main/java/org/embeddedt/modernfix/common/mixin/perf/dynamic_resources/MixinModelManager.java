@@ -1,7 +1,9 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
+import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
 import net.minecraft.client.resources.model.ModelManager;
@@ -52,5 +54,16 @@ public class MixinModelManager {
     @Overwrite
     private static Object2IntMap<BlockState> buildModelGroups(BlockColors blockColors, BlockStateModelLoader.LoadedModels loadedModels) {
         return new DynamicModelSystem.BlockGroupingMap(blockColors, loadedModels);
+    }
+
+    /**
+     * @author embeddedt
+     * @reason avoid copying inner map
+     */
+    @Overwrite
+    private static Map<BlockState, BlockStateModel> createBlockStateToModelDispatch(Map<BlockState, BlockStateModel> blockStateModels, BlockStateModel missingModel) {
+        return Maps.asMap(DynamicModelSystem.getAllBlockStates(), state -> {
+            return blockStateModels.getOrDefault(state, missingModel);
+        });
     }
 }

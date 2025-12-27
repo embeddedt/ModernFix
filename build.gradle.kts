@@ -55,7 +55,7 @@ neoForge {
 
     rootProject.properties["parchment_version"]?.let { parchmentVer ->
         parchment {
-            minecraftVersion = minecraft_version
+            minecraftVersion = rootProject.properties["parchment_mc_version"].toString()
             mappingsVersion = parchmentVer.toString()
         }
     }
@@ -87,13 +87,11 @@ tasks.named<Jar>("jar") {
     ))
 }
 
-// We must force the Java 21 compiler to be used because our AP requires Java 21
-
 java {
     toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
+        languageVersion = JavaLanguageVersion.of(25)
     }
-    val curSourceCompatLevel = JavaVersion.VERSION_21
+    val curSourceCompatLevel = JavaVersion.VERSION_25
     sourceCompatibility = curSourceCompatLevel
     targetCompatibility = curSourceCompatLevel
 }
@@ -139,7 +137,8 @@ dependencies {
     annotationProcessor(project(path = ":annotation-processor", configuration = "shadow"))
 
     val jei_version = rootProject.properties["jei_version"].toString()
-    compileOnly("mezz.jei:jei-${minecraft_version}-neoforge:${jei_version}")
+    val jei_minecraft_version = rootProject.properties["jei_minecraft_version"]?.toString() ?: minecraft_version
+    compileOnly("mezz.jei:jei-${jei_minecraft_version}-neoforge:${jei_version}")
     compileOnly("curse.maven:spark-361579:${rootProject.properties["spark_version"].toString()}")
     compileOnly("curse.maven:ctm-267602:${rootProject.properties["ctm_version"].toString()}")
     compileOnly("curse.maven:ldlib-626676:${rootProject.properties["ldlib_version"].toString()}")

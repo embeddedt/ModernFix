@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
-import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.Block;
@@ -14,7 +13,6 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
-import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +28,10 @@ public abstract class MixinBlockStateModelLoader {
         throw new AssertionError();
     }
 
+    /**
+     * @author embeddedt
+     * @reason Load blockstate model definitions dynamically instead of all at once
+     */
     @ModifyArg(method = "loadBlockStates", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;thenCompose(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;"))
     private static Function<Map<Identifier, List<Resource>>, ? extends CompletionStage<BlockStateModelLoader.LoadedModels>> skipAOTBlockStateLoad(Function<Map<Identifier, List<Resource>>, ? extends CompletionStage<Map<Identifier, BlockStateModelLoader.LoadedModels>>> original, @Local(ordinal = 0) Function<Identifier, StateDefinition<Block, BlockState>> mapper) {
         return resourceMap -> CompletableFuture.completedFuture(DynamicModelSystem.createDynamicBlockStateLoadedModels(resourceMap, (id, resources) -> {

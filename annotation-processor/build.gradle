@@ -1,7 +1,6 @@
 plugins {
-    id 'com.github.johnrengelman.shadow'
+    id 'com.gradleup.shadow' version '8.3.9'
     id 'java-library'
-    id 'com.diffplug.spotless'
 }
 
 repositories {
@@ -52,9 +51,4 @@ shadowJar {
     include {it.getName() == 'EnvType.class'}
 }
 
-spotless {
-    java {
-        removeUnusedImports()
-    }
-}
 version = '1.1.4'

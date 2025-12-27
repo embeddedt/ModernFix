@@ -1,5 +1,5 @@
 - Reimplement mixin.bugfix.entity_pose_stack
-- Reimplement dynamic_resources
+- Reimplement dynamic_resources for items & Neo standalone models
 - Investigate if cache_strongholds is still needed in 26.1
 - Check if BlockStateData patch is still needed in compact_mojang_registries
 - Check if faster_texture_stitching is still worthwhile with 21.x changes to the stitcher

@@ -27,13 +27,6 @@ jobs:
         with:
           cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
           gradle-home-cache-cleanup: true
-      - name: Setup project Loom cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            .gradle/loom-cache
-          key: ${{ runner.os }}-gradle-${{ hashFiles('**/gradle.properties', '**/*.gradle*', '**/gradle-wrapper.properties') }}
-          restore-keys: ${{ runner.os }}-gradle-
       - name: Build ModernFix using Gradle
         run: ./gradlew build
       - name: Upload Artifacts to GitHub

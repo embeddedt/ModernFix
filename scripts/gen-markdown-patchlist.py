@@ -8,7 +8,7 @@ from contextlib import redirect_stdout
 from modernfixlib import get_valid_mixin_options
 
 parser = argparse.ArgumentParser(description='Generate ModernFix patch summary Markdown file.')
-parser.add_argument('-p', '--langpath', default='common/src/main/resources/assets/modernfix/lang/en_us.json')
+parser.add_argument('-p', '--langpath', default='src/main/resources/assets/modernfix/lang/en_us.json')
 
 args = parser.parse_args()
 

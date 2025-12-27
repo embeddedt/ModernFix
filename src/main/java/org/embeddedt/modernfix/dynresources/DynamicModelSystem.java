@@ -9,6 +9,7 @@ import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
+import it.unimi.dsi.fastutil.objects.ReferenceSets;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
@@ -68,7 +69,7 @@ public class DynamicModelSystem {
     }
 
     public static Set<BlockState> getAllBlockStates() {
-        return ((IdMapperAccessor<BlockState>)Block.BLOCK_STATE_REGISTRY).getReferenceMap().keySet();
+        return ReferenceSets.unmodifiable(((IdMapperAccessor<BlockState>) Block.BLOCK_STATE_REGISTRY).getReferenceMap().keySet());
     }
 
     public static BlockStateModelLoader.LoadedModels createDynamicBlockStateLoadedModels(Map<Identifier, List<Resource>> resourceMap, SingleBlockStateEntryLoader entryLoader) {

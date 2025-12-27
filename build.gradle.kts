@@ -152,10 +152,6 @@ tasks.named<Jar>("jar") {
     from(embed.map { if (it.isDirectory) it else zipTree(it) })
 }
 
-tasks.named<Jar>("jar") {
-    from(embed.map { if (it.isDirectory) it else zipTree(it) })
-}
-
 // For the AP
 tasks.withType<JavaCompile>().configureEach {
     if (!name.lowercase().contains("test")) {

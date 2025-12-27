@@ -1,11 +1,14 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynresources.DynamicModelSystem;
 import org.spongepowered.asm.mixin.Mixin;
@@ -40,5 +43,14 @@ public class MixinModelManager {
             Map<Identifier, UnbakedModel> inputModels, BlockStateModelLoader.LoadedModels loadedModels, ClientItemInfoLoader.LoadedClientInfos loadedClientInfos, net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader.LoadedModels standaloneModels
     ) {
         return new DynamicModelSystem.DynamicResolver(inputModels, loadedModels, loadedClientInfos, standaloneModels).resolvedModels();
+    }
+
+    /**
+     * @author embeddedt
+     * @reason Build the model groups dynamically
+     */
+    @Overwrite
+    private static Object2IntMap<BlockState> buildModelGroups(BlockColors blockColors, BlockStateModelLoader.LoadedModels loadedModels) {
+        return new DynamicModelSystem.BlockGroupingMap(blockColors, loadedModels);
     }
 }

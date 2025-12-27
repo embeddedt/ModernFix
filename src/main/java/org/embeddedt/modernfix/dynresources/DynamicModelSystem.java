@@ -4,8 +4,13 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
+import it.unimi.dsi.fastutil.objects.AbstractObject2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
+import it.unimi.dsi.fastutil.objects.ObjectSets;
+import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
-import net.minecraft.client.renderer.item.ItemModel;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
 import net.minecraft.client.resources.model.MissingBlockModel;
@@ -110,6 +115,37 @@ public class DynamicModelSystem {
                 }
             });
             return new ModelManager.ResolvedModels(resolvedMissingModel, Maps.asMap(inputModels.keySet(), resolvedModelCache::getUnchecked));
+        }
+    }
+
+    public static class BlockGroupingMap extends AbstractObject2IntMap<BlockState> {
+        private final BlockColors blockColors;
+        private final BlockStateModelLoader.LoadedModels loadedModels;
+
+        record GroupKey(Object equalityGroup, List<Object> coloringValues) {}
+
+        private final Object2IntMap<GroupKey> groupKeyToId;
+
+        public BlockGroupingMap(BlockColors blockColors, BlockStateModelLoader.LoadedModels loadedModels) {
+            this.blockColors = blockColors;
+            this.loadedModels = loadedModels;
+            this.groupKeyToId = new Object2IntOpenHashMap<>();
+        }
+
+        @Override
+        public int size() {
+            return 0;
+        }
+
+        @Override
+        public ObjectSet<Entry<BlockState>> object2IntEntrySet() {
+            return ObjectSets.emptySet();
+        }
+
+        @Override
+        public int getInt(Object key) {
+            // TODO: Implement
+            return -1;
         }
     }
 }

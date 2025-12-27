@@ -1,0 +1,73 @@
+package org.embeddedt.modernfix.dynresources;
+
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
+import com.google.common.cache.LoadingCache;
+import com.google.common.collect.Maps;
+import net.minecraft.client.resources.model.BlockStateModelLoader;
+import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.resources.FileToIdConverter;
+import net.minecraft.resources.Identifier;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.model.UnbakedModelParser;
+import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.IdMapperAccessor;
+
+import java.io.Reader;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+public class DynamicModelSystem {
+    private static final FileToIdConverter MODEL_LISTER = FileToIdConverter.json("models");
+    private static final FileToIdConverter BLOCKSTATE_LISTER = FileToIdConverter.json("blockstates");
+
+    public static final boolean DEBUG_DYNAMIC_MODEL_LOADING = true; // Boolean.getBoolean("modernfix.debugDynamicModelLoading");
+    
+    public static Map<Identifier, UnbakedModel> createDynamicUnbakedModelMap(Map<Identifier, Resource> resourceMap) {
+        LoadingCache<Identifier, UnbakedModel> unbakedModelCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
+            @Override
+            public UnbakedModel load(Identifier key) throws Exception {
+                var resource = resourceMap.get(MODEL_LISTER.idToFile(key));
+                if (resource == null) {
+                    throw new IllegalArgumentException("Model " + key + " does not exist in map");
+                }
+                if (DEBUG_DYNAMIC_MODEL_LOADING) {
+                    ModernFix.LOGGER.info("Loading unbaked model {}", key);
+                }
+                try (Reader reader = resource.openAsReader()) {
+                    return UnbakedModelParser.parse(reader);
+                }
+            }
+        });
+        Set<Identifier> unbakedIdSet = resourceMap.keySet().stream().map(MODEL_LISTER::fileToId).collect(Collectors.toUnmodifiableSet());
+        return Maps.asMap(unbakedIdSet, key -> key != null ? unbakedModelCache.getUnchecked(key) : null);
+    }
+
+    public interface SingleBlockStateEntryLoader {
+        BlockStateModelLoader.LoadedModels loadEntry(Identifier identifier, List<Resource> blockstateResources);
+    }
+
+    public static BlockStateModelLoader.LoadedModels createDynamicBlockStateLoadedModels(Map<Identifier, List<Resource>> resourceMap, SingleBlockStateEntryLoader entryLoader) {
+        LoadingCache<Identifier, BlockStateModelLoader.LoadedModels> definitionCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
+            @Override
+            public BlockStateModelLoader.LoadedModels load(Identifier key) throws Exception {
+                if (DEBUG_DYNAMIC_MODEL_LOADING) {
+                    ModernFix.LOGGER.info("Loading blockstate definition for {}", key);
+                }
+                var file = BLOCKSTATE_LISTER.idToFile(key);
+                var resources = resourceMap.getOrDefault(file, List.of());
+                return entryLoader.loadEntry(file, resources);
+            }
+        });
+        Set<BlockState> allStates = ((IdMapperAccessor<BlockState>)Block.BLOCK_STATE_REGISTRY).getReferenceMap().keySet();
+        return new BlockStateModelLoader.LoadedModels(Maps.asMap(allStates, state -> {
+            var identifier = state.getBlock().builtInRegistryHolder().getKey().identifier();
+            var loadedModels = definitionCache.getUnchecked(identifier);
+            return loadedModels.models().get(state);
+        }));
+    }
+}

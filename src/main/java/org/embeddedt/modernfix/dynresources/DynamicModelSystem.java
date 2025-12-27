@@ -33,7 +33,6 @@ import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.ModelDiscover
 import java.io.Reader;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -155,22 +154,34 @@ public class DynamicModelSystem {
         }
     }
 
+    private static final Object NULL_BAKED = new Object();
+
     public static <K, U, V> Map<K, V> createDynamicBakedRegistry(Map<K, U> input, BiFunction<K, U, V> baker) {
         // TODO: support persistence of overrides
-        LoadingCache<K, Optional<V>> bakedCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
+        LoadingCache<K, Object> bakedCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
             @Override
-            public Optional<V> load(K key) throws Exception {
+            public Object load(K key) throws Exception {
                 var unbaked = input.get(key);
                 if (unbaked != null) {
                     if (DEBUG_DYNAMIC_MODEL_LOADING) {
                         ModernFix.LOGGER.info("Baking {}", key);
                     }
-                    return Optional.ofNullable(baker.apply(key, unbaked));
+                    return baker.apply(key, unbaked);
                 } else {
-                    return Optional.empty();
+                    return NULL_BAKED;
                 }
             }
         });
-        return Maps.asMap(input.keySet(), k -> k != null ? bakedCache.getUnchecked(k).orElse(null) : null);
+        return Maps.asMap(input.keySet(), k -> {
+            if (k != null) {
+                Object value = bakedCache.getUnchecked(k);
+                if (value == NULL_BAKED) {
+                    value = null;
+                }
+                return (V)value;
+            } else {
+                return null;
+            }
+        });
     }
 }

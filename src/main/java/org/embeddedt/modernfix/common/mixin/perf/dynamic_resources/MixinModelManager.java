@@ -12,6 +12,7 @@ import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.dynresources.BlockStateModelMap;
 import org.embeddedt.modernfix.dynresources.DynamicModelSystem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -62,8 +63,7 @@ public class MixinModelManager {
      */
     @Overwrite
     private static Map<BlockState, BlockStateModel> createBlockStateToModelDispatch(Map<BlockState, BlockStateModel> blockStateModels, BlockStateModel missingModel) {
-        return Maps.asMap(DynamicModelSystem.getAllBlockStates(), state -> {
-            return blockStateModels.getOrDefault(state, missingModel);
-        });
+        BlockStateModelMap.resetCache();
+        return new BlockStateModelMap(blockStateModels, missingModel);
     }
 }

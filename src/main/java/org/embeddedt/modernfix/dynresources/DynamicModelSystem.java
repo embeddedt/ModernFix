@@ -11,6 +11,7 @@ import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
 import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.renderer.block.model.BlockStateModel;
 import net.minecraft.client.renderer.block.model.ItemModelGenerator;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
@@ -35,6 +36,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DynamicModelSystem {
@@ -172,13 +174,13 @@ public class DynamicModelSystem {
                 }
             }
         });
-        return new DynamicRegistryMap<>(input.keySet(),k -> {
+        return new DynamicRegistryMap<>(input.keySet(), k -> {
             if (k != null) {
                 Object value = bakedCache.getUnchecked(k);
                 if (value == NULL_BAKED) {
                     value = null;
                 }
-                return (V)value;
+                return (V) value;
             } else {
                 return null;
             }

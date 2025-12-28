@@ -172,7 +172,7 @@ public class DynamicModelSystem {
                 }
             }
         });
-        return Maps.asMap(input.keySet(), k -> {
+        return new DynamicRegistryMap<>(input.keySet(),k -> {
             if (k != null) {
                 Object value = bakedCache.getUnchecked(k);
                 if (value == NULL_BAKED) {

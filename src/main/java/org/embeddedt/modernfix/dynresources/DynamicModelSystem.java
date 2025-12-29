@@ -43,7 +43,7 @@ public class DynamicModelSystem {
     private static final FileToIdConverter MODEL_LISTER = FileToIdConverter.json("models");
     private static final FileToIdConverter BLOCKSTATE_LISTER = FileToIdConverter.json("blockstates");
 
-    public static final boolean DEBUG_DYNAMIC_MODEL_LOADING = true; // Boolean.getBoolean("modernfix.debugDynamicModelLoading");
+    public static final boolean DEBUG_DYNAMIC_MODEL_LOADING = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
     
     public static Map<Identifier, UnbakedModel> createDynamicUnbakedModelMap(Map<Identifier, Resource> resourceMap) {
         LoadingCache<Identifier, UnbakedModel> unbakedModelCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {

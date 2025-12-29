@@ -4,4 +4,3 @@
 - Check if BlockStateData patch is still needed in compact_mojang_registries
 - Check if faster_texture_stitching is still worthwhile with 21.x changes to the stitcher
 - Sculk deadlock fix looks unnecessary since Mojang is careful about when they send the event
-- Rewrite deduplicate_wall_shapes

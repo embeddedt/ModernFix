@@ -4,6 +4,7 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.objects.AbstractObject2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
@@ -28,10 +29,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.neoforged.neoforge.client.model.UnbakedModelParser;
 import net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.BlockStateDefinitionsAccessor;
 import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.IdMapperAccessor;
 import org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.ModelDiscoveryAccessor;
 
 import java.io.Reader;
+import java.util.AbstractSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -85,8 +89,17 @@ public class DynamicModelSystem {
                 return entryLoader.loadEntry(file, resources);
             }
         });
-        return new BlockStateModelLoader.LoadedModels(Maps.asMap(getAllBlockStates(), state -> {
-            var identifier = state.getBlock().builtInRegistryHolder().getKey().identifier();
+        var staticDefinitions = BlockStateDefinitionsAccessor.getStaticDefinitions();
+        var staticIdentifiers = staticDefinitions.entrySet()
+                .stream()
+                .flatMap(e -> e.getValue().getPossibleStates().stream().map(s -> Map.entry(s, e.getKey())))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        var blockStateSet = new DisjointSetUnion<>(getAllBlockStates(), staticIdentifiers.keySet());
+        return new BlockStateModelLoader.LoadedModels(Maps.asMap(blockStateSet, state -> {
+            var identifier = staticIdentifiers.get(state);
+            if (identifier == null) {
+                identifier = state.getBlock().builtInRegistryHolder().getKey().identifier();
+            }
             var loadedModels = definitionCache.getUnchecked(identifier);
             return loadedModels.models().get(state);
         }));

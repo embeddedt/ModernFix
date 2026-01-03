@@ -181,7 +181,13 @@ public class DynamicModelSystem {
                     if (DEBUG_DYNAMIC_MODEL_LOADING) {
                         ModernFix.LOGGER.info("Baking {}", key);
                     }
-                    return baker.apply(key, unbaked);
+                    var bakerResult = baker.apply(key, unbaked);
+                    if (bakerResult == null) {
+                        ModernFix.LOGGER.warn("Baker has returned null for {}", key);
+                        return NULL_BAKED;
+                    } else {
+                        return bakerResult;
+                    }
                 } else {
                     return NULL_BAKED;
                 }

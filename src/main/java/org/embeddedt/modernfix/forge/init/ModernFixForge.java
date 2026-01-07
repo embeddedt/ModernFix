@@ -28,6 +28,7 @@ import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
 import org.embeddedt.modernfix.forge.config.NightConfigFixer;
+import org.embeddedt.modernfix.forge.load.ModFileScanDataCompactor;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.forge.registry.ObjectHolderClearer;
 
@@ -49,6 +50,7 @@ public class ModernFixForge {
         ModLoadingContext.get().registerConfig(ModConfig.Type.COMMON, ModernFixConfig.COMMON_CONFIG);
         PacketHandler.register();
         ConfigFixer.replaceConfigHandlers();
+        ModFileScanDataCompactor.compact();
     }
 
     @SubscribeEvent

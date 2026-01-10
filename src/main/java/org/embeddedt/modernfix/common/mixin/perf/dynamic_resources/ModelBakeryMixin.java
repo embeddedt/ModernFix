@@ -6,6 +6,7 @@ import com.google.common.cache.RemovalCause;
 import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
+import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -119,10 +120,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         this.bakedTopLevelModels = new DynamicBakedModelProvider((ModelBakery)(Object)this, bakedCache);
     }
 
-    @ModifyArg(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/profiling/ProfilerFiller;popPush(Ljava/lang/String;)V", ordinal = 0), index = 0)
-    private String ignoreFutureModelLoads(String name) {
+    @ModifyExpressionValue(method = "<init>", at = @At(value = "FIELD", opcode = Opcodes.GETSTATIC, ordinal = 0, target = "Lnet/minecraft/client/resources/model/ModelBakery;STATIC_DEFINITIONS:Ljava/util/Map;"))
+    private Map<ResourceLocation, StateDefinition<Block, BlockState>> ignoreFutureModelLoads(Map<ResourceLocation, StateDefinition<Block, BlockState>> original) {
         this.ignoreModelLoad = true;
-        return name;
+        return original;
     }
 
     private <K, V> void onModelRemoved(RemovalNotification<K, V> notification) {

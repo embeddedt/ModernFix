@@ -5,6 +5,8 @@ import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynresources.DynamicModelSystem;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Constant;
+import org.spongepowered.asm.mixin.injection.ModifyConstant;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Map;
@@ -22,5 +24,14 @@ public class MixinModelBakery {
     @Redirect(method = "bakeModels", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/thread/ParallelMapTransform;schedule(Ljava/util/Map;Ljava/util/function/BiFunction;Ljava/util/concurrent/Executor;)Ljava/util/concurrent/CompletableFuture;"))
     private <K, U, V> CompletableFuture<Map<K, V>> dynamicallyBake(Map<K, U> input, BiFunction<K, U, V> baker, Executor executor) {
         return CompletableFuture.completedFuture(DynamicModelSystem.createDynamicBakedRegistry(input, baker));
+    }
+
+    /**
+     * @author embeddedt
+     * @reason We want log4j to print the stacktrace and not just the exception message
+     */
+    @ModifyConstant(method = "lambda$bakeModels$3", constant = @Constant(stringValue = "Unable to bake model: '{}': {}"))
+    private static String showFullException(String prefix) {
+        return "Unable to bake model: '{}'";
     }
 }

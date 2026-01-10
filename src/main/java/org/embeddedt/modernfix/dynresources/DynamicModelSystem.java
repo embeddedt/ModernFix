@@ -177,14 +177,21 @@ public class DynamicModelSystem {
             @Override
             public Object load(K key) throws Exception {
                 var unbaked = input.get(key);
-                if (unbaked != null) {
-                    if (DEBUG_DYNAMIC_MODEL_LOADING) {
-                        ModernFix.LOGGER.info("Baking {}", key);
-                    }
-                    return baker.apply(key, unbaked);
-                } else {
+                if (unbaked == null) {
                     return NULL_BAKED;
                 }
+
+                if (DEBUG_DYNAMIC_MODEL_LOADING) {
+                    ModernFix.LOGGER.info("Baking {}", key);
+                }
+
+                var bakerResult = baker.apply(key, unbaked);
+                if (bakerResult == null) {
+                    ModernFix.LOGGER.warn("Baker has returned null for {}", key);
+                    return NULL_BAKED;
+                }
+
+                return bakerResult;
             }
         });
         return new DynamicRegistryMap<>(input.keySet(), k -> {

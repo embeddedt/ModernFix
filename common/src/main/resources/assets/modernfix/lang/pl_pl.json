@@ -152,5 +152,6 @@
   "modernfix.option.mixin.perf.memoize_creative_tab_build": "Ulepsza przechowywanie zawartości zakładek w trybie kreatywnym w sposób kompatybilny z wymaganiami czasowymi modów takich jak JEI/EMI. Może to zmnejszyć lag pojawaiający się za pierwszym razem, gdy otwarty jest ekwipunek trybu kreatywnego.",
   "modernfix.option.mixin.perf.potential_spawns_alloc": "Optymalizuje ewent Forge, który szuka potencjalnych bytów do spawnowania. Zmniejsza to ilość alokacji i unika kosztu przebudowywania ważonej listy, gdy żaden mod nie zmienia listy spawnów.",
   "modernfix.option.mixin.perf.ticking_chunk_alloc": "Optymalizuje tickowanie chunków vanilli, by zmnejszyć ilość alokacji.",
-  "modernfix.option.mixin.perf.worldgen_allocation": "Optymalizuje logikę generowania świata vanilli, by zmnejszyć ilość alokacji."
+  "modernfix.option.mixin.perf.worldgen_allocation": "Optymalizuje logikę generowania świata vanilli, by zmnejszyć ilość alokacji.",
+  "modernfix.option.mixin.feature.suppress_narrator_stacktrace": "Zapobiega wpisywaniu do logów bardzo długiego stack trace'a gdy nie udaje się załadować narratora na Linuksie (co zwykle jest spowodowane brakiem zainstalowanego libflite)."
 }

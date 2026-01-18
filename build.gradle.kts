@@ -2,6 +2,7 @@ plugins {
     id("net.neoforged.moddev.legacyforge") version("2.0.134")
     id("org.ajoberstar.grgit") version("5.2.0")
     id("com.palantir.git-version") version("1.0.0")
+    id("me.modmuss50.mod-publish-plugin") version("1.1.0")
 }
 
 val minecraft_version = rootProject.properties["minecraft_version"].toString()
@@ -211,4 +212,28 @@ tasks.register<Copy>("copyJarToBin") {
 
 tasks.named("build") {
     dependsOn("copyJarToBin", "copyJarNameConsistent")
+}
+
+publishMods {
+    file.set(tasks.named<Jar>(finalJarTask).get().outputs.files.singleFile)
+    changelog = "Please check the [GitHub wiki](https://github.com/embeddedt/ModernFix/wiki/Changelog) for major changes."
+    type = STABLE
+
+    modLoaders.add("forge")
+
+    curseforge {
+        projectId = "790626"
+        projectSlug = "modernfix"
+        accessToken = providers.environmentVariable("CURSEFORGE_TOKEN")
+        minecraftVersions.add(minecraft_version)
+    }
+    modrinth {
+        projectId = "modernfix"
+        accessToken = providers.environmentVariable("MODRINTH_TOKEN")
+        minecraftVersions.add(minecraft_version)
+    }
+}
+
+tasks.named("publishMods") {
+    dependsOn(finalJarTask)
 }

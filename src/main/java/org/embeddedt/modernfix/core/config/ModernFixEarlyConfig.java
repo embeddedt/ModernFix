@@ -314,16 +314,16 @@ public class ModernFixEarlyConfig {
     }
 
     private void readGlobalProperties() {
-        Path minecraftFolder;
-        if (SystemUtils.IS_OS_MAC) {
-            minecraftFolder = Paths.get(System.getProperty("user.home"), "Library", "Application Support", "minecraft");
-        } else if (SystemUtils.IS_OS_WINDOWS) {
-            minecraftFolder = Paths.get(System.getenv("APPDATA"), ".minecraft");
-        } else {
-            minecraftFolder = Paths.get(System.getProperty("user.home"), ".minecraft");
-        }
-        Path globalPropsFile = minecraftFolder.resolve("global").resolve("modernfix-global-mixins.properties");
         try {
+            Path minecraftFolder;
+            if (SystemUtils.IS_OS_MAC) {
+                minecraftFolder = Paths.get(System.getProperty("user.home"), "Library", "Application Support", "minecraft");
+            } else if (SystemUtils.IS_OS_WINDOWS) {
+                minecraftFolder = Paths.get(System.getenv("APPDATA"), ".minecraft");
+            } else {
+                minecraftFolder = Paths.get(System.getProperty("user.home"), ".minecraft");
+            }
+            Path globalPropsFile = minecraftFolder.resolve("global").resolve("modernfix-global-mixins.properties");
             if (Files.exists(globalPropsFile)) {
                 Properties properties = new Properties();
                 try (var is = Files.newInputStream(globalPropsFile)) {

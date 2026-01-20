@@ -30,7 +30,7 @@ public class MixinModelBakery {
      * @author embeddedt
      * @reason We want log4j to print the stacktrace and not just the exception message
      */
-    @ModifyConstant(method = "lambda$bakeModels$3", constant = @Constant(stringValue = "Unable to bake model: '{}': {}"))
+    @ModifyConstant(method = "lambda$bakeModels$0", constant = @Constant(stringValue = "Unable to bake model: '{}': {}"))
     private static String showFullException(String prefix) {
         return "Unable to bake model: '{}'";
     }

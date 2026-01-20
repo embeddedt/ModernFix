@@ -61,8 +61,8 @@ public abstract class LevelChunkMixin extends ChunkAccess {
 
     @Unique
     private void scanSectionForBlockEntities(LevelChunkSection section, int i) {
-        int chunkXOff = this.chunkPos.x * 16;
-        int chunkZOff = this.chunkPos.z * 16;
+        int chunkXOff = this.chunkPos.x() * 16;
+        int chunkZOff = this.chunkPos.z() * 16;
         BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
         int sectionYOff = this.getSectionYFromSectionIndex(i) * 16;
         for (int y = 0; y < 16; y++) {

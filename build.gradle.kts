@@ -215,7 +215,7 @@ tasks.named("build") {
 }
 
 publishMods {
-    file.set(tasks.named<Jar>(finalJarTask).get().outputs.files.singleFile)
+    file.set(tasks.named<Jar>(finalJarTask).flatMap { it.archiveFile })
     changelog = "Please check the [GitHub wiki](https://github.com/embeddedt/ModernFix/wiki/Changelog) for major changes."
     type = STABLE
 

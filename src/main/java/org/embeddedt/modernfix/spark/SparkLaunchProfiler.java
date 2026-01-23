@@ -37,11 +37,26 @@ public class SparkLaunchProfiler {
     private static ExecutorService executor = Executors.newSingleThreadScheduledExecutor(new ThreadFactoryBuilder().setDaemon(true).setNameFormat("spark-modernfix-async-worker").build());
     private static final SparkPlatform platform = new SparkPlatform(new ModernFixSparkPlugin());
 
+    private static final String ALLOW_SPARK_PROFILING_PROP = "modernfix.allowSparkProfiling";
     private static final boolean USE_JAVA_SAMPLER_FOR_LAUNCH = !Boolean.getBoolean("modernfix.profileWithAsyncSampler");
+    private static final boolean ALLOW_SPARK_PROFILING = Boolean.getBoolean(ALLOW_SPARK_PROFILING_PROP);
     private static final int SAMPLING_INTERVAL = Integer.getInteger("modernfix.profileSamplingIntervalMicroseconds", 4000);
     private static final String THREAD_GROUPER = System.getProperty("modernfix.profileSamplingThreadGrouper", "by-pool");
 
+    private static boolean checkSparkProfilingAllowed() {
+        if (!ALLOW_SPARK_PROFILING) {
+            ModernFixMixinPlugin.instance.logger.fatal("To reduce excessive load on the Spark servers, you must set " +
+                    "-D{}=true in your JVM arguments for profiling to proceed. Please do " +
+                    "this and relaunch the game.", ALLOW_SPARK_PROFILING_PROP);
+            return false;
+        }
+        return true;
+    }
+
     public static void start(String key) {
+        if (!checkSparkProfilingAllowed()) {
+            return;
+        }
         if (!ongoingSamplers.containsKey(key)) {
             Sampler sampler;
             SamplerSettings settings = new SamplerSettings(SAMPLING_INTERVAL, ThreadDumper.ALL, ThreadGrouper.parseConfigSetting(THREAD_GROUPER), -1, false);

@@ -66,6 +66,8 @@ public class ModFileScanDataCompactor {
                 a.annotationData().entrySet().stream().collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> {
                     Object annValue = e.getValue();
                     if (annValue instanceof ArrayList<?> list) {
+                        // We cannot properly compact annValue using List.of() because there are mods that
+                        // (unnecessarily) rely on the list implementation being ArrayList.
                         list.trimToSize();
                     }
                     return annValue;

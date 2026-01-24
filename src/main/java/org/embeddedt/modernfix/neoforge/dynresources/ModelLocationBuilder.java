@@ -21,7 +21,17 @@ public class ModelLocationBuilder {
     private record PropertyData(ImmutableList<String> nameValuePairs, int maxPairLength) {}
 
     public void generateForBlock(Set<ModelResourceLocation> destinationSet, Block block, ResourceLocation baseLocation) {
-        var props = block.getStateDefinition().getProperties();
+        // Make sure to iterate over the properties in the order of the getValues() map rather than using
+        // StateDefinition.getProperties(), to match the logic in BlockModelShaper.statePropertiesToString.
+        // In vanilla, these have the same order, because the backing implementation of getValues() is a map
+        // that preserves insertion order. However, in some versions of FerriteCore, getValues() may not
+        // preserve insertion order, but instead rely on hash order of the keys. This results in BlockModelShape
+        // and ModelLocationBuilder producing different MRLs. Using the keySet produces the same ordering as
+        // BlockModelShaper, provided that all states were built with the keys inserted in the same order into the same
+        // map implementation (which should always be true in practice).
+        // The above issue only seems to affect versions of FerriteCore after the switch to fastutil maps, but it
+        // is harmless to be consistent on older versions too, especially if another mod backports the fastutil change.
+        var props = block.defaultBlockState().getValues().keySet();
         List<ImmutableList<String>> optionsList = new ArrayList<>(props.size());
         int requiredBuilderSize = Math.max(0, props.size() - 1); // commas
         for (var prop : props) {

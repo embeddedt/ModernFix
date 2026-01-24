@@ -8,7 +8,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.objectweb.asm.Type;
 
 import java.lang.reflect.Field;
-import java.util.List;
+import java.util.ArrayList;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -65,8 +65,8 @@ public class ModFileScanDataCompactor {
                 memberNames.addOrGet(a.memberName()),
                 a.annotationData().entrySet().stream().collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, e -> {
                     Object annValue = e.getValue();
-                    if (annValue instanceof List<?> list) {
-                        annValue = List.copyOf(list);
+                    if (annValue instanceof ArrayList<?> list) {
+                        list.trimToSize();
                     }
                     return annValue;
                 }))

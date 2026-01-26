@@ -4,8 +4,6 @@ import it.unimi.dsi.fastutil.Hash;
 import it.unimi.dsi.fastutil.objects.ObjectOpenCustomHashSet;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 
-import java.util.Objects;
-
 public class AttributeInstanceTemplates {
     private static final ObjectOpenCustomHashSet<AttributeInstance> INTERNER = new ObjectOpenCustomHashSet<>(new Hash.Strategy<>() {
         @Override
@@ -13,7 +11,7 @@ public class AttributeInstanceTemplates {
             if (o == null) {
                 return 0;
             }
-            int h = o.getAttribute().hashCode();
+            int h = System.identityHashCode(o.getAttribute());
             h = 31 * h + Double.hashCode(o.getBaseValue());
             h = 31 * h + o.getModifiers().hashCode();
             return h;

@@ -35,7 +35,7 @@ public class BlockStateDataMixin {
                 t = compactTag(ct);
             }
             t = TAG_INTERNER.addOrGet(t);
-            entries[i++] = Map.entry(key, t);
+            entries[i++] = Map.entry(key.intern(), t);
         }
         return new CompoundTag(Map.ofEntries(entries));
     }

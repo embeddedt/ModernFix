@@ -64,7 +64,8 @@ public class ModelManagerMixin implements IExtendedModelManager {
     @ModifyArg(method = "loadBlockModels", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;thenCompose(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", ordinal = 0), index = 0)
     private static Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> deferBlockModelLoad(Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> fn, @Local(ordinal = 0, argsOnly = true) ResourceManager manager) {
         return resourceMap -> {
-            var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, location), 100L);
+            var fallbackModel = BlockModel.fromString(ModelBakery.MISSING_MODEL_MESH);
+            var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, location, fallbackModel), 100L);
             return CompletableFuture.completedFuture(Maps.asMap(Set.copyOf(resourceMap.keySet()), location -> cache.getUnchecked(location)));
         };
     }
@@ -81,13 +82,15 @@ public class ModelManagerMixin implements IExtendedModelManager {
         return ImmutableList.of();
     }
 
-    private static BlockModel loadSingleBlockModel(ResourceManager manager, ResourceLocation location) {
+    private static BlockModel loadSingleBlockModel(ResourceManager manager, ResourceLocation location, BlockModel fallbackModel) {
         return manager.getResource(location).map(resource -> {
             try (BufferedReader reader = resource.openAsReader()) {
                 return BlockModel.fromStream(reader);
-            } catch(IOException e) {
-                ModernFix.LOGGER.error("Couldn't load model", e);
-                return null;
+            } catch (Exception e) {
+                // We must return some nonnull value to avoid breaking the map convention. The easiest solution
+                // is to just return a missing model template.
+                ModernFix.LOGGER.error("Couldn't load model {}, substituting missing", location, e);
+                return fallbackModel;
             }
         }).orElse(null);
     }

@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.attribute_supplier_dedup;
 
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -18,7 +19,7 @@ public class AttributeSupplierMixin {
     @Shadow
     @Final
     @Mutable
-    private Map<Attribute, AttributeInstance> instances;
+    private Map<Holder<Attribute>, AttributeInstance> instances;
 
     /**
      * @author embeddedt
@@ -26,7 +27,7 @@ public class AttributeSupplierMixin {
      * care about insertion order in this context
      */
     @Inject(method = "<init>", at = @At("RETURN"))
-    private void useCompactJavaMap(Map<Attribute, AttributeInstance> instances, CallbackInfo ci) {
+    private void useCompactJavaMap(Map<Holder<Attribute>, AttributeInstance> instances, CallbackInfo ci) {
         this.instances = Map.copyOf(this.instances);
     }
 }

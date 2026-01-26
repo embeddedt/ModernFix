@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.attribute_supplier_dedup;
 
+import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
@@ -17,7 +18,7 @@ import java.util.Map;
 public class AttributeSupplierBuilderMixin {
     @Shadow
     @Final
-    private Map<Attribute, AttributeInstance> builder;
+    private Map<Holder<Attribute>, AttributeInstance> builder;
 
     /**
      * @author embeddedt

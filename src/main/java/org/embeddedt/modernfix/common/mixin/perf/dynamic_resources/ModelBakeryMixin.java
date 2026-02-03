@@ -7,6 +7,8 @@ import com.google.common.cache.RemovalNotification;
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableList;
 import com.llamalad7.mixinextras.injector.ModifyExpressionValue;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -188,6 +190,20 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     }
 
     /**
+     * @author embeddedt
+     * @reason Prevent the models provided by RegisterAdditional from being tracked, otherwise the unbaked models will
+     * be loaded, baked, and added to permanent overrides unnecessarily.
+     * We still need to fire the event, because there is a decent chance mods rely on it to set up state for their
+     * model loaders, but we can ignore the return value.
+     */
+    @WrapOperation(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraftforge/client/ForgeHooksClient;onRegisterAdditionalModels(Ljava/util/Set;)V"))
+    private void preventLoadOfAdditionalModels(Set<ResourceLocation> additionalModels, Operation<Void> original) {
+        original.call(additionalModels);
+        // Immediately clear the set
+        additionalModels.clear();
+    }
+
+    /**
      * Make a copy of the top-level model list to avoid CME if more models get loaded here.
      */
     @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Ljava/util/Map;values()Ljava/util/Collection;", ordinal = 0))
@@ -256,7 +272,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             cir.setReturnValue(existing);
         } else {
             synchronized(this) {
-                if (this.loadingStack.contains(modelLocation)) {
+                // CIT Resewn adds dependencies to loadingStack outside of getModel(), so we must silently
+                // ignore existing things in the stack for the outermost model
+                if (mfix$nestedLoads > 0 && this.loadingStack.contains(modelLocation)) {
                     throw new IllegalStateException("Circular reference while loading " + modelLocation);
                 } else {
                     this.loadingStack.add(modelLocation);

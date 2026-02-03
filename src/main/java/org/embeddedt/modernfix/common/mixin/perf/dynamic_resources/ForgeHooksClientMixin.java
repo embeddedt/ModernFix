@@ -12,6 +12,7 @@ import net.minecraftforge.fml.ModList;
 import net.minecraftforge.fml.ModLoader;
 import net.minecraftforge.fml.util.ObfuscationReflectionHelper;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.dynamicresources.DynamicBakedModelProvider;
 import org.embeddedt.modernfix.forge.dynresources.ModelBakeEventHelper;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -61,6 +62,9 @@ public class ForgeHooksClientMixin {
                     .forEach(entry -> {
                         ModernFix.LOGGER.warn("    {}: {}", entry.getKey(), entry.getValue().toString());
                     });
+        }
+        if (bakeEvent.getModels() instanceof DynamicBakedModelProvider dynamicProvider) {
+            dynamicProvider.dumpStats();
         }
     }
 }

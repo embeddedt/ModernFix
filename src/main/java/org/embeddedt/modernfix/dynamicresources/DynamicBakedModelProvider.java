@@ -2,6 +2,8 @@ package org.embeddedt.modernfix.dynamicresources;
 
 import com.google.common.collect.ImmutableSet;
 import com.mojang.math.Transformation;
+import it.unimi.dsi.fastutil.objects.Object2IntMap;
+import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -247,5 +249,48 @@ public class DynamicBakedModelProvider implements Map<ResourceLocation, BakedMod
             else
                 return function.apply(loc.id(), oldModel);
         });
+    }
+
+    public void dumpStats() {
+        Object2ObjectOpenHashMap<Class<? extends BakedModel>, Object2IntOpenHashMap<String>> byClassAndNamespace = new Object2ObjectOpenHashMap<>();
+        Object2IntOpenHashMap<Class<? extends BakedModel>> totalsByClass = new Object2IntOpenHashMap<>();
+        synchronized (permanentOverrides) {
+            for (var entry : permanentOverrides.entrySet()) {
+                var model = entry.getValue();
+                if (model == null) {
+                    continue;
+                }
+                totalsByClass.addTo(model.getClass(), 1);
+                var byNamespace = byClassAndNamespace.computeIfAbsent(model.getClass(), $ -> new Object2IntOpenHashMap<>());
+                byNamespace.addTo(entry.getKey().getNamespace(), 1);
+            }
+        }
+        ModernFix.LOGGER.debug("Loaded {} permanent overrides", permanentOverrides.size());
+        byClassAndNamespace.entrySet().stream().sorted((a, b) ->
+                Integer.compare(
+                        totalsByClass.getInt(b.getKey()),
+                        totalsByClass.getInt(a.getKey())
+                ))
+                .forEach(classEntry -> {
+                    var byNamespace = classEntry.getValue();
+                    int totalModels = totalsByClass.getInt(classEntry.getKey());
+                    ModernFix.LOGGER.debug(
+                            "{}: {} models",
+                            classEntry.getKey().getName(),
+                            totalModels
+                    );
+
+                    // sort namespaces by count (descending)
+                    byNamespace.object2IntEntrySet().stream()
+                            .sorted((a, b) ->
+                                    Integer.compare(b.getIntValue(), a.getIntValue()))
+                            .forEach(nsEntry -> {
+                                ModernFix.LOGGER.debug(
+                                        "  {}: {}",
+                                        nsEntry.getKey(),
+                                        nsEntry.getIntValue()
+                                );
+                            });
+                });
     }
 }

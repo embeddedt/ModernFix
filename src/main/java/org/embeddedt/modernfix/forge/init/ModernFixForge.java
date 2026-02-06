@@ -38,6 +38,7 @@ import java.util.List;
 public class ModernFixForge {
     private static ModernFix commonMod;
     public static boolean launchDone = false;
+    public static boolean registryEventsFired = false;
 
     public ModernFixForge() {
         commonMod = new ModernFix();

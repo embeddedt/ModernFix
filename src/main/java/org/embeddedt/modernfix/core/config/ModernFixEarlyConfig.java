@@ -174,6 +174,7 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.blockentity_incorrect_thread", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.deduplicate_climate_parameters", false)
+            .put("mixin.perf.faster_capabilities.bytecode_analysis", false)
             .put("mixin.bugfix.packet_leak", false)
             .put("mixin.perf.deduplicate_location", false)
             .put("mixin.perf.dynamic_entity_renderers", false)

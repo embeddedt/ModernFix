@@ -2,13 +2,21 @@ package org.embeddedt.modernfix.forge.capability;
 
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalysisResult;
+import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalyzer;
+import org.embeddedt.modernfix.forge.capability.analysis.CapabilityRef;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import java.lang.reflect.Modifier;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -23,6 +31,7 @@ import static org.objectweb.asm.Opcodes.*;
  * and performs direct dispatch instead of megamorphic virtual calls.
  */
 public class CapabilityProviderDispatcherGenerator {
+    private static final String GENERATED_CLASSES_FOLDER = System.getProperty("modernfix.generatedCapabilityDispatcherClassDumpFolder", "");
 
     private static final ConcurrentHashMap<List<Class<? extends ICapabilityProvider>>, MethodHandle> cache =
             new ConcurrentHashMap<>();
@@ -67,10 +76,27 @@ public class CapabilityProviderDispatcherGenerator {
     }
 
     private static MethodHandle generateClass(List<Class<? extends ICapabilityProvider>> providerTypes) {
-        ModernFix.LOGGER.debug("Generating capability dispatcher for types: [{}]", providerTypes.stream().map(Class::getName).collect(Collectors.joining(", ")));
         try {
-            String className = "org.embeddedt.modernfix.forge.capability.CapabilityDispatcher$Generated$" + classCounter.incrementAndGet();
-            byte[] classBytes = generateClassBytes(className, providerTypes);
+            // Analyze each provider type
+            List<CapabilityAnalysisResult> analysisResults = new ArrayList<>(providerTypes.size());
+            for (Class<? extends ICapabilityProvider> type : providerTypes) {
+                CapabilityAnalysisResult result = CapabilityAnalyzer.analyze(type);
+                analysisResults.add(result);
+            }
+
+            int generatedClassId = classCounter.incrementAndGet();
+            String className = "org.embeddedt.modernfix.forge.capability.CapabilityDispatcher$Generated$" + generatedClassId;
+
+            ModernFix.LOGGER.debug("Generating capability dispatcher #{} for types: [{}]", () -> generatedClassId, () -> {
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < providerTypes.size(); i++) {
+                    if (i > 0) sb.append(", ");
+                    sb.append(providerTypes.get(i).getName()).append(" -> ").append(formatAnalysisResult(analysisResults.get(i)));
+                }
+                return sb;
+            });
+
+            byte[] classBytes = generateClassBytes(className, providerTypes, analysisResults);
 
             // Define the hidden class
             MethodHandles.Lookup hiddenLookup = lookup.defineHiddenClass(
@@ -78,6 +104,12 @@ public class CapabilityProviderDispatcherGenerator {
                     true,
                     MethodHandles.Lookup.ClassOption.NESTMATE
             );
+
+            if (!GENERATED_CLASSES_FOLDER.isBlank()) {
+                Path path = Paths.get(GENERATED_CLASSES_FOLDER, "generatedDispatcher" + generatedClassId + ".class");
+                Files.createDirectories(path.getParent());
+                Files.write(path, classBytes);
+            }
 
             // Return a MethodHandle to the constructor
             // Constructor signature: (ICapabilityProvider[])V
@@ -92,7 +124,7 @@ public class CapabilityProviderDispatcherGenerator {
         }
     }
 
-    private static byte[] generateClassBytes(String className, List<Class<? extends ICapabilityProvider>> providerTypes) {
+    private static byte[] generateClassBytes(String className, List<Class<? extends ICapabilityProvider>> providerTypes, List<CapabilityAnalysisResult> analysisResults) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS);
 
         // Class declaration: implements ICapabilityProvider
@@ -105,28 +137,36 @@ public class CapabilityProviderDispatcherGenerator {
                 new String[] { "net/minecraftforge/common/capabilities/ICapabilityProvider" }
         );
 
+        // Compute field descriptors: use concrete type when possible for JIT devirtualization
+        String[] fieldDescs = new String[providerTypes.size()];
+        for (int i = 0; i < providerTypes.size(); i++) {
+            Class<? extends ICapabilityProvider> type = providerTypes.get(i);
+            fieldDescs[i] = (!type.isHidden() && Modifier.isPublic(type.getModifiers()))
+                    ? Type.getDescriptor(type) : ICAP_PROVIDER_DESC;
+        }
+
         // Generate final fields for each provider
         for (int i = 0; i < providerTypes.size(); i++) {
             cw.visitField(
                     ACC_PRIVATE | ACC_FINAL,
                     "provider" + i,
-                    ICAP_PROVIDER_DESC,
+                    fieldDescs[i],
                     null,
                     null
             ).visitEnd();
         }
 
         // Generate constructor
-        generateConstructor(cw, className, providerTypes.size());
+        generateConstructor(cw, className, providerTypes.size(), fieldDescs);
 
         // Generate getCapability method with sided parameter
-        generateGetCapabilityMethod(cw, className, providerTypes.size());
+        generateGetCapabilityMethod(cw, className, fieldDescs, analysisResults);
 
         cw.visitEnd();
         return cw.toByteArray();
     }
 
-    private static void generateConstructor(ClassWriter cw, String className, int providerCount) {
+    private static void generateConstructor(ClassWriter cw, String className, int providerCount, String[] fieldDescs) {
         Method constructor = Method.getMethod("void <init>(net.minecraftforge.common.capabilities.ICapabilityProvider[])");
         GeneratorAdapter mg = new GeneratorAdapter(ACC_PUBLIC, constructor, null, null, cw);
 
@@ -136,14 +176,18 @@ public class CapabilityProviderDispatcherGenerator {
 
         // Unpack array into final fields
         for (int i = 0; i < providerCount; i++) {
+            Type fieldType = Type.getType(fieldDescs[i]);
             mg.loadThis();              // this
             mg.loadArg(0);              // array
             mg.push(i);                 // index
             mg.arrayLoad(Type.getType(ICAP_PROVIDER_DESC)); // array[i]
+            if (!fieldDescs[i].equals(ICAP_PROVIDER_DESC)) {
+                mg.checkCast(fieldType);
+            }
             mg.putField(
                     Type.getObjectType(className.replace('.', '/')),
                     "provider" + i,
-                    Type.getType(ICAP_PROVIDER_DESC)
+                    fieldType
             );
         }
 
@@ -151,7 +195,9 @@ public class CapabilityProviderDispatcherGenerator {
         mg.endMethod();
     }
 
-    private static void generateGetCapabilityMethod(ClassWriter cw, String className, int providerCount) {
+    private static void generateGetCapabilityMethod(ClassWriter cw, String className, String[] fieldDescs, List<CapabilityAnalysisResult> analysisResults) {
+        int providerCount = fieldDescs.length;
+
         // Method: <T> LazyOptional<T> getCapability(Capability<T>, Direction)
         MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
@@ -168,7 +214,37 @@ public class CapabilityProviderDispatcherGenerator {
         Label endLabel = new Label();
 
         for (int i = 0; i < providerCount; i++) {
+            CapabilityAnalysisResult analysis = analysisResults.get(i);
             Label nextLabel = new Label();
+
+            // AlwaysEmpty: skip code generation for this provider entirely
+            if (analysis instanceof CapabilityAnalysisResult.AlwaysEmpty) {
+                continue;
+            }
+
+            // KnownCapabilities: emit guard checks before dispatch
+            if (analysis instanceof CapabilityAnalysisResult.KnownCapabilities known
+                    && known.capabilities().size() <= 5) {
+                if (known.capabilities().size() == 1) {
+                    // Single cap: if (cap != KNOWN_CAP) goto nextProvider
+                    CapabilityRef ref = known.capabilities().iterator().next();
+                    mv.visitVarInsn(ALOAD, 1); // cap parameter
+                    mv.visitFieldInsn(GETSTATIC, ref.owner(), ref.fieldName(), CAPABILITY_DESC);
+                    mv.visitJumpInsn(IF_ACMPNE, nextLabel);
+                } else {
+                    // Multiple caps: check each, jump to callProvider on match
+                    Label callProvider = new Label();
+                    for (CapabilityRef ref : known.capabilities()) {
+                        mv.visitVarInsn(ALOAD, 1); // cap parameter
+                        mv.visitFieldInsn(GETSTATIC, ref.owner(), ref.fieldName(), CAPABILITY_DESC);
+                        mv.visitJumpInsn(IF_ACMPEQ, callProvider);
+                    }
+                    // No match, skip this provider
+                    mv.visitJumpInsn(GOTO, nextLabel);
+                    mv.visitLabel(callProvider);
+                }
+            }
+            // Indeterminate: no guard, fall through to dispatch
 
             // LazyOptional<T> result = this.providerN.getCapability(cap, side);
             mv.visitVarInsn(ALOAD, 0);  // this
@@ -176,7 +252,7 @@ public class CapabilityProviderDispatcherGenerator {
                     GETFIELD,
                     className.replace('.', '/'),
                     "provider" + i,
-                    ICAP_PROVIDER_DESC
+                    fieldDescs[i]
             );
             mv.visitVarInsn(ALOAD, 1);  // cap parameter
             mv.visitVarInsn(ALOAD, 2);  // side parameter
@@ -211,9 +287,6 @@ public class CapabilityProviderDispatcherGenerator {
             mv.visitInsn(ARETURN);
 
             mv.visitLabel(nextLabel);
-            if (i < providerCount - 1) {
-                mv.visitFrame(Opcodes.F_SAME, 0, null, 0, null);
-            }
         }
 
         // If no provider returned a capability, return empty
@@ -231,29 +304,16 @@ public class CapabilityProviderDispatcherGenerator {
         mv.visitEnd();
     }
 
-    /**
-     * Creates an instance of the optimized dispatcher for the given providers.
-     */
-    public static ICapabilityProvider createDispatcher(ICapabilityProvider[] providers) {
-        try {
-            MethodHandle constructor = getOrGenerateConstructor(providers);
-            return (ICapabilityProvider) constructor.invoke(providers);
-        } catch (Throwable e) {
-            throw new RuntimeException("Failed to create capability dispatcher instance", e);
+    private static String formatAnalysisResult(CapabilityAnalysisResult result) {
+        if (result instanceof CapabilityAnalysisResult.AlwaysEmpty) {
+            return "always empty (skipped)";
+        } else if (result instanceof CapabilityAnalysisResult.KnownCapabilities known) {
+            return "known caps: " + known.capabilities().stream()
+                    .map(ref -> ref.owner() + "#" + ref.fieldName())
+                    .collect(Collectors.joining(", "));
+        } else if (result instanceof CapabilityAnalysisResult.Indeterminate ind) {
+            return "indeterminate (" + ind.reason() + ")";
         }
-    }
-
-    /**
-     * Clears the cache of generated classes. Use with caution.
-     */
-    public static void clearCache() {
-        cache.clear();
-    }
-
-    /**
-     * Returns the number of cached dispatcher classes.
-     */
-    public static int getCacheSize() {
-        return cache.size();
+        return result.toString();
     }
 }

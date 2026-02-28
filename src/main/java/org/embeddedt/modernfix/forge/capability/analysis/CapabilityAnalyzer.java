@@ -232,6 +232,9 @@ public class CapabilityAnalyzer {
             }
         }
 
+        if (source instanceof MethodInsnNode m) {
+            return new ReturnClassification.Unknown("unclassified method: " + m.owner + "." + m.name + m.desc);
+        }
         return new ReturnClassification.Unknown("unclassified source: " + source.getClass().getSimpleName()
                 + " opcode=" + source.getOpcode());
     }
@@ -311,6 +314,28 @@ public class CapabilityAnalyzer {
                     // TODO: that simplification may have edge cases
                     int endIndex = findGuardedRegionEnd(instructions, targetIndex);
                     regions.add(new GuardRegion(capRef, targetIndex, endIndex));
+                }
+            }
+        }
+
+        // Extend guard regions for forward jumps that land beyond the guard target.
+        // This handles compound conditions like (cap == X && cond) compiled as:
+        //   if_acmpne L_false   // guard: [here, L_false)
+        //   evaluate cond
+        //   ifeq L_true         // forward jump beyond L_false
+        //   L_false: empty(); areturn
+        //   L_true: cast(); areturn   // <-- also guarded by cap == X
+        int baseSize = regions.size();
+        for (int r = 0; r < baseSize; r++) {
+            GuardRegion guard = regions.get(r);
+            for (int j = guard.guardIndex + 1; j < guard.targetIndex; j++) {
+                AbstractInsnNode inner = instructions.get(j);
+                if (inner instanceof JumpInsnNode jump) {
+                    int jumpTarget = instructions.indexOf(jump.label);
+                    if (jumpTarget >= guard.targetIndex) {
+                        int endIndex = findGuardedRegionEnd(instructions, jumpTarget);
+                        regions.add(new GuardRegion(guard.capabilityRef, jumpTarget, endIndex));
+                    }
                 }
             }
         }

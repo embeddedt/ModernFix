@@ -66,6 +66,7 @@ public class CapabilityProviderDispatcherGenerator {
     private static final String LAZY_OPTIONAL_DESC = "Lnet/minecraftforge/common/util/LazyOptional;";
     private static final String DIRECTION_DESC = "Lnet/minecraft/core/Direction;";
     private static final String MAP_DESC = "Ljava/util/Map;";
+    private static final String MAP_SIGNATURE = "Ljava/util/Map<Lnet/minecraftforge/common/capabilities/Capability<*>;Lnet/minecraftforge/common/capabilities/ICapabilityProvider;>;";
 
     /**
      * Gets or generates a constructor MethodHandle for the given capability provider types.
@@ -276,13 +277,20 @@ public class CapabilityProviderDispatcherGenerator {
         // Generate final fields for each distinct provider
         LinkedHashMap<Integer, String> providerFields = collectProviderFields(dispatches);
         for (var entry : providerFields.entrySet()) {
-            cw.visitField(ACC_PRIVATE | ACC_FINAL, "provider" + entry.getKey(), entry.getValue(), null, null).visitEnd();
+            FieldVisitor fv = cw.visitField(ACC_PRIVATE | ACC_FINAL, "provider" + entry.getKey(), entry.getValue(), null, null);
+            if (entry.getValue().equals(ICAP_PROVIDER_DESC)) {
+                String originalName = providerTypes.get(entry.getKey()).getName();
+                AnnotationVisitor av = fv.visitAnnotation("Lorg/embeddedt/modernfix/forge/capability/OriginalType;", false);
+                av.visit("value", originalName);
+                av.visitEnd();
+            }
+            fv.visitEnd();
         }
 
         // Generate map fields for Hash dispatches
         for (ProviderDispatch dispatch : dispatches) {
             if (dispatch instanceof ProviderDispatch.Hash hash) {
-                cw.visitField(ACC_PRIVATE | ACC_FINAL, "capMap" + hash.mapIndex(), MAP_DESC, null, null).visitEnd();
+                cw.visitField(ACC_PRIVATE | ACC_FINAL, "capMap" + hash.mapIndex(), MAP_DESC, MAP_SIGNATURE, null).visitEnd();
             }
         }
 
@@ -367,32 +375,36 @@ public class CapabilityProviderDispatcherGenerator {
 
         mv.visitCode();
 
-        // Generate unrolled dispatch loop
-        // For each provider, call getCapability and check if present
-        Label endLabel = new Label();
+        Label methodStart = new Label();
+        Label methodEnd = new Label();
+        mv.visitLabel(methodStart);
 
         String internalName = className.replace('.', '/');
         String getCapDesc = "(" + CAPABILITY_DESC + DIRECTION_DESC + ")" + LAZY_OPTIONAL_DESC;
+
+        // slot 3 = LazyOptional<T> result (all paths)
+        // slot 4 = ICapabilityProvider provider (Hash paths only)
+        boolean usesProviderLocal = dispatches.stream().anyMatch(d -> d instanceof ProviderDispatch.Hash);
 
         for (ProviderDispatch dispatch : dispatches) {
             Label nextLabel = new Label();
 
             if (dispatch instanceof ProviderDispatch.Hash hash) {
-                // ICapabilityProvider p = (ICapabilityProvider) this.capMapN.get(cap);
+                // ICapabilityProvider provider = (ICapabilityProvider) this.capMapN.get(cap);
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitFieldInsn(GETFIELD, internalName, "capMap" + hash.mapIndex(), MAP_DESC);
                 mv.visitVarInsn(ALOAD, 1);
                 mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get",
                         "(Ljava/lang/Object;)Ljava/lang/Object;", true);
-                mv.visitVarInsn(ASTORE, 3);
+                mv.visitTypeInsn(CHECKCAST, "net/minecraftforge/common/capabilities/ICapabilityProvider");
+                mv.visitVarInsn(ASTORE, 4);
 
-                // if (p == null) goto next
-                mv.visitVarInsn(ALOAD, 3);
+                // if (provider == null) goto next
+                mv.visitVarInsn(ALOAD, 4);
                 mv.visitJumpInsn(IFNULL, nextLabel);
 
-                // result = ((ICapabilityProvider) p).getCapability(cap, side)
-                mv.visitVarInsn(ALOAD, 3);
-                mv.visitTypeInsn(CHECKCAST, "net/minecraftforge/common/capabilities/ICapabilityProvider");
+                // LazyOptional<T> result = provider.getCapability(cap, side)
+                mv.visitVarInsn(ALOAD, 4);
                 mv.visitVarInsn(ALOAD, 1);
                 mv.visitVarInsn(ALOAD, 2);
                 mv.visitMethodInsn(INVOKEINTERFACE,
@@ -445,7 +457,6 @@ public class CapabilityProviderDispatcherGenerator {
         }
 
         // If no provider returned a capability, return empty
-        mv.visitLabel(endLabel);
         mv.visitMethodInsn(
                 INVOKESTATIC,
                 "net/minecraftforge/common/util/LazyOptional",
@@ -454,6 +465,18 @@ public class CapabilityProviderDispatcherGenerator {
                 false
         );
         mv.visitInsn(ARETURN);
+
+        mv.visitLabel(methodEnd);
+
+        // Local variable table for clean decompilation
+        String capSig = CAPABILITY_DESC.replace(";", "<TT;>;");
+        String resultSig = LAZY_OPTIONAL_DESC.replace(";", "<TT;>;");
+        mv.visitLocalVariable("cap", CAPABILITY_DESC, capSig, methodStart, methodEnd, 1);
+        mv.visitLocalVariable("side", DIRECTION_DESC, null, methodStart, methodEnd, 2);
+        mv.visitLocalVariable("result", LAZY_OPTIONAL_DESC, resultSig, methodStart, methodEnd, 3);
+        if (usesProviderLocal) {
+            mv.visitLocalVariable("provider", ICAP_PROVIDER_DESC, null, methodStart, methodEnd, 4);
+        }
 
         mv.visitMaxs(0, 0);  // Computed by COMPUTE_MAXS
         mv.visitEnd();

@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.forge.capability;
 
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalysisResult;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalyzer;
@@ -53,6 +54,12 @@ public class CapabilityProviderDispatcherGenerator {
     private static final int HASH_DISPATCH_THRESHOLD = 3;
 
     private static final String GENERATED_CLASSES_FOLDER = System.getProperty("modernfix.generatedCapabilityDispatcherClassDumpFolder", "");
+
+    /**
+     * Sentinel used in generated guards to skip empty results via reference equality,
+     * avoiding a method call to {@code isPresent()}.
+     */
+    public static final LazyOptional<?> EMPTY = LazyOptional.empty();
 
     private static final ConcurrentHashMap<List<Class<? extends ICapabilityProvider>>, MethodHandle> cache =
             new ConcurrentHashMap<>();
@@ -401,9 +408,16 @@ public class CapabilityProviderDispatcherGenerator {
                 di++;
             }
 
-            // if (result == null) goto next
-            mv.visitVarInsn(ALOAD, 3);
-            mv.visitJumpInsn(IFNULL, nextLabel);
+            // If not a hash lookup, then optimistically check for the exact LazyOptional.empty() value to avoid
+            // an isPresent call
+            if (!(dispatch instanceof ProviderDispatch.Hash)) {
+                // if (result == EMPTY) goto next
+                mv.visitVarInsn(ALOAD, 3);
+                mv.visitFieldInsn(GETSTATIC,
+                        "org/embeddedt/modernfix/forge/capability/CapabilityProviderDispatcherGenerator",
+                        "EMPTY", LAZY_OPTIONAL_DESC);
+                mv.visitJumpInsn(IF_ACMPEQ, nextLabel);
+            }
 
             // if (result.isPresent()) return result
             mv.visitVarInsn(ALOAD, 3);

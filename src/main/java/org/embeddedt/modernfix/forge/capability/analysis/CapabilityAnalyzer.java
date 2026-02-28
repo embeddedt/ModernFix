@@ -154,31 +154,39 @@ public class CapabilityAnalyzer {
 
         // If any source is unknown, try the guard region fallback before giving up
         if (!unknownSources.isEmpty()) {
+            boolean allResolved = false;
+
             // Check if the return itself is in a guard region
             for (GuardRegion guard : guardRegions) {
                 if (returnIndex > guard.guardIndex && returnIndex < guard.targetIndex) {
-                    return new ReturnClassification.Known(Set.of(guard.capabilityRef));
-                }
-            }
-            // Also check if each unknown source instruction is inside a guard region.
-            // This handles ternary patterns where both branches merge into a single
-            // ARETURN after the guard, but the unknown value was produced inside it.
-            boolean allResolved = true;
-            for (AbstractInsnNode unknownSource : unknownSources) {
-                int sourceIndex = instructions.indexOf(unknownSource);
-                boolean resolved = false;
-                for (GuardRegion guard : guardRegions) {
-                    if (sourceIndex > guard.guardIndex && sourceIndex < guard.targetIndex) {
-                        caps.add(guard.capabilityRef);
-                        resolved = true;
-                        break;
-                    }
-                }
-                if (!resolved) {
-                    allResolved = false;
+                    caps.add(guard.capabilityRef);
+                    allResolved = true;
                     break;
                 }
             }
+
+            // Also check if each unknown source instruction is inside a guard region.
+            // This handles ternary patterns where both branches merge into a single
+            // ARETURN after the guard, but the unknown value was produced inside it.
+            if (!allResolved) {
+                allResolved = true;
+                for (AbstractInsnNode unknownSource : unknownSources) {
+                    int sourceIndex = instructions.indexOf(unknownSource);
+                    boolean resolved = false;
+                    for (GuardRegion guard : guardRegions) {
+                        if (sourceIndex > guard.guardIndex && sourceIndex < guard.targetIndex) {
+                            caps.add(guard.capabilityRef);
+                            resolved = true;
+                            break;
+                        }
+                    }
+                    if (!resolved) {
+                        allResolved = false;
+                        break;
+                    }
+                }
+            }
+
             if (!allResolved) {
                 return new ReturnClassification.Unknown(unknownReason);
             }

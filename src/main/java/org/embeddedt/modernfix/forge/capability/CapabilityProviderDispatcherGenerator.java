@@ -386,57 +386,19 @@ public class CapabilityProviderDispatcherGenerator {
         // slot 4 = ICapabilityProvider provider (Hash paths only)
         boolean usesProviderLocal = dispatches.stream().anyMatch(d -> d instanceof ProviderDispatch.Hash);
 
-        for (ProviderDispatch dispatch : dispatches) {
+        for (int di = 0; di < dispatches.size(); ) {
+            ProviderDispatch dispatch = dispatches.get(di);
             Label nextLabel = new Label();
 
             if (dispatch instanceof ProviderDispatch.Hash hash) {
-                // ICapabilityProvider provider = (ICapabilityProvider) this.capMapN.get(cap);
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitFieldInsn(GETFIELD, internalName, "capMap" + hash.mapIndex(), MAP_DESC);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get",
-                        "(Ljava/lang/Object;)Ljava/lang/Object;", true);
-                mv.visitTypeInsn(CHECKCAST, "net/minecraftforge/common/capabilities/ICapabilityProvider");
-                mv.visitVarInsn(ASTORE, 4);
-
-                // if (provider == null) goto next
-                mv.visitVarInsn(ALOAD, 4);
-                mv.visitJumpInsn(IFNULL, nextLabel);
-
-                // LazyOptional<T> result = provider.getCapability(cap, side)
-                mv.visitVarInsn(ALOAD, 4);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitMethodInsn(INVOKEINTERFACE,
-                        "net/minecraftforge/common/capabilities/ICapabilityProvider",
-                        "getCapability", getCapDesc, true);
-                mv.visitVarInsn(ASTORE, 3);
+                emitHashDispatch(mv, internalName, getCapDesc, hash, nextLabel);
+                di++;
+            } else if (dispatch instanceof ProviderDispatch.Guarded) {
+                di = emitGuardedDispatch(mv, internalName, getCapDesc, dispatches, di, nextLabel);
             } else {
-                if (dispatch instanceof ProviderDispatch.Guarded guarded) {
-                    // if (cap != KNOWN_CAP) goto next
-                    CapabilityRef ref = guarded.capability();
-                    mv.visitVarInsn(ALOAD, 1);
-                    mv.visitFieldInsn(GETSTATIC, ref.owner(), ref.fieldName(), CAPABILITY_DESC);
-                    mv.visitJumpInsn(IF_ACMPNE, nextLabel);
-                }
-
-                // LazyOptional<T> result = this.providerN.getCapability(cap, side);
-                int provIdx;
-                String fDesc;
-                if (dispatch instanceof ProviderDispatch.Guarded g) {
-                    provIdx = g.providerIndex(); fDesc = g.fieldDesc();
-                } else {
-                    var u = (ProviderDispatch.Unguarded) dispatch;
-                    provIdx = u.providerIndex(); fDesc = u.fieldDesc();
-                }
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitFieldInsn(GETFIELD, internalName, "provider" + provIdx, fDesc);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ALOAD, 2);
-                mv.visitMethodInsn(INVOKEINTERFACE,
-                        "net/minecraftforge/common/capabilities/ICapabilityProvider",
-                        "getCapability", getCapDesc, true);
-                mv.visitVarInsn(ASTORE, 3);
+                var u = (ProviderDispatch.Unguarded) dispatch;
+                emitProviderGetCapability(mv, internalName, getCapDesc, u.providerIndex(), u.fieldDesc());
+                di++;
             }
 
             // if (result == null) goto next
@@ -480,6 +442,80 @@ public class CapabilityProviderDispatcherGenerator {
 
         mv.visitMaxs(0, 0);  // Computed by COMPUTE_MAXS
         mv.visitEnd();
+    }
+
+    private static void emitHashDispatch(MethodVisitor mv, String internalName, String getCapDesc,
+                                          ProviderDispatch.Hash hash, Label nextLabel) {
+        // ICapabilityProvider provider = (ICapabilityProvider) this.capMapN.get(cap);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName, "capMap" + hash.mapIndex(), MAP_DESC);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get",
+                "(Ljava/lang/Object;)Ljava/lang/Object;", true);
+        mv.visitTypeInsn(CHECKCAST, "net/minecraftforge/common/capabilities/ICapabilityProvider");
+        mv.visitVarInsn(ASTORE, 4);
+
+        // if (provider == null) goto next
+        mv.visitVarInsn(ALOAD, 4);
+        mv.visitJumpInsn(IFNULL, nextLabel);
+
+        // LazyOptional<T> result = provider.getCapability(cap, side)
+        mv.visitVarInsn(ALOAD, 4);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitMethodInsn(INVOKEINTERFACE,
+                "net/minecraftforge/common/capabilities/ICapabilityProvider",
+                "getCapability", getCapDesc, true);
+        mv.visitVarInsn(ASTORE, 3);
+    }
+
+    /**
+     * Emit guarded dispatch for one or more consecutive Guarded entries sharing the same providerIndex.
+     * When multiple caps map to the same provider, an OR-chain guard is emitted instead of separate dispatches.
+     *
+     * @return the updated dispatch index (past the consumed group)
+     */
+    private static int emitGuardedDispatch(MethodVisitor mv, String internalName, String getCapDesc,
+                                           List<ProviderDispatch> dispatches, int di, Label nextLabel) {
+        var guarded = (ProviderDispatch.Guarded) dispatches.get(di);
+
+        // Peek ahead to collect consecutive Guarded entries with same providerIndex
+        int groupEnd = di + 1;
+        while (groupEnd < dispatches.size()
+                && dispatches.get(groupEnd) instanceof ProviderDispatch.Guarded next
+                && next.providerIndex() == guarded.providerIndex()) {
+            groupEnd++;
+        }
+
+        // OR-chain: IF_ACMPEQ matchLabel for each cap except the last, IF_ACMPNE nextLabel for the last
+        Label matchLabel = new Label();
+        for (int gi = di; gi < groupEnd; gi++) {
+            var g = (ProviderDispatch.Guarded) dispatches.get(gi);
+            CapabilityRef ref = g.capability();
+            mv.visitVarInsn(ALOAD, 1);
+            mv.visitFieldInsn(GETSTATIC, ref.owner(), ref.fieldName(), CAPABILITY_DESC);
+            if (gi < groupEnd - 1) {
+                mv.visitJumpInsn(IF_ACMPEQ, matchLabel);
+            } else {
+                mv.visitJumpInsn(IF_ACMPNE, nextLabel);
+            }
+        }
+        mv.visitLabel(matchLabel);
+
+        emitProviderGetCapability(mv, internalName, getCapDesc, guarded.providerIndex(), guarded.fieldDesc());
+        return groupEnd;
+    }
+
+    private static void emitProviderGetCapability(MethodVisitor mv, String internalName, String getCapDesc,
+                                                  int providerIndex, String fieldDesc) {
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, internalName, "provider" + providerIndex, fieldDesc);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitMethodInsn(INVOKEINTERFACE,
+                "net/minecraftforge/common/capabilities/ICapabilityProvider",
+                "getCapability", getCapDesc, true);
+        mv.visitVarInsn(ASTORE, 3);
     }
 
     private static String formatAnalysisResult(CapabilityAnalysisResult result) {

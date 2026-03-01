@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.common.mixin.core;
 
 import net.minecraft.server.Bootstrap;
 import net.minecraftforge.network.NetworkConstants;
+import org.embeddedt.modernfix.forge.classloading.ManifestCompactor;
 import org.slf4j.Logger;
 import org.embeddedt.modernfix.forge.load.ModWorkManagerQueue;
 import org.embeddedt.modernfix.util.TimeFormatter;
@@ -25,6 +26,7 @@ public class BootstrapMixin {
         if(!isBootstrapped) {
             LOGGER.info("ModernFix reached bootstrap stage ({} after launch)", TimeFormatter.formatNanos(ManagementFactory.getRuntimeMXBean().getUptime() * 1000L * 1000L));
             ModWorkManagerQueue.replace();
+            ManifestCompactor.compactManifests();
         }
     }
 

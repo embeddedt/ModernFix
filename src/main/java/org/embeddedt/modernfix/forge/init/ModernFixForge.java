@@ -125,6 +125,7 @@ public class ModernFixForge {
             });
         }
         ObjectHolderClearer.clearThrowables();
+        event.enqueueWork(ObjectHolderClearer::removeRedundantHolders);
     }
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onServerDead(ServerStoppedEvent event) {

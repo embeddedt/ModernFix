@@ -90,24 +90,19 @@ public class ClientMixinValidator {
     }
 
     private boolean targetsClient(Object classTarget) {
-        return switch (classTarget) {
-            case TypeElement te ->
-                isClientMarked(te);
-            case TypeMirror tm -> {
-                var el = types.asElement(tm);
-                yield el != null ? targetsClient(el) : warn("TypeMirror of " + tm);
-            }
-            // If you're using a dollar sign in class names you are insane
-            case String s -> {
-                var te =
-                elemUtils.getTypeElement(toSourceString(s.split("\\$")[0]));
-                yield te != null ? targetsClient(te) : warn(s);
-            }
-            default ->
-                throw new IllegalArgumentException("Unhandled type: "
+        if (classTarget instanceof TypeElement te) {
+            return isClientMarked(te);
+        } else if (classTarget instanceof TypeMirror tm) {
+            var el = types.asElement(tm);
+            return el != null ? targetsClient(el) : warn("TypeMirror of " + tm);
+        } else if (classTarget instanceof String s) {
+            var te = elemUtils.getTypeElement(toSourceString(s.split("\\$")[0]));
+            return te != null ? targetsClient(te) : warn(s);
+        } else {
+            throw new IllegalArgumentException("Unhandled type: "
                 + classTarget.getClass() + "\n" + "Stringified contents: "
                 + classTarget.toString());
-        };
+        }
     }
 
     private boolean isClientMarked(TypeElement te) {

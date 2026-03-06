@@ -4,6 +4,8 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.datafixers.util.Either;
+import net.minecraft.CrashReport;
+import net.minecraft.ReportedException;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.util.thread.BlockableEventLoop;
@@ -19,10 +21,12 @@ import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.Redirect;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.lang.reflect.Field;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.function.Function;
 
@@ -38,6 +42,9 @@ public abstract class ChunkMapLoadMixin {
 
     @Unique
     private static final ThreadLocal<CompletableFuture<Either<ChunkAccess, ChunkHolder.ChunkLoadingFailure>>> MFIX_SURROGATE_FUTURE = new ThreadLocal<>();
+
+    @Unique
+    private final ConcurrentLinkedQueue<Throwable> mfix$promotionExceptions = new ConcurrentLinkedQueue<>();
 
     /**
      * @author embeddedt
@@ -72,7 +79,14 @@ public abstract class ChunkMapLoadMixin {
             }
         }, this.mainThreadExecutor).whenComplete((either, throwable) -> {
             if (throwable != null) {
-                surrogate.completeExceptionally(throwable);
+                if (!surrogate.isDone()) {
+                    surrogate.completeExceptionally(throwable);
+                } else {
+                    // The chunk has already become visible at FULL status, so we
+                    // track the exception ourselves and manually rethrow it at the right point
+                    // to trigger a server crash
+                    this.mfix$promotionExceptions.add(throwable);
+                }
             } else {
                 surrogate.complete(either);
             }
@@ -92,6 +106,19 @@ public abstract class ChunkMapLoadMixin {
         var future = MFIX_SURROGATE_FUTURE.get();
         if (future != null) {
             future.complete(Either.left(levelChunk));
+        }
+    }
+
+    @Inject(method = "tick()V", at = @At("HEAD"))
+    private void reportDeferredPromotionException(CallbackInfo ci) {
+        var throwable = this.mfix$promotionExceptions.poll();
+        if (throwable == null) {
+            return;
+        }
+        if (throwable instanceof ReportedException e) {
+            throw e;
+        } else {
+            throw new ReportedException(CrashReport.forThrowable(throwable, "Exception during promotion of chunk to FULL status"));
         }
     }
 

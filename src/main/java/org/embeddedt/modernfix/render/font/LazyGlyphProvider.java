@@ -4,7 +4,6 @@ import com.mojang.blaze3d.font.GlyphInfo;
 import com.mojang.blaze3d.font.GlyphProvider;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.MapCodec;
-import it.unimi.dsi.fastutil.ints.IntOpenHashSet;
 import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.client.gui.font.providers.GlyphProviderDefinition;
 import net.minecraft.client.gui.font.providers.GlyphProviderType;
@@ -20,8 +19,6 @@ public class LazyGlyphProvider implements GlyphProvider {
     private final ResourceManager manager;
 
     private SoftReference<GlyphProvider> innerProvider = new SoftReference<>(null);
-
-    private IntSet supportedGlyphs;
 
     LazyGlyphProvider(GlyphProviderDefinition.Loader loader, ResourceManager manager) {
         this.loader = loader;
@@ -61,16 +58,13 @@ public class LazyGlyphProvider implements GlyphProvider {
     }
 
     @Override
-    public synchronized IntSet getSupportedGlyphs() {
-        if (supportedGlyphs == null) {
-            var prov = getGlyphProvider();
-            if (prov != null) {
-                supportedGlyphs = new IntOpenHashSet(prov.getSupportedGlyphs());
-            } else {
-                supportedGlyphs = IntSet.of();
-            }
+    public IntSet getSupportedGlyphs() {
+        var prov = getGlyphProvider();
+        if (prov != null) {
+            return prov.getSupportedGlyphs();
+        } else {
+            return IntSet.of();
         }
-        return supportedGlyphs;
     }
 
     private static class Definition implements GlyphProviderDefinition {

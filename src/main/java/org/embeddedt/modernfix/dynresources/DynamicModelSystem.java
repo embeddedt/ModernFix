@@ -12,15 +12,14 @@ import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
 import it.unimi.dsi.fastutil.objects.ReferenceSets;
 import net.minecraft.client.color.block.BlockColors;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
-import net.minecraft.client.renderer.block.model.ItemModelGenerator;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
-import net.minecraft.client.resources.model.MissingBlockModel;
 import net.minecraft.client.resources.model.ModelDiscovery;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.cuboid.ItemModelGenerator;
+import net.minecraft.client.resources.model.cuboid.MissingCuboidModel;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
@@ -111,7 +110,7 @@ public class DynamicModelSystem {
                                           StandaloneModelLoader.LoadedModels standaloneModels) {
 
         private ResolvedModel resolveModel(Identifier id) {
-            var discovery = new ModelDiscovery(inputModels, MissingBlockModel.missingModel());
+            var discovery = new ModelDiscovery(inputModels, MissingCuboidModel.missingModel());
             discovery.addSpecialModel(ItemModelGenerator.GENERATED_ITEM_MODEL_ID, new ItemModelGenerator());
             if (!id.equals(ItemModelGenerator.GENERATED_ITEM_MODEL_ID)) {
                 UnbakedModel unbaked = inputModels.get(id);
@@ -127,7 +126,7 @@ public class DynamicModelSystem {
         }
 
         public ModelManager.ResolvedModels resolvedModels() {
-            var resolvedMissingModel = new ModelDiscovery(inputModels, MissingBlockModel.missingModel()).missingModel();
+            var resolvedMissingModel = new ModelDiscovery(inputModels, MissingCuboidModel.missingModel()).missingModel();
             LoadingCache<Identifier, ResolvedModel> resolvedModelCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
                 @Override
                 public ResolvedModel load(Identifier key) {

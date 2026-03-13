@@ -1,7 +1,7 @@
 package org.embeddedt.modernfix.screen;
 
 import net.minecraft.client.gui.Font;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -32,17 +32,17 @@ public class ModernFixOptionInfoScreen extends Screen {
         this.minecraft.setScreen(lastScreen);
     }
 
-    private void drawMultilineString(GuiGraphics guiGraphics, Font fr, Component str, int x, int y) {
+    private void drawMultilineString(GuiGraphicsExtractor guiGraphics, Font fr, Component str, int x, int y) {
         for(FormattedCharSequence s : fr.split(str, this.width - 50)) {
-            guiGraphics.drawString(fr, s, x, y, 16777215, true);
+            guiGraphics.text(fr, s, x, y, 16777215, true);
             y += fr.lineHeight;
         }
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        super.render(guiGraphics, mouseX, mouseY, partialTicks);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 16777215);
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
+        guiGraphics.centeredText(this.font, this.title, this.width / 2, 8, 16777215);
         this.drawMultilineString(guiGraphics, this.minecraft.font, description, 10, 50);
     }
 }

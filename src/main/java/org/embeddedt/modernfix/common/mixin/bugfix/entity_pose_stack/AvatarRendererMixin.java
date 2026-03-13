@@ -13,7 +13,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 @Mixin(AvatarRenderer.class)
 @ClientOnlyMixin
 public class AvatarRendererMixin {
-    @Redirect(method = "submit(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/CameraRenderState;)V", at = @At(value = "INVOKE", target = "Lnet/neoforged/bus/api/IEventBus;post(Lnet/neoforged/bus/api/Event;)Lnet/neoforged/bus/api/Event;", ordinal = 0))
+    @Redirect(method = "submit(Lnet/minecraft/client/renderer/entity/state/AvatarRenderState;Lcom/mojang/blaze3d/vertex/PoseStack;Lnet/minecraft/client/renderer/SubmitNodeCollector;Lnet/minecraft/client/renderer/state/level/CameraRenderState;)V", at = @At(value = "INVOKE", target = "Lnet/neoforged/bus/api/IEventBus;post(Lnet/neoforged/bus/api/Event;)Lnet/neoforged/bus/api/Event;", ordinal = 0))
     private Event fireCheckingPoseStack(IEventBus instance, Event event) {
         PoseStack stack = ((RenderPlayerEvent)event).getPoseStack();
         int size = ((PoseStackAccessor)stack).mfix$getLastIndex();

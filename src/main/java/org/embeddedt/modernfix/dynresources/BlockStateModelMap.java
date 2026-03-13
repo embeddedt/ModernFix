@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.dynresources;
 
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import org.embeddedt.modernfix.duck.IModelHoldingBlockState;

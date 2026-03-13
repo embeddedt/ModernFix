@@ -1,5 +1,5 @@
 plugins {
-    id("net.neoforged.moddev") version("2.0.134")
+    id("net.neoforged.moddev") version("2.0.140")
     id("org.ajoberstar.grgit") version("5.2.0")
     id("com.palantir.git-version") version("1.0.0")
     id("me.modmuss50.mod-publish-plugin") version("1.1.0")
@@ -122,6 +122,14 @@ repositories {
         }
         filter {
             includeGroup("curse.maven")
+        }
+    }
+    maven {
+        name = "Maven for PR #2993" // https://github.com/neoforged/NeoForge/pull/2993
+        url = uri("https://prmaven.neoforged.net/NeoForge/pr2993")
+        content {
+            includeModule("net.neoforged", "neoforge")
+            includeModule("net.neoforged", "testframework")
         }
     }
 }

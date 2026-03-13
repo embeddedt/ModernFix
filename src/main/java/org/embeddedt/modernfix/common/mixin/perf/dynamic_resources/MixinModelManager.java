@@ -1,9 +1,8 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
-import com.google.common.collect.Maps;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import net.minecraft.client.color.block.BlockColors;
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
 import net.minecraft.client.resources.model.ModelManager;

@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.screen;
 
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.CommonComponents;
@@ -41,10 +41,10 @@ public class ModernFixConfigScreen extends Screen {
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
-        super.render(guiGraphics, mouseX, mouseY, partialTicks);
-        this.optionList.render(guiGraphics, mouseX, mouseY, partialTicks);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, 8, 16777215);
+    public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        super.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
+        this.optionList.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
+        guiGraphics.centeredText(this.font, this.title, this.width / 2, 8, 16777215);
         this.doneButton.setMessage(madeChanges ? Component.translatable("modernfix.config.done_restart") : CommonComponents.GUI_DONE);
     }
 

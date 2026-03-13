@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.duck.IModelHoldingBlockState;

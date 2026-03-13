@@ -1,6 +1,6 @@
 package org.embeddedt.modernfix.duck;
 
-import net.minecraft.client.renderer.block.model.BlockStateModel;
+import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 
 public interface IModelHoldingBlockState {
     BlockStateModel mfix$getModel();

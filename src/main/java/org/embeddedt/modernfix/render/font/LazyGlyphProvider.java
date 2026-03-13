@@ -37,7 +37,7 @@ public class LazyGlyphProvider implements GlyphProvider {
         }
     }
 
-    private @Nullable GlyphProvider getGlyphProvider() {
+    private synchronized @Nullable GlyphProvider getGlyphProvider() {
         GlyphProvider prov = innerProvider.get();
         if (prov == null) {
             try {
@@ -61,7 +61,7 @@ public class LazyGlyphProvider implements GlyphProvider {
     }
 
     @Override
-    public IntSet getSupportedGlyphs() {
+    public synchronized IntSet getSupportedGlyphs() {
         if (supportedGlyphs == null) {
             var prov = getGlyphProvider();
             if (prov != null) {

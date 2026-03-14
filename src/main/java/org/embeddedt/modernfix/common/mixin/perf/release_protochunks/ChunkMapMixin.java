@@ -10,8 +10,6 @@ import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.FullChunkStatus;
-import net.minecraft.server.level.ThreadedLevelLightEngine;
-import net.minecraft.server.level.progress.ChunkProgressListener;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -27,7 +25,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.Executor;
 import java.util.function.BooleanSupplier;
 
@@ -38,19 +35,15 @@ public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap 
     public Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap;
 
     @Shadow
-    protected abstract boolean save(ChunkAccess chunk);
-
-    @Shadow
-    @Final
-    private ChunkProgressListener progressListener;
-    @Shadow
-    @Final
-    private ThreadedLevelLightEngine lightEngine;
-
-    @Shadow
     @Final
     private BlockableEventLoop<Runnable> mainThreadExecutor;
 
+    @Shadow
+    protected abstract void lambda$scheduleUnload$14(ChunkHolder holder, CompletableFuture<ChunkAccess> chunkToSaveFuture, long chunkPos, ChunkAccess chunk);
+
+    @Shadow
+    @Final
+    public Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
     private final LongOpenHashSet mfix$protoChunksToDrop = new LongOpenHashSet();
 
     /**
@@ -85,16 +78,15 @@ public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap 
             // All generation work done, so we can suspend and remove from set
             dropIterator.remove();
 
-            ChunkAccess chunk = holder.getChunkToSave().getNow(null);
-            if (chunk != null) {
-                this.save(chunk); // flush protochunk to disk
-            }
+            var chunkToSaveFuture = holder.getChunkToSave();
+
+            // Execute the logic inside scheduleUnload() inline, without delegating to a queue
+            // When this returns it is safe to release any data the ChunkHolder holds
+            this.pendingUnloads.put(pos, holder);
+            this.lambda$scheduleUnload$14(holder, chunkToSaveFuture, pos, chunkToSaveFuture.getNow(null));
 
             ((IClearableChunkHolder)holder).mfix$resetProtoChunkFutures();
 
-            this.progressListener.onStatusChange(holder.getPos(), null);
-            ((ThreadedLevelLightEngineAccessor)this.lightEngine).mfix$invokeUpdateChunkStatus(holder.getPos());
-            this.lightEngine.tryScheduleUpdate();
             suspended++;
         }
     }

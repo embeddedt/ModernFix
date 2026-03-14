@@ -3,9 +3,8 @@ package org.embeddedt.modernfix.common.mixin.perf.release_protochunks;
 import com.llamalad7.mixinextras.injector.ModifyReturnValue;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.mojang.datafixers.util.Either;
+import it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
-import it.unimi.dsi.fastutil.longs.LongIterator;
-import it.unimi.dsi.fastutil.longs.LongOpenHashSet;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkMap;
@@ -30,6 +29,9 @@ import java.util.function.BooleanSupplier;
 
 @Mixin(ChunkMap.class)
 public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap {
+
+    private static final int MFIX$TICKS_TO_WAIT_BEFORE_SUSPENDING = 100;
+
     @Shadow
     @Final
     public Long2ObjectLinkedOpenHashMap<ChunkHolder> updatingChunkMap;
@@ -44,7 +46,10 @@ public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap 
     @Shadow
     @Final
     public Long2ObjectLinkedOpenHashMap<ChunkHolder> pendingUnloads;
-    private final LongOpenHashSet mfix$protoChunksToDrop = new LongOpenHashSet();
+
+    private final Long2IntOpenHashMap mfix$protoChunksToDrop = new Long2IntOpenHashMap();
+
+    private int mfix$dropTickCounter = 0;
 
     /**
      * @author embeddedt
@@ -55,10 +60,12 @@ public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap 
     private void dropProtoChunks(BooleanSupplier hasMoreTime, CallbackInfo ci) {
         int suspended = 0;
         int iterations = 0;
-        LongIterator dropIterator = mfix$protoChunksToDrop.longIterator();
+        mfix$dropTickCounter++;
+        var dropIterator = mfix$protoChunksToDrop.long2IntEntrySet().fastIterator();
         while (dropIterator.hasNext() && suspended < 50 && iterations < 500 && (hasMoreTime.getAsBoolean() || mfix$protoChunksToDrop.size() > 1000)) {
             iterations++;
-            long pos = dropIterator.nextLong();
+            var entry = dropIterator.next();
+            long pos = entry.getLongKey();
             ChunkHolder holder = this.updatingChunkMap.get(pos);
             if (holder == null // already removed
                 || ChunkLevel.fullStatus(holder.getTicketLevel()).isOrAfter(FullChunkStatus.FULL) // promoted to FULL
@@ -68,10 +75,16 @@ public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap 
                 continue;
             }
 
-            if (!holder.getChunkToSave().isDone()
-                || ((IClearableChunkHolder)holder).mfix$getGenerationRefCount().get() != 0) {
-                // Not safe to suspend yet; either the chunkToSave chain is still pending, or a neighbor's
-                // generation task is still actively using this chunk's sections
+            if (!holder.getChunkToSave().isDone() // chunkToSave dependencies have not completed
+                || ((IClearableChunkHolder)holder).mfix$getGenerationRefCount().get() != 0 // chunk is still being referenced by another chunk for generation
+            ) {
+                // Not safe to suspend yet, reset timer
+                entry.setValue(mfix$dropTickCounter);
+                continue;
+            }
+
+            if ((mfix$dropTickCounter - entry.getIntValue()) < MFIX$TICKS_TO_WAIT_BEFORE_SUSPENDING) {
+                // Chunk has not been idle for long enough, wait
                 continue;
             }
 
@@ -135,7 +148,7 @@ public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap 
 
     @Override
     public void mfix$markForSuspensionCheck(ChunkPos pos) {
-        this.mfix$protoChunksToDrop.add(pos.toLong());
+        this.mfix$protoChunksToDrop.put(pos.toLong(), this.mfix$dropTickCounter);
     }
 
     @Override

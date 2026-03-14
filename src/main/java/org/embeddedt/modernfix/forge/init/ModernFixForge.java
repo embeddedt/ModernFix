@@ -5,6 +5,8 @@ import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.chunk.ChunkStatus;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
@@ -24,6 +26,7 @@ import net.minecraftforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.maven.artifact.versioning.DefaultArtifactVersion;
 import org.embeddedt.modernfix.ModernFix;
+import org.embeddedt.modernfix.benchmark.WorldgenBenchmark;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.ModernFixConfig;
 import org.embeddedt.modernfix.forge.config.ConfigFixer;
@@ -134,5 +137,12 @@ public class ModernFixForge {
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onServerStarted(ServerStartedEvent event) {
         commonMod.onServerStarted();
+        if (Boolean.getBoolean("modernfix.runWorldgenBenchmark")) {
+            int iterations = Integer.getInteger("modernfix.worldgenIterations", 100);
+            int testRadius = Integer.getInteger("modernfix.worldgenTestRadius", 10);
+            var level = event.getServer().overworld();
+            ModernFix.LOGGER.info("Worldgen results: {}", WorldgenBenchmark.run(level, new ChunkPos(0, 0), testRadius, iterations,
+                    ChunkStatus.SURFACE, ChunkStatus.SURFACE));
+        }
     }
 }

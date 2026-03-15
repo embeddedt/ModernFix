@@ -138,7 +138,7 @@ public class ModernFixForge {
     public void onServerStarted(ServerStartedEvent event) {
         commonMod.onServerStarted();
         if (Boolean.getBoolean("modernfix.runWorldgenBenchmark")) {
-            int iterations = Integer.getInteger("modernfix.worldgenIterations", 100);
+            int iterations = Integer.getInteger("modernfix.worldgenIterations", 15);
             int testRadius = Integer.getInteger("modernfix.worldgenTestRadius", 10);
             var level = event.getServer().overworld();
             ModernFix.LOGGER.info("Worldgen results: {}", WorldgenBenchmark.run(level, new ChunkPos(0, 0), testRadius, iterations,

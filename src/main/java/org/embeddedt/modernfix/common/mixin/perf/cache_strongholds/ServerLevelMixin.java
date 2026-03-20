@@ -1,61 +1,30 @@
 package org.embeddedt.modernfix.common.mixin.perf.cache_strongholds;
 
-import net.minecraft.core.Holder;
-import net.minecraft.core.RegistryAccess;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.resources.ResourceKey;
-import net.minecraft.server.level.ServerChunkCache;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.profiling.ProfilerFiller;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
-import net.minecraft.world.level.dimension.DimensionType;
-import net.minecraft.world.level.storage.DimensionDataStorage;
-import net.minecraft.world.level.storage.WritableLevelData;
+import net.minecraft.world.level.storage.LevelStorageSource;
 import org.embeddedt.modernfix.duck.IChunkGenerator;
-import org.embeddedt.modernfix.duck.IServerLevel;
-import org.embeddedt.modernfix.world.StrongholdLocationCache;
-import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
-
-import java.util.function.Supplier;
 
 @Mixin(ServerLevel.class)
-public abstract class ServerLevelMixin extends Level implements IServerLevel {
-    protected ServerLevelMixin(WritableLevelData arg, ResourceKey<Level> arg2, RegistryAccess arg3, Holder<DimensionType> arg4, Supplier<ProfilerFiller> supplier, boolean bl, boolean bl2, long l, int i) {
-        super(arg, arg2, arg3, arg4, supplier, bl, bl2, l, i);
-    }
-
-    @Shadow public abstract DimensionDataStorage getDataStorage();
-
-    @Shadow @Final private ServerChunkCache chunkSource;
-    private StrongholdLocationCache mfix$strongholdCache;
-
+public class ServerLevelMixin {
     /**
-     * Initialize the stronghold cache but don't force any structure generation yet.
+     * @author embeddedt
+     * @reason Make the dimension path accessible to ChunkGeneratorStructureState.
      */
-    @Redirect(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/ChunkGeneratorStructureState;ensureStructuresGenerated()V"))
-    private void hookStrongholdCache(ChunkGeneratorStructureState generator) {
-        ((IChunkGenerator)generator).mfix$setAssociatedServerLevel((ServerLevel)(Object)this);
-    }
-
-    /**
-     * Now start the stronghold generation process.
-     */
-    @Inject(method = "<init>", at = @At("TAIL"))
-    private void ensureGeneration(CallbackInfo ci) {
-        mfix$strongholdCache = this.getDataStorage().computeIfAbsent(StrongholdLocationCache::load,
-                StrongholdLocationCache::new,
-                StrongholdLocationCache.getFileId(this.dimensionTypeRegistration()));
-        this.chunkSource.getGeneratorState().ensureStructuresGenerated();
-    }
-
-    @Override
-    public StrongholdLocationCache mfix$getStrongholdCache() {
-        return mfix$strongholdCache;
+    @WrapOperation(method = "<init>", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/chunk/ChunkGeneratorStructureState;ensureStructuresGenerated()V"))
+    private void setCachePath(ChunkGeneratorStructureState instance, Operation<Void> original,
+                                     @Local(ordinal = 0, argsOnly = true) LevelStorageSource.LevelStorageAccess levelStorageAccess,
+                                     @Local(ordinal = 0, argsOnly = true) ResourceKey<Level> dimension,
+                                     @Local(ordinal = 0, argsOnly = true) MinecraftServer server) {
+        ((IChunkGenerator)instance).mfix$setStrongholdCachePath(levelStorageAccess.getDimensionPath(dimension), server.registryAccess());
+        original.call(instance);
     }
 }

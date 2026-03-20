@@ -1,68 +1,169 @@
 package org.embeddedt.modernfix.common.mixin.perf.cache_strongholds;
 
+import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.RegistryAccess;
+import net.minecraft.nbt.*;
+import net.minecraft.resources.RegistryOps;
 import net.minecraft.world.level.ChunkPos;
+import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.structure.StructureSet;
 import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.duck.IChunkGenerator;
-import org.embeddedt.modernfix.duck.IServerLevel;
-import org.embeddedt.modernfix.world.StrongholdLocationCache;
+import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.injection.At;
-import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+import org.spongepowered.asm.mixin.Shadow;
 
-import java.lang.ref.WeakReference;
+import java.lang.ref.SoftReference;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 
 @Mixin(ChunkGeneratorStructureState.class)
 public class ChunkGeneratorMixin implements IChunkGenerator {
-    private WeakReference<ServerLevel> mfix$serverLevel;
+    @Shadow
+    @Final
+    private long concentricRingsSeed;
+
+    @Shadow
+    @Final
+    private BiomeSource biomeSource;
+
+    private Path mfix$dimensionPath;
+    private RegistryAccess.Frozen mfix$registryAccess;
+    private SoftReference<Map<String, List<ChunkPos>>> mfix$cachedPositions = new SoftReference<>(null);
+
+    private static final String CACHE_FILENAME = "mfix_stronghold_cache_v2.nbt";
 
     @Override
-    public void mfix$setAssociatedServerLevel(ServerLevel level) {
-        mfix$serverLevel = new WeakReference<>(level);
+    public void mfix$setStrongholdCachePath(Path cachePath, RegistryAccess.Frozen registryAccess) {
+        this.mfix$dimensionPath = cachePath;
+        this.mfix$registryAccess = registryAccess;
     }
 
-    @Inject(method = "generateRingPositions", at = @At("HEAD"), cancellable = true)
-    private void useCachedDataIfAvailable(Holder<StructureSet> structureSet, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
-        if(placement.count() == 0)
-            return;
-        ServerLevel level = searchLevel();
-        if(level == null)
-            return;
-        StrongholdLocationCache cache = ((IServerLevel)level).mfix$getStrongholdCache();
-        List<ChunkPos> positions = cache.getChunkPosList();
-        if(positions.isEmpty())
-            return;
-        ModernFix.LOGGER.debug("Loaded stronghold cache for dimension {} with {} positions", level.dimension().location(), positions.size());
-        cir.setReturnValue(CompletableFuture.completedFuture(positions));
+    @WrapMethod(method = "generateRingPositions")
+    private CompletableFuture<List<ChunkPos>> modernfix$cacheRingPositions(Holder<StructureSet> structureSet,
+                                                                          ConcentricRingsStructurePlacement placement,
+                                                                          Operation<CompletableFuture<List<ChunkPos>>> original) {
+        if (this.mfix$registryAccess == null || this.mfix$dimensionPath == null) {
+            return original.call(structureSet, placement);
+        }
+
+        String cacheKey = mfix$makeCacheKey(placement);
+
+        // Try reading from cache
+        List<ChunkPos> cached = mfix$readFromCache(cacheKey);
+        if (cached != null) {
+            ModernFix.LOGGER.debug("Using cached stronghold positions for {}", cacheKey);
+            return CompletableFuture.completedFuture(List.copyOf(cached));
+        }
+
+        return original.call(structureSet, placement).thenApplyAsync(positions -> {
+            mfix$writeToCache(cacheKey, positions);
+            return positions;
+        }, Util.ioPool());
     }
 
-    private ServerLevel searchLevel() {
-        if(mfix$serverLevel != null)
-            return mfix$serverLevel.get();
-        else
+    private String mfix$makeCacheKey(ConcentricRingsStructurePlacement placement) {
+        RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, this.mfix$registryAccess);
+        String placementKey = ConcentricRingsStructurePlacement.CODEC.encodeStart(ops, placement)
+                .result().map(Tag::toString).orElse(null);
+        String biomeSourceKey = BiomeSource.CODEC.encodeStart(ops, this.biomeSource)
+                .result().map(Tag::toString).orElse(null);
+        if (placementKey == null || biomeSourceKey == null) {
+            ModernFix.LOGGER.warn("Failed to create cache key for concentric structure placement");
             return null;
+        }
+        String data = placementKey + ";biomes=" + biomeSourceKey + ";seed=" + this.concentricRingsSeed;
+        try {
+            byte[] hash = MessageDigest.getInstance("SHA-256").digest(data.getBytes(StandardCharsets.UTF_8));
+            StringBuilder sb = new StringBuilder(64);
+            for (byte b : hash) {
+                sb.append(String.format("%02x", b));
+            }
+            return sb.toString();
+        } catch (NoSuchAlgorithmException e) {
+            return null;
+        }
     }
 
-    @Inject(method = "generateRingPositions", at = @At("RETURN"), cancellable = true)
-    private void saveCachedData(Holder<StructureSet> structureSet, ConcentricRingsStructurePlacement placement, CallbackInfoReturnable<CompletableFuture<List<ChunkPos>>> cir) {
-        cir.setReturnValue(cir.getReturnValue().thenApplyAsync(list -> {
-            if(list.size() == 0)
-                return list;
-            ServerLevel level = searchLevel();
-            if(level != null) {
-                StrongholdLocationCache cache = ((IServerLevel)level).mfix$getStrongholdCache();
-                cache.setChunkPosList(list);
-                ModernFix.LOGGER.debug("Saved stronghold cache for dimension {}", level.dimension().location());
+    private synchronized List<ChunkPos> mfix$readFromCache(String cacheKey) {
+        Map<String, List<ChunkPos>> cache = mfix$getOrLoadCache();
+        return cache.get(cacheKey);
+    }
+
+    private synchronized void mfix$writeToCache(String cacheKey, List<ChunkPos> positions) {
+        Map<String, List<ChunkPos>> cache = mfix$getOrLoadCache();
+        cache.put(cacheKey, List.copyOf(positions));
+        mfix$cachedPositions = new SoftReference<>(cache);
+        mfix$saveCacheFile(cache);
+    }
+
+    private Map<String, List<ChunkPos>> mfix$getOrLoadCache() {
+        Map<String, List<ChunkPos>> cache = mfix$cachedPositions.get();
+        if (cache != null) {
+            return cache;
+        }
+        cache = mfix$loadCacheFile();
+        mfix$cachedPositions = new SoftReference<>(cache);
+        return cache;
+    }
+
+    private Map<String, List<ChunkPos>> mfix$loadCacheFile() {
+        Path file = mfix$dimensionPath.resolve(CACHE_FILENAME);
+        if (!Files.exists(file)) {
+            return new HashMap<>();
+        }
+        try {
+            CompoundTag root = NbtIo.readCompressed(file.toFile());
+            Map<String, List<ChunkPos>> result = new HashMap<>();
+            for (String key : root.getAllKeys()) {
+                if (root.contains(key, Tag.TAG_INT_ARRAY)) {
+                    int[] data = root.getIntArray(key);
+                    if (data.length >= 2 && data.length % 2 == 0) {
+                        List<ChunkPos> positions = new ArrayList<>(data.length / 2);
+                        for (int i = 0; i < data.length; i += 2) {
+                            positions.add(new ChunkPos(data[i], data[i + 1]));
+                        }
+                        result.put(key, positions);
+                    }
+                }
             }
-            return list;
-        }, Util.backgroundExecutor()));
+            return result;
+        } catch (Exception e) {
+            ModernFix.LOGGER.warn("Failed to read stronghold cache, will recompute", e);
+            return new HashMap<>();
+        }
+    }
+
+    private void mfix$saveCacheFile(Map<String, List<ChunkPos>> cache) {
+        CompoundTag root = new CompoundTag();
+        for (var entry : cache.entrySet()) {
+            List<ChunkPos> positions = entry.getValue();
+            int[] data = new int[positions.size() * 2];
+            for (int i = 0; i < positions.size(); i++) {
+                ChunkPos pos = positions.get(i);
+                data[i * 2] = pos.x;
+                data[i * 2 + 1] = pos.z;
+            }
+            root.putIntArray(entry.getKey(), data);
+        }
+        Path file = mfix$dimensionPath.resolve(CACHE_FILENAME);
+        try {
+            NbtIo.writeCompressed(root, file.toFile());
+        } catch (Exception e) {
+            ModernFix.LOGGER.warn("Failed to write stronghold cache", e);
+        }
     }
 }

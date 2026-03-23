@@ -89,9 +89,6 @@ tasks.named<Jar>("jar") {
 }
 
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(25)
-    }
     val curSourceCompatLevel = JavaVersion.VERSION_25
     sourceCompatibility = curSourceCompatLevel
     targetCompatibility = curSourceCompatLevel
@@ -212,7 +209,8 @@ tasks.named("build") {
 }
 
 publishMods {
-    file.set(tasks.named<Jar>(finalJarTask).get().outputs.files.singleFile)
+    file.set(tasks.named<Jar>(finalJarTask).flatMap { it.archiveFile })
+    displayName.set(tasks.named<Jar>(finalJarTask).flatMap { it.archiveFileName })
     changelog = "Please check the [GitHub wiki](https://github.com/embeddedt/ModernFix/wiki/Changelog) for major changes."
     type = STABLE
 
@@ -225,7 +223,7 @@ publishMods {
         minecraftVersions.add(minecraft_version)
     }
     modrinth {
-        projectId = "modernfix"
+        projectId = "nmDcB62a"
         accessToken = providers.environmentVariable("MODRINTH_TOKEN")
         minecraftVersions.add(minecraft_version)
     }

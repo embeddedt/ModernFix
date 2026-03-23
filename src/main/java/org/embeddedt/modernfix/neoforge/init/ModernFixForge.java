@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.neoforge.init;
 
 import com.google.common.collect.ImmutableList;
+import net.minecraft.client.Minecraft;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.Identifier;
 import net.minecraft.world.item.Item;
@@ -17,10 +18,14 @@ import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartedEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
+import net.neoforged.neoforge.network.registration.HandlerThread;
+import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.RegisterEvent;
 import org.apache.commons.lang3.tuple.Pair;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.embeddedt.modernfix.duck.suspend_integrated_server_during_load.IDeferrableIntegratedServer;
+import org.embeddedt.modernfix.neoforge.packet.ClientLoadFinishedPayload;
 
 import java.util.List;
 
@@ -28,6 +33,7 @@ import java.util.List;
 public class ModernFixForge {
     private static ModernFix commonMod;
     public static boolean launchDone = false;
+    public static boolean registryEventsFired = false;
 
     public ModernFixForge(ModContainer modContainer, IEventBus modBus) {
         commonMod = new ModernFix();
@@ -74,7 +80,19 @@ public class ModernFixForge {
     }
 
     private void registerNetworkChannel(final RegisterPayloadHandlersEvent event) {
+        final PayloadRegistrar registrar = event.registrar("1").executesOn(HandlerThread.MAIN).optional();
 
+        registrar.playToClient(
+                ClientLoadFinishedPayload.TYPE,
+                ClientLoadFinishedPayload.STREAM_CODEC,
+                (payload, ctx) -> {
+                    ctx.enqueueWork(() -> {
+                        Minecraft mc = Minecraft.getInstance();
+                        if (mc.hasSingleplayerServer()) {
+                            ((IDeferrableIntegratedServer)mc.getSingleplayerServer()).mfix$markClientLoadFinished();
+                        }
+                    });
+                });
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

@@ -1,7 +1,9 @@
 package org.embeddedt.modernfix.duck;
 
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.RegistryAccess;
+
+import java.nio.file.Path;
 
 public interface IChunkGenerator {
-    void mfix$setAssociatedServerLevel(ServerLevel level);
+    void mfix$setStrongholdCachePath(Path cachePath, RegistryAccess.Frozen registryAccess);
 }

@@ -68,7 +68,9 @@ public abstract class ChunkHolderMixin extends GenerationChunkHolder implements 
             // register for suspension check when chain completes
             var map = ((ISuspendedHolderTrackingChunkMap)this.playerProvider);
             this.saveSync.whenCompleteAsync((r, e) -> {
-                map.mfix$markForSuspensionCheck(this.pos);
+                if (this.getLatestChunk() != null) {
+                    map.mfix$markForSuspensionCheck(this.pos);
+                }
             }, map.mfix$getMainThreadExecutor());
         }
     }

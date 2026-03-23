@@ -85,12 +85,7 @@ tasks.named<Jar>("jar") {
     ))
 }
 
-// We must force the Java 21 compiler to be used because our AP requires Java 21
-
 java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(21)
-    }
     val curSourceCompatLevel = JavaVersion.VERSION_21
     sourceCompatibility = curSourceCompatLevel
     targetCompatibility = curSourceCompatLevel

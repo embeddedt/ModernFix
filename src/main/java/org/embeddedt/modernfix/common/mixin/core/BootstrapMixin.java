@@ -1,8 +1,9 @@
 package org.embeddedt.modernfix.common.mixin.core;
 
 import net.minecraft.server.Bootstrap;
-import org.embeddedt.modernfix.util.TimeFormatter;
+import org.embeddedt.modernfix.forge.classloading.ManifestCompactor;
 import org.slf4j.Logger;
+import org.embeddedt.modernfix.util.TimeFormatter;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -22,6 +23,7 @@ public class BootstrapMixin {
     private static void doModernFixBootstrap(CallbackInfo ci) {
         if(!isBootstrapped) {
             LOGGER.info("ModernFix reached bootstrap stage ({} after launch)", TimeFormatter.formatNanos(ManagementFactory.getRuntimeMXBean().getUptime() * 1000L * 1000L));
+            ManifestCompactor.compactManifests();
         }
     }
 }

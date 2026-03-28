@@ -121,13 +121,6 @@ repositories {
             includeGroup("curse.maven")
         }
     }
-    maven {
-        url = uri("https://prmaven.neoforged.net/NeoForge/pr2879")
-        content {
-            includeModule("net.neoforged", "neoforge")
-            includeModule("net.neoforged", "testframework")
-        }
-    }
 }
 
 val embed by configurations.creating {

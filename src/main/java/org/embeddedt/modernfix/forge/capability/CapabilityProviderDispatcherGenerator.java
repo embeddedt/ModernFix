@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.forge.capability;
 
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import org.embeddedt.modernfix.ModernFix;
@@ -10,6 +11,7 @@ import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
 
+import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -74,6 +76,7 @@ public class CapabilityProviderDispatcherGenerator {
     private static final String DIRECTION_DESC = "Lnet/minecraft/core/Direction;";
     private static final String MAP_DESC = "Ljava/util/Map;";
     private static final String MAP_SIGNATURE = "Ljava/util/Map<Lnet/minecraftforge/common/capabilities/Capability<*>;Lnet/minecraftforge/common/capabilities/ICapabilityProvider;>;";
+    private static final String LOOKUP_DESC = "Ljava/lang/invoke/MethodHandles$Lookup;";
 
     /**
      * Gets or generates a constructor MethodHandle for the given capability provider types.
@@ -117,6 +120,14 @@ public class CapabilityProviderDispatcherGenerator {
             int generatedClassId = classCounter.incrementAndGet();
             String className = "org.embeddedt.modernfix.forge.capability.CapabilityDispatcher$Generated$" + generatedClassId;
 
+            List<ProviderDispatch> dispatches = optimizeDispatches(buildDispatchList(providerTypes, analysisResults));
+
+            // Assign a stable index to every unique CapabilityRef across all dispatches.
+            // We resolve the actual Capability<?> instances here (in Java) so the generated
+            // <clinit> only needs simple classDataAt calls - no reflection bytecode needed.
+            LinkedHashMap<CapabilityRef, Integer> capRefIndices = collectCapabilityRefs(dispatches);
+            List<Capability<?>> capValues = resolveCapabilityValues(capRefIndices);
+
             ModernFix.LOGGER.debug("Generating capability dispatcher #{} for types: [{}]", () -> generatedClassId, () -> {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < providerTypes.size(); i++) {
@@ -126,11 +137,14 @@ public class CapabilityProviderDispatcherGenerator {
                 return sb;
             });
 
-            byte[] classBytes = generateClassBytes(className, providerTypes, analysisResults);
+            byte[] classBytes = generateClassBytes(className, providerTypes, dispatches, capRefIndices);
 
-            // Define the hidden class
-            MethodHandles.Lookup hiddenLookup = lookup.defineHiddenClass(
+            // Define the hidden class, injecting the resolved Capability instances as class data.
+            // The generated <clinit> retrieves them via MethodHandles.classDataAt so it never
+            // needs to perform reflection itself - private fields are handled transparently here.
+            MethodHandles.Lookup hiddenLookup = lookup.defineHiddenClassWithClassData(
                     classBytes,
+                    capValues,
                     true,
                     MethodHandles.Lookup.ClassOption.NESTMATE
             );
@@ -152,6 +166,47 @@ public class CapabilityProviderDispatcherGenerator {
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate capability dispatcher class", e);
         }
+    }
+
+    /**
+     * Collects all unique {@link CapabilityRef}s referenced by {@code dispatches} in encounter order,
+     * assigning each a stable list index for use with {@code classDataAt}.
+     */
+    private static LinkedHashMap<CapabilityRef, Integer> collectCapabilityRefs(List<ProviderDispatch> dispatches) {
+        LinkedHashMap<CapabilityRef, Integer> result = new LinkedHashMap<>();
+        for (ProviderDispatch dispatch : dispatches) {
+            if (dispatch instanceof ProviderDispatch.Guarded g) {
+                result.putIfAbsent(g.capability(), result.size());
+            } else if (dispatch instanceof ProviderDispatch.Hash hash) {
+                for (ProviderDispatch.Guarded g : hash.entries()) {
+                    result.putIfAbsent(g.capability(), result.size());
+                }
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Resolves the actual {@link Capability} instances for all refs at class-generation time.
+     * Uses reflection (with {@code setAccessible}) so private fields are handled without any
+     * reflection bytecode appearing in the generated class.
+     */
+    private static List<Capability<?>> resolveCapabilityValues(LinkedHashMap<CapabilityRef, Integer> capRefIndices) {
+        @SuppressWarnings("unchecked")
+        Capability<?>[] caps = new Capability[capRefIndices.size()];
+        for (Map.Entry<CapabilityRef, Integer> entry : capRefIndices.entrySet()) {
+            CapabilityRef ref = entry.getKey();
+            try {
+                Class<?> clazz = Class.forName(ref.owner().replace('/', '.'), false,
+                        CapabilityProviderDispatcherGenerator.class.getClassLoader());
+                Field field = clazz.getDeclaredField(ref.fieldName());
+                field.setAccessible(true);
+                caps[entry.getValue()] = (Capability<?>) field.get(null);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Failed to resolve capability field " + ref, e);
+            }
+        }
+        return Arrays.asList(caps);
     }
 
     /**
@@ -261,9 +316,8 @@ public class CapabilityProviderDispatcherGenerator {
         return fields;
     }
 
-    private static byte[] generateClassBytes(String className, List<Class<? extends ICapabilityProvider>> providerTypes, List<CapabilityAnalysisResult> analysisResults) {
-        List<ProviderDispatch> dispatches = optimizeDispatches(buildDispatchList(providerTypes, analysisResults));
-
+    private static byte[] generateClassBytes(String className, List<Class<? extends ICapabilityProvider>> providerTypes,
+                                             List<ProviderDispatch> dispatches, LinkedHashMap<CapabilityRef, Integer> capRefIndices) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
             @Override
             protected ClassLoader getClassLoader() {
@@ -271,11 +325,13 @@ public class CapabilityProviderDispatcherGenerator {
             }
         };
 
+        String internalName = className.replace('.', '/');
+
         // Class declaration: implements ICapabilityProvider
         cw.visit(
                 V17,
                 ACC_PUBLIC | ACC_FINAL | ACC_SUPER,
-                className.replace('.', '/'),
+                internalName,
                 null,
                 "java/lang/Object",
                 new String[] { "net/minecraftforge/common/capabilities/ICapabilityProvider" }
@@ -301,17 +357,74 @@ public class CapabilityProviderDispatcherGenerator {
             }
         }
 
+        // Generate one static final field per unique CapabilityRef.
+        // These are populated in <clinit> via MethodHandles.classDataAt, which reads the
+        // Capability<?> instances injected by defineHiddenClassWithClassData. This avoids
+        // any reflection bytecode in the generated class and handles private fields transparently.
+        for (Map.Entry<CapabilityRef, Integer> entry : capRefIndices.entrySet()) {
+            cw.visitField(ACC_PRIVATE | ACC_STATIC | ACC_FINAL,
+                    capRefFieldName(entry.getValue()), CAPABILITY_DESC, null, null).visitEnd();
+        }
+
+        // Generate <clinit> to load capability instances from class data
+        if (!capRefIndices.isEmpty()) {
+            generateClinit(cw, internalName, capRefIndices);
+        }
+
         // Generate constructor
-        generateConstructor(cw, className, providerFields, dispatches);
+        generateConstructor(cw, className, providerFields, dispatches, capRefIndices);
 
         // Generate getCapability method with sided parameter
-        generateGetCapabilityMethod(cw, className, dispatches);
+        generateGetCapabilityMethod(cw, className, dispatches, capRefIndices);
 
         cw.visitEnd();
         return cw.toByteArray();
     }
 
-    private static void generateConstructor(ClassWriter cw, String className, Map<Integer, String> providerFields, List<ProviderDispatch> dispatches) {
+    private static String capRefFieldName(int index) {
+        return "capRef" + index;
+    }
+
+    /**
+     * Generates {@code <clinit>} that loads each capability from class data injected at define time.
+     * The bytecode is simply: {@code capRefN = MethodHandles.classDataAt(lookup(), "", Capability.class, N)}.
+     */
+    private static void generateClinit(ClassWriter cw, String internalName, LinkedHashMap<CapabilityRef, Integer> capRefIndices) {
+        MethodVisitor mv = cw.visitMethod(ACC_STATIC, "<clinit>", "()V", null, null);
+        mv.visitCode();
+
+        for (int i = 0; i < capRefIndices.size(); i++) {
+            // MethodHandles.lookup()
+            mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "lookup",
+                    "()" + LOOKUP_DESC, false);
+            // "_"  (classDataAt requires this exact name)
+            mv.visitLdcInsn("_");
+            // Capability.class
+            mv.visitLdcInsn(Type.getType(CAPABILITY_DESC));
+            // index
+            mv.visitLdcInsn(i);
+            // MethodHandles.classDataAt(lookup, name, type, index) → Object
+            mv.visitMethodInsn(INVOKESTATIC, "java/lang/invoke/MethodHandles", "classDataAt",
+                    "(" + LOOKUP_DESC + "Ljava/lang/String;Ljava/lang/Class;I)Ljava/lang/Object;", false);
+            mv.visitTypeInsn(CHECKCAST, "net/minecraftforge/common/capabilities/Capability");
+            mv.visitFieldInsn(PUTSTATIC, internalName, capRefFieldName(i), CAPABILITY_DESC);
+        }
+
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+    }
+
+    /**
+     * Emits a load of the capability constant for {@code ref} from the generated class's own static field.
+     */
+    private static void emitCapabilityLoad(MethodVisitor mv, String internalName, CapabilityRef ref,
+                                           Map<CapabilityRef, Integer> capRefIndices) {
+        mv.visitFieldInsn(GETSTATIC, internalName, capRefFieldName(capRefIndices.get(ref)), CAPABILITY_DESC);
+    }
+
+    private static void generateConstructor(ClassWriter cw, String className, Map<Integer, String> providerFields,
+                                            List<ProviderDispatch> dispatches, Map<CapabilityRef, Integer> capRefIndices) {
         Method constructor = Method.getMethod("void <init>(net.minecraftforge.common.capabilities.ICapabilityProvider[])");
         GeneratorAdapter mg = new GeneratorAdapter(ACC_PUBLIC, constructor, null, null, cw);
         Type classType = Type.getObjectType(className.replace('.', '/'));
@@ -338,7 +451,7 @@ public class CapabilityProviderDispatcherGenerator {
         // Build hash maps
         for (ProviderDispatch dispatch : dispatches) {
             if (dispatch instanceof ProviderDispatch.Hash hash) {
-                generateMapConstruction(mg, classType, hash);
+                generateMapConstruction(mg, classType, hash, capRefIndices);
             }
         }
 
@@ -346,7 +459,8 @@ public class CapabilityProviderDispatcherGenerator {
         mg.endMethod();
     }
 
-    private static void generateMapConstruction(GeneratorAdapter mg, Type classType, ProviderDispatch.Hash hash) {
+    private static void generateMapConstruction(GeneratorAdapter mg, Type classType, ProviderDispatch.Hash hash,
+                                                Map<CapabilityRef, Integer> capRefIndices) {
         List<ProviderDispatch.Guarded> entries = hash.entries();
         mg.loadThis(); // for PUTFIELD at the end
 
@@ -356,7 +470,7 @@ public class CapabilityProviderDispatcherGenerator {
             ProviderDispatch.Guarded g = entries.get(i);
             mg.dup();
             mg.push(i);
-            mg.visitFieldInsn(GETSTATIC, g.capability().owner(), g.capability().fieldName(), CAPABILITY_DESC);
+            emitCapabilityLoad(mg, classType.getInternalName(), g.capability(), capRefIndices);
             mg.loadArg(0);
             mg.push(g.providerIndex());
             mg.arrayLoad(Type.getType(ICAP_PROVIDER_DESC));
@@ -370,7 +484,8 @@ public class CapabilityProviderDispatcherGenerator {
         mg.putField(classType, "capMap" + hash.mapIndex(), Type.getType(MAP_DESC));
     }
 
-    private static void generateGetCapabilityMethod(ClassWriter cw, String className, List<ProviderDispatch> dispatches) {
+    private static void generateGetCapabilityMethod(ClassWriter cw, String className, List<ProviderDispatch> dispatches,
+                                                    Map<CapabilityRef, Integer> capRefIndices) {
         // Method: <T> LazyOptional<T> getCapability(Capability<T>, Direction)
         MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
@@ -401,7 +516,7 @@ public class CapabilityProviderDispatcherGenerator {
                 emitHashDispatch(mv, internalName, getCapDesc, hash, nextLabel);
                 di++;
             } else if (dispatch instanceof ProviderDispatch.Guarded) {
-                di = emitGuardedDispatch(mv, internalName, getCapDesc, dispatches, di, nextLabel);
+                di = emitGuardedDispatch(mv, internalName, getCapDesc, dispatches, di, nextLabel, capRefIndices);
             } else {
                 var u = (ProviderDispatch.Unguarded) dispatch;
                 emitProviderGetCapability(mv, internalName, getCapDesc, u.providerIndex(), u.fieldDesc());
@@ -490,7 +605,8 @@ public class CapabilityProviderDispatcherGenerator {
      * @return the updated dispatch index (past the consumed group)
      */
     private static int emitGuardedDispatch(MethodVisitor mv, String internalName, String getCapDesc,
-                                           List<ProviderDispatch> dispatches, int di, Label nextLabel) {
+                                           List<ProviderDispatch> dispatches, int di, Label nextLabel,
+                                           Map<CapabilityRef, Integer> capRefIndices) {
         var guarded = (ProviderDispatch.Guarded) dispatches.get(di);
 
         // Peek ahead to collect consecutive Guarded entries with same providerIndex
@@ -507,7 +623,7 @@ public class CapabilityProviderDispatcherGenerator {
             var g = (ProviderDispatch.Guarded) dispatches.get(gi);
             CapabilityRef ref = g.capability();
             mv.visitVarInsn(ALOAD, 1);
-            mv.visitFieldInsn(GETSTATIC, ref.owner(), ref.fieldName(), CAPABILITY_DESC);
+            emitCapabilityLoad(mv, internalName, ref, capRefIndices);
             if (gi < groupEnd - 1) {
                 mv.visitJumpInsn(IF_ACMPEQ, matchLabel);
             } else {

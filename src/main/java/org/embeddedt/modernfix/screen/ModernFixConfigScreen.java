@@ -44,7 +44,7 @@ public class ModernFixConfigScreen extends Screen {
     public void extractRenderState(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, float partialTicks) {
         super.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
         this.optionList.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);
-        guiGraphics.centeredText(this.font, this.title, this.width / 2, 8, 16777215);
+        guiGraphics.centeredText(this.font, this.title, this.width / 2, 8, -1);
         this.doneButton.setMessage(madeChanges ? Component.translatable("modernfix.config.done_restart") : CommonComponents.GUI_DONE);
     }
 

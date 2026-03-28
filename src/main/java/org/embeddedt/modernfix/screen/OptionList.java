@@ -108,8 +108,8 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         public void extractContent(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, boolean isMouseOver, float partialTicks) {
             Font var10000 = OptionList.this.minecraft.font;
             float x = (float)(OptionList.this.minecraft.screen.width / 2 - this.width / 2);
-            int y = 0 + height - 10;
-            guiGraphics.text(var10000, this.name, (int)x, y, 16777215);
+            int y = getY() + getHeight() - 10;
+            guiGraphics.text(var10000, this.name, (int)x, y, -1);
             /*
             if(mouseX >= x && mouseY >= y && mouseX <= (x + this.width) && mouseY <= (y + OptionList.this.minecraft.font.lineHeight))
                 OptionList.this.mainScreen.renderComponentHoverEffect(matrixStack, this.name.getStyle(), mouseX, mouseY);
@@ -179,13 +179,13 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
         @Override
         public void extractContent(GuiGraphicsExtractor guiGraphics, int mouseX, int mouseY, boolean isHovering, float partialTicks) {
-            int left = 0, top = 0;
+            int left = getX(), top = getY();
             MutableComponent nameComponent = getOptionComponent(option);
             if(this.option.isUserDefined())
                 nameComponent = nameComponent.withStyle(style -> style.withItalic(true)).append(Component.translatable("modernfix.config.not_default"));
             float textX = (float)(left + DEPTH_OFFSET * option.getDepth() + 160 - OptionList.this.maxNameWidth);
-            float textY = (float)(top + height / 2 - 4);
-            guiGraphics.text(OptionList.this.minecraft.font, nameComponent, (int)textX, (int)textY, 16777215);
+            float textY = (float)(top + getHeight() / 2 - 4);
+            guiGraphics.text(OptionList.this.minecraft.font, nameComponent, (int)textX, (int)textY, -1);
             this.toggleButton.setPosition(left + 175, top);
             this.toggleButton.setMessage(getOptionMessage(this.option));
             this.toggleButton.extractRenderState(guiGraphics, mouseX, mouseY, partialTicks);

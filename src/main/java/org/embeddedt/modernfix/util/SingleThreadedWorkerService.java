@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.util;
 
+import net.minecraft.util.thread.ProcessorMailbox;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.List;
@@ -52,9 +53,13 @@ public class SingleThreadedWorkerService extends AbstractExecutorService {
         return executorService.awaitTermination(timeout, unit);
     }
 
+    private static boolean isForcedAsyncCommand(Runnable command) {
+        return command instanceof ProcessorMailbox<?>;
+    }
+
     @Override
     public void execute(@NotNull Runnable command) {
-        if (Thread.currentThread() == thread.get()) {
+        if (!isForcedAsyncCommand(command) && Thread.currentThread() == thread.get()) {
             command.run();
         } else {
             executorService.execute(command);

@@ -173,15 +173,12 @@ public class ModernFixEarlyConfig {
             .put("mixin.feature.blockentity_incorrect_thread", false)
             .put("mixin.perf.clear_mixin_classinfo", false)
             .put("mixin.perf.deduplicate_climate_parameters", false)
-            .put("mixin.perf.faster_capabilities.bytecode_analysis", false)
             .put("mixin.bugfix.packet_leak", false)
             .put("mixin.perf.deduplicate_location", false)
             .put("mixin.perf.dynamic_entity_renderers", false)
             .put("mixin.feature.integrated_server_watchdog", true)
             .put("mixin.perf.faster_item_rendering", false)
-            .put("mixin.perf.ingredient_item_deduplication", false)
             .put("mixin.feature.spam_thread_dump", false)
-            .put("mixin.feature.disable_unihex_font", false)
             .put("mixin.feature.remove_chat_signing", false)
             .put("mixin.bugfix.skip_redundant_saves", false)
             .put("mixin.feature.snapshot_easter_egg", true)
@@ -193,6 +190,12 @@ public class ModernFixEarlyConfig {
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
             .putConditionally(() -> !isFabric, "mixin.feature.registry_event_progress", true)
             .putConditionally(() -> isFabric, "mixin.perf.clear_fabric_mapping_tables", false)
+            // Beta (promote on next release)
+            .put("mixin.perf.compact_entity_models", false)
+            .put("mixin.perf.dynamic_languages", false)
+            .put("mixin.perf.faster_capabilities.bytecode_analysis", false)
+            .put("mixin.perf.ingredient_item_deduplication", false)
+            // END
             .build();
 
     private ModernFixEarlyConfig(File file) {
@@ -236,7 +239,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.item_cache_flag", "lithium", "canary", "radium");
         // DimThread makes changes to the server chunk manager (understandably), C2ME probably does the same
         disableIfModPresent("mixin.bugfix.chunk_deadlock", "c2me", "dimthread");
-        disableIfModPresent("mixin.perf.reuse_datapacks", "tac");
+        disableIfModPresent("mixin.perf.release_protochunks", "c2me");
         disableIfModPresent("mixin.launch.class_search_cache", "optifine");
         disableIfModPresent("mixin.perf.faster_texture_stitching", "optifine");
         disableIfModPresent("mixin.bugfix.entity_pose_stack", "optifine");

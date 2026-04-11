@@ -20,6 +20,7 @@ import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.client.resources.model.cuboid.ItemModelGenerator;
 import net.minecraft.client.resources.model.cuboid.MissingCuboidModel;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
@@ -73,7 +74,25 @@ public class DynamicModelSystem {
     }
 
     public static Set<BlockState> getAllBlockStates() {
-        return ReferenceSets.unmodifiable(((IdMapperAccessor<BlockState>) Block.BLOCK_STATE_REGISTRY).getReferenceMap().keySet());
+        var blockStateSet = ((IdMapperAccessor<BlockState>) Block.BLOCK_STATE_REGISTRY).getReferenceMap().keySet();
+        return new AbstractSet<>() {
+            @Override
+            public Iterator<BlockState> iterator() {
+                // We explicitly override iterator() and handle it differently so that mods iterating the maps
+                // are likely to work with the same block many times in a row, which hits our caches better
+                return BuiltInRegistries.BLOCK.stream().flatMap(b -> b.getStateDefinition().getPossibleStates().stream()).iterator();
+            }
+
+            @Override
+            public boolean contains(Object o) {
+                return blockStateSet.contains(o);
+            }
+
+            @Override
+            public int size() {
+                return blockStateSet.size();
+            }
+        };
     }
 
     public static BlockStateModelLoader.LoadedModels createDynamicBlockStateLoadedModels(Map<Identifier, List<Resource>> resourceMap, SingleBlockStateEntryLoader entryLoader) {

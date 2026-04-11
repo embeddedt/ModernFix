@@ -8,7 +8,6 @@ import org.embeddedt.modernfix.forge.load.ModWorkManagerQueue;
 import org.embeddedt.modernfix.util.TimeFormatter;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.MixinEnvironment;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -28,13 +27,6 @@ public class BootstrapMixin {
             LOGGER.info("ModernFix reached bootstrap stage ({} after launch)", TimeFormatter.formatNanos(ManagementFactory.getRuntimeMXBean().getUptime() * 1000L * 1000L));
             ModWorkManagerQueue.replace();
             ManifestCompactor.compactManifests();
-            boolean auditAndExit = Boolean.getBoolean("modernfix.auditAndExit");
-            if (auditAndExit || Boolean.getBoolean("modernfix.auditMixinsAtStart")) {
-                MixinEnvironment.getCurrentEnvironment().audit();
-                if (auditAndExit) {
-                    System.exit(0);
-                }
-            }
         }
     }
 

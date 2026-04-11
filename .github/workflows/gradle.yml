@@ -11,6 +11,9 @@ on:
 jobs:
   build:
     runs-on: ubuntu-22.04
+    concurrency:
+      group: release-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -22,13 +25,31 @@ jobs:
           distribution: 'temurin'
           java-version: 21
           check-latest: true
+      - name: Check if release branch
+        id: check_branch
+        if: github.event_name == 'push'
+        run: |
+          if [[ "${{ github.ref }}" =~ ^refs/heads/[0-9]+\. ]]; then
+            echo "is_release=true" >> $GITHUB_OUTPUT
+          else
+            echo "is_release=false" >> $GITHUB_OUTPUT
+          fi
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
         with:
-          cache-read-only: ${{ !startsWith(github.ref, 'refs/heads/1.') }}
+          cache-read-only: ${{ steps.check_branch.outputs.is_release != 'true' }}
           gradle-home-cache-cleanup: true
+      - name: Remove tags for release on other versions
+        if: steps.check_branch.outputs.is_release == 'true'
+        run: ./scripts/tagcleaner.sh
       - name: Build ModernFix using Gradle
         run: ./gradlew build
+      - name: Publish mod to CurseForge & Modrinth
+        if: steps.check_branch.outputs.is_release == 'true'
+        run: ./gradlew publishMods copyJarToBin
+        env:
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
       - name: Upload Artifacts to GitHub
         uses: actions/upload-artifact@v4
         with:

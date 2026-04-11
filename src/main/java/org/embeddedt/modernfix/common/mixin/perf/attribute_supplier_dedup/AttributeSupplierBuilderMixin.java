@@ -4,6 +4,7 @@ import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import org.embeddedt.modernfix.entity.AttributeInstanceTemplates;
+import org.embeddedt.modernfix.forge.init.ModernFixForge;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -25,6 +26,11 @@ public class AttributeSupplierBuilderMixin {
      */
     @Inject(method = "build", at = @At(value = "NEW", target = "(Ljava/util/Map;)Lnet/minecraft/world/entity/ai/attributes/AttributeSupplier;"))
     private void deduplicateInstances(CallbackInfoReturnable<AttributeSupplier> cir) {
+        // The interning has overhead, so we only apply it early during the launch, when mods are normally
+        // registering the custom attribute suppliers.
+        if (ModernFixForge.registryEventsFired) {
+            return;
+        }
         this.builder.replaceAll((a, i) -> AttributeInstanceTemplates.intern(i));
     }
 }

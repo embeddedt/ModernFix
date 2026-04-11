@@ -1,7 +1,5 @@
 plugins {
     id("net.neoforged.moddev") version("2.0.140")
-    id("org.ajoberstar.grgit") version("5.2.0")
-    id("com.palantir.git-version") version("1.0.0")
     id("me.modmuss50.mod-publish-plugin") version("1.1.0")
 }
 
@@ -9,42 +7,14 @@ val minecraft_version = rootProject.properties["minecraft_version"].toString()
 
 group = "org.embeddedt"
 
-val versionDetails: groovy.lang.Closure<com.palantir.gradle.gitversion.VersionDetails> by extra
-// extract base version from tag, generate other metadata ourselves
-val details = versionDetails()
-
-var plusIndex = details.lastTag.indexOf("+")
-if (plusIndex == -1) {
-    plusIndex = details.lastTag.length
+val gitVersion = providers.of(GitVersionSource::class) {
+    parameters {
+        minecraftVersion.set(minecraft_version)
+        projectDir.set(rootProject.layout.projectDirectory)
+    }
 }
 
-var baseVersion = details.lastTag.substring(0, plusIndex)
-
-val dirtyMarker = if (grgit.status().isClean) "" else ".dirty"
-
-val commitHashMarker =
-    if (details.commitDistance > 0)
-        "." + details.gitHash.substring(0, minOf(4, details.gitHash.length))
-    else
-        ""
-
-var preMarker =
-    if (details.commitDistance > 0 || !details.isCleanTag)
-        "-beta.${details.commitDistance}"
-    else
-        ""
-
-if (preMarker.isNotEmpty()) {
-    // bump to next patch release
-    val versionParts = baseVersion.split(".")
-    baseVersion =
-        "${versionParts[0]}.${versionParts[1]}.${versionParts[2].toInt() + 1}"
-}
-
-val versionString =
-    "${baseVersion}${preMarker}+mc${minecraft_version}${commitHashMarker}${dirtyMarker}"
-
-version = versionString
+version = gitVersion.get()
 
 base.archivesName = "modernfix-neoforge"
 

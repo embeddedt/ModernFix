@@ -4,16 +4,16 @@ import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
 import com.google.common.collect.Maps;
-import com.google.common.collect.Sets;
 import it.unimi.dsi.fastutil.objects.AbstractObject2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntMap;
 import it.unimi.dsi.fastutil.objects.Object2IntOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import it.unimi.dsi.fastutil.objects.ObjectSets;
-import it.unimi.dsi.fastutil.objects.ReferenceSets;
 import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
+import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
+import org.jetbrains.annotations.Nullable;
 import net.minecraft.client.resources.model.ModelDiscovery;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ResolvedModel;
@@ -38,35 +38,48 @@ import java.util.AbstractSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BiFunction;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class DynamicModelSystem {
     private static final FileToIdConverter MODEL_LISTER = FileToIdConverter.json("models");
     private static final FileToIdConverter BLOCKSTATE_LISTER = FileToIdConverter.json("blockstates");
+    private static final FileToIdConverter ITEM_LISTER = FileToIdConverter.json("items");
 
     public static final boolean DEBUG_DYNAMIC_MODEL_LOADING = Boolean.getBoolean("modernfix.debugDynamicModelLoading");
-    
-    public static Map<Identifier, UnbakedModel> createDynamicUnbakedModelMap(Map<Identifier, Resource> resourceMap) {
-        LoadingCache<Identifier, UnbakedModel> unbakedModelCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
+
+    private interface ResultLoader<RESOURCE, RESULT> {
+        RESULT load(Identifier file, @Nullable RESOURCE resource) throws Exception;
+    }
+
+    private static <RESOURCE, RESULT> Map<Identifier, RESULT> createCachedResourceBackedMap(Map<Identifier, RESOURCE> resourceMap,
+                                                                                  FileToIdConverter converter,
+                                                                                  String debugName,
+                                                                                  ResultLoader<RESOURCE, RESULT> loader) {
+        LoadingCache<Identifier, RESULT> resultCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
             @Override
-            public UnbakedModel load(Identifier key) throws Exception {
-                var resource = resourceMap.get(MODEL_LISTER.idToFile(key));
-                if (resource == null) {
-                    throw new IllegalArgumentException("Model " + key + " does not exist in map");
-                }
+            public RESULT load(Identifier id) throws Exception {
+                var file = converter.idToFile(id);
+                var resource = resourceMap.get(file);
                 if (DEBUG_DYNAMIC_MODEL_LOADING) {
-                    ModernFix.LOGGER.info("Loading unbaked model {}", key);
+                    ModernFix.LOGGER.info("Loading {} {}", debugName, id);
                 }
-                try (Reader reader = resource.openAsReader()) {
-                    return UnbakedModelParser.parse(reader);
-                }
+                return loader.load(file, resource);
             }
         });
-        Set<Identifier> unbakedIdSet = resourceMap.keySet().stream().map(MODEL_LISTER::fileToId).collect(Collectors.toUnmodifiableSet());
-        return Maps.asMap(unbakedIdSet, key -> key != null ? unbakedModelCache.getUnchecked(key) : null);
+        Set<Identifier> idSet = resourceMap.keySet().stream().map(converter::fileToId).collect(Collectors.toUnmodifiableSet());
+        return Maps.asMap(idSet, key -> key != null ? resultCache.getUnchecked(key) : null);
+    }
+    
+    public static Map<Identifier, UnbakedModel> createDynamicUnbakedModelMap(Map<Identifier, Resource> resourceMap) {
+        return createCachedResourceBackedMap(resourceMap, MODEL_LISTER, "unbaked model", (id, resource) -> {
+            Objects.requireNonNull(resource, "unbaked model not present");
+            try (Reader reader = resource.openAsReader()) {
+                return UnbakedModelParser.parse(reader);
+            }
+        });
     }
 
     public interface SingleBlockStateEntryLoader {
@@ -96,17 +109,7 @@ public class DynamicModelSystem {
     }
 
     public static BlockStateModelLoader.LoadedModels createDynamicBlockStateLoadedModels(Map<Identifier, List<Resource>> resourceMap, SingleBlockStateEntryLoader entryLoader) {
-        LoadingCache<Identifier, BlockStateModelLoader.LoadedModels> definitionCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
-            @Override
-            public BlockStateModelLoader.LoadedModels load(Identifier key) throws Exception {
-                if (DEBUG_DYNAMIC_MODEL_LOADING) {
-                    ModernFix.LOGGER.info("Loading blockstate definition for {}", key);
-                }
-                var file = BLOCKSTATE_LISTER.idToFile(key);
-                var resources = resourceMap.getOrDefault(file, List.of());
-                return entryLoader.loadEntry(file, resources);
-            }
-        });
+        var blockStateDefinitions = createCachedResourceBackedMap(resourceMap, BLOCKSTATE_LISTER, "blockstate definition", entryLoader::loadEntry);
         var staticDefinitions = BlockStateDefinitionsAccessor.getStaticDefinitions();
         var staticIdentifiers = staticDefinitions.entrySet()
                 .stream()
@@ -118,9 +121,18 @@ public class DynamicModelSystem {
             if (identifier == null) {
                 identifier = state.getBlock().builtInRegistryHolder().getKey().identifier();
             }
-            var loadedModels = definitionCache.getUnchecked(identifier);
+            var loadedModels = blockStateDefinitions.get(identifier);
             return loadedModels.models().get(state);
         }));
+    }
+
+    public interface SingleClientItemEntryLoader {
+        @Nullable ClientItem loadEntry(Identifier resourceId, Resource resource);
+    }
+
+    public static ClientItemInfoLoader.LoadedClientInfos createDynamicClientInfos(Map<Identifier, Resource> resourceMap, SingleClientItemEntryLoader entryLoader) {
+        var clientItems = createCachedResourceBackedMap(resourceMap, ITEM_LISTER, "client item info", entryLoader::loadEntry);
+        return new ClientItemInfoLoader.LoadedClientInfos(clientItems);
     }
 
     public record DynamicResolver(Map<Identifier, UnbakedModel> inputModels,

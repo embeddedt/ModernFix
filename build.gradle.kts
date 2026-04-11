@@ -38,6 +38,10 @@ legacyForge {
         create("server") {
             server()
         }
+        create("auditClient") {
+            client()
+            jvmArguments.addAll("-Dmodernfix.auditAndExit=true", "-Djava.awt.headless=true")
+        }
     }
 
     mods {

@@ -44,6 +44,8 @@ jobs:
         run: ./scripts/tagcleaner.sh
       - name: Build ModernFix using Gradle
         run: ./gradlew build
+      - name: Run mixin audit
+        run: timeout 60 xvfb-run ./gradlew runAuditClient
       - name: Publish mod to CurseForge & Modrinth
         if: steps.check_branch.outputs.is_release == 'true'
         run: ./gradlew publishMods copyJarToBin

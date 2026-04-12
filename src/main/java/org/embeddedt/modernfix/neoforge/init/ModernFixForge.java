@@ -77,6 +77,7 @@ public class ModernFixForge {
                     ModLoader.addLoadingIssue(ModLoadingIssue.warning("modernfix.perf_mod_warning"));
             });
         }
+        event.enqueueWork(ModernFix::runAuditIfRequested);
     }
 
     private void registerNetworkChannel(final RegisterPayloadHandlersEvent event) {

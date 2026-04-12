@@ -26,7 +26,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.function.Function;
 
-@Mixin(SurfaceSystem.class)
+@Mixin(value = SurfaceSystem.class, priority = 2000)
 public class SurfaceSystemMixin {
     private static final ThreadLocal<ChunkBiomeLookup> MFIX_LOOKUP_CACHE = ThreadLocal.withInitial(ChunkBiomeLookup::new);
     private static final ThreadLocal<PrefetchingBlockColumn> MFIX_BLOCK_COLUMN = new ThreadLocal<>();
@@ -43,7 +43,7 @@ public class SurfaceSystemMixin {
         return lookup;
     }
 
-    @Inject(method = "buildSurface", at = @At("RETURN"))
+    @Inject(method = "buildSurface", at = @At("TAIL"))
     private void finishAndDisposeLookups(RandomState randomState, BiomeManager biomeManager, Registry<Biome> biomes, boolean p_224652_, WorldGenerationContext context, ChunkAccess chunk, NoiseChunk noiseChunk, SurfaceRules.RuleSource ruleSource, CallbackInfo ci) {
         MFIX_LOOKUP_CACHE.get().dispose();
         var column = MFIX_BLOCK_COLUMN.get();

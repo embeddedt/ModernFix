@@ -7,6 +7,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalysisResult;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalyzer;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityRef;
+import org.jetbrains.annotations.NotNull;
 import org.objectweb.asm.*;
 import org.objectweb.asm.commons.GeneratorAdapter;
 import org.objectweb.asm.commons.Method;
@@ -190,6 +191,8 @@ public class CapabilityProviderDispatcherGenerator {
      * Resolves the actual {@link Capability} instances for all refs at class-generation time.
      * Uses reflection (with {@code setAccessible}) so private fields are handled without any
      * reflection bytecode appearing in the generated class.
+     * <p>
+     * Field lookup is delegated to {@link #getRefField(Class, CapabilityRef)}
      */
     private static List<Capability<?>> resolveCapabilityValues(LinkedHashMap<CapabilityRef, Integer> capRefIndices) {
         @SuppressWarnings("unchecked")
@@ -199,14 +202,34 @@ public class CapabilityProviderDispatcherGenerator {
             try {
                 Class<?> clazz = Class.forName(ref.owner().replace('/', '.'), false,
                         CapabilityProviderDispatcherGenerator.class.getClassLoader());
-                Field field = clazz.getDeclaredField(ref.fieldName());
-                field.setAccessible(true);
+                Field field = getRefField(clazz, ref);
                 caps[entry.getValue()] = (Capability<?>) field.get(null);
             } catch (ReflectiveOperationException e) {
                 throw new RuntimeException("Failed to resolve capability field " + ref, e);
             }
         }
         return Arrays.asList(caps);
+    }
+
+    /**
+     * Resolves the {@link Field} for the given {@link CapabilityRef},
+     * falls back to the implemented interfaces if no match is found.
+     */
+    private static @NotNull Field getRefField(Class<?> clazz, CapabilityRef ref) throws NoSuchFieldException {
+        Field field = null;
+        try {
+            field = clazz.getDeclaredField(ref.fieldName());
+        } catch (NoSuchFieldException ignored) {
+            for (Class<?> iface : clazz.getInterfaces()) {
+                try {
+                    field = iface.getDeclaredField(ref.fieldName());
+                    break;
+                } catch (NoSuchFieldException ignored1) {}
+            }
+        }
+        if (field == null) throw new NoSuchFieldException(ref.fieldName());
+        field.setAccessible(true);
+        return field;
     }
 
     /**

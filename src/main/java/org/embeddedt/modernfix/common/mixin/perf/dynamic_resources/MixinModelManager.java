@@ -5,11 +5,15 @@ import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
+import net.minecraft.client.resources.model.ModelDiscovery;
 import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.cuboid.ItemModelGenerator;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynresources.BlockStateModelMap;
 import org.embeddedt.modernfix.dynresources.DynamicModelSystem;
@@ -17,6 +21,7 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
@@ -40,11 +45,20 @@ public class MixinModelManager {
      * @author embeddedt
      * @reason Model resolution is not necessary, because we dynamically find models as they are referenced
      */
-    @Overwrite
-    private static ModelManager.ResolvedModels discoverModelDependencies(
-            Map<Identifier, UnbakedModel> inputModels, BlockStateModelLoader.LoadedModels loadedModels, ClientItemInfoLoader.LoadedClientInfos loadedClientInfos, net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader.LoadedModels standaloneModels
+    @Redirect(
+            method = "discoverModelDependencies(Ljava/util/Map;Lnet/minecraft/client/resources/model/BlockStateModelLoader$LoadedModels;Lnet/minecraft/client/resources/model/ClientItemInfoLoader$LoadedClientInfos;Lnet/neoforged/neoforge/client/model/standalone/StandaloneModelLoader$LoadedModels;)Lnet/minecraft/client/resources/model/ModelManager$ResolvedModels;",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelDiscovery;resolve()Ljava/util/Map;")
+    )
+    private static Map<Identifier, ResolvedModel> resolveModelDependenciesDynamically(
+            ModelDiscovery discovery, Map<Identifier, UnbakedModel> inputModels, BlockStateModelLoader.LoadedModels loadedModels, ClientItemInfoLoader.LoadedClientInfos loadedClientInfos, StandaloneModelLoader.LoadedModels standaloneModels
     ) {
-        return new DynamicModelSystem.DynamicResolver(inputModels, loadedModels, loadedClientInfos, standaloneModels).resolvedModels();
+        UnbakedModel generatedItemModel = new ItemModelGenerator();
+        var generatedItemWrapper = ((ModelDiscoveryAccessor) discovery).mfix$getModelWrappers().get(ItemModelGenerator.GENERATED_ITEM_MODEL_ID);
+        if (generatedItemWrapper != null) {
+            generatedItemModel = ((ModelDiscoveryModelWrapperAccessor) generatedItemWrapper).mfix$getWrapped();
+        }
+
+        return new DynamicModelSystem.DynamicResolver(inputModels, loadedModels, loadedClientInfos, standaloneModels, generatedItemModel).resolvedModels().models();
     }
 
     /**

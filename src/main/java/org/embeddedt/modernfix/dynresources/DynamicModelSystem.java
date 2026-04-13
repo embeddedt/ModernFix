@@ -138,11 +138,19 @@ public class DynamicModelSystem {
     public record DynamicResolver(Map<Identifier, UnbakedModel> inputModels,
                                           BlockStateModelLoader.LoadedModels loadedModels,
                                           ClientItemInfoLoader.LoadedClientInfos loadedClientInfos,
-                                          StandaloneModelLoader.LoadedModels standaloneModels) {
+                                          StandaloneModelLoader.LoadedModels standaloneModels,
+                                          UnbakedModel generatedItemModel) {
+
+        public DynamicResolver(Map<Identifier, UnbakedModel> inputModels,
+                               BlockStateModelLoader.LoadedModels loadedModels,
+                               ClientItemInfoLoader.LoadedClientInfos loadedClientInfos,
+                               StandaloneModelLoader.LoadedModels standaloneModels) {
+            this(inputModels, loadedModels, loadedClientInfos, standaloneModels, new ItemModelGenerator());
+        }
 
         private ResolvedModel resolveModel(Identifier id) {
             var discovery = new ModelDiscovery(inputModels, MissingCuboidModel.missingModel());
-            discovery.addSpecialModel(ItemModelGenerator.GENERATED_ITEM_MODEL_ID, new ItemModelGenerator());
+            discovery.addSpecialModel(ItemModelGenerator.GENERATED_ITEM_MODEL_ID, generatedItemModel);
             if (!id.equals(ItemModelGenerator.GENERATED_ITEM_MODEL_ID)) {
                 UnbakedModel unbaked = inputModels.get(id);
                 if (unbaked != null) {

@@ -5,11 +5,15 @@ import net.minecraft.client.color.block.BlockColors;
 import net.minecraft.client.renderer.block.dispatch.BlockStateModel;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
+import net.minecraft.client.resources.model.ModelDiscovery;
 import net.minecraft.client.resources.model.ModelManager;
+import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedModel;
+import net.minecraft.client.resources.model.cuboid.ItemModelGenerator;
 import net.minecraft.resources.Identifier;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.world.level.block.state.BlockState;
+import net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynresources.BlockStateModelMap;
 import org.embeddedt.modernfix.dynresources.DynamicModelSystem;
@@ -17,10 +21,13 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.ModifyArg;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
+import java.util.Collection;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionStage;
+import java.util.function.Consumer;
 import java.util.function.Function;
 
 @Mixin(ModelManager.class)
@@ -38,13 +45,38 @@ public class MixinModelManager {
 
     /**
      * @author embeddedt
-     * @reason Model resolution is not necessary, because we dynamically find models as they are referenced
+     * @reason Stop all models from being loaded at startup by the model resolution logic.
      */
-    @Overwrite
-    private static ModelManager.ResolvedModels discoverModelDependencies(
-            Map<Identifier, UnbakedModel> inputModels, BlockStateModelLoader.LoadedModels loadedModels, ClientItemInfoLoader.LoadedClientInfos loadedClientInfos, net.neoforged.neoforge.client.model.standalone.StandaloneModelLoader.LoadedModels standaloneModels
+    @Redirect(
+            method = "discoverModelDependencies(Ljava/util/Map;Lnet/minecraft/client/resources/model/BlockStateModelLoader$LoadedModels;Lnet/minecraft/client/resources/model/ClientItemInfoLoader$LoadedClientInfos;Lnet/neoforged/neoforge/client/model/standalone/StandaloneModelLoader$LoadedModels;)Lnet/minecraft/client/resources/model/ModelManager$ResolvedModels;",
+            at = @At(value = "INVOKE", target = "Ljava/util/Collection;forEach(Ljava/util/function/Consumer;)V"))
+    private static <T> void skipAddingRoot(Collection<T> instance, Consumer<T> consumer) {
+    }
+
+    /**
+     * @author embeddedt, coredex
+     * @reason Divert to our dynamic resolver. It is cleaner to overwrite the whole method, but this seems to cause
+     * a conflict with Sodium.
+     */
+    @Redirect(
+            method = "discoverModelDependencies(Ljava/util/Map;Lnet/minecraft/client/resources/model/BlockStateModelLoader$LoadedModels;Lnet/minecraft/client/resources/model/ClientItemInfoLoader$LoadedClientInfos;Lnet/neoforged/neoforge/client/model/standalone/StandaloneModelLoader$LoadedModels;)Lnet/minecraft/client/resources/model/ModelManager$ResolvedModels;",
+            at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/model/ModelDiscovery;resolve()Ljava/util/Map;")
+    )
+    private static Map<Identifier, ResolvedModel> useDynamicResolverMap(
+            ModelDiscovery discovery,
+            Map<Identifier, UnbakedModel> allModels,
+            BlockStateModelLoader.LoadedModels blockStateModels,
+            ClientItemInfoLoader.LoadedClientInfos itemInfos,
+            StandaloneModelLoader.LoadedModels standaloneModels
     ) {
-        return new DynamicModelSystem.DynamicResolver(inputModels, loadedModels, loadedClientInfos, standaloneModels).resolvedModels();
+        UnbakedModel generatedItemModel;
+        var generatedItemWrapper = ((ModelDiscoveryAccessor) discovery).mfix$getModelWrappers().get(ItemModelGenerator.GENERATED_ITEM_MODEL_ID);
+        if (generatedItemWrapper != null) {
+            generatedItemModel = generatedItemWrapper.wrapped();
+        } else {
+            generatedItemModel = new ItemModelGenerator();
+        }
+        return new DynamicModelSystem.DynamicResolver(allModels, blockStateModels, itemInfos, standaloneModels, generatedItemModel).resolvedModelsMap();
     }
 
     /**

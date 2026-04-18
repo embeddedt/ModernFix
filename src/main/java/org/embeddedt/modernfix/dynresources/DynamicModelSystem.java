@@ -15,7 +15,6 @@ import net.minecraft.client.renderer.item.ClientItem;
 import net.minecraft.client.resources.model.ClientItemInfoLoader;
 import org.jetbrains.annotations.Nullable;
 import net.minecraft.client.resources.model.ModelDiscovery;
-import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ResolvedModel;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.client.resources.model.cuboid.ItemModelGenerator;
@@ -138,7 +137,8 @@ public class DynamicModelSystem {
     public record DynamicResolver(Map<Identifier, UnbakedModel> inputModels,
                                           BlockStateModelLoader.LoadedModels loadedModels,
                                           ClientItemInfoLoader.LoadedClientInfos loadedClientInfos,
-                                          StandaloneModelLoader.LoadedModels standaloneModels) {
+                                          StandaloneModelLoader.LoadedModels standaloneModels,
+                                          UnbakedModel generatedItemModel) {
 
         private ResolvedModel resolveModel(Identifier id) {
             var discovery = new ModelDiscovery(inputModels, MissingCuboidModel.missingModel());
@@ -156,15 +156,14 @@ public class DynamicModelSystem {
             return resolved.getOrDefault(id, discovery.missingModel());
         }
 
-        public ModelManager.ResolvedModels resolvedModels() {
-            var resolvedMissingModel = new ModelDiscovery(inputModels, MissingCuboidModel.missingModel()).missingModel();
+        public Map<Identifier, ResolvedModel> resolvedModelsMap() {
             LoadingCache<Identifier, ResolvedModel> resolvedModelCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
                 @Override
                 public ResolvedModel load(Identifier key) {
                     return resolveModel(key);
                 }
             });
-            return new ModelManager.ResolvedModels(resolvedMissingModel, Maps.asMap(inputModels.keySet(), resolvedModelCache::getUnchecked));
+            return Maps.asMap(inputModels.keySet(), resolvedModelCache::getUnchecked);
         }
     }
 

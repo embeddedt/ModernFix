@@ -78,8 +78,8 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                         while(true) {
                             try {
                                 Thread.sleep(60000);
-                                logger.error("------ DEBUG THREAD DUMP (occurs every 60 seconds) ------");
-                                logger.error(ThreadDumper.obtainThreadDump());
+                                logger.info("------ DEBUG THREAD DUMP (occurs every 60 seconds) ------");
+                                logger.info(ThreadDumper.obtainThreadDump());
                             } catch(InterruptedException | RuntimeException e) {}
                         }
                     }

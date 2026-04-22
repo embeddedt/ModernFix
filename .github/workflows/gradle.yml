@@ -56,7 +56,9 @@ jobs:
           MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
       - name: Capture mod version
         if: steps.check_branch.outputs.is_release == 'true'
-        run: echo "MOD_VERSION=$(./gradlew properties -q | grep '^version:' | awk '{print $2}')" >> $GITHUB_ENV
+        run: |
+          echo "MOD_VERSION=$(./gradlew properties -q | grep '^version:' | awk '{print $2}')" >> $GITHUB_ENV
+          echo "MC_VERSION=$(grep '^minecraft_version=' gradle.properties | cut -d= -f2)" >> $GITHUB_ENV
       - name: Comment on fixed issues
         if: steps.check_branch.outputs.is_release == 'true'
         uses: actions/github-script@v7
@@ -91,16 +93,38 @@ jobs:
               return;
             }
 
-            const version = process.env.MOD_VERSION;
+            const MARKER = '<!-- modernfix-fix-tracker -->';
+            const modVersion = process.env.MOD_VERSION;
+            const mcVersion = process.env.MC_VERSION;
+            const newLine = `- ${modVersion} for Minecraft ${mcVersion}`;
+
             for (const issueNumber of issueNumbers) {
               try {
-                await github.rest.issues.createComment({
+                const { data: comments } = await github.rest.issues.listComments({
                   owner: context.repo.owner,
                   repo: context.repo.repo,
                   issue_number: issueNumber,
-                  body: `The fix for this issue has been released in ModernFix ${version}`
+                  per_page: 100
                 });
-                console.log(`Commented on issue #${issueNumber}`);
+
+                const existing = comments.find(c => c.body.includes(MARKER));
+                if (existing) {
+                  await github.rest.issues.updateComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: existing.id,
+                    body: existing.body + `\n${newLine}`
+                  });
+                  console.log(`Updated comment on issue #${issueNumber}`);
+                } else {
+                  await github.rest.issues.createComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    body: `${MARKER}\nThe fix for this issue has been released in the following versions of ModernFix:\n${newLine}`
+                  });
+                  console.log(`Created comment on issue #${issueNumber}`);
+                }
               } catch (e) {
                 console.log(`Could not comment on #${issueNumber}: ${e.message}`);
               }

@@ -374,7 +374,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         ModelBakery self = (ModelBakery) (Object) this;
         ModelBaker theBaker = self.new ModelBakerImpl(textureGetter, modelLocation);
         ((IExtendedModelBaker)theBaker).throwOnMissingModel(true);
-        synchronized(this) { m = theBaker.bake(modelLocation, state, theBaker.getModelTextureGetter()); }
+        synchronized(this) {
+            // We intentionally use the 2-arg overload for better mixin compatibility, because we use the baker's default
+            // texture getter anyway.
+            //noinspection deprecation
+            m = theBaker.bake(modelLocation, state);
+        }
         if(m != null)
             loadedBakedModels.put(key, m);
         return m;

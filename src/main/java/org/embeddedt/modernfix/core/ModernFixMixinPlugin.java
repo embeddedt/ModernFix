@@ -5,6 +5,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
+import org.embeddedt.modernfix.core.launchplugin.CoreLaunchPluginService;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.world.ThreadDumper;
 import org.objectweb.asm.Opcodes;
@@ -109,7 +110,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-
+        CoreLaunchPluginService.install();
     }
 
     @Override

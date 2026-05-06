@@ -2,6 +2,7 @@ package org.embeddedt.modernfix;
 
 import net.minecraft.SharedConstants;
 import net.minecraft.Util;
+import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
@@ -51,6 +52,8 @@ public class ModernFix {
         if (auditAndExit || Boolean.getBoolean("modernfix.auditMixinsAtStart")) {
             MixinEnvironment.getCurrentEnvironment().audit();
             if (auditAndExit) {
+                // Prevents Crash Assistant from treating mixin audit as a crash
+                Minecraft.getInstance().stop();
                 System.exit(0);
             }
         }

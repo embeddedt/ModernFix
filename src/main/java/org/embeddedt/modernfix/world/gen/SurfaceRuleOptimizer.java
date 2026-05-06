@@ -1,9 +1,11 @@
 package org.embeddedt.modernfix.world.gen;
 
+import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.core.Holder;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.util.KeyDispatchDataCodec;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.levelgen.SurfaceRules;
@@ -15,25 +17,33 @@ import java.util.Map;
 import java.util.Objects;
 
 public class SurfaceRuleOptimizer {
-    public static @Nullable SurfaceRules.SurfaceRule optimizeSequenceRule(SurfaceRules.SequenceRuleSource source, SurfaceRules.Context context) {
+    public static SurfaceRules.RuleSource optimizeSequenceRuleSource(SurfaceRules.SequenceRuleSource source) {
         // First pass: collect which biomes appear and count biome-gated branches
-        Reference2ObjectOpenHashMap<ResourceKey<Biome>, List<SurfaceRules.RuleSource>> perBiomeSources = new Reference2ObjectOpenHashMap<>();
+        Reference2ObjectOpenHashMap<ResourceKey<Biome>, List<SurfaceRules.RuleSource>> perBiomeSources = null;
         int biomeGatedBranches = 0;
-        for (var innerSource : source.sequence()) {
-            if (innerSource instanceof SurfaceRules.TestRuleSource testRuleSource
+        var sequence = source.sequence();
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < sequence.size(); i++) {
+            if (sequence.get(i) instanceof SurfaceRules.TestRuleSource testRuleSource
                     && testRuleSource.ifTrue() instanceof SurfaceRules.BiomeConditionSource biomeConditionSource) {
                 biomeGatedBranches++;
+                if (perBiomeSources == null) {
+                    perBiomeSources = new Reference2ObjectOpenHashMap<>();
+                }
                 for (var biome : biomeConditionSource.biomes) {
                     perBiomeSources.putIfAbsent(biome, new ArrayList<>());
                 }
             }
         }
         if (biomeGatedBranches < 3) {
-            return null;
+            // Just use the source as-is, not worth optimizing
+            return source;
         }
         // Second pass: build per-biome source lists preserving original interleaving order
         List<SurfaceRules.RuleSource> noMatchSources = new ArrayList<>();
-        for (var innerSource : source.sequence()) {
+        //noinspection ForLoopReplaceableByForEach
+        for (int i = 0; i < sequence.size(); i++) {
+            var innerSource = sequence.get(i);
             if (innerSource instanceof SurfaceRules.TestRuleSource testRuleSource
                     && testRuleSource.ifTrue() instanceof SurfaceRules.BiomeConditionSource biomeConditionSource) {
                 // Add the inner rule (condition stripped) only to the matching biomes' lists
@@ -48,23 +58,41 @@ public class SurfaceRuleOptimizer {
                 noMatchSources.add(innerSource);
             }
         }
-        // Compile all source lists into rule lists
-        Reference2ObjectOpenHashMap<ResourceKey<Biome>, List<SurfaceRules.SurfaceRule>> compiledBiomeMatch = new Reference2ObjectOpenHashMap<>(perBiomeSources.size());
-        Reference2ObjectMaps.fastForEach(perBiomeSources, entry -> {
-            List<SurfaceRules.SurfaceRule> compiled = new ArrayList<>(entry.getValue().size());
-            for (var src : entry.getValue()) {
-                compiled.add(src.apply(context));
-            }
-            compiledBiomeMatch.put(entry.getKey(), List.copyOf(compiled));
-        });
-        List<SurfaceRules.SurfaceRule> compiledNoMatch = new ArrayList<>(noMatchSources.size());
-        for (var src : noMatchSources) {
-            compiledNoMatch.add(src.apply(context));
-        }
-        return new OptimizedBiomeLookupSequenceRule(compiledBiomeMatch, List.copyOf(compiledNoMatch), context);
+        return new OptimizedBiomeLookupSequenceRule(perBiomeSources, List.copyOf(noMatchSources));
     }
 
     public record OptimizedBiomeLookupSequenceRule(
+            Reference2ObjectMap<ResourceKey<Biome>, List<SurfaceRules.RuleSource>> sourcesForBiomeMatch,
+            List<SurfaceRules.RuleSource> sourcesForNoBiomeMatch
+    ) implements SurfaceRules.RuleSource {
+        @Override
+        public SurfaceRules.SurfaceRule apply(SurfaceRules.Context context) {
+            var sourcesForBiomeMatch = this.sourcesForBiomeMatch;
+            Reference2ObjectOpenHashMap<ResourceKey<Biome>, List<SurfaceRules.SurfaceRule>> compiledBiomeMatch =
+                    new Reference2ObjectOpenHashMap<>(sourcesForBiomeMatch.size());
+            Reference2ObjectMaps.fastForEach(sourcesForBiomeMatch, entry -> {
+                SurfaceRules.SurfaceRule[] compiled = new SurfaceRules.SurfaceRule[entry.getValue().size()];
+                var uncompiled = entry.getValue();
+                for (int i = 0; i < uncompiled.size(); i++) {
+                    compiled[i] = uncompiled.get(i).apply(context);
+                }
+                compiledBiomeMatch.put(entry.getKey(), List.of(compiled));
+            });
+            var sourcesForNoBiomeMatch = this.sourcesForNoBiomeMatch;
+            SurfaceRules.SurfaceRule[] compiledNoMatch = new SurfaceRules.SurfaceRule[sourcesForNoBiomeMatch.size()];
+            for (int i = 0; i < sourcesForNoBiomeMatch.size(); i++) {
+                compiledNoMatch[i] = sourcesForNoBiomeMatch.get(i).apply(context);
+            }
+            return new CompiledOptimizedBiomeLookupRule(compiledBiomeMatch, List.of(compiledNoMatch), context);
+        }
+
+        @Override
+        public KeyDispatchDataCodec<? extends SurfaceRules.RuleSource> codec() {
+            throw new UnsupportedOperationException("Do not try to serialize OptimizedBiomeLookupSequenceRule");
+        }
+    }
+
+    private record CompiledOptimizedBiomeLookupRule(
             Map<ResourceKey<Biome>, List<SurfaceRules.SurfaceRule>> rulesForBiomeMatch,
             List<SurfaceRules.SurfaceRule> rulesForNoBiomeMatch,
             SurfaceRules.Context context
@@ -88,7 +116,7 @@ public class SurfaceRuleOptimizer {
         @Override
         public boolean equals(Object o) {
             if (o == null || getClass() != o.getClass()) return false;
-            OptimizedBiomeLookupSequenceRule that = (OptimizedBiomeLookupSequenceRule) o;
+            CompiledOptimizedBiomeLookupRule that = (CompiledOptimizedBiomeLookupRule) o;
             return rulesForBiomeMatch.equals(that.rulesForBiomeMatch) && rulesForNoBiomeMatch.equals(that.rulesForNoBiomeMatch);
         }
 

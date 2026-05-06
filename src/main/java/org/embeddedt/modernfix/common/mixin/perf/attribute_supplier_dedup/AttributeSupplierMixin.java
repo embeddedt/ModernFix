@@ -1,5 +1,6 @@
 package org.embeddedt.modernfix.common.mixin.perf.attribute_supplier_dedup;
 
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.core.Holder;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeInstance;
@@ -23,11 +24,11 @@ public class AttributeSupplierMixin {
 
     /**
      * @author embeddedt
-     * @reason Java 9's Map.of() implementation is significantly more compact than ImmutableMap, and we do not
+     * @reason more compact than ImmutableMap due to less wrapper objects, and we do not
      * care about insertion order in this context
      */
     @Inject(method = "<init>", at = @At("RETURN"))
     private void useCompactJavaMap(Map<Holder<Attribute>, AttributeInstance> instances, CallbackInfo ci) {
-        this.instances = Map.copyOf(this.instances);
+        this.instances = new Object2ObjectOpenHashMap<>(this.instances);
     }
 }

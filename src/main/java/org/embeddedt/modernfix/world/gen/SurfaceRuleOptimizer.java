@@ -1,6 +1,5 @@
 package org.embeddedt.modernfix.world.gen;
 
-import it.unimi.dsi.fastutil.objects.Reference2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectMaps;
 import it.unimi.dsi.fastutil.objects.Reference2ObjectOpenHashMap;
 import net.minecraft.core.Holder;
@@ -58,32 +57,49 @@ public class SurfaceRuleOptimizer {
                 noMatchSources.add(innerSource);
             }
         }
-        return new OptimizedBiomeLookupSequenceRule(perBiomeSources, List.copyOf(noMatchSources));
+        @SuppressWarnings("unchecked")
+        ResourceKey<Biome>[] biomeKeys = new ResourceKey[perBiomeSources.size()];
+        SurfaceRules.RuleSource[][] sourcesPerBiome = new SurfaceRules.RuleSource[perBiomeSources.size()][];
+        int i = 0;
+        for (var entry : Reference2ObjectMaps.fastIterable(perBiomeSources)) {
+            biomeKeys[i] = entry.getKey();
+            sourcesPerBiome[i] = entry.getValue().toArray(new SurfaceRules.RuleSource[0]);
+            i++;
+        }
+        return new OptimizedBiomeLookupSequenceRule(biomeKeys, sourcesPerBiome, noMatchSources.toArray(new SurfaceRules.RuleSource[0]));
     }
 
     public record OptimizedBiomeLookupSequenceRule(
-            Reference2ObjectMap<ResourceKey<Biome>, List<SurfaceRules.RuleSource>> sourcesForBiomeMatch,
-            List<SurfaceRules.RuleSource> sourcesForNoBiomeMatch
+            ResourceKey<Biome>[] biomeKeys,
+            SurfaceRules.RuleSource[][] sourcesPerBiome,
+            SurfaceRules.RuleSource[] sourcesForNoBiomeMatch
     ) implements SurfaceRules.RuleSource {
         @Override
         public SurfaceRules.SurfaceRule apply(SurfaceRules.Context context) {
-            var sourcesForBiomeMatch = this.sourcesForBiomeMatch;
+            var biomeKeys = this.biomeKeys;
+            var sourcesPerBiome = this.sourcesPerBiome;
             Reference2ObjectOpenHashMap<ResourceKey<Biome>, List<SurfaceRules.SurfaceRule>> compiledBiomeMatch =
-                    new Reference2ObjectOpenHashMap<>(sourcesForBiomeMatch.size());
-            Reference2ObjectMaps.fastForEach(sourcesForBiomeMatch, entry -> {
-                SurfaceRules.SurfaceRule[] compiled = new SurfaceRules.SurfaceRule[entry.getValue().size()];
-                var uncompiled = entry.getValue();
-                for (int i = 0; i < uncompiled.size(); i++) {
-                    compiled[i] = uncompiled.get(i).apply(context);
+                    new Reference2ObjectOpenHashMap<>(biomeKeys.length);
+            for (int i = 0; i < biomeKeys.length; i++) {
+                var uncompiled = sourcesPerBiome[i];
+                SurfaceRules.SurfaceRule[] compiled = new SurfaceRules.SurfaceRule[uncompiled.length];
+                for (int j = 0; j < uncompiled.length; j++) {
+                    compiled[j] = uncompiled[j].apply(context);
                 }
-                compiledBiomeMatch.put(entry.getKey(), List.of(compiled));
-            });
-            var sourcesForNoBiomeMatch = this.sourcesForNoBiomeMatch;
-            SurfaceRules.SurfaceRule[] compiledNoMatch = new SurfaceRules.SurfaceRule[sourcesForNoBiomeMatch.size()];
-            for (int i = 0; i < sourcesForNoBiomeMatch.size(); i++) {
-                compiledNoMatch[i] = sourcesForNoBiomeMatch.get(i).apply(context);
+                compiledBiomeMatch.put(biomeKeys[i], List.of(compiled));
             }
-            return new CompiledOptimizedBiomeLookupRule(compiledBiomeMatch, List.of(compiledNoMatch), context);
+            var sourcesForNoBiomeMatch = this.sourcesForNoBiomeMatch;
+            List<SurfaceRules.SurfaceRule> compiledNoMatchList;
+            if (sourcesForNoBiomeMatch.length > 0) {
+                SurfaceRules.SurfaceRule[] compiledNoMatch = new SurfaceRules.SurfaceRule[sourcesForNoBiomeMatch.length];
+                for (int i = 0; i < sourcesForNoBiomeMatch.length; i++) {
+                    compiledNoMatch[i] = sourcesForNoBiomeMatch[i].apply(context);
+                }
+                compiledNoMatchList = List.of(compiledNoMatch);
+            } else {
+                compiledNoMatchList = List.of();
+            }
+            return new CompiledOptimizedBiomeLookupRule(compiledBiomeMatch, compiledNoMatchList, context);
         }
 
         @Override

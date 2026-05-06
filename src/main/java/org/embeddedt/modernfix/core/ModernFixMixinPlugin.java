@@ -109,7 +109,6 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
     @Override
     public void onLoad(String mixinPackage) {
-
     }
 
     @Override

@@ -16,6 +16,7 @@ import net.minecraft.world.level.levelgen.SurfaceRules;
 import net.minecraft.world.level.levelgen.SurfaceSystem;
 import net.minecraft.world.level.levelgen.WorldGenerationContext;
 import org.embeddedt.modernfix.world.gen.ChunkBiomeLookup;
+import org.embeddedt.modernfix.world.gen.ExtendedSurfaceContext;
 import org.embeddedt.modernfix.world.gen.PrefetchingBlockColumn;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -41,6 +42,11 @@ public class SurfaceSystemMixin {
         lookup.prepare(accessor.mfix$getBiomeSource(), accessor.mfix$getZoomSeed(), chunk, manager);
         lookupRef.set(lookup);
         return lookup;
+    }
+
+    @Inject(method = "buildSurface", at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/levelgen/SurfaceRules$RuleSource;apply(Ljava/lang/Object;)Ljava/lang/Object;", ordinal = 0))
+    private void injectBiomesOnContext(CallbackInfo ci, @Local(ordinal = 0) SurfaceRules.Context surfacerules$context) {
+        ((ExtendedSurfaceContext)(Object) surfacerules$context).mfix$applyPossibleBiomes();
     }
 
     @Inject(method = "buildSurface", at = @At("TAIL"))

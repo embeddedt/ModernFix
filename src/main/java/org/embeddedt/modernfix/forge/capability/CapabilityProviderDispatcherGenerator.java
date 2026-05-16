@@ -94,9 +94,10 @@ public class CapabilityProviderDispatcherGenerator {
      * Convenience method that takes an array of providers and returns the constructor.
      */
     private static MethodHandle getOrGenerateConstructor(ICapabilityProvider[] providers) {
-        List<Class<? extends ICapabilityProvider>> types = Arrays.stream(providers)
-                .<Class<? extends ICapabilityProvider>>map(ICapabilityProvider::getClass)
-                .toList();
+        List<Class<? extends ICapabilityProvider>> types = new ArrayList<>(providers.length);
+        for (ICapabilityProvider provider : providers) {
+            types.add(provider.getClass());
+        }
         return getOrGenerateConstructor(types);
     }
 

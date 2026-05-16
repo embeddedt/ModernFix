@@ -34,12 +34,13 @@ public class CapabilityAnalyzer {
     private static final String ICAP_PROVIDER_INTERNAL = "net/minecraftforge/common/capabilities/ICapabilityProvider";
 
     public static CapabilityAnalysisResult analyze(Class<? extends ICapabilityProvider> clazz) {
-        if (!ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_capabilities.bytecode_analysis.CapabilityAnalyzer")) {
-            return new CapabilityAnalysisResult.Indeterminate("bytecode analysis disabled");
-        }
         CapabilityAnalysisResult result = cache.get(clazz);
         if (result != null) return result;
-        result = doAnalyzeSafe(clazz);
+        if (!ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_capabilities.bytecode_analysis.CapabilityAnalyzer")) {
+            result = new CapabilityAnalysisResult.Indeterminate("bytecode analysis disabled");
+        } else {
+            result = doAnalyzeSafe(clazz);
+        }
         CapabilityAnalysisResult existing = cache.putIfAbsent(clazz, result);
         return existing != null ? existing : result;
     }

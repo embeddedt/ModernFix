@@ -22,7 +22,8 @@ public class NightConfigWatchThrottler {
     @SuppressWarnings("rawtypes")
     public static void throttle() {
         Map watchedDirs = ObfuscationReflectionHelper.getPrivateValue(FileWatcher.class, FileWatcher.defaultInstance(), "watchedDirs");
-        ObfuscationReflectionHelper.setPrivateValue(FileWatcher.class, FileWatcher.defaultInstance(), new ForwardingMap() {
+        Thread launchThread = Thread.currentThread();
+        Map watchedDirsWrapper = new ForwardingMap() {
             @Override
             protected Map delegate() {
                 return watchedDirs;
@@ -44,13 +45,24 @@ public class NightConfigWatchThrottler {
                         public Iterator iterator() {
                             // iterator() is called at the beginning of each iteration of the watch loop,
                             // so it is a good spot to inject the delay.
-                            LockSupport.parkNanos(DELAY);
+                            if (Thread.currentThread() != launchThread) {
+                                LockSupport.parkNanos(DELAY);
+                            }
                             return super.iterator();
                         }
                     };
                 }
                 return cachedValues;
             }
-        }, "watchedDirs");
+        };
+        // Force all classes related to the iterator to be loaded ahead of time. This is necessary to prevent
+        // a ConcurrentModificationException from being thrown inside ModLauncher when the NightConfig file
+        // watcher thread loads forwarding collection classes while the main thread is still mutating the
+        // launch plugin map.
+        //noinspection StatementWithEmptyBody
+        for (var ignored : watchedDirsWrapper.values()) {
+
+        }
+        ObfuscationReflectionHelper.setPrivateValue(FileWatcher.class, FileWatcher.defaultInstance(), watchedDirsWrapper, "watchedDirs");
     }
 }

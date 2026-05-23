@@ -26,8 +26,15 @@ public class NoiseBasedChunkGeneratorMixin {
     @SuppressWarnings("unchecked")
     private static void mfix$accumulate(Set<ResourceKey<Biome>> chunkBiomes, LevelChunkSection section) {
         var palette = ((ExtendedPalettedContainer<Holder<Biome>>)section.getBiomes()).mfix$getPalette();
-        for (int i = 0; i < palette.getSize(); i++) {
-            chunkBiomes.add(palette.valueFor(i).unwrapKey().orElseThrow());
+        if (palette.getSize() == 1) {
+            // No need to iterate the storage itself, as there can only be one value
+            chunkBiomes.add(palette.valueFor(0).unwrapKey().orElseThrow());
+        } else {
+            // Use getAll() rather than raw palette iteration. PalettedContainer.recreate() seeds the new
+            // palette with Biomes.PLAINS (the initial default), leaving a stale palette entry even after
+            // fillBiomesFromNoise replaces all cells with real biomes. getAll() only visits entries that
+            // are actually referenced in the backing storage, so stale entries are correctly excluded.
+            section.getBiomes().getAll(holder -> chunkBiomes.add(holder.unwrapKey().orElseThrow()));
         }
     }
 

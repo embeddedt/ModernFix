@@ -24,7 +24,7 @@ public class ServerLevelMixin {
                                      @Local(ordinal = 0, argsOnly = true) LevelStorageSource.LevelStorageAccess levelStorageAccess,
                                      @Local(ordinal = 0, argsOnly = true) ResourceKey<Level> dimension,
                                      @Local(ordinal = 0, argsOnly = true) MinecraftServer server) {
-        ((IChunkGenerator)instance).mfix$setStrongholdCachePath(levelStorageAccess.getDimensionPath(dimension), server.registryAccess());
+        ((IChunkGenerator)instance).mfix$setStrongholdCachePath(levelStorageAccess.getDimensionPath(dimension), server);
         original.call(instance);
     }
 }

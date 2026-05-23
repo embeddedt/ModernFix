@@ -135,10 +135,17 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         }
 
         String mixin = mixinClassName.substring(MIXIN_PACKAGE_ROOT.length());
-        if(!instance.isOptionEnabled(mixin))
+        if(!instance.isOptionEnabled(mixin)) {
+            this.logger.debug("Skipping mixin {}: disabled by configuration", mixin);
             return false;
+        }
         String disabledBecauseMod = instance.config.getPermanentlyDisabledMixins().get(mixin);
-        return disabledBecauseMod == null;
+        if(disabledBecauseMod != null) {
+            this.logger.debug("Skipping mixin {}: disabled for mod compat ({})", mixin, disabledBecauseMod);
+            return false;
+        }
+        this.logger.debug("Applying mixin {}", mixin);
+        return true;
     }
 
     public boolean isOptionEnabled(String mixin) {

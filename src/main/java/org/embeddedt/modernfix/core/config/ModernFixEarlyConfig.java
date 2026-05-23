@@ -72,7 +72,7 @@ public class ModernFixEarlyConfig {
     public static final FeatureLevel ACTIVE_FEATURE_LEVEL = resolveFeatureLevel();
 
     private static FeatureLevel resolveFeatureLevel() {
-        String prop = System.getProperty("modernfix.stabilityLevel", "ga").toLowerCase(Locale.ROOT);
+        String prop = System.getProperty("modernfix.stabilityLevel", "ga").toUpperCase(Locale.ROOT);
         try {
             return FeatureLevel.valueOf(prop);
         } catch (IllegalArgumentException e) {

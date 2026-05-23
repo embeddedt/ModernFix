@@ -129,6 +129,7 @@ dependencies {
     modCompileOnly("curse.maven:cofhcore-69162:5374122")
     modCompileOnly("curse.maven:resourcefullib-570073:5659871")
     modCompileOnly("curse.maven:kubejs-238086:5853326")
+    modCompileOnly("curse.maven:terrablender-563928:6290448")
 }
 
 tasks.named<Jar>("jar") {

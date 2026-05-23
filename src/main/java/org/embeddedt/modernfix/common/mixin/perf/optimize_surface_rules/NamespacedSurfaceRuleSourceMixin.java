@@ -41,7 +41,7 @@ public class NamespacedSurfaceRuleSourceMixin {
      * @reason Avoid doing an expensive biome lookup per block in cases where we can prove all biomes will be from a
      * single namespace. This achieves much of the benefit of TerraBlenderFix without the compatibility issues.
      */
-    @Inject(method = "apply(Lnet/minecraft/world/level/levelgen/SurfaceRules$Context;)Lnet/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule;", at = @At("HEAD"), cancellable = true)
+    @Inject(method = "apply(Lnet/minecraft/world/level/levelgen/SurfaceRules$Context;)Lnet/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule;", at = @At("HEAD"), cancellable = true, remap = false)
     private void modernfix$fastApply(SurfaceRules.Context context, CallbackInfoReturnable<SurfaceRules.SurfaceRule> cir,
                                      @Share("possibleNamespaces") LocalRef<Set<String>> possibleNamespacesRef) {
         var possibleBiomes = ((ExtendedSurfaceContext)(Object)context).mfix$getPossibleBiomes();
@@ -69,7 +69,7 @@ public class NamespacedSurfaceRuleSourceMixin {
      * @reason Even if we have to fall back to the namespaced source, avoid compiling surface rules for namespaces that
      * will never be hit in the given chunk.
      */
-    @ModifyArg(method = "apply(Lnet/minecraft/world/level/levelgen/SurfaceRules$Context;)Lnet/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule;", at = @At(value = "INVOKE", target = "Ljava/util/Set;forEach(Ljava/util/function/Consumer;)V"))
+    @ModifyArg(method = "apply(Lnet/minecraft/world/level/levelgen/SurfaceRules$Context;)Lnet/minecraft/world/level/levelgen/SurfaceRules$SurfaceRule;", at = @At(value = "INVOKE", target = "Ljava/util/Set;forEach(Ljava/util/function/Consumer;)V"), remap = false)
     private Consumer<Map.Entry<String, SurfaceRules.RuleSource>> mfix$filterConsumer(Consumer<Map.Entry<String, SurfaceRules.RuleSource>> originalConsumer,
                                                                                      @Share("possibleNamespaces") LocalRef<Set<String>> possibleNamespacesRef) {
         var possibleNamespaces = possibleNamespacesRef.get();

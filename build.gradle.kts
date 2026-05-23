@@ -116,6 +116,7 @@ dependencies {
     compileOnly("curse.maven:cofhcore-69162:5374122")
     compileOnly("curse.maven:resourcefullib-570073:5659871")
     compileOnly("curse.maven:kubejs-238086:5853326")
+    compileOnly("curse.maven:terrablender-neoforge-940057:6054947")
 }
 
 tasks.named<Jar>("jar") {

@@ -9,7 +9,9 @@ import org.apache.commons.lang3.SystemUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
+import org.embeddedt.modernfix.annotation.FeatureLevel;
 import org.embeddedt.modernfix.annotation.IgnoreOutsideDev;
+import org.embeddedt.modernfix.annotation.RequiresFeatureLevel;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -65,6 +67,18 @@ public class ModernFixEarlyConfig {
     private static final String MIXIN_CLIENT_ONLY_DESC = Type.getDescriptor(ClientOnlyMixin.class);
     private static final String MIXIN_REQUIRES_MOD_DESC = Type.getDescriptor(RequiresMod.class);
     private static final String MIXIN_DEV_ONLY_DESC = Type.getDescriptor(IgnoreOutsideDev.class);
+    private static final String FEATURE_LEVEL_ANNOTATION_DESC = Type.getDescriptor(RequiresFeatureLevel.class);
+
+    public static final FeatureLevel ACTIVE_FEATURE_LEVEL = resolveFeatureLevel();
+
+    private static FeatureLevel resolveFeatureLevel() {
+        String prop = System.getProperty("modernfix.stabilityLevel", "ga").toLowerCase(Locale.ROOT);
+        try {
+            return FeatureLevel.valueOf(prop);
+        } catch (IllegalArgumentException e) {
+            return FeatureLevel.GA;
+        }
+    }
 
     private static final Pattern PLATFORM_PREFIX = Pattern.compile("(forge|fabric|common)\\.");
 
@@ -112,6 +126,7 @@ public class ModernFixEarlyConfig {
                     return;
                 boolean isMixin = false, isClientOnly = false, requiredModPresent = true, isDevOnly = false;
                 String requiredModId = "";
+                FeatureLevel requiredLevel = FeatureLevel.GA;
                 for(AnnotationNode annotation : node.invisibleAnnotations) {
                     if(Objects.equals(annotation.desc, MIXIN_DESC)) {
                         isMixin = true;
@@ -130,6 +145,15 @@ public class ModernFixEarlyConfig {
                         }
                     } else if(Objects.equals(annotation.desc, MIXIN_DEV_ONLY_DESC)) {
                         isDevOnly = true;
+                    } else if(Objects.equals(annotation.desc, FEATURE_LEVEL_ANNOTATION_DESC)) {
+                        for(int i = 0; i < annotation.values.size(); i += 2) {
+                            if(annotation.values.get(i).equals("value")) {
+                                // ASM stores enum annotation values as String[]{typeDescriptor, constantName}
+                                String[] enumVal = (String[]) annotation.values.get(i + 1);
+                                requiredLevel = FeatureLevel.valueOf(enumVal[1]);
+                                break;
+                            }
+                        }
                     }
                 }
                 if(isMixin && (!isDevOnly || ModernFixPlatformHooks.INSTANCE.isDevEnv())) {
@@ -138,6 +162,8 @@ public class ModernFixEarlyConfig {
                         mixinsMissingMods.put(mixinClassName, requiredModId);
                     else if(isClientOnly && !ModernFixPlatformHooks.INSTANCE.isClient())
                         mixinsMissingMods.put(mixinClassName, "[not client]");
+                    else if(!ACTIVE_FEATURE_LEVEL.isAtLeast(requiredLevel))
+                        mixinsMissingMods.put(mixinClassName, "[feature level: requires " + requiredLevel + "]");
                     String mixinCategoryName = "mixin." + mixinClassName.substring(0, mixinClassName.lastIndexOf('.'));
                     mixinOptions.add(mixinCategoryName);
                 }

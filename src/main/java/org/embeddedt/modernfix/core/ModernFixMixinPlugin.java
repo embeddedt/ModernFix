@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.core;
 import com.google.common.collect.ImmutableSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.annotation.FeatureLevel;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
 import org.embeddedt.modernfix.core.launchplugin.CoreLaunchPluginService;
@@ -39,6 +40,11 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
 
             this.logger.info("Loaded configuration file for ModernFix {}: {} options available, {} override(s) found",
                     ModernFixPlatformHooks.INSTANCE.getVersionString(), config.getOptionCount(), config.getOptionOverrideCount());
+
+            if(ModernFixEarlyConfig.ACTIVE_FEATURE_LEVEL != FeatureLevel.GA) {
+                this.logger.warn("ModernFix stability level is set to {}. Features at this level may be unstable or cause crashes.",
+                        ModernFixEarlyConfig.ACTIVE_FEATURE_LEVEL);
+            }
 
             config.getOptionMap().values().forEach(option -> {
                 if (option.isOverridden()) {

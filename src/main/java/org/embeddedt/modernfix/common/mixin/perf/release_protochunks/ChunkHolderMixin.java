@@ -4,7 +4,6 @@ import com.mojang.datafixers.util.Either;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkMap;
-import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import org.embeddedt.modernfix.duck.release_protochunks.IClearableChunkHolder;
@@ -85,7 +84,7 @@ public class ChunkHolderMixin implements IClearableChunkHolder {
     }
 
     private void mfix$markAsNeedingProtoChunkDrop() {
-        if (!ChunkLevel.fullStatus(this.ticketLevel).isOrAfter(FullChunkStatus.FULL)
+        if (this.ticketLevel >= LOWEST_DROPPABLE_TICKET_LEVEL
                 && ChunkLevel.isLoaded(this.ticketLevel)) {
             // register for suspension check when chain completes
             var map = ((ISuspendedHolderTrackingChunkMap)this.playerProvider);

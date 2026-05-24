@@ -9,7 +9,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Path;
@@ -74,8 +73,8 @@ public class ZipPackIndex {
     // Fields
     // -------------------------------------------------------------------------
 
-    /** Memory-mapped central directory. May be null for empty/invalid zips. */
-    private final MappedByteBuffer cdBuffer;
+    /** Central directory buffer (memory-mapped or heap-allocated fallback). May be null for empty/invalid zips. */
+    private final ByteBuffer cdBuffer;
     /** Root of the directory tree, always non-null (may be empty but frozen). */
     private final DirNode root;
 
@@ -87,14 +86,14 @@ public class ZipPackIndex {
      * Build an index from the zip at the given path. Does not open a {@link ZipFile}
      * and does not keep a reference to one; the caller owns all {@link ZipFile} lifecycle.
      *
-     * @throws IOException if the file cannot be read or its central directory cannot be mapped
+     * @throws IOException if the file cannot be read or its central directory cannot be parsed
      */
     public ZipPackIndex(Path zipPath) throws IOException {
-        this.cdBuffer = mmapCentralDirectory(zipPath);
+        this.cdBuffer = readCentralDirectory(zipPath);
         this.root = buildTree();
     }
 
-    private static MappedByteBuffer mmapCentralDirectory(Path filePath) throws IOException {
+    private static ByteBuffer readCentralDirectory(Path filePath) throws IOException {
         try (FileChannel channel = FileChannel.open(filePath, StandardOpenOption.READ)) {
             long fileSize = channel.size();
             if (fileSize < EOCD_SIZE) return null;
@@ -138,13 +137,24 @@ public class ZipPackIndex {
                 throw new IOException("Invalid central directory range");
             }
 
+            // Try memory-mapping first; fall back to a heap copy if the OS refuses.
             try {
-                MappedByteBuffer buf = channel.map(FileChannel.MapMode.READ_ONLY, cdOffset, cdSize);
+                ByteBuffer buf = channel.map(FileChannel.MapMode.READ_ONLY, cdOffset, cdSize);
                 buf.order(ByteOrder.LITTLE_ENDIAN);
                 return buf;
-            } catch (RuntimeException e) {
-                throw new IOException("Failed to map central directory", e);
+            } catch (Exception ignored) {
+                // mmap unavailable (e.g. some Linux mount flags, container restrictions);
+                // read the central directory into a heap buffer instead.
             }
+
+            ByteBuffer buf = ByteBuffer.allocate((int) cdSize);
+            buf.order(ByteOrder.LITTLE_ENDIAN);
+            while (buf.hasRemaining()) {
+                int n = channel.read(buf, cdOffset + buf.position());
+                if (n < 0) throw new IOException("Truncated central directory during heap read");
+            }
+            buf.flip();
+            return buf;
         }
     }
 
@@ -154,6 +164,11 @@ public class ZipPackIndex {
             treeRoot.freeze();
             return treeRoot;
         }
+
+        // Computed here (not statically) so that any loader-injected PackType values
+        // registered after class-load are included.
+        Set<String> packTypeDirs = new HashSet<>();
+        for (PackType type : PackType.values()) packTypeDirs.add(type.getDirectory());
 
         // Accumulate file offsets per DirNode before compacting to int[]
         IdentityHashMap<DirNode, List<Integer>> fileOffsets = new IdentityHashMap<>();
@@ -180,6 +195,10 @@ public class ZipPackIndex {
 
             if (!name.isEmpty()) {
                 String[] parts = name.split("/");
+                if (!packTypeDirs.contains(parts[0])) {
+                    pos += recordLen;
+                    continue;
+                }
                 DirNode current = treeRoot;
                 int dirDepth = isDirectory ? parts.length : parts.length - 1;
                 for (int i = 0; i < dirDepth; i++) {

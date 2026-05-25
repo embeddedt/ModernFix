@@ -2,11 +2,13 @@ package org.embeddedt.modernfix.common.mixin.perf.cache_strongholds;
 
 import com.llamalad7.mixinextras.injector.wrapmethod.WrapMethod;
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.sugar.Share;
+import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import net.minecraft.Util;
 import net.minecraft.core.Holder;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.*;
 import net.minecraft.resources.RegistryOps;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.BiomeSource;
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
@@ -17,6 +19,8 @@ import org.embeddedt.modernfix.duck.IChunkGenerator;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.lang.ref.SoftReference;
 import java.nio.charset.StandardCharsets;
@@ -29,6 +33,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 @Mixin(ChunkGeneratorStructureState.class)
 public class ChunkGeneratorMixin implements IChunkGenerator {
@@ -41,22 +47,24 @@ public class ChunkGeneratorMixin implements IChunkGenerator {
     private BiomeSource biomeSource;
 
     private Path mfix$dimensionPath;
-    private RegistryAccess.Frozen mfix$registryAccess;
+    private MinecraftServer mfix$server;
+
     private SoftReference<Map<String, List<ChunkPos>>> mfix$cachedPositions = new SoftReference<>(null);
 
     private static final String CACHE_FILENAME = "mfix_stronghold_cache_v2.nbt";
 
     @Override
-    public void mfix$setStrongholdCachePath(Path cachePath, RegistryAccess.Frozen registryAccess) {
+    public void mfix$setStrongholdCachePath(Path cachePath, MinecraftServer server) {
         this.mfix$dimensionPath = cachePath;
-        this.mfix$registryAccess = registryAccess;
+        this.mfix$server = server;
     }
 
     @WrapMethod(method = "generateRingPositions")
     private CompletableFuture<List<ChunkPos>> modernfix$cacheRingPositions(Holder<StructureSet> structureSet,
-                                                                          ConcentricRingsStructurePlacement placement,
-                                                                          Operation<CompletableFuture<List<ChunkPos>>> original) {
-        if (this.mfix$registryAccess == null || this.mfix$dimensionPath == null) {
+                                                                           ConcentricRingsStructurePlacement placement,
+                                                                           Operation<CompletableFuture<List<ChunkPos>>> original,
+                                                                           @Share("threadPool") LocalRef<ExecutorService> threadPoolRef) {
+        if (this.mfix$server == null || this.mfix$dimensionPath == null) {
             return original.call(structureSet, placement);
         }
 
@@ -69,14 +77,35 @@ public class ChunkGeneratorMixin implements IChunkGenerator {
             return CompletableFuture.completedFuture(List.copyOf(cached));
         }
 
-        return original.call(structureSet, placement).thenApplyAsync(positions -> {
-            mfix$writeToCache(cacheKey, positions);
-            return positions;
-        }, Util.ioPool());
+        var server = this.mfix$server;
+        ExecutorService strongholdPool = Executors.newFixedThreadPool(Math.max(1, Runtime.getRuntime().availableProcessors() - 2));
+        threadPoolRef.set(strongholdPool);
+        try {
+            return original.call(structureSet, placement).thenApplyAsync(positions -> {
+                // Skip write if server exited before we finished
+                if (server.isRunning()) {
+                    mfix$writeToCache(cacheKey, positions);
+                }
+                return positions;
+            }, Util.ioPool());
+        } finally {
+            strongholdPool.shutdown();
+        }
+    }
+
+    /**
+     * @author embeddedt
+     * @reason Ring position calculation is often not required for initial chunk generation, but the tasks still occupy
+     * CPU time on the main worker pool and prevent higher priority work from progressing. To fix this we use a
+     * dedicated pool.
+     */
+    @Redirect(method = "generateRingPositions", at = @At(value = "INVOKE", target = "Lnet/minecraft/Util;backgroundExecutor()Ljava/util/concurrent/ExecutorService;"))
+    private ExecutorService useDedicatedService(@Share("threadPool") LocalRef<ExecutorService> threadPoolRef) {
+        return threadPoolRef.get();
     }
 
     private String mfix$makeCacheKey(ConcentricRingsStructurePlacement placement) {
-        RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, this.mfix$registryAccess);
+        RegistryOps<Tag> ops = RegistryOps.create(NbtOps.INSTANCE, this.mfix$server.registryAccess());
         String placementKey = ConcentricRingsStructurePlacement.CODEC.codec().encodeStart(ops, placement)
                 .result().map(Tag::toString).orElse(null);
         String biomeSourceKey = BiomeSource.CODEC.encodeStart(ops, this.biomeSource)

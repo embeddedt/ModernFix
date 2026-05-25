@@ -5,7 +5,6 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkMap;
-import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.util.thread.BlockableEventLoop;
 import net.minecraft.world.level.ChunkPos;
 import org.embeddedt.modernfix.duck.release_protochunks.IClearableChunkHolder;
@@ -61,7 +60,7 @@ public abstract class ChunkMapMixin implements ISuspendedHolderTrackingChunkMap 
             long pos = entry.getLongKey();
             ChunkHolder holder = this.updatingChunkMap.get(pos);
             if (holder == null // already removed
-                || ChunkLevel.fullStatus(holder.getTicketLevel()).isOrAfter(FullChunkStatus.FULL) // promoted to FULL
+                || holder.getTicketLevel() < IClearableChunkHolder.LOWEST_DROPPABLE_TICKET_LEVEL // promoted to FULL or adjacent to FULL chunk
                 || !ChunkLevel.isLoaded(holder.getTicketLevel()) // is going to be dropped through normal code path
             ) {
                 dropIterator.remove();

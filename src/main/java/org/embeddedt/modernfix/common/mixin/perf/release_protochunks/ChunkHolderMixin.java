@@ -3,7 +3,6 @@ package org.embeddedt.modernfix.common.mixin.perf.release_protochunks;
 import net.minecraft.server.level.ChunkHolder;
 import net.minecraft.server.level.ChunkLevel;
 import net.minecraft.server.level.ChunkMap;
-import net.minecraft.server.level.FullChunkStatus;
 import net.minecraft.server.level.GenerationChunkHolder;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -63,7 +62,7 @@ public abstract class ChunkHolderMixin extends GenerationChunkHolder implements 
     }
 
     private void mfix$markAsNeedingProtoChunkDrop() {
-        if (!ChunkLevel.fullStatus(this.ticketLevel).isOrAfter(FullChunkStatus.FULL)
+        if (this.ticketLevel >= LOWEST_DROPPABLE_TICKET_LEVEL
                 && ChunkLevel.isLoaded(this.ticketLevel)) {
             // register for suspension check when chain completes
             var map = ((ISuspendedHolderTrackingChunkMap)this.playerProvider);

@@ -1,5 +1,8 @@
 package org.embeddedt.modernfix.resources;
 
+import it.unimi.dsi.fastutil.ints.IntArrayList;
+import it.unimi.dsi.fastutil.ints.IntList;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.PackResources;
 import net.minecraft.server.packs.PackType;
@@ -46,7 +49,7 @@ public class ZipPackIndex {
     private static final int CD_OFF_EXTRA_LENGTH     = 30;
     private static final int CD_OFF_COMMENT_LENGTH   = 32;
 
-    private static final int[] EMPTY_OFFSETS = new int[0];
+    private static final IntList EMPTY_OFFSETS = IntList.of();
 
     // -------------------------------------------------------------------------
     // DirNode
@@ -54,14 +57,17 @@ public class ZipPackIndex {
 
     static final class DirNode {
         Map<String, DirNode> childDirs;
-        int[] fileChildOffsets; // offsets into cdBuffer for each direct file child
+        IntList fileChildOffsets; // offsets into cdBuffer for each direct file child
 
         DirNode() {
-            childDirs = new HashMap<>();
+            childDirs = new Object2ObjectOpenHashMap<>();
             fileChildOffsets = EMPTY_OFFSETS;
         }
 
         void freeze() {
+            if (fileChildOffsets instanceof IntArrayList arrayList) {
+                arrayList.trim();
+            }
             childDirs = childDirs.isEmpty() ? Map.of() : Map.copyOf(childDirs);
             for (DirNode child : childDirs.values()) {
                 child.freeze();
@@ -75,6 +81,8 @@ public class ZipPackIndex {
 
     /** Central directory buffer (memory-mapped or heap-allocated fallback). May be null for empty/invalid zips. */
     private final ByteBuffer cdBuffer;
+    /** Top-level directories tracked by the index. */
+    private final Set<String> trackedTopLevelDirs;
     /** Root of the directory tree, always non-null (may be empty but frozen). */
     private final DirNode root;
 
@@ -90,6 +98,11 @@ public class ZipPackIndex {
      */
     public ZipPackIndex(Path zipPath) throws IOException {
         this.cdBuffer = readCentralDirectory(zipPath);
+        // Computed here (not statically) so that any loader-injected PackType values
+        // registered after class-load are included.
+        Set<String> packTypeDirs = new HashSet<>();
+        for (PackType type : PackType.values()) packTypeDirs.add(type.getDirectory());
+        this.trackedTopLevelDirs = Set.copyOf(packTypeDirs);
         this.root = buildTree();
     }
 
@@ -159,68 +172,77 @@ public class ZipPackIndex {
     }
 
     private DirNode buildTree() throws IOException {
+        var cdBuffer = this.cdBuffer;
+
         DirNode treeRoot = new DirNode();
         if (cdBuffer == null) {
             treeRoot.freeze();
             return treeRoot;
         }
 
-        // Computed here (not statically) so that any loader-injected PackType values
-        // registered after class-load are included.
-        Set<String> packTypeDirs = new HashSet<>();
-        for (PackType type : PackType.values()) packTypeDirs.add(type.getDirectory());
-
-        // Accumulate file offsets per DirNode before compacting to int[]
-        IdentityHashMap<DirNode, List<Integer>> fileOffsets = new IdentityHashMap<>();
-
         int pos = 0;
         int limit = cdBuffer.limit();
         while (pos + CD_ENTRY_HEADER_SIZE <= limit) {
             if (cdBuffer.getInt(pos) != CD_ENTRY_SIGNATURE) break;
-
-            int fileNameLen = Short.toUnsignedInt(cdBuffer.getShort(pos + CD_OFF_FILENAME_LENGTH));
-            int extraLen    = Short.toUnsignedInt(cdBuffer.getShort(pos + CD_OFF_EXTRA_LENGTH));
-            int commentLen  = Short.toUnsignedInt(cdBuffer.getShort(pos + CD_OFF_COMMENT_LENGTH));
-            int recordLen   = CD_ENTRY_HEADER_SIZE + fileNameLen + extraLen + commentLen;
-            if (pos + recordLen > limit) {
-                throw new IOException("Truncated central directory");
-            }
-
-            byte[] nameBytes = new byte[fileNameLen];
-            cdBuffer.get(pos + CD_ENTRY_HEADER_SIZE, nameBytes);
-            String name = new String(nameBytes, StandardCharsets.UTF_8);
-
-            boolean isDirectory = name.endsWith("/");
-            if (isDirectory) name = name.substring(0, name.length() - 1);
-
-            if (!name.isEmpty()) {
-                String[] parts = name.split("/");
-                if (!packTypeDirs.contains(parts[0])) {
-                    pos += recordLen;
-                    continue;
-                }
-                DirNode current = treeRoot;
-                int dirDepth = isDirectory ? parts.length : parts.length - 1;
-                for (int i = 0; i < dirDepth; i++) {
-                    current = current.childDirs.computeIfAbsent(parts[i], k -> new DirNode());
-                }
-                if (!isDirectory) {
-                    fileOffsets.computeIfAbsent(current, k -> new ArrayList<>()).add(pos);
-                }
-            }
-
-            pos += recordLen;
+            pos += indexCdEntry(pos, limit, treeRoot, cdBuffer);
         }
-
-        // Compact to int[] arrays
-        fileOffsets.forEach((node, offsets) -> {
-            int[] arr = new int[offsets.size()];
-            for (int i = 0; i < arr.length; i++) arr[i] = offsets.get(i);
-            node.fileChildOffsets = arr;
-        });
 
         treeRoot.freeze();
         return treeRoot;
+    }
+
+    /**
+     * Parses the CD entry at {@code pos}, inserts it into the tree, and returns the
+     * number of bytes to advance {@code pos} (i.e. the full record length).
+     */
+    private int indexCdEntry(int pos, int limit,
+                             DirNode treeRoot,
+                             ByteBuffer cdBuffer) throws IOException {
+        int fileNameLen = Short.toUnsignedInt(cdBuffer.getShort(pos + CD_OFF_FILENAME_LENGTH));
+        int extraLen    = Short.toUnsignedInt(cdBuffer.getShort(pos + CD_OFF_EXTRA_LENGTH));
+        int commentLen  = Short.toUnsignedInt(cdBuffer.getShort(pos + CD_OFF_COMMENT_LENGTH));
+        int recordLen   = CD_ENTRY_HEADER_SIZE + fileNameLen + extraLen + commentLen;
+        if (pos + recordLen > limit) {
+            throw new IOException("Truncated central directory");
+        }
+
+        byte[] nameBytes = new byte[fileNameLen];
+        cdBuffer.get(pos + CD_ENTRY_HEADER_SIZE, nameBytes);
+
+        DirNode current = treeRoot;
+        boolean tracked = false;
+        boolean skipped = false;
+        int segStart = 0;
+
+        for (int i = 0; i < fileNameLen; i++) {
+            if (nameBytes[i] == '/') {
+                int segLen = i - segStart;
+                if (segLen > 0) {
+                    String segment = new String(nameBytes, segStart, segLen, StandardCharsets.UTF_8);
+                    if (!tracked) {
+                        if (!trackedTopLevelDirs.contains(segment)) { skipped = true; break; }
+                        tracked = true;
+                    }
+                    DirNode next = current.childDirs.get(segment);
+                    //noinspection Java8MapApi
+                    if (next == null) {
+                        current.childDirs.put(segment, next = new DirNode());
+                    }
+                    current = next;
+                }
+                segStart = i + 1;
+            }
+        }
+
+        // A remaining non-empty segment after the last '/' is a file basename.
+        if (!skipped && tracked && segStart < fileNameLen) {
+            if (current.fileChildOffsets == EMPTY_OFFSETS) {
+                current.fileChildOffsets = new IntArrayList();
+            }
+            current.fileChildOffsets.add(pos);
+        }
+
+        return recordLen;
     }
 
     // -------------------------------------------------------------------------
@@ -246,6 +268,10 @@ public class ZipPackIndex {
     // Public API
     // -------------------------------------------------------------------------
 
+    public Set<String> getTrackedTopLevelDirs() {
+        return this.trackedTopLevelDirs;
+    }
+
     /**
      * Returns all namespaces present under the given pack type directory.
      *
@@ -262,6 +288,28 @@ public class ZipPackIndex {
             }
         }
         return result;
+    }
+
+    public boolean hasResource(String... paths) {
+        var node = this.root;
+        for (int i = 0; i < paths.length - 1; i++) {
+            var path = paths[i];
+            if (path.isEmpty()) {
+                continue;
+            }
+            node = node.childDirs.get(path);
+            if (node == null) {
+                return false;
+            }
+        }
+        String basename = paths[paths.length - 1];
+        var offsets = node.fileChildOffsets;
+        for (int i = 0; i < offsets.size(); i++) {
+            if (basename.equals(readBasename(offsets.getInt(i)))) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -310,8 +358,9 @@ public class ZipPackIndex {
                                   ZipFile zipFile, String namespace,
                                   PackResources.ResourceOutput output) {
         // Emit direct file children of this node
-        for (int cdOffset : node.fileChildOffsets) {
-            String basename = readBasename(cdOffset);
+        var offsets = node.fileChildOffsets;
+        for (int i = 0; i < offsets.size(); i++) {
+            String basename = readBasename(offsets.getInt(i));
             String rlPathFull = rlSubPath + basename;
             ResourceLocation rl = ResourceLocation.tryBuild(namespace, rlPathFull);
             if (rl != null) {

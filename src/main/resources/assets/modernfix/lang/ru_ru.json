@@ -17,7 +17,7 @@
   "modernfix.option.enabled": "включён",
   "modernfix.option.mod_override": " модами [%s]",
   "modernfix.config.not_default": " (модифицировано)",
-  "asynclocator.map.locating": "Map (Ищем...)",
+  "asynclocator.map.locating": "Карта (Ищем...)",
   "asynclocator.map.none": "Карта (Не было найдено ближайших структур)",
   "modernfix.option.category.performance": "Производительность",
   "modernfix.option.category.performance.description": "Фичи, которые улучшают производительность игры/запуска",

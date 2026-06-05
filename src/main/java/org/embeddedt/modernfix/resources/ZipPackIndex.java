@@ -13,7 +13,9 @@ import java.io.InputStream;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.channels.FileChannel;
+import java.nio.channels.SeekableByteChannel;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.util.*;
@@ -106,8 +108,16 @@ public class ZipPackIndex {
         this.root = buildTree();
     }
 
+    private static SeekableByteChannel obtainChannel(Path filePath) throws IOException {
+        try {
+            return FileChannel.open(filePath, StandardOpenOption.READ);
+        } catch (Exception e) {
+            return Files.newByteChannel(filePath);
+        }
+    }
+
     private static ByteBuffer readCentralDirectory(Path filePath) throws IOException {
-        try (FileChannel channel = FileChannel.open(filePath, StandardOpenOption.READ)) {
+        try (SeekableByteChannel channel = obtainChannel(filePath)) {
             long fileSize = channel.size();
             if (fileSize < EOCD_SIZE) return null;
 
@@ -117,7 +127,8 @@ public class ZipPackIndex {
 
             long tailStart = fileSize - tailSize;
             while (tail.hasRemaining()) {
-                int n = channel.read(tail, tailStart + tail.position());
+                channel.position(tailStart + tail.position());
+                int n = channel.read(tail);
                 if (n < 0) {
                     break;
                 }
@@ -151,19 +162,22 @@ public class ZipPackIndex {
             }
 
             // Try memory-mapping first; fall back to a heap copy if the OS refuses.
-            try {
-                ByteBuffer buf = channel.map(FileChannel.MapMode.READ_ONLY, cdOffset, cdSize);
-                buf.order(ByteOrder.LITTLE_ENDIAN);
-                return buf;
-            } catch (Exception ignored) {
-                // mmap unavailable (e.g. some Linux mount flags, container restrictions);
-                // read the central directory into a heap buffer instead.
+            if (channel instanceof FileChannel fc) {
+                try {
+                    ByteBuffer buf = fc.map(FileChannel.MapMode.READ_ONLY, cdOffset, cdSize);
+                    buf.order(ByteOrder.LITTLE_ENDIAN);
+                    return buf;
+                } catch (Exception ignored) {
+                    // mmap unavailable (e.g. some Linux mount flags, container restrictions);
+                    // read the central directory into a heap buffer instead.
+                }
             }
 
             ByteBuffer buf = ByteBuffer.allocate((int) cdSize);
             buf.order(ByteOrder.LITTLE_ENDIAN);
             while (buf.hasRemaining()) {
-                int n = channel.read(buf, cdOffset + buf.position());
+                channel.position(cdOffset + buf.position());
+                int n = channel.read(buf);
                 if (n < 0) throw new IOException("Truncated central directory during heap read");
             }
             buf.flip();

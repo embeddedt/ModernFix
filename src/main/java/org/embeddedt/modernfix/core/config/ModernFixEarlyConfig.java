@@ -89,10 +89,56 @@ public class ModernFixEarlyConfig {
     private final Set<String> mixinOptions = new ObjectOpenHashSet<>();
     private final Map<String, String> mixinsMissingMods = new Object2ObjectOpenHashMap<>();
 
+    private static class PackageMetadata {
+        String requiredModId;
+        FeatureLevel requiredLevel;
+    }
+
+    private final Map<String, PackageMetadata> packageMetadataCache = new HashMap<>();
+
     public static boolean isFabric = ModernFixEarlyConfig.class.getClassLoader().getResourceAsStream("modernfix-fabric.mixins.json") != null;
 
     public Map<String, String> getPermanentlyDisabledMixins() {
         return mixinsMissingMods;
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> T getAnnotationValue(AnnotationNode ann, String key) {
+        if (ann.values == null) return null;
+        for (int i = 0; i < ann.values.size(); i += 2) {
+            if (ann.values.get(i).equals(key)) return (T) ann.values.get(i + 1);
+        }
+        return null;
+    }
+
+    private PackageMetadata loadPackageMetadata(String packageResourcePath) {
+        String classPath = packageResourcePath + "/package-info.class";
+        try (InputStream stream = ModernFixEarlyConfig.class.getClassLoader().getResourceAsStream(classPath)) {
+            if (stream == null) return new PackageMetadata();
+            ClassReader reader = new ClassReader(stream);
+            ClassNode node = new ClassNode();
+            reader.accept(node, ClassReader.SKIP_CODE | ClassReader.SKIP_FRAMES | ClassReader.SKIP_DEBUG);
+            PackageMetadata meta = new PackageMetadata();
+            List<AnnotationNode> annotations = new ArrayList<>();
+            if (node.invisibleAnnotations != null) annotations.addAll(node.invisibleAnnotations);
+            if (node.visibleAnnotations != null) annotations.addAll(node.visibleAnnotations);
+            for (AnnotationNode annotation : annotations) {
+                if (Objects.equals(annotation.desc, MIXIN_REQUIRES_MOD_DESC)) {
+                    meta.requiredModId = getAnnotationValue(annotation, "value");
+                } else if (Objects.equals(annotation.desc, FEATURE_LEVEL_ANNOTATION_DESC)) {
+                    String[] enumVal = getAnnotationValue(annotation, "value");
+                    meta.requiredLevel = FeatureLevel.valueOf(enumVal[1]);
+                }
+            }
+            return meta;
+        } catch (IOException e) {
+            LOGGER.error("Error scanning package-info " + classPath, e);
+            return new PackageMetadata();
+        }
+    }
+
+    private PackageMetadata getOrLoadPackageMetadata(String packageResourcePath) {
+        return packageMetadataCache.computeIfAbsent(packageResourcePath, this::loadPackageMetadata);
     }
 
     private void scanForAndBuildMixinOptions() {
@@ -133,26 +179,40 @@ public class ModernFixEarlyConfig {
                     } else if(Objects.equals(annotation.desc, MIXIN_CLIENT_ONLY_DESC)) {
                         isClientOnly = true;
                     } else if(Objects.equals(annotation.desc, MIXIN_REQUIRES_MOD_DESC)) {
-                        for(int i = 0; i < annotation.values.size(); i += 2) {
-                            if(annotation.values.get(i).equals("value")) {
-                                String modId = (String)annotation.values.get(i + 1);
-                                if(modId != null) {
-                                    requiredModPresent = modId.startsWith("!") ? !modPresent(modId.substring(1)) : modPresent(modId);
-                                    requiredModId = modId;
-                                }
-                                break;
-                            }
+                        String modId = getAnnotationValue(annotation, "value");
+                        if(modId != null) {
+                            requiredModPresent = modId.startsWith("!") ? !modPresent(modId.substring(1)) : modPresent(modId);
+                            requiredModId = modId;
                         }
                     } else if(Objects.equals(annotation.desc, MIXIN_DEV_ONLY_DESC)) {
                         isDevOnly = true;
                     } else if(Objects.equals(annotation.desc, FEATURE_LEVEL_ANNOTATION_DESC)) {
-                        for(int i = 0; i < annotation.values.size(); i += 2) {
-                            if(annotation.values.get(i).equals("value")) {
-                                // ASM stores enum annotation values as String[]{typeDescriptor, constantName}
-                                String[] enumVal = (String[]) annotation.values.get(i + 1);
-                                requiredLevel = FeatureLevel.valueOf(enumVal[1]);
-                                break;
+                        // ASM stores enum annotation values as String[]{typeDescriptor, constantName}
+                        String[] enumVal = getAnnotationValue(annotation, "value");
+                        requiredLevel = FeatureLevel.valueOf(enumVal[1]);
+                    }
+                }
+                // Merge constraints from ancestor package-info files (up to the mixin root)
+                String classPackagePath = mixinPath.substring(0, mixinPath.lastIndexOf('/'));
+                int mixinRootEnd = classPackagePath.indexOf("/mixin");
+                if (mixinRootEnd >= 0) {
+                    String mixinRoot = classPackagePath.substring(0, mixinRootEnd + "/mixin".length());
+                    String walkPkg = mixinRoot;
+                    while (walkPkg.length() < classPackagePath.length()) {
+                        int nextSlash = classPackagePath.indexOf('/', walkPkg.length() + 1);
+                        walkPkg = (nextSlash == -1) ? classPackagePath : classPackagePath.substring(0, nextSlash);
+                        PackageMetadata pkgMeta = getOrLoadPackageMetadata(walkPkg);
+                        if (requiredModPresent && pkgMeta.requiredModId != null) {
+                            boolean present = pkgMeta.requiredModId.startsWith("!")
+                                    ? !modPresent(pkgMeta.requiredModId.substring(1))
+                                    : modPresent(pkgMeta.requiredModId);
+                            if (!present) {
+                                requiredModPresent = false;
+                                requiredModId = pkgMeta.requiredModId;
                             }
+                        }
+                        if (pkgMeta.requiredLevel != null && pkgMeta.requiredLevel.ordinal() > requiredLevel.ordinal()) {
+                            requiredLevel = pkgMeta.requiredLevel;
                         }
                     }
                 }

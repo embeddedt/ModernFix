@@ -135,6 +135,7 @@ public abstract class IngredientMixin implements ExtendedIngredient {
                 return stacks;
             }
         }
+        IngredientItemStacksSoftReference.clearReferences();
         ItemStack[] result = computeItemsArray();
         this.mfix$cachedItemStacks = new IngredientItemStacksSoftReference((Ingredient)(Object)this, result);
         return result;

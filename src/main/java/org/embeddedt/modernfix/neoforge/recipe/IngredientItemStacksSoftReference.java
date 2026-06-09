@@ -11,28 +11,15 @@ public class IngredientItemStacksSoftReference extends SoftReference<ItemStack[]
     private final Ingredient ingredient;
 
     private static final ReferenceQueue<ItemStack[]> QUEUE = new ReferenceQueue<>();
-    private static final Thread DISCARD_THREAD = new Thread(IngredientItemStacksSoftReference::clearReferences, "Ingredient reference clearing thread");
-
-    static {
-        DISCARD_THREAD.setPriority(Thread.NORM_PRIORITY + 2);
-        DISCARD_THREAD.setDaemon(true);
-        DISCARD_THREAD.start();
-    }
 
     public IngredientItemStacksSoftReference(Ingredient ingredient, ItemStack[] stacks) {
         super(stacks, QUEUE);
         this.ingredient = ingredient;
     }
 
-    private static void clearReferences() {
-        while (true) {
-            Reference<? extends ItemStack[]> ref;
-            try {
-                ref = QUEUE.remove();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                return;
-            }
+    public static void clearReferences() {
+        Reference<? extends ItemStack[]> ref;
+        while ((ref = QUEUE.poll()) != null) {
             if (ref instanceof IngredientItemStacksSoftReference ingRef && (Object)ingRef.ingredient instanceof ExtendedIngredient extIng) {
                 // Null out the reference to the SoftReference object, to allow the SoftReference itself to be garbage collected.
                 extIng.mfix$clearReference();

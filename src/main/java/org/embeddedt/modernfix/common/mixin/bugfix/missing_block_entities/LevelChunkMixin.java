@@ -86,13 +86,9 @@ public abstract class LevelChunkMixin extends ChunkAccess {
         }
 
         BlockEntity blockEntity = this.getBlockEntity(pos.immutable(), LevelChunk.EntityCreationType.IMMEDIATE);
-        String blockName = state.getBlock().toString();
-        if (blockEntity != null) {
-            if (ModernFix.LOGGER.isDebugEnabled()) {
-                ModernFix.LOGGER.debug("Created missing block entity for {} at {}", blockName, pos.toShortString());
-            }
-        } else {
-            ModernFix.LOGGER.error("Block entity is missing for {} at {}, but could not be created", blockName, pos.toShortString());
+        if (blockEntity != null && ModernFix.LOGGER.isDebugEnabled()) {
+            String blockName = state.getBlock().toString();
+            ModernFix.LOGGER.debug("Created missing block entity for {} at {}", blockName, pos.toShortString());
         }
     }
 }

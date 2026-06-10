@@ -28,9 +28,11 @@ public class ClientLanguageMixin {
      * @reason collect the list of all known language resources
      */
     @WrapOperation(method = "loadFrom", at = @At(value = "INVOKE",
-            target = "Lnet/minecraft/client/resources/language/ClientLanguage;appendFrom(Ljava/lang/String;Ljava/util/List;Ljava/util/Map;)V"))
+            target = "Lnet/minecraft/client/resources/language/ClientLanguage;appendFrom(Ljava/lang/String;Ljava/util/List;Ljava/util/Map;Ljava/util/Map;)V"))
     private static void collectResources(String languageName, List<Resource> resources,
-                                              Map<String, String> destinationMap, Operation<Void> original,
+                                              Map<String, String> destinationMap,
+                                              Map<String, net.minecraft.network.chat.Component> componentMap,
+                                              Operation<Void> original,
                                               @Share("usedResources") LocalRef<List<Resource>> usedResources) {
         List<Resource> collected = usedResources.get();
         if (collected == null) {
@@ -38,14 +40,14 @@ public class ClientLanguageMixin {
             usedResources.set(collected);
         }
         collected.addAll(resources);
-        original.call(languageName, resources, destinationMap);
+        original.call(languageName, resources, destinationMap, componentMap);
     }
 
     /**
      * @author embeddedt
      * @reason figure out which keys are dynamically loaded and which are injected by mixins
      */
-    @ModifyArg(method = "loadFrom", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/language/ClientLanguage;<init>(Ljava/util/Map;Z)V"), index = 0)
+    @ModifyArg(method = "loadFrom", at = @At(value = "INVOKE", target = "Lnet/minecraft/client/resources/language/ClientLanguage;<init>(Ljava/util/Map;ZLjava/util/Map;)V"), index = 0)
     private static Map<String, String> modifyLanguageMap(Map<String, String> storage, @Share("usedResources") LocalRef<List<Resource>> usedResources) {
         List<Resource> collected = Objects.requireNonNullElse(usedResources.get(), List.of());
         return DynamicLanguageMap.forVanillaData(storage, collected);

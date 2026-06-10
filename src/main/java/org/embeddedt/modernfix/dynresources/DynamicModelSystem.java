@@ -38,6 +38,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.stream.Collectors;
@@ -57,19 +58,32 @@ public class DynamicModelSystem {
                                                                                   FileToIdConverter converter,
                                                                                   String debugName,
                                                                                   ResultLoader<RESOURCE, RESULT> loader) {
-        LoadingCache<Identifier, RESULT> resultCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
+        LoadingCache<Identifier, Optional<RESULT>> resultCache = CacheBuilder.newBuilder().softValues().maximumSize(1000).build(new CacheLoader<>() {
             @Override
-            public RESULT load(Identifier id) throws Exception {
+            public Optional<RESULT> load(Identifier id) throws Exception {
                 var file = converter.idToFile(id);
                 var resource = resourceMap.get(file);
+                if (resource == null) {
+                    return Optional.empty();
+                }
                 if (DEBUG_DYNAMIC_MODEL_LOADING) {
                     ModernFix.LOGGER.info("Loading {} {}", debugName, id);
                 }
-                return loader.load(file, resource);
+                return Optional.of(loader.load(file, resource));
             }
         });
         Set<Identifier> idSet = resourceMap.keySet().stream().map(converter::fileToId).collect(Collectors.toUnmodifiableSet());
-        return Maps.asMap(idSet, key -> key != null ? resultCache.getUnchecked(key) : null);
+        return new DynamicRegistryMap<>(idSet, key -> {
+            if (key == null) {
+                return null;
+            }
+            try {
+                return resultCache.getUnchecked(key).orElse(null);
+            } catch (RuntimeException e) {
+                ModernFix.LOGGER.error("Error loading {} {} from cache", debugName, key);
+                throw e;
+            }
+        });
     }
     
     public static Map<Identifier, UnbakedModel> createDynamicUnbakedModelMap(Map<Identifier, Resource> resourceMap) {

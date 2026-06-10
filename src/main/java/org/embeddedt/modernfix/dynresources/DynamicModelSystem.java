@@ -121,7 +121,11 @@ public class DynamicModelSystem {
                 identifier = state.getBlock().builtInRegistryHolder().getKey().identifier();
             }
             var loadedModels = blockStateDefinitions.get(identifier);
-            return loadedModels.models().get(state);
+            if (loadedModels != null) {
+                return loadedModels.models().get(state);
+            } else {
+                return null;
+            }
         }));
     }
 

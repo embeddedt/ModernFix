@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.locks.LockSupport;
 
 /**
@@ -19,6 +20,8 @@ import java.util.concurrent.locks.LockSupport;
 public class NightConfigWatchThrottler {
     private static final long DELAY = TimeUnit.MILLISECONDS.toNanos(1000);
     
+    private static final AtomicBoolean isShuttingDown = new AtomicBoolean(false);
+
     // FIXED: Add shutdown hook to clean up watcher threads
     private static void addShutdownHook() {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {

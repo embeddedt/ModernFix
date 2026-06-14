@@ -18,9 +18,18 @@ import java.util.concurrent.locks.LockSupport;
  */
 public class NightConfigWatchThrottler {
     private static final long DELAY = TimeUnit.MILLISECONDS.toNanos(1000);
-
+    
+    // FIXED: Add shutdown hook to clean up watcher threads
+    private static void addShutdownHook() {
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            isShuttingDown.set(true);
+        }, "ModernFix-ShutdownHook"));
+    }
+    
     @SuppressWarnings("rawtypes")
     public static void throttle() {
+        // FIXED: Register shutdown hook for clean cleanup
+        addShutdownHook();
         Map watchedDirs = ObfuscationReflectionHelper.getPrivateValue(FileWatcher.class, FileWatcher.defaultInstance(), "watchedDirs");
         Thread launchThread = Thread.currentThread();
         Map watchedDirsWrapper = new ForwardingMap() {
@@ -46,7 +55,15 @@ public class NightConfigWatchThrottler {
                             // iterator() is called at the beginning of each iteration of the watch loop,
                             // so it is a good spot to inject the delay.
                             if (Thread.currentThread() != launchThread) {
+                                // FIXED: Check for shutdown state to prevent new watches from being created
+                                if (isShuttingDown.get()) {
+                                    return java.util.Collections.emptyIterator();
+                                }
                                 LockSupport.parkNanos(DELAY);
+                                // FIXED: Properly handle thread interruption to allow graceful container shutdown
+                                if (Thread.currentThread().isInterrupted()) {
+                                    return java.util.Collections.emptyIterator();
+                                }
                             }
                             return super.iterator();
                         }

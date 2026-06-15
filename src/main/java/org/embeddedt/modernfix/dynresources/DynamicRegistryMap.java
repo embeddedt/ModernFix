@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
@@ -70,6 +71,19 @@ public final class DynamicRegistryMap<K, V> implements Map<K, V> {
             return (V) value;
         } else {
             return fallbackGetter.apply((K)o);
+        }
+    }
+
+    @Override
+    public V getOrDefault(Object o, V defaultValue) {
+        Object value = overrides.get(o);
+        if (value == NULL_OVERRIDE) {
+            return null;
+        } else if (value != null) {
+            return (V) value;
+        } else {
+            var fallback = fallbackGetter.apply((K)o);
+            return fallback != null ? fallback : defaultValue;
         }
     }
 

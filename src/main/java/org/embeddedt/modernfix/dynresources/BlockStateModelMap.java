@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Collection;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 /**
@@ -17,6 +18,10 @@ import java.util.Set;
  */
 public record BlockStateModelMap(Map<BlockState, BlockStateModel> modelMap,
                                  BlockStateModel fallbackModel) implements Map<BlockState, BlockStateModel> {
+
+    public BlockStateModelMap {
+        Objects.requireNonNull(fallbackModel);
+    }
 
     @Override
     public int size() {
@@ -53,6 +58,12 @@ public record BlockStateModelMap(Map<BlockState, BlockStateModel> modelMap,
         } else {
             return modelMap.getOrDefault(o, fallbackModel);
         }
+    }
+
+    @Override
+    public BlockStateModel getOrDefault(Object key, BlockStateModel defaultValue) {
+        var value = get(key);
+        return value != fallbackModel ? value : defaultValue;
     }
 
     @Override

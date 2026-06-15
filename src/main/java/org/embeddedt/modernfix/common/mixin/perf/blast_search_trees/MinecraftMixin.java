@@ -3,7 +3,6 @@ package org.embeddedt.modernfix.common.mixin.perf.blast_search_trees;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.searchtree.SearchRegistry;
-import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
@@ -33,12 +32,8 @@ public abstract class MinecraftMixin {
         if(provider == null)
             return;
         ModernFix.LOGGER.info("Replacing search trees with '{}' provider", provider.getName());
-        SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier = list -> provider.getSearchTree(false);
-        SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier = list -> provider.getSearchTree(true);
-        this.searchRegistry.register(SearchRegistry.CREATIVE_NAMES, nameSupplier);
-        this.searchRegistry.register(SearchRegistry.CREATIVE_TAGS, tagSupplier);
-        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new RecipeBookSearchTree(provider.getSearchTree(false), list));
-        ModernFixPlatformHooks.INSTANCE.registerCreativeSearchTrees(this.searchRegistry, nameSupplier, tagSupplier, this::populateSearchTree);
+        this.searchRegistry.register(SearchRegistry.RECIPE_COLLECTIONS, list -> new RecipeBookSearchTree(provider.getSearchTree(false, null), list));
+        ModernFixPlatformHooks.INSTANCE.registerCreativeSearchTrees(this.searchRegistry, provider, this::populateSearchTree);
         // grab components for all key mappings in order to prevent them from being loaded off-thread later
         // this populates the LazyLoadedValues
         // we also need to suppress GLFW errors to prevent crashes if a key is missing

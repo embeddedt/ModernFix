@@ -1,6 +1,7 @@
 package org.embeddedt.modernfix.searchtree;
 
 import net.minecraft.client.searchtree.RefreshableSearchTree;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 
 import java.util.Collections;
@@ -27,7 +28,7 @@ public class DummySearchTree<T> implements RefreshableSearchTree<T> {
     static final SearchTreeProviderRegistry.Provider PROVIDER = new SearchTreeProviderRegistry.Provider() {
 
         @Override
-        public RefreshableSearchTree<ItemStack> getSearchTree(boolean tag) {
+        public RefreshableSearchTree<ItemStack> getSearchTree(boolean tag, CreativeModeTab backingTab) {
             return new DummySearchTree<>();
         }
 

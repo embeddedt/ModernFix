@@ -7,6 +7,7 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
+import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 import org.objectweb.asm.tree.ClassNode;
 
 import java.nio.file.Path;
@@ -47,7 +48,7 @@ public interface ModernFixPlatformHooks {
 
     void onLaunchComplete();
 
-    void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator);
+    void registerCreativeSearchTrees(SearchRegistry registry, SearchTreeProviderRegistry.Provider provider, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator);
 
     String getPlatformName();
 }

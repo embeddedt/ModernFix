@@ -8,9 +8,11 @@ import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.CreativeModeTab;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.CreativeModeTabSearchRegistry;
+import net.minecraftforge.common.CreativeModeTabRegistry;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.fml.ModLoader;
@@ -30,6 +32,7 @@ import org.embeddedt.modernfix.forge.config.NightConfigWatchThrottler;
 import org.embeddedt.modernfix.forge.init.ModernFixForge;
 import org.embeddedt.modernfix.forge.packet.PacketHandler;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
+import org.embeddedt.modernfix.searchtree.SearchTreeProviderRegistry;
 import org.embeddedt.modernfix.spark.SparkLaunchProfiler;
 import org.embeddedt.modernfix.util.CommonModUtil;
 import org.embeddedt.modernfix.util.DummyList;
@@ -39,6 +42,7 @@ import org.spongepowered.asm.mixin.injection.struct.InjectorGroupInfo;
 
 import java.lang.reflect.Field;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -153,12 +157,19 @@ public class ModernFixPlatformHooksImpl implements ModernFixPlatformHooks {
         return modOptions;
     }
 
-    public void registerCreativeSearchTrees(SearchRegistry registry, SearchRegistry.TreeBuilderSupplier<ItemStack> nameSupplier, SearchRegistry.TreeBuilderSupplier<ItemStack> tagSupplier, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
-        for (SearchRegistry.Key<ItemStack> nameKey : CreativeModeTabSearchRegistry.getNameSearchKeys().values()) {
-            registry.register(nameKey, nameSupplier);
-        }
-        for (SearchRegistry.Key<ItemStack> tagKey : CreativeModeTabSearchRegistry.getTagSearchKeys().values()) {
-            registry.register(tagKey, tagSupplier);
+    public void registerCreativeSearchTrees(SearchRegistry registry, SearchTreeProviderRegistry.Provider provider, BiConsumer<SearchRegistry.Key<ItemStack>, List<ItemStack>> populator) {
+        List<CreativeModeTab> tabs = new ArrayList<>();
+        tabs.add(CreativeModeTabs.searchTab());
+        tabs.addAll(CreativeModeTabRegistry.getSortedCreativeModeTabs());
+        for (var tab : tabs) {
+            var nameKey = CreativeModeTabSearchRegistry.getNameSearchKey(tab);
+            if (nameKey != null) {
+                registry.register(nameKey, c -> provider.getSearchTree(false, tab));
+            }
+            var tagKey = CreativeModeTabSearchRegistry.getTagSearchKey(tab);
+            if (tagKey != null) {
+                registry.register(tagKey, c -> provider.getSearchTree(true, tab));
+            }
         }
         Map<CreativeModeTab, SearchRegistry.Key<ItemStack>> tagSearchKeys = CreativeModeTabSearchRegistry.getTagSearchKeys();
         CreativeModeTabSearchRegistry.getNameSearchKeys().forEach((tab, nameSearchKey) -> {

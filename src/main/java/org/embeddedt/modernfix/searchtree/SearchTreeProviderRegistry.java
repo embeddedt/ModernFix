@@ -1,8 +1,10 @@
 package org.embeddedt.modernfix.searchtree;
 
 import net.minecraft.client.searchtree.RefreshableSearchTree;
+import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.ItemStack;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,7 +29,7 @@ public class SearchTreeProviderRegistry {
     }
 
     public interface Provider {
-        RefreshableSearchTree<ItemStack> getSearchTree(boolean tag);
+        RefreshableSearchTree<ItemStack> getSearchTree(boolean tag, @Nullable CreativeModeTab backingTab);
         boolean canUse();
         String getName();
     }

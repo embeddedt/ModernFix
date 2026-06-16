@@ -6,6 +6,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import it.unimi.dsi.fastutil.objects.ObjectOpenHashSet;
 import net.minecraft.client.color.block.BlockColors;
+import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.BlockModelRotation;
 import net.minecraft.client.resources.model.BlockStateModelLoader;
@@ -13,6 +14,7 @@ import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.core.DefaultedRegistry;
+import net.minecraft.resources.FileToIdConverter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.profiling.ProfilerFiller;
 import org.embeddedt.modernfix.ModernFix;
@@ -79,6 +81,12 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Shadow protected abstract void registerModelAndLoadDependencies(ModelResourceLocation modelLocation, UnbakedModel model);
 
+    @Shadow
+    @Final
+    private Map<ResourceLocation, BlockModel> modelResources;
+    @Shadow
+    @Final
+    public static FileToIdConverter MODEL_LISTER;
     private final Map<ModelResourceLocation, BakedModel> mfix$emulatedBakedRegistry = new DynamicOverridableMap<>(ModelResourceLocation.class, this::loadBakedModelDynamic);
 
     @Override
@@ -98,6 +106,11 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             if(location.variant().equals("inventory")) {
                 this.loadItemModelAndDependencies(location.id());
             } else if (location.variant().equals("fabric_resource") || location.variant().equals("standalone")) {
+                // Check that the model file will actually exist. Quark's tiny potato (and possibly other mods)
+                // rely on this to decide when to fall back to a default model.
+                if (!this.modelResources.containsKey(MODEL_LISTER.idToFile(location.id()))) {
+                    return null;
+                }
                 UnbakedModel unbakedModel = this.getModel(location.id());
                 this.registerModelAndLoadDependencies(location, unbakedModel);
             } else {
@@ -135,6 +148,10 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             model = bakedTopLevelModels.get(location);
             if(model == null) {
                 UnbakedModel prototype = mfix$loadUnbakedModelDynamic(location);
+                if (prototype == null) {
+                    // model legitimately should not exist
+                    return null;
+                }
                 if(prototype == missingModel) {
                     model = bakedMissingModel;
                 } else {

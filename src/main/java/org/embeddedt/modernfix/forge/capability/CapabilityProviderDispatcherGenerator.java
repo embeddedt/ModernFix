@@ -22,11 +22,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.stream.Collectors;
@@ -47,8 +49,8 @@ public class CapabilityProviderDispatcherGenerator {
         record Guarded(int providerIndex, String fieldDesc, CapabilityRef capability) implements ProviderDispatch {}
         /** Provider capabilities are unknown - dispatch unconditionally. */
         record Unguarded(int providerIndex, String fieldDesc) implements ProviderDispatch {}
-        /** Multiple guarded dispatches collapsed into a Map lookup. */
-        record Hash(int mapIndex, List<Guarded> entries) implements ProviderDispatch {}
+        /** Multiple guarded dispatches collapsed into an identity-hash switch. */
+        record Hash(List<Guarded> entries) implements ProviderDispatch {}
     }
 
     /**
@@ -62,6 +64,7 @@ public class CapabilityProviderDispatcherGenerator {
      * Sentinel used in generated guards to skip empty results via reference equality,
      * avoiding a method call to {@code isPresent()}.
      */
+    @SuppressWarnings("unused")
     public static final LazyOptional<?> EMPTY = LazyOptional.empty();
 
     private static final ConcurrentHashMap<List<Class<? extends ICapabilityProvider>>, MethodHandle> cache =
@@ -75,8 +78,6 @@ public class CapabilityProviderDispatcherGenerator {
     private static final String CAPABILITY_DESC = "Lnet/minecraftforge/common/capabilities/Capability;";
     private static final String LAZY_OPTIONAL_DESC = "Lnet/minecraftforge/common/util/LazyOptional;";
     private static final String DIRECTION_DESC = "Lnet/minecraft/core/Direction;";
-    private static final String MAP_DESC = "Ljava/util/Map;";
-    private static final String MAP_SIGNATURE = "Ljava/util/Map<Lnet/minecraftforge/common/capabilities/Capability<*>;Lnet/minecraftforge/common/capabilities/ICapabilityProvider;>;";
     private static final String LOOKUP_DESC = "Ljava/lang/invoke/MethodHandles$Lookup;";
 
     /**
@@ -130,6 +131,13 @@ public class CapabilityProviderDispatcherGenerator {
             LinkedHashMap<CapabilityRef, Integer> capRefIndices = collectCapabilityRefs(dispatches);
             List<Capability<?>> capValues = resolveCapabilityValues(capRefIndices);
 
+            // Resolve each capability's identity hash now, from the singleton instances that will
+            // also be present at runtime. These become the LOOKUPSWITCH keys in the generated dispatch.
+            Map<CapabilityRef, Integer> capRefHashes = new HashMap<>();
+            for (Map.Entry<CapabilityRef, Integer> entry : capRefIndices.entrySet()) {
+                capRefHashes.put(entry.getKey(), System.identityHashCode(capValues.get(entry.getValue())));
+            }
+
             ModernFix.LOGGER.debug("Generating capability dispatcher #{} for types: [{}]", () -> generatedClassId, () -> {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < providerTypes.size(); i++) {
@@ -139,7 +147,7 @@ public class CapabilityProviderDispatcherGenerator {
                 return sb;
             });
 
-            byte[] classBytes = generateClassBytes(className, providerTypes, dispatches, capRefIndices);
+            byte[] classBytes = generateClassBytes(className, providerTypes, dispatches, capRefIndices, capRefHashes);
 
             // Define the hidden class, injecting the resolved Capability instances as class data.
             // The generated <clinit> retrieves them via MethodHandles.classDataAt so it never
@@ -265,7 +273,6 @@ public class CapabilityProviderDispatcherGenerator {
      */
     static List<ProviderDispatch> optimizeDispatches(List<ProviderDispatch> dispatches) {
         List<ProviderDispatch> result = new ArrayList<>(dispatches.size());
-        int mapIndex = 0;
         int i = 0;
         while (i < dispatches.size()) {
             // Collect a run of consecutive Guarded entries
@@ -282,10 +289,8 @@ public class CapabilityProviderDispatcherGenerator {
                 continue;
             }
 
-            if (!tryCollapseToHash(run, mapIndex, result)) {
+            if (!tryCollapseToHash(run, result)) {
                 result.addAll(run);
-            } else {
-                mapIndex++;
             }
         }
         return result;
@@ -295,7 +300,7 @@ public class CapabilityProviderDispatcherGenerator {
      * Attempt to collapse a run of Guarded dispatches into a Hash.
      * Returns true if a Hash was emitted, false if the run should be kept as-is.
      */
-    private static boolean tryCollapseToHash(List<ProviderDispatch> run, int mapIndex, List<ProviderDispatch> result) {
+    private static boolean tryCollapseToHash(List<ProviderDispatch> run, List<ProviderDispatch> result) {
         if (run.size() < HASH_DISPATCH_THRESHOLD) {
             return false;
         }
@@ -318,7 +323,7 @@ public class CapabilityProviderDispatcherGenerator {
             return false;
         }
 
-        result.add(new ProviderDispatch.Hash(mapIndex, hashEntries));
+        result.add(new ProviderDispatch.Hash(hashEntries));
         result.addAll(duplicates);
         return true;
     }
@@ -334,14 +339,18 @@ public class CapabilityProviderDispatcherGenerator {
                 fields.putIfAbsent(g.providerIndex(), g.fieldDesc());
             } else if (dispatch instanceof ProviderDispatch.Unguarded u) {
                 fields.putIfAbsent(u.providerIndex(), u.fieldDesc());
+            } else if (dispatch instanceof ProviderDispatch.Hash hash) {
+                for (ProviderDispatch.Guarded g : hash.entries()) {
+                    fields.putIfAbsent(g.providerIndex(), g.fieldDesc());
+                }
             }
-            // Hash entries don't need provider fields - map reads from constructor array
         }
         return fields;
     }
 
     private static byte[] generateClassBytes(String className, List<Class<? extends ICapabilityProvider>> providerTypes,
-                                             List<ProviderDispatch> dispatches, LinkedHashMap<CapabilityRef, Integer> capRefIndices) {
+                                             List<ProviderDispatch> dispatches, LinkedHashMap<CapabilityRef, Integer> capRefIndices,
+                                             Map<CapabilityRef, Integer> capRefHashes) {
         ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_FRAMES | ClassWriter.COMPUTE_MAXS) {
             @Override
             protected ClassLoader getClassLoader() {
@@ -374,13 +383,6 @@ public class CapabilityProviderDispatcherGenerator {
             fv.visitEnd();
         }
 
-        // Generate map fields for Hash dispatches
-        for (ProviderDispatch dispatch : dispatches) {
-            if (dispatch instanceof ProviderDispatch.Hash hash) {
-                cw.visitField(ACC_PRIVATE | ACC_FINAL, "capMap" + hash.mapIndex(), MAP_DESC, MAP_SIGNATURE, null).visitEnd();
-            }
-        }
-
         // Generate one static final field per unique CapabilityRef.
         // These are populated in <clinit> via MethodHandles.classDataAt, which reads the
         // Capability<?> instances injected by defineHiddenClassWithClassData. This avoids
@@ -396,10 +398,10 @@ public class CapabilityProviderDispatcherGenerator {
         }
 
         // Generate constructor
-        generateConstructor(cw, className, providerFields, dispatches, capRefIndices);
+        generateConstructor(cw, className, providerFields);
 
         // Generate getCapability method with sided parameter
-        generateGetCapabilityMethod(cw, className, dispatches, capRefIndices);
+        generateGetCapabilityMethod(cw, className, dispatches, capRefIndices, capRefHashes);
 
         cw.visitEnd();
         return cw.toByteArray();
@@ -447,8 +449,7 @@ public class CapabilityProviderDispatcherGenerator {
         mv.visitFieldInsn(GETSTATIC, internalName, capRefFieldName(capRefIndices.get(ref)), CAPABILITY_DESC);
     }
 
-    private static void generateConstructor(ClassWriter cw, String className, Map<Integer, String> providerFields,
-                                            List<ProviderDispatch> dispatches, Map<CapabilityRef, Integer> capRefIndices) {
+    private static void generateConstructor(ClassWriter cw, String className, Map<Integer, String> providerFields) {
         Method constructor = Method.getMethod("void <init>(net.minecraftforge.common.capabilities.ICapabilityProvider[])");
         GeneratorAdapter mg = new GeneratorAdapter(ACC_PUBLIC, constructor, null, null, cw);
         Type classType = Type.getObjectType(className.replace('.', '/'));
@@ -472,44 +473,13 @@ public class CapabilityProviderDispatcherGenerator {
             mg.putField(classType, "provider" + idx, fieldType);
         }
 
-        // Build hash maps
-        for (ProviderDispatch dispatch : dispatches) {
-            if (dispatch instanceof ProviderDispatch.Hash hash) {
-                generateMapConstruction(mg, classType, hash, capRefIndices);
-            }
-        }
-
         mg.returnValue();
         mg.endMethod();
     }
 
-    private static void generateMapConstruction(GeneratorAdapter mg, Type classType, ProviderDispatch.Hash hash,
-                                                Map<CapabilityRef, Integer> capRefIndices) {
-        List<ProviderDispatch.Guarded> entries = hash.entries();
-        mg.loadThis(); // for PUTFIELD at the end
-
-        mg.push(entries.size());
-        mg.visitTypeInsn(ANEWARRAY, "java/util/Map$Entry");
-        for (int i = 0; i < entries.size(); i++) {
-            ProviderDispatch.Guarded g = entries.get(i);
-            mg.dup();
-            mg.push(i);
-            emitCapabilityLoad(mg, classType.getInternalName(), g.capability(), capRefIndices);
-            mg.loadArg(0);
-            mg.push(g.providerIndex());
-            mg.arrayLoad(Type.getType(ICAP_PROVIDER_DESC));
-            mg.visitMethodInsn(INVOKESTATIC, "java/util/Map", "entry",
-                    "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/util/Map$Entry;", true);
-            mg.visitInsn(AASTORE);
-        }
-        mg.visitMethodInsn(INVOKESTATIC, "java/util/Map", "ofEntries",
-                "([Ljava/util/Map$Entry;)Ljava/util/Map;", true);
-
-        mg.putField(classType, "capMap" + hash.mapIndex(), Type.getType(MAP_DESC));
-    }
-
     private static void generateGetCapabilityMethod(ClassWriter cw, String className, List<ProviderDispatch> dispatches,
-                                                    Map<CapabilityRef, Integer> capRefIndices) {
+                                                    Map<CapabilityRef, Integer> capRefIndices,
+                                                    Map<CapabilityRef, Integer> capRefHashes) {
         // Method: <T> LazyOptional<T> getCapability(Capability<T>, Direction)
         MethodVisitor mv = cw.visitMethod(
                 ACC_PUBLIC,
@@ -529,15 +499,12 @@ public class CapabilityProviderDispatcherGenerator {
         String getCapDesc = "(" + CAPABILITY_DESC + DIRECTION_DESC + ")" + LAZY_OPTIONAL_DESC;
 
         // slot 3 = LazyOptional<T> result (all paths)
-        // slot 4 = ICapabilityProvider provider (Hash paths only)
-        boolean usesProviderLocal = dispatches.stream().anyMatch(d -> d instanceof ProviderDispatch.Hash);
-
         for (int di = 0; di < dispatches.size(); ) {
             ProviderDispatch dispatch = dispatches.get(di);
             Label nextLabel = new Label();
 
             if (dispatch instanceof ProviderDispatch.Hash hash) {
-                emitHashDispatch(mv, internalName, getCapDesc, hash, nextLabel);
+                emitHashDispatch(mv, internalName, getCapDesc, hash, nextLabel, capRefIndices, capRefHashes);
                 di++;
             } else if (dispatch instanceof ProviderDispatch.Guarded) {
                 di = emitGuardedDispatch(mv, internalName, getCapDesc, dispatches, di, nextLabel, capRefIndices);
@@ -547,16 +514,14 @@ public class CapabilityProviderDispatcherGenerator {
                 di++;
             }
 
-            // If not a hash lookup, then optimistically check for the exact LazyOptional.empty() value to avoid
-            // an isPresent call
-            if (!(dispatch instanceof ProviderDispatch.Hash)) {
-                // if (result == EMPTY) goto next
-                mv.visitVarInsn(ALOAD, 3);
-                mv.visitFieldInsn(GETSTATIC,
-                        "org/embeddedt/modernfix/forge/capability/CapabilityProviderDispatcherGenerator",
-                        "EMPTY", LAZY_OPTIONAL_DESC);
-                mv.visitJumpInsn(IF_ACMPEQ, nextLabel);
-            }
+            // Optimistically check for the exact LazyOptional.empty() value to avoid an isPresent call.
+            // (For a Hash dispatch, the no-match case has already jumped to nextLabel, so result is set here.)
+            // if (result == EMPTY) goto next
+            mv.visitVarInsn(ALOAD, 3);
+            mv.visitFieldInsn(GETSTATIC,
+                    "org/embeddedt/modernfix/forge/capability/CapabilityProviderDispatcherGenerator",
+                    "EMPTY", LAZY_OPTIONAL_DESC);
+            mv.visitJumpInsn(IF_ACMPEQ, nextLabel);
 
             // if (result.isPresent()) return result
             mv.visitVarInsn(ALOAD, 3);
@@ -589,37 +554,76 @@ public class CapabilityProviderDispatcherGenerator {
         mv.visitLocalVariable("cap", CAPABILITY_DESC, capSig, methodStart, methodEnd, 1);
         mv.visitLocalVariable("side", DIRECTION_DESC, null, methodStart, methodEnd, 2);
         mv.visitLocalVariable("result", LAZY_OPTIONAL_DESC, resultSig, methodStart, methodEnd, 3);
-        if (usesProviderLocal) {
-            mv.visitLocalVariable("provider", ICAP_PROVIDER_DESC, null, methodStart, methodEnd, 4);
-        }
 
         mv.visitMaxs(0, 0);  // Computed by COMPUTE_MAXS
         mv.visitEnd();
     }
 
+    /**
+     * Emits an O(1) dispatch over a group of guarded entries using a single {@code LOOKUPSWITCH}
+     * over {@code System.identityHashCode(cap)}, following the string-switch translation strategy
+     * from JEP 325. Each switch arm narrows to the candidate entries sharing that hash; a
+     * reference-equality guard against the expected capability (handling the rare event of hash
+     * collisions, including collisions between distinct capabilities, which share a single case)
+     * then dispatches straight to the matching provider field. A miss - either an unmatched hash or
+     * a failed guard - jumps to {@code nextLabel}.
+     * <p>
+     * On a match, {@code result} (slot 3) is set and control falls through to the shared
+     * empty/isPresent check emitted by the caller.
+     */
     private static void emitHashDispatch(MethodVisitor mv, String internalName, String getCapDesc,
-                                          ProviderDispatch.Hash hash, Label nextLabel) {
-        // ICapabilityProvider provider = (ICapabilityProvider) this.capMapN.get(cap);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, internalName, "capMap" + hash.mapIndex(), MAP_DESC);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitMethodInsn(INVOKEINTERFACE, "java/util/Map", "get",
-                "(Ljava/lang/Object;)Ljava/lang/Object;", true);
-        mv.visitTypeInsn(CHECKCAST, "net/minecraftforge/common/capabilities/ICapabilityProvider");
-        mv.visitVarInsn(ASTORE, 4);
+                                         ProviderDispatch.Hash hash, Label nextLabel,
+                                         Map<CapabilityRef, Integer> capRefIndices,
+                                         Map<CapabilityRef, Integer> capRefHashes) {
+        List<ProviderDispatch.Guarded> entries = hash.entries();
+        int n = entries.size();
 
-        // if (provider == null) goto next
-        mv.visitVarInsn(ALOAD, 4);
-        mv.visitJumpInsn(IFNULL, nextLabel);
+        // Group entry indices by their capability's identity hash so colliding entries share one case.
+        TreeMap<Integer, List<Integer>> byHash = new TreeMap<>();
+        for (int i = 0; i < n; i++) {
+            int h = capRefHashes.get(entries.get(i).capability());
+            byHash.computeIfAbsent(h, k -> new ArrayList<>()).add(i);
+        }
 
-        // LazyOptional<T> result = provider.getCapability(cap, side)
-        mv.visitVarInsn(ALOAD, 4);
+        // switch (System.identityHashCode(cap))
         mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
-        mv.visitMethodInsn(INVOKEINTERFACE,
-                "net/minecraftforge/common/capabilities/ICapabilityProvider",
-                "getCapability", getCapDesc, true);
-        mv.visitVarInsn(ASTORE, 3);
+        mv.visitMethodInsn(INVOKESTATIC, "java/lang/System", "identityHashCode",
+                "(Ljava/lang/Object;)I", false);
+
+        int[] keys = new int[byHash.size()];
+        Label[] caseLabels = new Label[byHash.size()];
+        int k = 0;
+        for (Integer key : byHash.keySet()) {
+            keys[k] = key;
+            caseLabels[k] = new Label();
+            k++;
+        }
+        mv.visitLookupSwitchInsn(nextLabel, keys, caseLabels);
+
+        // On a match, dispatch and jump here; falls through to the caller's empty/isPresent check.
+        Label matchEnd = new Label();
+
+        k = 0;
+        for (List<Integer> group : byHash.values()) {
+            mv.visitLabel(caseLabels[k++]);
+            int m = group.size();
+            for (int j = 0; j < m; j++) {
+                ProviderDispatch.Guarded g = entries.get(group.get(j));
+                // if (cap != capRef) try the next colliding candidate, or give up on the last one
+                Label fail = (j < m - 1) ? new Label() : nextLabel;
+                mv.visitVarInsn(ALOAD, 1);
+                emitCapabilityLoad(mv, internalName, g.capability(), capRefIndices);
+                mv.visitJumpInsn(IF_ACMPNE, fail);
+                // result = providerN.getCapability(cap, side)
+                emitProviderGetCapability(mv, internalName, getCapDesc, g.providerIndex(), g.fieldDesc());
+                mv.visitJumpInsn(GOTO, matchEnd);
+                if (j < m - 1) {
+                    mv.visitLabel(fail);
+                }
+            }
+        }
+
+        mv.visitLabel(matchEnd);
     }
 
     /**

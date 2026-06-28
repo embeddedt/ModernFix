@@ -136,9 +136,34 @@ tasks.named<Jar>("jar") {
     from(embed.map { if (it.isDirectory) it else zipTree(it) })
 }
 
+val checkDanglingMixinPackageInfo by tasks.registering {
+    val mixinDir = file("src/main/java/org/embeddedt/modernfix/common/mixin")
+    inputs.dir(mixinDir)
+    doLast {
+        val dangling = mutableListOf<File>()
+        mixinDir.walkTopDown()
+            .filter { it.name == "package-info.java" }
+            .forEach { pkgInfo ->
+                val dir = pkgInfo.parentFile
+                val hasOtherJava = dir.listFiles { f -> f.name != "package-info.java" && f.extension == "java" }?.isNotEmpty() == true
+                val hasSubpackage = dir.listFiles { f -> f.isDirectory }?.isNotEmpty() == true
+                if (!hasOtherJava && !hasSubpackage) {
+                    dangling += pkgInfo
+                }
+            }
+        if (dangling.isNotEmpty()) {
+            throw GradleException(
+                "Dangling package-info.java files found (no sibling classes or subpackages):\n" +
+                dangling.joinToString("\n") { "  ${it.relativeTo(projectDir)}" }
+            )
+        }
+    }
+}
+
 // For the AP
 tasks.withType<JavaCompile>().configureEach {
     if (!name.lowercase().contains("test")) {
+        dependsOn(checkDanglingMixinPackageInfo)
         options.compilerArgs.addAll(
             listOf(
                 "-ArootProject.name=${rootProject.name}",

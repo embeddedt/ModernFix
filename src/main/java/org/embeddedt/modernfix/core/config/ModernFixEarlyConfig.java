@@ -273,12 +273,6 @@ public class ModernFixEarlyConfig {
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
             .putConditionally(() -> !isFabric, "mixin.bugfix.forge_at_inject_error", true)
             .putConditionally(() -> !isFabric, "mixin.feature.registry_event_progress", false)
-            // Beta (promote on next release)
-            .put("mixin.perf.compact_entity_models", false)
-            .put("mixin.perf.dynamic_languages", false)
-            .put("mixin.perf.faster_capabilities.bytecode_analysis", false)
-            .put("mixin.perf.ingredient_item_deduplication", false)
-            // END
             .build();
 
     private ModernFixEarlyConfig(File file) {

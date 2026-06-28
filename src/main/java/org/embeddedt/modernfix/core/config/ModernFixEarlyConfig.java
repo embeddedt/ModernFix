@@ -565,6 +565,9 @@ public class ModernFixEarlyConfig {
             writer.write("#   mixin.perf.dynamic_resources=true\n");
             writer.write("# Do not include the #. You may reset to defaults by deleting this file.\n");
             writer.write("#\n");
+            writer.write("# To enable features that are still in testing, add a line at the bottom setting the stability level:\n");
+            writer.write("#   stability_level=BETA\n");
+            writer.write("#\n");
             writer.write("# Available options:\n");
             List<String> keys = this.options.keySet().stream()
                     .filter(key -> !key.equals("mixin.core"))

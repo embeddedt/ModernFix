@@ -3,33 +3,44 @@ package org.embeddedt.modernfix.core.config;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.LinkedHashSet;
+import java.util.Objects;
 import java.util.Set;
 
-public class Option {
+public class Option<T> {
     private final String name;
+    private final OptionType<T> type;
 
     private Set<String> modDefined = null;
-    private boolean enabled;
+    private T value;
     private boolean userDefined;
-    private Option parent = null;
+    private Option<?> parent = null;
 
-    public Option(String name, boolean enabled, boolean userDefined) {
+    public Option(String name, OptionType<T> type, T value, boolean userDefined) {
         this.name = name;
-        this.enabled = enabled;
+        this.type = type;
+        this.value = value;
         this.userDefined = userDefined;
     }
 
-    public void setEnabled(boolean enabled, boolean userDefined) {
-        if(this.enabled == enabled)
+    public OptionType<T> getType() {
+        return this.type;
+    }
+
+    public T getValue() {
+        return this.value;
+    }
+
+    public void setValue(T value, boolean userDefined) {
+        if(Objects.equals(this.value, value))
             return;
-        this.enabled = enabled;
+        this.value = value;
         this.userDefined = userDefined;
     }
 
-    public void addModOverride(boolean enabled, String modId) {
-        if(this.enabled == enabled)
+    public void addModOverride(T value, String modId) {
+        if(Objects.equals(this.value, value))
             return;
-        this.enabled = enabled;
+        this.value = value;
 
         if (this.modDefined == null) {
             this.modDefined = new LinkedHashSet<>();
@@ -38,11 +49,27 @@ public class Option {
         this.modDefined.add(modId);
     }
 
-    public void setParent(Option option) {
+    public String getSerializedValue() {
+        return this.type.serialize(this.value);
+    }
+
+    public void setFromString(String value, boolean userDefined) {
+        setValue(this.type.parse(value), userDefined);
+    }
+
+    @SuppressWarnings("unchecked")
+    public Option<Boolean> asBoolean() {
+        if (this.type != OptionType.BOOLEAN) {
+            throw new IllegalStateException("Option '" + this.name + "' is not a boolean option");
+        }
+        return (Option<Boolean>) this;
+    }
+
+    public void setParent(Option<?> option) {
         this.parent = option;
     }
 
-    public Option getParent() {
+    public Option<?> getParent() {
         return this.parent;
     }
 
@@ -53,16 +80,12 @@ public class Option {
             return this.parent.getDepth() + 1;
     }
 
-    public boolean isEnabled() {
-        return this.enabled;
-    }
-
     /**
      * Checks if this option will effectively be disabled (regardless of its own status)
      * by the parent rule being disabled.
      */
     public boolean isEffectivelyDisabledByParent() {
-        return this.parent != null && (!this.parent.enabled || this.parent.isEffectivelyDisabledByParent());
+        return this.parent != null && (this.parent.type == OptionType.BOOLEAN && (!this.parent.asBoolean().getValue() || this.parent.isEffectivelyDisabledByParent()));
     }
 
     public boolean isOverridden() {
@@ -86,14 +109,6 @@ public class Option {
             return this.name;
         else
             return this.name.substring(this.parent.getName().length() + 1);
-    }
-
-    public void clearModsDefiningValue() {
-        this.modDefined = null;
-    }
-
-    public void clearUserDefined() {
-        this.userDefined = false;
     }
 
     public Collection<String> getDefiningMods() {

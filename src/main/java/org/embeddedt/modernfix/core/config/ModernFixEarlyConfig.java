@@ -37,8 +37,8 @@ import java.util.stream.StreamSupport;
 public class ModernFixEarlyConfig {
     private static final Logger LOGGER = LogManager.getLogger("ModernFixConfig");
 
-    private final Map<String, Option> options = new HashMap<>();
-    private final Multimap<String, Option> optionsByCategory = HashMultimap.create();
+    private final Map<String, Option<?>> options = new HashMap<>();
+    private final Multimap<String, Option<?>> optionsByCategory = HashMultimap.create();
 
     private static final boolean ALLOW_OVERRIDE_OVERRIDES = Boolean.getBoolean("modernfix.unsupported.allowOverriding");
 
@@ -293,16 +293,16 @@ public class ModernFixEarlyConfig {
         mixinOptions.addAll(DEFAULT_SETTING_OVERRIDES.keySet());
         for(String optionName : mixinOptions) {
             boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(optionName, true);
-            Option option = new Option(optionName, defaultEnabled, false);
+            Option<Boolean> option = new Option<>(optionName, OptionType.BOOLEAN, defaultEnabled, false);
             this.options.putIfAbsent(optionName, option);
             this.optionsByCategory.put(OptionCategories.getCategoryForOption(optionName), option);
         }
-        for(Map.Entry<String, Option> entry : this.options.entrySet()) {
+        for(Map.Entry<String, Option<?>> entry : this.options.entrySet()) {
             int idx = entry.getKey().lastIndexOf('.');
             if(idx <= 0)
                 continue;
             String potentialParentKey = entry.getKey().substring(0, idx);
-            Option potentialParent = this.options.get(potentialParentKey);
+            Option<?> potentialParent = this.options.get(potentialParentKey);
             if(potentialParent != null) {
                 entry.getValue().setParent(potentialParent);
             }
@@ -354,7 +354,7 @@ public class ModernFixEarlyConfig {
                     ModernFixEarlyConfig.class.getClassLoader().getResource("/net/minecraft/world/level/Level.class");
             if(deobfClass == null) {
                 LOGGER.warn("We are in a non-Mojmap dev environment. Disabling blockstate cache patch");
-                this.options.get("mixin.perf.reduce_blockstate_cache_rebuilds").addModOverride(false, "[not mojmap]");
+                this.options.get("mixin.perf.reduce_blockstate_cache_rebuilds").asBoolean().addModOverride(false, "[not mojmap]");
             }
         } catch(Throwable e) {
             e.printStackTrace();
@@ -363,10 +363,10 @@ public class ModernFixEarlyConfig {
 
     private void checkModelDataManager() {
         if(!isFabric && modPresent("rubidium") && !modPresent("embeddium")) {
-            Option option = this.options.get("mixin.bugfix.model_data_manager_cme");
+            Option<?> option = this.options.get("mixin.bugfix.model_data_manager_cme");
             if(option != null) {
                 LOGGER.warn("ModelDataManager bugfixes have been disabled to prevent broken rendering with Rubidium installed. Please migrate to Embeddium.");
-                option.addModOverride(false, "rubidium");
+                option.asBoolean().addModOverride(false, "rubidium");
             }
         }
     }
@@ -374,9 +374,9 @@ public class ModernFixEarlyConfig {
     private void disableIfModPresent(String configName, String... ids) {
         for(String id : ids) {
             if(!ModernFixPlatformHooks.INSTANCE.isEarlyLoadingNormally() || modPresent(id)) {
-                Option option = this.options.get(configName);
+                Option<?> option = this.options.get(configName);
                 if(option != null)
-                    option.addModOverride(false, id);
+                    option.asBoolean().addModOverride(false, id);
             }
         }
     }
@@ -390,7 +390,7 @@ public class ModernFixEarlyConfig {
     private void addMixinRule(String mixin, boolean enabled) {
         String name = getMixinRuleName(mixin);
 
-        if (this.options.putIfAbsent(name, new Option(name, enabled, false)) != null) {
+        if (this.options.putIfAbsent(name, new Option<>(name, OptionType.BOOLEAN, enabled, false)) != null) {
             throw new IllegalStateException("Mixin rule already defined: " + mixin);
         }
     }
@@ -400,9 +400,12 @@ public class ModernFixEarlyConfig {
             String value = System.getProperty("modernfix.config." + optionKey);
             if(value == null || value.length() == 0)
                 continue;
-            boolean isEnabled = Boolean.valueOf(value);
-            ModernFixMixinPlugin.instance.logger.info("Configured {} to '{}' via JVM property.", optionKey, isEnabled);
-            this.options.get(optionKey).setEnabled(isEnabled, true);
+            try {
+                this.options.get(optionKey).setFromString(value, true);
+                ModernFixMixinPlugin.instance.logger.info("Configured {} to '{}' via JVM property.", optionKey, value);
+            } catch(RuntimeException e) {
+                ModernFixMixinPlugin.instance.logger.warn("Invalid value '{}' for JVM property '{}', ignoring", value, optionKey);
+            }
         }
     }
 
@@ -440,27 +443,20 @@ public class ModernFixEarlyConfig {
             String key = (String) entry.getKey();
             String value = (String) entry.getValue();
 
-            Option option = this.options.get(key);
+            Option<?> option = this.options.get(key);
 
             if (option == null) {
                 LOGGER.warn("No configuration key exists with name '{}', ignoring", key);
                 continue;
             }
 
-            boolean enabled;
-
-            if (value.equalsIgnoreCase("true")) {
-                enabled = true;
-            } else if (value.equalsIgnoreCase("false")) {
-                enabled = false;
-            } else {
-                LOGGER.warn("Invalid value '{}' encountered for configuration key '{}', ignoring", value, key);
-                continue;
-            }
-
-            if(ALLOW_OVERRIDE_OVERRIDES || !option.isModDefined())
-                option.setEnabled(enabled, true);
-            else
+            if(ALLOW_OVERRIDE_OVERRIDES || !option.isModDefined()) {
+                try {
+                    option.setFromString(value, true);
+                } catch(RuntimeException e) {
+                    LOGGER.warn("Invalid value '{}' encountered for configuration key '{}', ignoring", value, key);
+                }
+            } else
                 LOGGER.warn("Option '{}' already disabled by a mod. Ignoring user configuration", key);
         }
     }
@@ -473,21 +469,21 @@ public class ModernFixEarlyConfig {
      *
      * @return Null if no options matched the given mixin name, otherwise the effective option for this Mixin
      */
-    public Option getEffectiveOptionForMixin(String mixinClassName) {
+    public Option<?> getEffectiveOptionForMixin(String mixinClassName) {
         int lastSplit = 0;
         int nextSplit;
 
-        Option rule = null;
+        Option<?> rule = null;
 
         while ((nextSplit = mixinClassName.indexOf('.', lastSplit)) != -1) {
             String key = getMixinRuleName(mixinClassName.substring(0, nextSplit));
 
-            Option candidate = this.options.get(key);
+            Option<?> candidate = this.options.get(key);
 
             if (candidate != null) {
                 rule = candidate;
 
-                if (!rule.isEnabled()) {
+                if (!rule.asBoolean().getValue()) {
                     return rule;
                 }
             }
@@ -558,11 +554,11 @@ public class ModernFixEarlyConfig {
                     .collect(Collectors.toList());
             for(String line : keys) {
                 if(!line.equals("mixin.core")) {
-                    Option option = this.options.get(line);
+                    Option<?> option = this.options.get(line);
                     String extraContext = "";
                     if(option != null) {
                         if(!option.isUserDefined())
-                            extraContext = "=" + option.isEnabled() + " # " + (option.isModDefined() ? "(overridden for mod compat)" : "(default)");
+                            extraContext = "=" + option.getSerializedValue() + " # " + (option.isModDefined() ? "(overridden for mod compat)" : "(default)");
                         else {
                             boolean defaultEnabled = DEFAULT_SETTING_OVERRIDES.getOrDefault(line, true);
                             extraContext = "=" + defaultEnabled + " # (default)";
@@ -576,9 +572,9 @@ public class ModernFixEarlyConfig {
             writer.write("# User overrides go here.\n");
 
             for (String key : keys) {
-                Option option = this.options.get(key);
+                Option<?> option = this.options.get(key);
                 if(option.isUserDefined())
-                    writer.write(key + "=" + option.isEnabled() + "\n");
+                    writer.write(key + "=" + option.getSerializedValue() + "\n");
             }
         }
     }
@@ -598,11 +594,11 @@ public class ModernFixEarlyConfig {
                 .count();
     }
 
-    public Map<String, Option> getOptionMap() {
+    public Map<String, Option<?>> getOptionMap() {
         return Collections.unmodifiableMap(this.options);
     }
 
-    public Multimap<String, Option> getOptionCategoryMap() {
+    public Multimap<String, Option<?>> getOptionCategoryMap() {
         return Multimaps.unmodifiableMultimap(this.optionsByCategory);
     }
 }

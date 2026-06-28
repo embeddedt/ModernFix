@@ -6,6 +6,7 @@ import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.annotation.FeatureLevel;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
+import org.embeddedt.modernfix.core.config.OptionType;
 import org.embeddedt.modernfix.core.launchplugin.CoreLaunchPluginService;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.world.ThreadDumper;
@@ -58,7 +59,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                         source = "mods [" + String.join(", ", option.getDefiningMods()) + "]";
                     }
                     this.logger.warn("Option '{}' overriden (by {}) to '{}'", option.getName(),
-                           source, option.isEnabled());
+                           source, option.getValue());
                 }
             });
 
@@ -149,7 +150,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
     }
 
     public boolean isOptionEnabled(String mixin) {
-        Option option = instance.config.getEffectiveOptionForMixin(mixin);
+        Option<?> option = instance.config.getEffectiveOptionForMixin(mixin);
 
         if (option == null) {
             String msg = "No rules matched mixin '{}', treating as foreign and disabling!";
@@ -161,7 +162,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             return false;
         }
 
-        return option.isEnabled();
+        return option.getType() == OptionType.BOOLEAN && option.asBoolean().getValue();
     }
     @Override
     public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {

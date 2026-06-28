@@ -38,9 +38,8 @@ public class NoiseBasedChunkGeneratorMixin {
         }
     }
 
-    private static Set<ResourceKey<Biome>> mfix$obtainBiomes(WorldGenRegion region, int chunkRadius) {
+    private static Set<ResourceKey<Biome>> mfix$obtainBiomes(WorldGenRegion region, ChunkPos center, int chunkRadius) {
         Set<ResourceKey<Biome>> chunkBiomes = new ReferenceOpenHashSet<>();
-        ChunkPos center = region.getCenter();
         for (int z = center.z - chunkRadius; z <= center.z + chunkRadius; z++) {
             for (int x = center.x - chunkRadius; x <= center.x + chunkRadius; x++) {
                 var chunk = region.getChunk(x, z);
@@ -60,9 +59,10 @@ public class NoiseBasedChunkGeneratorMixin {
             at = @At(value = "INVOKE", target = "Lnet/minecraft/world/level/levelgen/NoiseBasedChunkGenerator;buildSurface(Lnet/minecraft/world/level/chunk/ChunkAccess;Lnet/minecraft/world/level/levelgen/WorldGenerationContext;Lnet/minecraft/world/level/levelgen/RandomState;Lnet/minecraft/world/level/StructureManager;Lnet/minecraft/world/level/biome/BiomeManager;Lnet/minecraft/core/Registry;Lnet/minecraft/world/level/levelgen/blending/Blender;)V"))
     private void mfix$findNearbyBiomes(WorldGenRegion level, StructureManager structureManager, RandomState random, ChunkAccess chunk, CallbackInfo ci) {
         try {
-            ExtendedSurfaceContext.COMPUTED_POSSIBLE_BIOMES.set(mfix$obtainBiomes(level, 1));
-        } catch (NoSuchElementException ignored) {
-            // Catch in case a biome somehow does not have a key. In that case we just don't use the computed set
+            ExtendedSurfaceContext.COMPUTED_POSSIBLE_BIOMES.set(mfix$obtainBiomes(level, chunk.getPos(), 1));
+        } catch (Exception e) {
+            // Fall back to vanilla logic of not knowing the biomes in advance
+            ExtendedSurfaceContext.COMPUTED_POSSIBLE_BIOMES.remove();
         }
     }
 }

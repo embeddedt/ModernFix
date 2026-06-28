@@ -69,17 +69,6 @@ public class ModernFixEarlyConfig {
     private static final String MIXIN_DEV_ONLY_DESC = Type.getDescriptor(IgnoreOutsideDev.class);
     private static final String FEATURE_LEVEL_ANNOTATION_DESC = Type.getDescriptor(RequiresFeatureLevel.class);
 
-    public static final FeatureLevel ACTIVE_FEATURE_LEVEL = resolveFeatureLevel();
-
-    private static FeatureLevel resolveFeatureLevel() {
-        String prop = System.getProperty("modernfix.stabilityLevel", "ga").toUpperCase(Locale.ROOT);
-        try {
-            return FeatureLevel.valueOf(prop);
-        } catch (IllegalArgumentException e) {
-            return FeatureLevel.GA;
-        }
-    }
-
     private static final Pattern PLATFORM_PREFIX = Pattern.compile("(forge|fabric|common)\\.");
 
     public static String sanitize(String mixinClassName) {
@@ -88,6 +77,8 @@ public class ModernFixEarlyConfig {
 
     private final Set<String> mixinOptions = new ObjectOpenHashSet<>();
     private final Map<String, String> mixinsMissingMods = new Object2ObjectOpenHashMap<>();
+
+    private final Map<String, FeatureLevel> mixinsRequiringLowerStability = new Object2ObjectOpenHashMap<>();
 
     private static class PackageMetadata {
         String requiredModId;
@@ -222,8 +213,12 @@ public class ModernFixEarlyConfig {
                         mixinsMissingMods.put(mixinClassName, requiredModId);
                     else if(isClientOnly && !ModernFixPlatformHooks.INSTANCE.isClient())
                         mixinsMissingMods.put(mixinClassName, "[not client]");
-                    else if(!ACTIVE_FEATURE_LEVEL.isAtLeast(requiredLevel))
-                        mixinsMissingMods.put(mixinClassName, "[feature level: requires " + requiredLevel + "]");
+
+                    // Store the required stability level so it can be checked later
+                    if (requiredLevel != FeatureLevel.GA) {
+                        mixinsRequiringLowerStability.put(mixinClassName, requiredLevel);
+                    }
+
                     String mixinCategoryName = "mixin." + mixinClassName.substring(0, mixinClassName.lastIndexOf('.'));
                     mixinOptions.add(mixinCategoryName);
                 }
@@ -297,6 +292,7 @@ public class ModernFixEarlyConfig {
             this.options.putIfAbsent(optionName, option);
             this.optionsByCategory.put(OptionCategories.getCategoryForOption(optionName), option);
         }
+        this.addBuiltInOptions();
         for(Map.Entry<String, Option<?>> entry : this.options.entrySet()) {
             int idx = entry.getKey().lastIndexOf('.');
             if(idx <= 0)
@@ -379,6 +375,14 @@ public class ModernFixEarlyConfig {
                     option.asBoolean().addModOverride(false, id);
             }
         }
+    }
+
+    private <T> void addBuiltInOption(String name, OptionType<T> type, T initialValue) {
+        this.options.putIfAbsent(name, new Option<>(name, type, initialValue, false));
+    }
+
+    private void addBuiltInOptions() {
+        this.addBuiltInOption(BuiltInOptions.STABILITY_LEVEL, OptionType.enumType(FeatureLevel.class), FeatureLevel.GA);
     }
 
     /**
@@ -519,9 +523,23 @@ public class ModernFixEarlyConfig {
 
             config.readGlobalProperties();
             config.readJVMProperties();
+
+            config.finalizeLoad();
         }
 
         return config;
+    }
+
+    /**
+     * Called after all properties have been read.
+     */
+    public void finalizeLoad() {
+        var stabilityLevel = this.getOptionValue(BuiltInOptions.STABILITY_LEVEL, FeatureLevel.class);
+        for (var entry : mixinsRequiringLowerStability.entrySet()) {
+            if (!stabilityLevel.isAtLeast(entry.getValue())) {
+                mixinsMissingMods.put(entry.getKey(), "[feature level: requires " + entry.getValue() + "]");
+            }
+        }
     }
 
     public void save() throws IOException {
@@ -600,5 +618,15 @@ public class ModernFixEarlyConfig {
 
     public Multimap<String, Option<?>> getOptionCategoryMap() {
         return Multimaps.unmodifiableMultimap(this.optionsByCategory);
+    }
+
+    public <T> T getOptionValue(String optionName, Class<T> type) {
+        var option = this.options.get(optionName);
+
+        if (option == null) {
+            throw new IllegalStateException("Attempting to read option '" + optionName + "' that is not registered!");
+        }
+
+        return option.asType(type).getValue();
     }
 }

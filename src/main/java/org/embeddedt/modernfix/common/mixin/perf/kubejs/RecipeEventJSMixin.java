@@ -9,6 +9,7 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.annotation.FeatureLevel;
 import org.embeddedt.modernfix.annotation.RequiresMod;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -65,7 +66,7 @@ public class RecipeEventJSMixin {
      */
     @Inject(method = "post", at = @At(value = "NEW", target = "()Ljava/util/concurrent/ConcurrentLinkedQueue;", ordinal = 0), remap = false)
     private void modernfix$clearDatapackRecipeMap(RecipeManager recipeManager, Map<ResourceLocation, JsonElement> datapackRecipeMap, CallbackInfo ci) {
-        if (ModernFixEarlyConfig.ACTIVE_FEATURE_LEVEL.isAtLeast(FeatureLevel.BETA)) {
+        if (ModernFixMixinPlugin.activeFeatureLevel().isAtLeast(FeatureLevel.BETA)) {
             datapackRecipeMap.clear();
         }
     }
@@ -77,7 +78,7 @@ public class RecipeEventJSMixin {
      */
     @Inject(method = "createRecipe", at = @At("RETURN"), remap = false)
     private void modernfix$clearJson(RecipeJS r, CallbackInfoReturnable<Recipe<?>> cir) {
-        if (!ModernFixEarlyConfig.ACTIVE_FEATURE_LEVEL.isAtLeast(FeatureLevel.BETA)) {
+        if (!ModernFixMixinPlugin.activeFeatureLevel().isAtLeast(FeatureLevel.BETA)) {
             return;
         }
         r.json = null;

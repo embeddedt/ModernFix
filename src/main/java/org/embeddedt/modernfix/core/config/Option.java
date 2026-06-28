@@ -58,11 +58,15 @@ public class Option<T> {
     }
 
     @SuppressWarnings("unchecked")
-    public Option<Boolean> asBoolean() {
-        if (this.type != OptionType.BOOLEAN) {
-            throw new IllegalStateException("Option '" + this.name + "' is not a boolean option");
+    public <U> Option<U> asType(Class<U> type) {
+        if (this.type.type() != type) {
+            throw new IllegalStateException("Option '" + this.name + "' is not an option of type " + type.getName());
         }
-        return (Option<Boolean>) this;
+        return (Option<U>) this;
+    }
+
+    public Option<Boolean> asBoolean() {
+        return asType(Boolean.class);
     }
 
     public void setParent(Option<?> option) {

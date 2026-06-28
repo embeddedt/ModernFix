@@ -20,6 +20,11 @@ public abstract class OptionType<T> {
         public String serialize(Boolean value) {
             return value.toString();
         }
+
+        @Override
+        public Class<Boolean> type() {
+            return Boolean.class;
+        }
     };
 
     private static final ConcurrentHashMap<Class<? extends Enum<?>>, OptionType<? extends Enum<?>>> ENUM_TYPES = new ConcurrentHashMap<>();
@@ -28,6 +33,7 @@ public abstract class OptionType<T> {
 
     }
 
+    public abstract Class<T> type();
     public abstract T parse(String s) throws IllegalArgumentException;
     public abstract String serialize(T value);
 
@@ -41,6 +47,11 @@ public abstract class OptionType<T> {
             @Override
             public String serialize(T value) {
                 return value.name();
+            }
+
+            @Override
+            public Class<T> type() {
+                return enumClass;
             }
         };
     }

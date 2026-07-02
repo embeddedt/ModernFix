@@ -21,6 +21,7 @@ import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.Option;
 import org.embeddedt.modernfix.core.config.OptionCategories;
+import org.embeddedt.modernfix.core.config.OptionType;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
 import java.io.IOException;
@@ -38,7 +39,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
     private ModernFixConfigScreen mainScreen;
 
-    private static MutableComponent getOptionComponent(Option option) {
+    private static MutableComponent getOptionComponent(Option<?> option) {
         String friendlyKey = "modernfix.option.name." + option.getName();
         MutableComponent baseComponent = Component.literal(option.getSelfName());
         if(I18n.exists(friendlyKey))
@@ -55,9 +56,12 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
         }
     }
 
-    private final Set<Option> addedOptions = new HashSet<>();
+    private final Set<Option<?>> addedOptions = new HashSet<>();
 
-    private void addOption(Option option) {
+    private void addOption(Option<?> option) {
+        // The config screen only renders boolean toggles for now; skip any non-boolean options.
+        if(option.getType() != OptionType.BOOLEAN)
+            return;
         if(addedOptions.add(option)) {
             int w = this.minecraft.font.width(getOptionComponent(option)) + DEPTH_OFFSET * option.getDepth();
             this.maxNameWidth = Math.max(w, this.maxNameWidth);
@@ -74,7 +78,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
         this.mainScreen = arg;
 
-        Multimap<String, Option> optionsByCategory = ModernFixMixinPlugin.instance.config.getOptionCategoryMap();
+        Multimap<String, Option<?>> optionsByCategory = ModernFixMixinPlugin.instance.config.getOptionCategoryMap();
         List<String> theCategories = OptionCategories.getCategoriesInOrder();
         for(String category : theCategories) {
             String categoryTranslationKey = "modernfix.option.category." + category;
@@ -136,19 +140,19 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
 
         private final Button toggleButton;
         private final Button helpButton;
-        private final Option option;
+        private final Option<Boolean> option;
 
-        public OptionEntry(String optionName, Option option) {
+        public OptionEntry(String optionName, Option<?> option) {
             this.name = optionName;
-            this.option = option;
+            this.option = option.asBoolean();
             Tooltip toggleTooltip = null;
             if(this.option.isModDefined()) {
                 String disablingMods = String.join(", ", this.option.getDefiningMods());
-                toggleTooltip = Tooltip.create(Component.translatable("modernfix.option." + (this.option.isEnabled() ? "enabled" : "disabled"))
+                toggleTooltip = Tooltip.create(Component.translatable("modernfix.option." + (this.option.getValue() ? "enabled" : "disabled"))
                         .append(Component.translatable("modernfix.option.mod_override", disablingMods)));
             }
             this.toggleButton = new Button.Builder(Component.literal(""), (arg) -> {
-                this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
+                this.option.setValue(!this.option.getValue(), !this.option.isUserDefined());
                 try {
                     ModernFixMixinPlugin.instance.config.save();
                     if(!OptionList.this.mainScreen.madeChanges) {
@@ -156,7 +160,7 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
                     }
                 } catch(IOException e) {
                     // revert
-                    this.option.setEnabled(!this.option.isEnabled(), !this.option.isUserDefined());
+                    this.option.setValue(!this.option.getValue(), !this.option.isUserDefined());
                     ModernFix.LOGGER.error("Unable to save config", e);
                 }
                 OptionList.this.updateOptionEntryStatuses();
@@ -198,8 +202,8 @@ public class OptionList extends ContainerObjectSelectionList<OptionList.Entry> {
              */
         }
 
-        private Component getOptionMessage(Option option) {
-            return option.isEnabled() ? OPTION_ON : OPTION_OFF;
+        private Component getOptionMessage(Option<Boolean> option) {
+            return option.getValue() ? OPTION_ON : OPTION_OFF;
         }
 
         @Override

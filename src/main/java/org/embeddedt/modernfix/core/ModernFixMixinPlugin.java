@@ -3,8 +3,11 @@ package org.embeddedt.modernfix.core;
 import com.google.common.collect.ImmutableSet;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.annotation.FeatureLevel;
+import org.embeddedt.modernfix.core.config.BuiltInOptions;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.embeddedt.modernfix.core.config.Option;
+import org.embeddedt.modernfix.core.config.OptionType;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 import org.embeddedt.modernfix.world.ThreadDumper;
 import org.objectweb.asm.Opcodes;
@@ -39,6 +42,11 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             this.logger.info("Loaded configuration file for ModernFix {}: {} options available, {} override(s) found",
                     ModernFixPlatformHooks.INSTANCE.getVersionString(), config.getOptionCount(), config.getOptionOverrideCount());
 
+            if(activeFeatureLevel() != FeatureLevel.GA) {
+                this.logger.warn("ModernFix stability level is set to {}. Features at this level may be unstable or cause crashes.",
+                        activeFeatureLevel());
+            }
+
             config.getOptionMap().values().forEach(option -> {
                 if (option.isOverridden()) {
                     String source = "[unknown]";
@@ -51,7 +59,7 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
                         source = "mods [" + String.join(", ", option.getDefiningMods()) + "]";
                     }
                     this.logger.warn("Option '{}' overriden (by {}) to '{}'", option.getName(),
-                           source, option.isEnabled());
+                           source, option.getValue());
                 }
             });
 
@@ -127,14 +135,21 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
         }
 
         String mixin = mixinClassName.substring(MIXIN_PACKAGE_ROOT.length());
-        if(!instance.isOptionEnabled(mixin))
+        if(!instance.isOptionEnabled(mixin)) {
+            this.logger.debug("Skipping mixin {}: disabled by configuration", mixin);
             return false;
+        }
         String disabledBecauseMod = instance.config.getPermanentlyDisabledMixins().get(mixin);
-        return disabledBecauseMod == null;
+        if(disabledBecauseMod != null) {
+            this.logger.debug("Skipping mixin {}: disabled for mod compat ({})", mixin, disabledBecauseMod);
+            return false;
+        }
+        this.logger.debug("Applying mixin {}", mixin);
+        return true;
     }
 
     public boolean isOptionEnabled(String mixin) {
-        Option option = instance.config.getEffectiveOptionForMixin(mixin);
+        Option<?> option = instance.config.getEffectiveOptionForMixin(mixin);
 
         if (option == null) {
             String msg = "No rules matched mixin '{}', treating as foreign and disabling!";
@@ -146,8 +161,17 @@ public class ModernFixMixinPlugin implements IMixinConfigPlugin {
             return false;
         }
 
-        return option.isEnabled();
+        return option.getType() == OptionType.BOOLEAN && option.asBoolean().getValue();
     }
+
+    public <T> T getOptionValue(String optionName, Class<T> type) {
+        return this.config.getOptionValue(optionName, type);
+    }
+
+    public static FeatureLevel activeFeatureLevel() {
+        return instance.getOptionValue(BuiltInOptions.STABILITY_LEVEL, FeatureLevel.class);
+    }
+
     @Override
     public void acceptTargets(Set<String> myTargets, Set<String> otherTargets) {
 

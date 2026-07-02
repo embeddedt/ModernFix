@@ -7,6 +7,6 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.CLASS)
 @Target({ElementType.TYPE, ElementType.PACKAGE})
-public @interface RequiresMod {
-    String value() default "";
+public @interface RequiresFeatureLevel {
+    FeatureLevel value() default FeatureLevel.GA;
 }

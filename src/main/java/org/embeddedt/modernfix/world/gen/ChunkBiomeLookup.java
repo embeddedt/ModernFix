@@ -97,6 +97,9 @@ public class ChunkBiomeLookup implements Function<BlockPos, Holder<Biome>> {
     }
 
     public void dispose() {
+        if (this.fallbackManager == null) {
+            return;
+        }
         // Make sure we do not retain strong references to the biome holders
         Arrays.fill(biomes, null);
         this.fallbackManager = null;

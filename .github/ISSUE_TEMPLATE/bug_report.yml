@@ -70,6 +70,8 @@ body:
     attributes:
       label: Diagnostic Info
       description: >-
+        **Provide this even if the game is not crashing.**
+        
         Drag and drop `latest.log` from `.minecraft/logs/` for the session where the issue occurred.
         Do not paste log text inline. Issues without a valid `latest.log` will be closed.
 

@@ -3,6 +3,7 @@ package org.embeddedt.modernfix;
 import net.minecraft.client.Minecraft;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.MemoryReserve;
+import org.embeddedt.modernfix.annotation.FeatureLevel;
 import org.embeddedt.modernfix.api.constants.IntegrationConstants;
 import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
@@ -39,6 +40,9 @@ public class ModernFixClient {
         MemoryReserve.release();
         if(ModernFixMixinPlugin.instance.isOptionEnabled("feature.branding.F3Screen")) {
             brandingString = ModernFix.NAME + " " + ModernFixPlatformHooks.INSTANCE.getVersionString();
+            if (ModernFixMixinPlugin.activeFeatureLevel() != FeatureLevel.GA) {
+                brandingString = brandingString + "[" + ModernFixMixinPlugin.activeFeatureLevel().name() + "]";
+            }
         }
         SearchTreeProviderRegistry.register(JEIBackedSearchTree.PROVIDER);
         for(String className : ModernFixPlatformHooks.INSTANCE.getCustomModOptions().get(IntegrationConstants.CLIENT_INTEGRATION_CLASS)) {

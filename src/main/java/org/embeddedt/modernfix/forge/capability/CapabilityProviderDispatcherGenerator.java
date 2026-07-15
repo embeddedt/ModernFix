@@ -3,7 +3,9 @@ package org.embeddedt.modernfix.forge.capability;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
-import org.embeddedt.modernfix.ModernFix;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalysisResult;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalyzer;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityRef;
@@ -55,8 +57,11 @@ public class CapabilityProviderDispatcherGenerator {
 
     /**
      * Number of consecutive equality checks that must be performed to switch to a hash map.
+     * Overridable via the {@code modernfix.capabilityHashThreshold} system property (mainly for
+     * benchmarking); set it above any provider count to force chained-if dispatch everywhere.
      */
-    private static final int HASH_DISPATCH_THRESHOLD = 3;
+    private static final int HASH_DISPATCH_THRESHOLD =
+            Integer.getInteger("modernfix.capabilityHashThreshold", 3);
 
     private static final String GENERATED_CLASSES_FOLDER = System.getProperty("modernfix.generatedCapabilityDispatcherClassDumpFolder", "");
 
@@ -67,7 +72,12 @@ public class CapabilityProviderDispatcherGenerator {
     @SuppressWarnings("unused")
     public static final LazyOptional<?> EMPTY = LazyOptional.empty();
 
-    private static final ConcurrentHashMap<List<Class<? extends ICapabilityProvider>>, MethodHandle> cache =
+    private static final Logger LOGGER = LogManager.getLogger("ModernFix");
+
+    /** Cache key: the ordered provider types plus the analysis flag they were generated under. */
+    private record CacheKey(List<Class<? extends ICapabilityProvider>> types, boolean analysisEnabled) {}
+
+    private static final ConcurrentHashMap<CacheKey, MethodHandle> cache =
             new ConcurrentHashMap<>();
 
     private static final AtomicInteger classCounter = new AtomicInteger(0);
@@ -87,23 +97,33 @@ public class CapabilityProviderDispatcherGenerator {
      * @param providerTypes The types of capability providers in order
      * @return A MethodHandle to construct the optimized dispatcher
      */
-    private static MethodHandle getOrGenerateConstructor(List<Class<? extends ICapabilityProvider>> providerTypes) {
-        return cache.computeIfAbsent(providerTypes, CapabilityProviderDispatcherGenerator::generateClass);
+    private static MethodHandle getOrGenerateConstructor(List<Class<? extends ICapabilityProvider>> providerTypes,
+                                                         boolean analysisEnabled) {
+        return cache.computeIfAbsent(new CacheKey(providerTypes, analysisEnabled),
+                key -> generateClass(key.types(), key.analysisEnabled()));
     }
 
     /**
      * Convenience method that takes an array of providers and returns the constructor.
      */
-    private static MethodHandle getOrGenerateConstructor(ICapabilityProvider[] providers) {
+    private static MethodHandle getOrGenerateConstructor(ICapabilityProvider[] providers, boolean analysisEnabled) {
         List<Class<? extends ICapabilityProvider>> types = new ArrayList<>(providers.length);
         for (ICapabilityProvider provider : providers) {
             types.add(provider.getClass());
         }
-        return getOrGenerateConstructor(types);
+        return getOrGenerateConstructor(types, analysisEnabled);
     }
 
+    /** Production entry point: reads the analysis flag from the mixin config (requires the game loaded). */
     public static ICapabilityProvider getOrGenerateDispatcher(ICapabilityProvider[] providers) {
-        var handle = getOrGenerateConstructor(providers);
+        boolean analysisEnabled = ModernFixMixinPlugin.instance.isOptionEnabled(
+                "perf.faster_capabilities.bytecode_analysis.CapabilityAnalyzer");
+        return getOrGenerateDispatcher(providers, analysisEnabled);
+    }
+
+    /** Plugin-independent entry point for tests/benchmarks: caller supplies {@code analysisEnabled} directly. */
+    public static ICapabilityProvider getOrGenerateDispatcher(ICapabilityProvider[] providers, boolean analysisEnabled) {
+        var handle = getOrGenerateConstructor(providers, analysisEnabled);
         try {
             return (ICapabilityProvider)handle.invokeExact((Object)providers);
         } catch (Throwable e) {
@@ -111,12 +131,15 @@ public class CapabilityProviderDispatcherGenerator {
         }
     }
 
-    private static MethodHandle generateClass(List<Class<? extends ICapabilityProvider>> providerTypes) {
+    private static MethodHandle generateClass(List<Class<? extends ICapabilityProvider>> providerTypes,
+                                              boolean analysisEnabled) {
         try {
             // Analyze each provider type
             List<CapabilityAnalysisResult> analysisResults = new ArrayList<>(providerTypes.size());
             for (Class<? extends ICapabilityProvider> type : providerTypes) {
-                CapabilityAnalysisResult result = CapabilityAnalyzer.analyze(type);
+                CapabilityAnalysisResult result = analysisEnabled
+                        ? CapabilityAnalyzer.analyze(type)
+                        : new CapabilityAnalysisResult.Indeterminate("bytecode analysis disabled");
                 analysisResults.add(result);
             }
 
@@ -138,7 +161,7 @@ public class CapabilityProviderDispatcherGenerator {
                 capRefHashes.put(entry.getKey(), System.identityHashCode(capValues.get(entry.getValue())));
             }
 
-            ModernFix.LOGGER.debug("Generating capability dispatcher #{} for types: [{}]", () -> generatedClassId, () -> {
+            LOGGER.debug("Generating capability dispatcher #{} for types: [{}]", () -> generatedClassId, () -> {
                 StringBuilder sb = new StringBuilder();
                 for (int i = 0; i < providerTypes.size(); i++) {
                     if (i > 0) sb.append(", ");
@@ -670,9 +693,17 @@ public class CapabilityProviderDispatcherGenerator {
         mv.visitFieldInsn(GETFIELD, internalName, "provider" + providerIndex, fieldDesc);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitVarInsn(ALOAD, 2);
-        mv.visitMethodInsn(INVOKEINTERFACE,
-                "net/minecraftforge/common/capabilities/ICapabilityProvider",
-                "getCapability", getCapDesc, true);
+        if (fieldDesc.equals(ICAP_PROVIDER_DESC)) {
+            mv.visitMethodInsn(INVOKEINTERFACE,
+                    "net/minecraftforge/common/capabilities/ICapabilityProvider",
+                    "getCapability", getCapDesc, true);
+        } else {
+            // Field is typed to the concrete provider class: dispatch through its vtable
+            // instead of an itable scan. Cheaper in the interpreter/C1, identical under C2.
+            mv.visitMethodInsn(INVOKEVIRTUAL,
+                    Type.getType(fieldDesc).getInternalName(),
+                    "getCapability", getCapDesc, false);
+        }
         mv.visitVarInsn(ASTORE, 3);
     }
 

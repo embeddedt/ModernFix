@@ -1,16 +1,24 @@
 package org.embeddedt.modernfix.forge.capability.analysis;
 
+import it.unimi.dsi.fastutil.ints.Int2ObjectMap;
+import it.unimi.dsi.fastutil.ints.Int2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.ints.IntArrayFIFOQueue;
+import it.unimi.dsi.fastutil.ints.IntIterator;
+import it.unimi.dsi.fastutil.ints.IntLinkedOpenHashSet;
+import it.unimi.dsi.fastutil.ints.IntSet;
 import net.minecraft.core.Direction;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
 import org.objectweb.asm.tree.*;
 import org.objectweb.asm.tree.analysis.Analyzer;
 import org.objectweb.asm.tree.analysis.AnalyzerException;
 import org.objectweb.asm.tree.analysis.Frame;
+import org.objectweb.asm.tree.analysis.Interpreter;
 import org.objectweb.asm.tree.analysis.SourceValue;
 
 import java.io.IOException;
@@ -23,6 +31,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CapabilityAnalyzer {
 
+    private static final Logger LOGGER = LogManager.getLogger("ModernFix");
+
     private static final ConcurrentHashMap<Class<?>, CapabilityAnalysisResult> cache = new ConcurrentHashMap<>();
 
     private static final String CAPABILITY_INTERNAL = "net/minecraftforge/common/capabilities/Capability";
@@ -33,14 +43,15 @@ public class CapabilityAnalyzer {
     private static final String GET_CAPABILITY_DESC = "(" + CAPABILITY_DESC + DIRECTION_DESC + ")" + LAZY_OPTIONAL_DESC;
     private static final String ICAP_PROVIDER_INTERNAL = "net/minecraftforge/common/capabilities/ICapabilityProvider";
 
+    /**
+     * Reflective, cached entry point. The feature gate is enforced by callers (see
+     * {@code CapabilityProviderDispatcherGenerator}), keeping this and {@link #analyze(ClassNode, MethodNode)}
+     * free of the mixin plugin.
+     */
     public static CapabilityAnalysisResult analyze(Class<? extends ICapabilityProvider> clazz) {
         CapabilityAnalysisResult result = cache.get(clazz);
         if (result != null) return result;
-        if (!ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_capabilities.bytecode_analysis.CapabilityAnalyzer")) {
-            result = new CapabilityAnalysisResult.Indeterminate("bytecode analysis disabled");
-        } else {
-            result = doAnalyzeSafe(clazz);
-        }
+        result = doAnalyzeSafe(clazz);
         CapabilityAnalysisResult existing = cache.putIfAbsent(clazz, result);
         return existing != null ? existing : result;
     }
@@ -49,13 +60,12 @@ public class CapabilityAnalyzer {
         try {
             return doAnalyze(clazz);
         } catch (Exception e) {
-            ModernFix.LOGGER.debug("Capability analysis failed for {}: {}", clazz.getName(), e.getMessage());
+            LOGGER.debug("Capability analysis failed for {}: {}", clazz.getName(), e.getMessage());
             return new CapabilityAnalysisResult.Indeterminate("analysis exception: " + e.getMessage());
         }
     }
 
-    private static CapabilityAnalysisResult doAnalyze(Class<?> clazz) throws IOException, AnalyzerException {
-        // Find the class that actually declares getCapability via reflection
+    private static CapabilityAnalysisResult doAnalyze(Class<?> clazz) throws IOException {
         Class<?> declaringClass;
         try {
             declaringClass = clazz.getMethod("getCapability", Capability.class, Direction.class).getDeclaringClass();
@@ -67,7 +77,6 @@ public class CapabilityAnalyzer {
             return new CapabilityAnalysisResult.AlwaysEmpty();
         }
 
-        String declaringClassName = declaringClass.getName().replace('.', '/');
         ClassNode declaringClassNode = readClass(declaringClass);
         if (declaringClassNode == null) {
             return new CapabilityAnalysisResult.Indeterminate("cannot read bytecode for " + declaringClass.getName());
@@ -78,16 +87,49 @@ public class CapabilityAnalyzer {
             return new CapabilityAnalysisResult.Indeterminate("method not found in bytecode for " + declaringClass.getName());
         }
 
-        // Run the source analysis
-        CapabilitySourceInterpreter interpreter = new CapabilitySourceInterpreter();
-        Analyzer<SourceValue> analyzer = new Analyzer<>(interpreter);
-        Frame<SourceValue>[] frames = analyzer.analyze(declaringClassName, getCapMethod);
+        // Delegated calls (super.getCapability, LazyOptional-returning helpers) need bytecode for other
+        // classes, so bind a class-loading resolver over the provider's loader; the pure analysis below does not.
+        ClassLoader loader = clazz.getClassLoader();
+        DelegationContext context = DelegationContext.root(
+                name -> readClassByName(name, loader), declaringClassNode, getCapMethod);
+        return analyze(declaringClassNode, getCapMethod, context);
+    }
 
-        // Build if-guard map: maps instruction indices to CapabilityRef for guarded regions
-        List<GuardRegion> guardRegions = findGuardRegions(getCapMethod, frames);
+    /**
+     * Pure, unit-testable analysis of a {@code getCapability} method, with no class loading, Minecraft,
+     * or mixin plugin dependency. Delegated calls to other classes (including {@code super.getCapability})
+     * are treated as indeterminate here since they need class loading; same-class helpers are still folded.
+     * Use {@link #analyze(Class)} to resolve cross-class and super delegation.
+     */
+    public static CapabilityAnalysisResult analyze(ClassNode declaringClassNode, MethodNode getCapMethod) {
+        // Pure resolver: only the class in hand is available; cross-class / super delegates -> Unknown.
+        DelegationContext context = DelegationContext.root(
+                name -> name.equals(declaringClassNode.name) ? declaringClassNode : null,
+                declaringClassNode, getCapMethod);
+        return analyze(declaringClassNode, getCapMethod, context);
+    }
+
+    private static CapabilityAnalysisResult analyze(ClassNode declaringClassNode, MethodNode method,
+                                                    DelegationContext context) {
+        // Local slot of the capability parameter (1 for instance getCapability, but delegates may be static).
+        int capSlot = capSlotOf(method);
+
+        CapabilitySourceInterpreter interpreter = new CapabilitySourceInterpreter();
+        CfgRecordingAnalyzer analyzer = new CfgRecordingAnalyzer(interpreter);
+        Frame<SourceValue>[] frames;
+        try {
+            frames = analyzer.analyze(declaringClassNode.name, method);
+        } catch (AnalyzerException e) {
+            LOGGER.debug("Capability analysis failed for {}: {}", declaringClassNode.name, e.getMessage());
+            return new CapabilityAnalysisResult.Indeterminate("analysis exception: " + e.getMessage());
+        }
+
+        // For each instruction, the set of capabilities `cap` may equal there (see CapState). An opaque
+        // return is folded into that set when it is finite; an unconstrained cap forces Indeterminate.
+        CapState[] capStates = computeCapStates(method, frames, analyzer.successors, capSlot);
 
         // Classify each ARETURN
-        InsnList instructions = getCapMethod.instructions;
+        InsnList instructions = method.instructions;
         Set<CapabilityRef> knownCaps = new HashSet<>();
         boolean hasIndeterminate = false;
         String indeterminateReason = null;
@@ -102,7 +144,7 @@ public class CapabilityAnalyzer {
             SourceValue topOfStack = frame.getStack(frame.getStackSize() - 1);
 
             ReturnClassification classification = classifyReturnSources(
-                    topOfStack, interpreter, i, guardRegions, clazz, instructions);
+                    topOfStack, interpreter, capStates[i], context, capSlot);
 
             if (classification instanceof ReturnClassification.Known known) {
                 knownCaps.addAll(known.caps);
@@ -115,84 +157,59 @@ public class CapabilityAnalyzer {
 
         if (hasIndeterminate) {
             CapabilityAnalysisResult result = new CapabilityAnalysisResult.Indeterminate(indeterminateReason);
-            ModernFix.LOGGER.debug("Capability analysis for {}: {}", clazz.getName(), result);
+            LOGGER.debug("Capability analysis for {}: {}", declaringClassNode.name, result);
             return result;
         }
 
         if (knownCaps.isEmpty()) {
-            ModernFix.LOGGER.debug("Capability analysis for {}: AlwaysEmpty", clazz.getName());
+            LOGGER.debug("Capability analysis for {}: AlwaysEmpty", declaringClassNode.name);
             return new CapabilityAnalysisResult.AlwaysEmpty();
         }
 
         CapabilityAnalysisResult result = new CapabilityAnalysisResult.KnownCapabilities(Set.copyOf(knownCaps));
-        ModernFix.LOGGER.debug("Capability analysis for {}: {}", clazz.getName(), result);
+        LOGGER.debug("Capability analysis for {}: {}", declaringClassNode.name, result);
         return result;
     }
 
+    /**
+     * Classifies a single {@code ARETURN}. Recognized sources ({@code orEmpty}, {@code empty}, folded
+     * delegates) classify themselves; an opaque source contributes the caps in {@code stateAtReturn} when
+     * that set is finite, or forces Indeterminate when {@code cap} is unconstrained (TOP).
+     */
     private static ReturnClassification classifyReturnSources(
             SourceValue topOfStack,
             CapabilitySourceInterpreter interpreter,
-            int returnIndex,
-            List<GuardRegion> guardRegions,
-            Class<?> originalClass,
-            InsnList instructions) {
+            CapState stateAtReturn,
+            DelegationContext context,
+            int capSlot) {
 
         Set<CapabilityRef> caps = new HashSet<>();
-        List<AbstractInsnNode> unknownSources = new ArrayList<>();
+        boolean hasUnknown = false;
         String unknownReason = null;
+
+        boolean stateIsFinite = stateAtReturn != null && !stateAtReturn.isTop();
 
         for (AbstractInsnNode source : topOfStack.insns) {
             ReturnClassification sourceClassification = classifySingleSource(
-                    source, interpreter, originalClass);
+                    source, interpreter, context, capSlot);
 
-            if (sourceClassification instanceof ReturnClassification.Unknown unknown) {
-                unknownSources.add(source);
-                unknownReason = unknown.reason;
-            } else if (sourceClassification instanceof ReturnClassification.Known known) {
+            if (sourceClassification instanceof ReturnClassification.Known known) {
                 caps.addAll(known.caps);
-            }
-        }
-
-        // If any source is unknown, try the guard region fallback before giving up
-        if (!unknownSources.isEmpty()) {
-            boolean allResolved = false;
-
-            // Check if the return itself is in a guard region
-            for (GuardRegion guard : guardRegions) {
-                if (returnIndex > guard.guardIndex && returnIndex < guard.targetIndex) {
-                    caps.add(guard.capabilityRef);
-                    allResolved = true;
-                    break;
+            } else if (sourceClassification instanceof ReturnClassification.Unknown unknown) {
+                if (stateIsFinite) {
+                    // Opaque, but only reachable for these specific caps (an empty set is a dead path).
+                    caps.addAll(stateAtReturn.caps());
+                } else {
+                    hasUnknown = true;
+                    unknownReason = unknown.reason;
                 }
             }
-
-            // Also check if each unknown source instruction is inside a guard region.
-            // This handles ternary patterns where both branches merge into a single
-            // ARETURN after the guard, but the unknown value was produced inside it.
-            if (!allResolved) {
-                allResolved = true;
-                for (AbstractInsnNode unknownSource : unknownSources) {
-                    int sourceIndex = instructions.indexOf(unknownSource);
-                    boolean resolved = false;
-                    for (GuardRegion guard : guardRegions) {
-                        if (sourceIndex > guard.guardIndex && sourceIndex < guard.targetIndex) {
-                            caps.add(guard.capabilityRef);
-                            resolved = true;
-                            break;
-                        }
-                    }
-                    if (!resolved) {
-                        allResolved = false;
-                        break;
-                    }
-                }
-            }
-
-            if (!allResolved) {
-                return new ReturnClassification.Unknown(unknownReason);
-            }
+            // Empty: contributes nothing
         }
 
+        if (hasUnknown) {
+            return new ReturnClassification.Unknown(unknownReason);
+        }
         if (caps.isEmpty()) {
             return ReturnClassification.EMPTY;
         }
@@ -202,7 +219,8 @@ public class CapabilityAnalyzer {
     private static ReturnClassification classifySingleSource(
             AbstractInsnNode source,
             CapabilitySourceInterpreter interpreter,
-            Class<?> originalClass) {
+            DelegationContext context,
+            int capSlot) {
 
         if (source instanceof MethodInsnNode methodInsn) {
             // Case: Capability.orEmpty(...)
@@ -233,17 +251,15 @@ public class CapabilityAnalyzer {
                 }
             }
 
-            // Case: super.getCapability(...)
-            if (methodInsn.getOpcode() == Opcodes.INVOKESPECIAL
-                    && methodInsn.name.equals("getCapability")
-                    && methodInsn.desc.equals(GET_CAPABILITY_DESC)) {
-                return classifySuperDelegation(originalClass);
+            // Case: a delegated LazyOptional-returning call (super.getCapability or a helper).
+            if (methodInsn.desc.endsWith(")" + LAZY_OPTIONAL_DESC)) {
+                return context.resolveDelegate(methodInsn, interpreter, capSlot);
             }
+
+            return new ReturnClassification.Unknown(
+                    "unclassified method: " + methodInsn.owner + "." + methodInsn.name + methodInsn.desc);
         }
 
-        if (source instanceof MethodInsnNode m) {
-            return new ReturnClassification.Unknown("unclassified method: " + m.owner + "." + m.name + m.desc);
-        }
         return new ReturnClassification.Unknown("unclassified source: " + source.getClass().getSimpleName()
                 + " opcode=" + source.getOpcode());
     }
@@ -255,113 +271,270 @@ public class CapabilityAnalyzer {
             return new ReturnClassification.Unknown("orEmpty call with no recorded arguments");
         }
 
-        // arg 0 is the receiver (the Capability instance)
+        // arg 0 is the receiver: `receiver.orEmpty(cap, inst)` is non-empty exactly when cap == receiver.
+        // The receiver may merge several static Capability fields (e.g. a ternary), so union them all;
+        // bail to Unknown on any non-static-field source rather than drop a served cap.
         SourceValue receiver = args.get(0);
+        if (receiver.insns.isEmpty()) {
+            return new ReturnClassification.Unknown("orEmpty receiver has no recorded source");
+        }
+        Set<CapabilityRef> caps = new HashSet<>();
         for (AbstractInsnNode recvSource : receiver.insns) {
             if (recvSource instanceof FieldInsnNode fieldInsn
                     && fieldInsn.getOpcode() == Opcodes.GETSTATIC
                     && fieldInsn.desc.equals(CAPABILITY_DESC)) {
-                return new ReturnClassification.Known(
-                        Set.of(new CapabilityRef(fieldInsn.owner, fieldInsn.name)));
+                caps.add(new CapabilityRef(fieldInsn.owner, fieldInsn.name));
+            } else {
+                return new ReturnClassification.Unknown("orEmpty receiver is not exclusively static Capability fields");
             }
         }
-
-        return new ReturnClassification.Unknown("orEmpty receiver is not a static Capability field");
+        return new ReturnClassification.Known(caps);
     }
 
-    private static ReturnClassification classifySuperDelegation(Class<?> originalClass) {
-        Class<?> superClass = originalClass.getSuperclass();
-        if (superClass == null || superClass == Object.class) {
-            return ReturnClassification.EMPTY;
+    /**
+     * Carries the class-loading seam and recursion state for folding delegated {@code getCapability}-
+     * style calls (including {@code super.getCapability}). Injected by the entry points so the pure
+     * {@link #analyze(ClassNode, MethodNode)} core stays free of class loading.
+     */
+    private static final class DelegationContext {
+        @FunctionalInterface
+        interface ClassNodeProvider {
+            /** @return the {@link ClassNode} for an internal name, or {@code null} if it cannot be loaded. */
+            ClassNode get(String internalName);
         }
 
-        @SuppressWarnings("unchecked")
-        Class<? extends ICapabilityProvider> superProvider =
-                (Class<? extends ICapabilityProvider>) superClass;
-        CapabilityAnalysisResult superResult = analyze(superProvider);
-        if (superResult instanceof CapabilityAnalysisResult.KnownCapabilities known) {
-            return new ReturnClassification.Known(known.capabilities());
-        } else if (superResult instanceof CapabilityAnalysisResult.AlwaysEmpty) {
-            return ReturnClassification.EMPTY;
-        } else if (superResult instanceof CapabilityAnalysisResult.Indeterminate ind) {
-            return new ReturnClassification.Unknown("super delegation: " + ind.reason());
-        }
-        return ReturnClassification.EMPTY;
-    }
+        /** Backstop against pathological delegation chains (cycles are caught exactly by {@code visited}). */
+        private static final int MAX_DEPTH = 8;
 
-    private static List<GuardRegion> findGuardRegions(MethodNode method, Frame<SourceValue>[] frames) {
-        List<GuardRegion> regions = new ArrayList<>();
-        InsnList instructions = method.instructions;
+        private final ClassNodeProvider provider;
+        private final Set<String> visited;
+        private final int depth;
 
-        for (int i = 0; i < instructions.size(); i++) {
-            AbstractInsnNode insn = instructions.get(i);
-            int opcode = insn.getOpcode();
-            if (opcode != Opcodes.IF_ACMPEQ && opcode != Opcodes.IF_ACMPNE) continue;
-
-            Frame<SourceValue> frame = frames[i];
-            if (frame == null || frame.getStackSize() < 2) continue;
-
-            SourceValue val1 = frame.getStack(frame.getStackSize() - 2);
-            SourceValue val2 = frame.getStack(frame.getStackSize() - 1);
-
-            // Check if one traces to ALOAD 1 (cap parameter) and other to GETSTATIC Capability
-            CapabilityRef capRef = findCapRef(val1);
-            if (capRef == null) capRef = findCapRef(val2);
-            boolean hasParamLoad = isCapParamLoad(val1) || isCapParamLoad(val2);
-
-            if (capRef != null && hasParamLoad) {
-                JumpInsnNode jumpInsn = (JumpInsnNode) insn;
-                int targetIndex = instructions.indexOf(jumpInsn.label);
-
-                if (opcode == Opcodes.IF_ACMPNE) {
-                    // if (cap != KNOWN_CAP) goto target -> the code between insn and target is for KNOWN_CAP
-                    regions.add(new GuardRegion(capRef, i, targetIndex));
-                } else {
-                    // IF_ACMPEQ: if (cap == KNOWN_CAP) goto target -> the target is the guarded code
-                    // Find the end of the guarded region (next label or return)
-                    // For simplicity, mark from target to the next unconditional branch or return
-                    // TODO: that simplification may have edge cases
-                    int endIndex = findGuardedRegionEnd(instructions, targetIndex);
-                    regions.add(new GuardRegion(capRef, targetIndex, endIndex));
-                }
-            }
+        private DelegationContext(ClassNodeProvider provider, Set<String> visited, int depth) {
+            this.provider = provider;
+            this.visited = visited;
+            this.depth = depth;
         }
 
-        // Extend guard regions for forward jumps that land beyond the guard target.
-        // This handles compound conditions like (cap == X && cond) compiled as:
-        //   if_acmpne L_false   // guard: [here, L_false)
-        //   evaluate cond
-        //   ifeq L_true         // forward jump beyond L_false
-        //   L_false: empty(); areturn
-        //   L_true: cast(); areturn   // <-- also guarded by cap == X
-        int baseSize = regions.size();
-        for (int r = 0; r < baseSize; r++) {
-            GuardRegion guard = regions.get(r);
-            for (int j = guard.guardIndex + 1; j < guard.targetIndex; j++) {
-                AbstractInsnNode inner = instructions.get(j);
-                if (inner instanceof JumpInsnNode jump) {
-                    int jumpTarget = instructions.indexOf(jump.label);
-                    if (jumpTarget >= guard.targetIndex) {
-                        int endIndex = findGuardedRegionEnd(instructions, jumpTarget);
-                        regions.add(new GuardRegion(guard.capabilityRef, jumpTarget, endIndex));
+        static DelegationContext root(ClassNodeProvider provider, ClassNode rootClass, MethodNode rootMethod) {
+            Set<String> visited = new HashSet<>();
+            visited.add(methodId(rootClass.name, rootMethod));
+            return new DelegationContext(provider, visited, 0);
+        }
+
+        private DelegationContext child(String methodId) {
+            Set<String> next = new HashSet<>(visited);
+            next.add(methodId);
+            return new DelegationContext(provider, next, depth + 1);
+        }
+
+        /**
+         * Folds a delegated {@code LazyOptional}-returning call into the classification of its target,
+         * when all of:
+         * <ol>
+         *   <li>our {@code cap} is passed straight through to the target's sole {@code Capability}
+         *       parameter (so the target's served set, which is relative to that parameter, transfers);</li>
+         *   <li>the target resolves to a method that is <em>provably the one that runs</em> - never an
+         *       overridable virtual call, whose runtime target a subtype could change (see the gate below);</li>
+         *   <li>it does not recurse cyclically or beyond {@link #MAX_DEPTH}.</li>
+         * </ol>
+         * Any failure yields {@code Unknown} (i.e. Indeterminate), which is always safe.
+         */
+        ReturnClassification resolveDelegate(MethodInsnNode call, CapabilitySourceInterpreter interpreter,
+                                             int callerCapSlot) {
+            // (1) Identify the target's sole Capability parameter and require our cap flows into it.
+            Type[] params = Type.getArgumentTypes(call.desc);
+            int capParam = -1;
+            for (int p = 0; p < params.length; p++) {
+                if (params[p].getDescriptor().equals(CAPABILITY_DESC)) {
+                    if (capParam >= 0) {
+                        return new ReturnClassification.Unknown("delegate has multiple Capability parameters");
                     }
+                    capParam = p;
+                }
+            }
+            if (capParam < 0) {
+                return new ReturnClassification.Unknown("delegate has no Capability parameter");
+            }
+            boolean staticCall = call.getOpcode() == Opcodes.INVOKESTATIC;
+            List<SourceValue> args = interpreter.getCallArguments(call);
+            int argIndex = staticCall ? capParam : capParam + 1; // receiver occupies arg 0 when non-static
+            if (argIndex >= args.size() || !isCapParamLoad(args.get(argIndex), callerCapSlot)) {
+                return new ReturnClassification.Unknown("delegate is not called with our cap parameter");
+            }
+
+            // Resolve the target method, walking up from the call's owner (JVM-style method resolution).
+            ClassNode declaringNode = provider.get(call.owner);
+            if (declaringNode == null) {
+                return new ReturnClassification.Unknown("cannot load delegate owner " + call.owner);
+            }
+            MethodNode target = findMethod(declaringNode, call.name, call.desc);
+            while (target == null) {
+                String superName = declaringNode.superName;
+                if (superName == null) {
+                    // Exhausted the hierarchy without finding an implementation: it serves nothing.
+                    return ReturnClassification.EMPTY;
+                }
+                ClassNode next = provider.get(superName);
+                if (next == null) {
+                    return new ReturnClassification.Unknown("cannot load delegate super " + superName);
+                }
+                declaringNode = next;
+                target = findMethod(declaringNode, call.name, call.desc);
+            }
+
+            // (2) Soundness gate: the resolved target must be the method that actually runs. INVOKESPECIAL
+            // (super/private) and INVOKESTATIC are exact by construction; for a virtual/interface call we
+            // require the target itself to be non-overridable. NB: since Java 11 nestmates, javac may emit
+            // INVOKEVIRTUAL even for private calls, so we check the resolved method's flags, not the opcode.
+            boolean provablyExact = staticCall
+                    || call.getOpcode() == Opcodes.INVOKESPECIAL
+                    || (target.access & (Opcodes.ACC_PRIVATE | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL)) != 0
+                    || (declaringNode.access & Opcodes.ACC_FINAL) != 0;
+            if (!provablyExact) {
+                return new ReturnClassification.Unknown(
+                        "overridable virtual delegate " + call.owner + "." + call.name);
+            }
+
+            // (3) Recursion guard - delegation (unlike super chains) can cycle.
+            String id = methodId(declaringNode.name, target);
+            if (visited.contains(id)) {
+                return new ReturnClassification.Unknown("delegation cycle at " + id);
+            }
+            if (depth >= MAX_DEPTH) {
+                return new ReturnClassification.Unknown("delegation depth exceeded at " + id);
+            }
+
+            CapabilityAnalysisResult result = analyze(declaringNode, target, child(id));
+            if (result instanceof CapabilityAnalysisResult.KnownCapabilities known) {
+                return new ReturnClassification.Known(known.capabilities());
+            } else if (result instanceof CapabilityAnalysisResult.AlwaysEmpty) {
+                return ReturnClassification.EMPTY;
+            } else if (result instanceof CapabilityAnalysisResult.Indeterminate ind) {
+                return new ReturnClassification.Unknown("delegate: " + ind.reason());
+            }
+            return ReturnClassification.EMPTY;
+        }
+    }
+
+    // ---- cap-parameter path-condition dataflow -------------------------------------------------
+
+    /**
+     * Forward worklist fixpoint computing, for each instruction, the {@link CapState} of {@code cap}
+     * reaching it (indexed by instruction position; {@code null} = unreachable). CFG edges come from ASM's
+     * {@link Analyzer} via {@link CfgRecordingAnalyzer}. The only refinements are {@code cap == CONSTANT}
+     * guards: a matched {@code IF_ACMP*} narrows the state along its taken/fall-through edges, while every
+     * other instruction passes its state through unchanged.
+     */
+    private static CapState[] computeCapStates(MethodNode method, Frame<SourceValue>[] frames,
+                                               Int2ObjectMap<IntSet> cfgSuccessors, int capSlot) {
+        InsnList instructions = method.instructions;
+        int n = instructions.size();
+        CapState[] in = new CapState[n];
+        IntArrayFIFOQueue work = new IntArrayFIFOQueue();
+
+        if (n > 0) {
+            in[0] = CapState.TOP;
+            work.enqueue(0);
+        }
+
+        while (!work.isEmpty()) {
+            int i = work.dequeueInt();
+            CapState cur = in[i];
+            if (cur == null) continue;
+            AbstractInsnNode insn = instructions.get(i);
+            int op = insn.getOpcode();
+
+            CapabilityRef guardCap = matchedGuardCap(i, insn, frames, capSlot);
+            if (guardCap != null) {
+                JumpInsnNode jump = (JumpInsnNode) insn;
+                int target = instructions.indexOf(jump.label);
+                CapState takenState, fallState;
+                if (op == Opcodes.IF_ACMPEQ) { // branch taken when cap == guardCap
+                    takenState = cur.assertEq(guardCap);
+                    fallState = cur.assertNe(guardCap);
+                } else { // IF_ACMPNE: branch taken when cap != guardCap
+                    takenState = cur.assertNe(guardCap);
+                    fallState = cur.assertEq(guardCap);
+                }
+                propagate(in, work, target, takenState);
+                propagate(in, work, i + 1, fallState);
+                continue;
+            }
+
+            IntSet succs = cfgSuccessors.get(i);
+            if (succs != null) {
+                for (IntIterator it = succs.iterator(); it.hasNext(); ) {
+                    propagate(in, work, it.nextInt(), cur);
                 }
             }
         }
-
-        return regions;
+        return in;
     }
 
-    private static int findGuardedRegionEnd(InsnList instructions, int startIndex) {
-        for (int i = startIndex; i < instructions.size(); i++) {
-            AbstractInsnNode insn = instructions.get(i);
-            int opcode = insn.getOpcode();
-            if (opcode == Opcodes.GOTO || opcode == Opcodes.ARETURN
-                    || opcode == Opcodes.RETURN || opcode == Opcodes.ATHROW) {
-                return i + 1;
-            }
+    private static void propagate(CapState[] in, IntArrayFIFOQueue work, int idx, CapState incoming) {
+        if (idx < 0 || idx >= in.length || incoming == null) return;
+        CapState old = in[idx];
+        CapState merged = (old == null) ? incoming : old.join(incoming);
+        if (old == null || !old.sameAs(merged)) {
+            in[idx] = merged;
+            work.enqueue(idx);
         }
-        return instructions.size();
+    }
+
+    /**
+     * An {@link Analyzer} that records the control-flow graph ASM computes while producing the frames.
+     * Overriding the edge hooks lets us reuse ASM's opcode-aware CFG (normal <em>and</em> exception
+     * edges) instead of hand-enumerating every branching instruction. {@code successors} maps each
+     * instruction index to its successor indices.
+     */
+    private static final class CfgRecordingAnalyzer extends Analyzer<SourceValue> {
+        final Int2ObjectMap<IntSet> successors = new Int2ObjectOpenHashMap<>();
+
+        CfgRecordingAnalyzer(Interpreter<SourceValue> interpreter) {
+            super(interpreter);
+        }
+
+        private void record(int from, int to) {
+            IntSet set = successors.get(from);
+            if (set == null) {
+                set = new IntLinkedOpenHashSet();
+                successors.put(from, set);
+            }
+            set.add(to);
+        }
+
+        @Override
+        protected void newControlFlowEdge(int insnIndex, int successorIndex) {
+            record(insnIndex, successorIndex);
+        }
+
+        @Override
+        protected boolean newControlFlowExceptionEdge(int insnIndex, int successorIndex) {
+            record(insnIndex, successorIndex);
+            return true;
+        }
+    }
+
+    /**
+     * If the instruction at {@code i} is a clean {@code cap == CONSTANT} reference comparison (one
+     * operand traces to the {@code cap} parameter at {@code capSlot}, the other to a static
+     * {@code Capability} field), returns that capability; otherwise {@code null}.
+     */
+    private static CapabilityRef matchedGuardCap(int i, AbstractInsnNode insn, Frame<SourceValue>[] frames, int capSlot) {
+        int op = insn.getOpcode();
+        if (op != Opcodes.IF_ACMPEQ && op != Opcodes.IF_ACMPNE) return null;
+        Frame<SourceValue> frame = frames[i];
+        if (frame == null || frame.getStackSize() < 2) return null;
+
+        SourceValue val1 = frame.getStack(frame.getStackSize() - 2);
+        SourceValue val2 = frame.getStack(frame.getStackSize() - 1);
+
+        CapabilityRef capRef = findCapRef(val1);
+        if (capRef == null) capRef = findCapRef(val2);
+        boolean hasParamLoad = isCapParamLoad(val1, capSlot) || isCapParamLoad(val2, capSlot);
+
+        return (capRef != null && hasParamLoad) ? capRef : null;
     }
 
     private static CapabilityRef findCapRef(SourceValue sv) {
@@ -382,25 +555,47 @@ public class CapabilityAnalyzer {
         return ref;
     }
 
-    private static boolean isCapParamLoad(SourceValue sv) {
-        if (sv.insns.isEmpty()) return false;
+    /** True iff every source of {@code sv} is {@code ALOAD capSlot} - i.e. the value is the cap parameter. */
+    private static boolean isCapParamLoad(SourceValue sv, int capSlot) {
+        if (capSlot < 0 || sv.insns.isEmpty()) return false;
         for (AbstractInsnNode src : sv.insns) {
             if (!(src instanceof VarInsnNode varInsn)
                     || varInsn.getOpcode() != Opcodes.ALOAD
-                    || varInsn.var != 1) {
+                    || varInsn.var != capSlot) {
                 return false;
             }
         }
         return true;
     }
 
+    /** The local-variable slot of the (sole) {@code Capability}-typed parameter, or -1 if there is none. */
+    private static int capSlotOf(MethodNode method) {
+        boolean isStatic = (method.access & Opcodes.ACC_STATIC) != 0;
+        int slot = isStatic ? 0 : 1; // slot 0 is `this` for instance methods
+        for (Type argType : Type.getArgumentTypes(method.desc)) {
+            if (argType.getDescriptor().equals(CAPABILITY_DESC)) {
+                return slot;
+            }
+            slot += argType.getSize(); // long/double occupy two slots
+        }
+        return -1;
+    }
+
     private static MethodNode findGetCapabilityMethod(ClassNode classNode) {
+        return findMethod(classNode, "getCapability", GET_CAPABILITY_DESC);
+    }
+
+    private static MethodNode findMethod(ClassNode classNode, String name, String desc) {
         for (MethodNode method : classNode.methods) {
-            if (method.name.equals("getCapability") && method.desc.equals(GET_CAPABILITY_DESC)) {
+            if (method.name.equals(name) && method.desc.equals(desc)) {
                 return method;
             }
         }
         return null;
+    }
+
+    private static String methodId(String ownerInternalName, MethodNode method) {
+        return ownerInternalName + "." + method.name + method.desc;
     }
 
     private static ClassNode readClass(Class<?> clazz) throws IOException {
@@ -414,6 +609,20 @@ public class CapabilityAnalyzer {
         }
     }
 
+    /** Loads a {@link ClassNode} by internal name from {@code loader}; returns null if unavailable. */
+    private static ClassNode readClassByName(String internalName, ClassLoader loader) {
+        ClassLoader cl = (loader != null) ? loader : CapabilityAnalyzer.class.getClassLoader();
+        try (InputStream is = cl.getResourceAsStream(internalName + ".class")) {
+            if (is == null) return null;
+            ClassReader reader = new ClassReader(is);
+            ClassNode node = new ClassNode();
+            reader.accept(node, 0);
+            return node;
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
     private sealed interface ReturnClassification {
         ReturnClassification EMPTY = new Empty();
 
@@ -422,5 +631,58 @@ public class CapabilityAnalyzer {
         record Unknown(String reason) implements ReturnClassification {}
     }
 
-    private record GuardRegion(CapabilityRef capabilityRef, int guardIndex, int targetIndex) {}
+    /**
+     * Abstract value for the {@code cap} parameter at a program point: either TOP (any capability,
+     * encoded as {@code caps == null}) or the finite set of capabilities cap may equal (empty = an
+     * unreachable point). A join semilattice under union with TOP as top; its bounded height (subsets
+     * of the capabilities named in the method's guards) guarantees the fixpoint terminates.
+     */
+    private static final class CapState {
+        static final CapState TOP = new CapState(null);
+
+        /** {@code null} means TOP (any capability); otherwise the exact set cap may equal. */
+        private final Set<CapabilityRef> caps;
+
+        private CapState(Set<CapabilityRef> caps) {
+            this.caps = caps;
+        }
+
+        boolean isTop() {
+            return caps == null;
+        }
+
+        /** The exact cap set; only valid when {@code !isTop()}. */
+        Set<CapabilityRef> caps() {
+            return caps;
+        }
+
+        /** Join = set union, with TOP absorbing. */
+        CapState join(CapState other) {
+            if (other == null) return this;
+            if (this.isTop() || other.isTop()) return TOP;
+            Set<CapabilityRef> union = new HashSet<>(this.caps);
+            union.addAll(other.caps);
+            return new CapState(union);
+        }
+
+        boolean sameAs(CapState other) {
+            if (other == null) return false;
+            if (this.isTop() || other.isTop()) return this.isTop() && other.isTop();
+            return this.caps.equals(other.caps);
+        }
+
+        /** Refine along a {@code cap == x} edge. */
+        CapState assertEq(CapabilityRef x) {
+            if (isTop()) return new CapState(Set.of(x));
+            return new CapState(caps.contains(x) ? Set.of(x) : Set.of());
+        }
+
+        /** Refine along a {@code cap != x} edge. TOP minus one capability is still TOP. */
+        CapState assertNe(CapabilityRef x) {
+            if (isTop()) return TOP;
+            Set<CapabilityRef> narrowed = new HashSet<>(caps);
+            narrowed.remove(x);
+            return new CapState(narrowed);
+        }
+    }
 }

@@ -2,7 +2,6 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Maps;
-import com.llamalad7.mixinextras.sugar.Local;
 import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelBakery;
@@ -52,11 +51,12 @@ public class ModelManagerMixin {
     }
 
     @ModifyArg(method = "loadBlockModels", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;thenCompose(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", ordinal = 0), index = 0)
-    private static Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> deferBlockModelLoad(Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> fn, @Local(ordinal = 0, argsOnly = true) ResourceManager manager) {
+    private static Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> deferBlockModelLoad(Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> fn) {
         return resourceMap -> {
+            var resourceMapSnapshot = Map.copyOf(resourceMap);
             var fallbackModel = BlockModel.fromString(ModelBakery.MISSING_MODEL_MESH);
-            var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, location, fallbackModel), 100L);
-            return CompletableFuture.completedFuture(Maps.asMap(Set.copyOf(resourceMap.keySet()), location -> cache.getUnchecked(location)));
+            var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(resourceMapSnapshot, location, fallbackModel), 100L);
+            return CompletableFuture.completedFuture(Maps.asMap(resourceMapSnapshot.keySet(), location -> cache.getUnchecked(location)));
         };
     }
 
@@ -71,17 +71,17 @@ public class ModelManagerMixin {
         return ImmutableList.of();
     }
 
-    private static BlockModel loadSingleBlockModel(ResourceManager manager, ResourceLocation location, BlockModel fallbackModel) {
-        return manager.getResource(location).map(resource -> {
-            try (BufferedReader reader = resource.openAsReader()) {
-                return BlockModel.fromStream(reader);
-            } catch (Exception e) {
-                // We must return some nonnull value to avoid breaking the map convention. The easiest solution
-                // is to just return a missing model template.
-                ModernFix.LOGGER.error("Couldn't load model {}, substituting missing", location, e);
-                return fallbackModel;
-            }
-        }).orElse(null);
+    private static BlockModel loadSingleBlockModel(Map<ResourceLocation, Resource> resourceMap, ResourceLocation location, BlockModel fallbackModel) {
+        Resource resource = resourceMap.get(location);
+        if(resource == null) {
+            return null;
+        }
+        try (BufferedReader reader = resource.openAsReader()) {
+            return BlockModel.fromStream(reader);
+        } catch (Exception e) {
+            ModernFix.LOGGER.error("Couldn't load model {}, substituting missing", location, e);
+            return fallbackModel;
+        }
     }
 
     private List<ModelBakery.LoadedJson> loadSingleBlockState(ResourceManager manager, ResourceLocation location) {

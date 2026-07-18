@@ -69,7 +69,7 @@ public class DynamicModelSystem {
                 if (DEBUG_DYNAMIC_MODEL_LOADING) {
                     ModernFix.LOGGER.info("Loading {} {}", debugName, id);
                 }
-                return Optional.of(loader.load(file, resource));
+                return Optional.ofNullable(loader.load(file, resource));
             }
         });
         Set<Identifier> idSet = resourceMap.keySet().stream().map(converter::fileToId).collect(Collectors.toUnmodifiableSet());

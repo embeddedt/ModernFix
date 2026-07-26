@@ -7,6 +7,7 @@ import net.minecraftforge.common.capabilities.CapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import org.embeddedt.modernfix.forge.capability.CapabilityProviderDispatcherGenerator;
+import org.embeddedt.modernfix.forge.capability.GeneratedDispatcher;
 import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -24,7 +25,7 @@ public class CapabilityDispatcherMixin {
     @Shadow
     @Final
     private ICapabilityProvider[] caps;
-    private ICapabilityProvider mfix$turboDispatcher;
+    private GeneratedDispatcher mfix$turboDispatcher;
 
     @Inject(method = "<init>(Ljava/util/Map;Ljava/util/List;Lnet/minecraftforge/common/capabilities/ICapabilityProvider;)V", at = @At("RETURN"))
     private void createTurboDispatcher(Map list, List listeners, ICapabilityProvider parent, CallbackInfo ci) {

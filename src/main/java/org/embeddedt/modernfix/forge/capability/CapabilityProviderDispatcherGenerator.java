@@ -91,6 +91,7 @@ public class CapabilityProviderDispatcherGenerator {
     private static final String LAZY_OPTIONAL_DESC = "Lnet/minecraftforge/common/util/LazyOptional;";
     private static final String DIRECTION_DESC = "Lnet/minecraft/core/Direction;";
     private static final String LOOKUP_DESC = "Ljava/lang/invoke/MethodHandles$Lookup;";
+    private static final String GENERATED_DISPATCHER_INTERNAL_NAME = "org/embeddedt/modernfix/forge/capability/GeneratedDispatcher";
 
     /**
      * Gets or generates a constructor MethodHandle for the given capability provider types.
@@ -117,17 +118,17 @@ public class CapabilityProviderDispatcherGenerator {
     }
 
     /** Production entry point: reads the analysis flag from the mixin config (requires the game loaded). */
-    public static ICapabilityProvider getOrGenerateDispatcher(ICapabilityProvider[] providers) {
+    public static GeneratedDispatcher getOrGenerateDispatcher(ICapabilityProvider[] providers) {
         boolean analysisEnabled = ModernFixMixinPlugin.activeFeatureLevel().isAtLeast(FeatureLevel.BETA) &&
                 ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_capabilities.bytecode_analysis.CapabilityAnalyzer");
         return getOrGenerateDispatcher(providers, analysisEnabled);
     }
 
     /** Plugin-independent entry point for tests/benchmarks: caller supplies {@code analysisEnabled} directly. */
-    public static ICapabilityProvider getOrGenerateDispatcher(ICapabilityProvider[] providers, boolean analysisEnabled) {
+    public static GeneratedDispatcher getOrGenerateDispatcher(ICapabilityProvider[] providers, boolean analysisEnabled) {
         var handle = getOrGenerateConstructor(providers, analysisEnabled);
         try {
-            return (ICapabilityProvider)handle.invokeExact((Object)providers);
+            return (GeneratedDispatcher)handle.invokeExact((Object)providers);
         } catch (Throwable e) {
             throw new RuntimeException("Error constructing dispatcher", e);
         }
@@ -192,12 +193,12 @@ public class CapabilityProviderDispatcherGenerator {
 
             // Return a MethodHandle to the constructor
             // Constructor signature: (ICapabilityProvider[])V
-            // The constructor is adapted to take an Object and return an ICapabilityProvider to match
+            // The constructor is adapted to take an Object and return a GeneratedDispatcher to match
             // the usage in getOrGenerateDispatcher
             return hiddenLookup.findConstructor(
                     hiddenLookup.lookupClass(),
                     MethodType.methodType(void.class, ICapabilityProvider[].class)
-            ).asType(MethodType.methodType(ICapabilityProvider.class, Object.class));
+            ).asType(MethodType.methodType(GeneratedDispatcher.class, Object.class));
         } catch (Exception e) {
             throw new RuntimeException("Failed to generate capability dispatcher class", e);
         }
@@ -385,14 +386,13 @@ public class CapabilityProviderDispatcherGenerator {
 
         String internalName = className.replace('.', '/');
 
-        // Class declaration: implements ICapabilityProvider
         cw.visit(
                 V17,
                 ACC_PUBLIC | ACC_FINAL | ACC_SUPER,
                 internalName,
                 null,
-                "java/lang/Object",
-                new String[] { "net/minecraftforge/common/capabilities/ICapabilityProvider" }
+                GENERATED_DISPATCHER_INTERNAL_NAME,
+                null
         );
 
         // Generate final fields for each distinct provider
@@ -481,7 +481,7 @@ public class CapabilityProviderDispatcherGenerator {
 
         // Call super constructor
         mg.loadThis();
-        mg.invokeConstructor(Type.getType(Object.class), Method.getMethod("void <init>()"));
+        mg.invokeConstructor(Type.getObjectType(GENERATED_DISPATCHER_INTERNAL_NAME), Method.getMethod("void <init>()"));
 
         // Unpack array into provider fields
         for (var entry : providerFields.entrySet()) {

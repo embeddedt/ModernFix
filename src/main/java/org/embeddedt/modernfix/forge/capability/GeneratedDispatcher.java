@@ -10,4 +10,10 @@ import org.jetbrains.annotations.Nullable;
  */
 public abstract class GeneratedDispatcher {
     public abstract <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side);
+
+    /** @return {@code result} if non-empty, else {@code null}; called by generated dispatch sites. */
+    protected static <T> LazyOptional<T> nonEmptyOrNull(LazyOptional<T> result) {
+        if (result == CapabilityProviderDispatcherGenerator.EMPTY) return null;
+        return result.isPresent() ? result : null;
+    }
 }

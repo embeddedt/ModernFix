@@ -113,6 +113,9 @@ public class CapabilityAnalyzer {
                                                     DelegationContext context) {
         // Local slot of the capability parameter (1 for instance getCapability, but delegates may be static).
         int capSlot = capSlotOf(method);
+        if (capSlotReassigned(method, capSlot)) {
+            capSlot = -1;
+        }
 
         CapabilitySourceInterpreter interpreter = new CapabilitySourceInterpreter();
         CfgRecordingAnalyzer analyzer = new CfgRecordingAnalyzer(interpreter);
@@ -144,7 +147,7 @@ public class CapabilityAnalyzer {
             SourceValue topOfStack = frame.getStack(frame.getStackSize() - 1);
 
             ReturnClassification classification = classifyReturnSources(
-                    topOfStack, interpreter, capStates[i], context, capSlot);
+                    topOfStack, interpreter, capStates[i], context, capSlot, instructions, capStates);
 
             if (classification instanceof ReturnClassification.Known known) {
                 knownCaps.addAll(known.caps);
@@ -181,7 +184,9 @@ public class CapabilityAnalyzer {
             CapabilitySourceInterpreter interpreter,
             CapState stateAtReturn,
             DelegationContext context,
-            int capSlot) {
+            int capSlot,
+            InsnList instructions,
+            CapState[] capStates) {
 
         Set<CapabilityRef> caps = new HashSet<>();
         boolean hasUnknown = false;
@@ -196,9 +201,9 @@ public class CapabilityAnalyzer {
             if (sourceClassification instanceof ReturnClassification.Known known) {
                 caps.addAll(known.caps);
             } else if (sourceClassification instanceof ReturnClassification.Unknown unknown) {
-                if (stateIsFinite) {
-                    // Opaque, but only reachable for these specific caps (an empty set is a dead path).
-                    caps.addAll(stateAtReturn.caps());
+                CapState constraint = stateIsFinite ? stateAtReturn : stateAtSource(source, instructions, capStates);
+                if (constraint != null && !constraint.isTop()) {
+                    caps.addAll(constraint.caps());
                 } else {
                     hasUnknown = true;
                     unknownReason = unknown.reason;
@@ -214,6 +219,12 @@ public class CapabilityAnalyzer {
             return ReturnClassification.EMPTY;
         }
         return new ReturnClassification.Known(caps);
+    }
+
+    /** The {@link CapState} entering the instruction that produced a returned value, or null if unknown. */
+    private static CapState stateAtSource(AbstractInsnNode source, InsnList instructions, CapState[] capStates) {
+        int index = instructions.indexOf(source);
+        return (index >= 0 && index < capStates.length) ? capStates[index] : null;
     }
 
     private static ReturnClassification classifySingleSource(
@@ -566,6 +577,19 @@ public class CapabilityAnalyzer {
             }
         }
         return true;
+    }
+
+    /** True if the method ever stores to {@code capSlot}, invalidating parameter-based guard reasoning. */
+    private static boolean capSlotReassigned(MethodNode method, int capSlot) {
+        if (capSlot < 0) return false;
+        for (AbstractInsnNode insn : method.instructions) {
+            if (insn instanceof VarInsnNode varInsn
+                    && varInsn.getOpcode() == Opcodes.ASTORE
+                    && varInsn.var == capSlot) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /** The local-variable slot of the (sole) {@code Capability}-typed parameter, or -1 if there is none. */

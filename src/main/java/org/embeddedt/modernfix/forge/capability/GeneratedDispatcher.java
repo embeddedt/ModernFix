@@ -13,7 +13,10 @@ public abstract class GeneratedDispatcher {
 
     /** @return {@code result} if non-empty, else {@code null}; called by generated dispatch sites. */
     protected static <T> LazyOptional<T> nonEmptyOrNull(LazyOptional<T> result) {
+        // Almost all misses return the canonical LazyOptional.empty() instance, so checking for it via a pointer
+        // compare is faster than loading the supplier and isValid fields.
         if (result == CapabilityProviderDispatcherGenerator.EMPTY) return null;
+        // Any other LazyOptional is almost always present, so this branch will predict well.
         return result.isPresent() ? result : null;
     }
 }

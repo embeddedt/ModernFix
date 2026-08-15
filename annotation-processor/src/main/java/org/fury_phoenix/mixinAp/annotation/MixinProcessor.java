@@ -89,8 +89,9 @@ public class MixinProcessor extends AbstractProcessor {
 
     private void filterMixinSets() {
         List<String> commonSet = mixinConfigList.get("mixins");
-        if(commonSet == null) return;
-        commonSet.removeAll(mixinConfigList.get("client"));
+        List<String> clientSet = mixinConfigList.get("client");
+        if(commonSet == null || clientSet == null) return;
+        commonSet.removeAll(clientSet);
     }
 
     private void validateCommonMixins(TypeElement annotation, Stream<TypeElement> mixins) {

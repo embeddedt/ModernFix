@@ -67,8 +67,8 @@ public class ConcentricRingsStructurePlacementMixin {
 
         // min(dist): 4*i + i*0*6 - maxNoise
         double minDist = 4.0 * this.distance - maxNoise;
-        double safeInnerRadius = minDist - MFIX_MAX_POSITION_ERROR;
-        this.mfix$innerRadiusSq = (long)Math.max(0.0, Math.floor(safeInnerRadius * safeInnerRadius));
+        double safeInnerRadius = Math.max(0.0, minDist - MFIX_MAX_POSITION_ERROR);
+        this.mfix$innerRadiusSq = (long)Math.floor(safeInnerRadius * safeInnerRadius);
 
         if (this.spread == 0) {
             // Vanilla behavior becomes non-finite here (angle += 2π / 0), so keep only inner rejection.

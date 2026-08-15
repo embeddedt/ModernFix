@@ -32,7 +32,7 @@ public class LootDataManagerMixin {
         for (var entry : lootTableResourceMap.entrySet()) {
             if (lootTables.get(converter.fileToId(entry.getKey())) instanceof JsonObject obj) {
                 var resource = entry.getValue();
-                if (resource != null && !resource.isBuiltin()) {
+                if (resource != null && resource.isBuiltin()) {
                     obj.addProperty("mfix$isVanillaTable", true);
                 }
             }

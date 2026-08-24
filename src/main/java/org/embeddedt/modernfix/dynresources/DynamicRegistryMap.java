@@ -78,7 +78,7 @@ public final class DynamicRegistryMap<K, V> implements Map<K, V> {
     public V getOrDefault(Object o, V defaultValue) {
         Object value = overrides.get(o);
         if (value == NULL_OVERRIDE) {
-            return null;
+            return defaultValue;
         } else if (value != null) {
             return (V) value;
         } else {

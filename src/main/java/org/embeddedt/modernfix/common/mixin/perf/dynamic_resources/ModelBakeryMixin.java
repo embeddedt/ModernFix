@@ -24,6 +24,7 @@ import org.embeddedt.modernfix.api.entrypoint.ModernFixClientIntegration;
 import org.embeddedt.modernfix.duck.IBlockStateModelLoader;
 import org.embeddedt.modernfix.duck.IExtendedModelBakery;
 import org.embeddedt.modernfix.util.DynamicOverridableMap;
+import org.embeddedt.modernfix.util.ForwardingInclDefaultsMap;
 import org.embeddedt.modernfix.util.LRUMap;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
@@ -37,6 +38,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -56,6 +58,22 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Unique
     private BakedModel bakedMissingModel;
+
+    /**
+     * The actual storage behind {@link ModelBakeryMixin#topLevelModels}. That field is replaced with a forwarding
+     * map which lazily loads models on {@code get}, so all internal code must use this field instead, to avoid
+     * triggering (or recursing into) the lazy load.
+     */
+    @Unique
+    private LRUMap<ModelResourceLocation, UnbakedModel> mfix$rawTopLevelModels;
+
+    /**
+     * Locations currently being loaded on this thread. Mods (such as Additional Placements) may query
+     * {@link ModelBakeryMixin#topLevelModels} from inside a blockstate definition load; if they ask for a location
+     * that is already in flight, we have to report it as absent rather than recursing.
+     */
+    @Unique
+    private final Set<ModelResourceLocation> mfix$inFlightModels = new HashSet<>();
 
     @Shadow abstract UnbakedModel getModel(ResourceLocation resourceLocation);
 
@@ -96,27 +114,35 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
         }
         modelBakeryLock.lock();
         try {
-            UnbakedModel existing = this.topLevelModels.get(location);
+            UnbakedModel existing = this.mfix$rawTopLevelModels.get(location);
             if (existing != null) {
                 return existing;
             }
-            if(DEBUG_MODEL_LOADS) {
-                ModernFix.LOGGER.info("Loading model {}", location);
+            if(!this.mfix$inFlightModels.add(location)) {
+                // Re-entrant request for a model we are already loading; we have nothing to hand out yet.
+                return null;
             }
-            if(location.variant().equals("inventory")) {
-                this.loadItemModelAndDependencies(location.id());
-            } else if (location.variant().equals("fabric_resource") || location.variant().equals("standalone")) {
-                // Check that the model file will actually exist. Quark's tiny potato (and possibly other mods)
-                // rely on this to decide when to fall back to a default model.
-                if (!this.modelResources.containsKey(MODEL_LISTER.idToFile(location.id()))) {
-                    return null;
+            try {
+                if(DEBUG_MODEL_LOADS) {
+                    ModernFix.LOGGER.info("Loading model {}", location);
                 }
-                UnbakedModel unbakedModel = this.getModel(location.id());
-                this.registerModelAndLoadDependencies(location, unbakedModel);
-            } else {
-                ((IBlockStateModelLoader)dynamicLoader).loadSpecificBlock(location);
+                if(location.variant().equals("inventory")) {
+                    this.loadItemModelAndDependencies(location.id());
+                } else if (location.variant().equals("fabric_resource") || location.variant().equals("standalone")) {
+                    // Check that the model file will actually exist. Quark's tiny potato (and possibly other mods)
+                    // rely on this to decide when to fall back to a default model.
+                    if (!this.modelResources.containsKey(MODEL_LISTER.idToFile(location.id()))) {
+                        return null;
+                    }
+                    UnbakedModel unbakedModel = this.getModel(location.id());
+                    this.registerModelAndLoadDependencies(location, unbakedModel);
+                } else {
+                    ((IBlockStateModelLoader)dynamicLoader).loadSpecificBlock(location);
+                }
+                return this.mfix$rawTopLevelModels.getOrDefault(location, this.missingModel);
+            } finally {
+                this.mfix$inFlightModels.remove(location);
             }
-            return this.topLevelModels.getOrDefault(location, this.missingModel);
         } finally {
             modelBakeryLock.unlock();
         }
@@ -184,7 +210,33 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     private String replaceBackingMaps(String original) {
         this.unbakedCache = new LRUMap<>(this.unbakedCache);
         this.bakedCache = new LRUMap<>(this.bakedCache);
-        this.topLevelModels = new LRUMap<>(this.topLevelModels);
+        LRUMap<ModelResourceLocation, UnbakedModel> rawTopLevelModels = new LRUMap<>(this.topLevelModels);
+        this.mfix$rawTopLevelModels = rawTopLevelModels;
+        IExtendedModelBakery self = this;
+        // Third-party code commonly reads this map directly to look up the model of some other blockstate, so give
+        // it a view which loads on demand instead of one that only returns whatever happens to be cached.
+        this.topLevelModels = new ForwardingInclDefaultsMap<ModelResourceLocation, UnbakedModel>() {
+            @Override
+            protected Map<ModelResourceLocation, UnbakedModel> delegate() {
+                return rawTopLevelModels;
+            }
+
+            @Override
+            public UnbakedModel get(Object key) {
+                UnbakedModel model = rawTopLevelModels.get(key);
+                if(model == null && key instanceof ModelResourceLocation mrl) {
+                    self.mfix$loadUnbakedModelDynamic(mrl);
+                    model = rawTopLevelModels.get(mrl);
+                }
+                return model;
+            }
+
+            @Override
+            public UnbakedModel getOrDefault(Object key, UnbakedModel defaultValue) {
+                UnbakedModel model = get(key);
+                return model != null ? model : defaultValue;
+            }
+        };
         this.bakedTopLevelModels = new LRUMap<>(this.bakedTopLevelModels);
         return original;
     }
@@ -204,7 +256,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
     @Inject(method = "bakeModels", at = @At("HEAD"))
     private void storeTextureGetterAndBakeMissing(ModelBakery.TextureGetter textureGetter, CallbackInfo ci) {
         this.textureGetter = textureGetter;
-        this.method_61072(textureGetter, MISSING_MODEL_VARIANT, Objects.requireNonNull(this.topLevelModels.get(MISSING_MODEL_VARIANT)));
+        this.method_61072(textureGetter, MISSING_MODEL_VARIANT, Objects.requireNonNull(this.mfix$rawTopLevelModels.get(MISSING_MODEL_VARIANT)));
         this.bakedMissingModel = this.bakedTopLevelModels.get(MISSING_MODEL_VARIANT);
     }
 
@@ -219,9 +271,9 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
 
     @Inject(method = "<init>", at = @At("RETURN"))
     private void onInitialLoadFinish(BlockColors blockColors, ProfilerFiller profilerFiller, Map map, Map map2, CallbackInfo ci) {
-        var permanentMRLs = new ObjectOpenHashSet<>(this.topLevelModels.keySet());
-        ((LRUMap<ModelResourceLocation, UnbakedModel>)this.topLevelModels).setPermanentEntries(permanentMRLs);
-        ModernFix.LOGGER.info("Dynamic model bakery loading finished, with {} permanent top level models", this.topLevelModels.size());
+        var permanentMRLs = new ObjectOpenHashSet<>(this.mfix$rawTopLevelModels.keySet());
+        this.mfix$rawTopLevelModels.setPermanentEntries(permanentMRLs);
+        ModernFix.LOGGER.info("Dynamic model bakery loading finished, with {} permanent top level models", this.mfix$rawTopLevelModels.size());
     }
 
     @Unique
@@ -242,7 +294,7 @@ public abstract class ModelBakeryMixin implements IExtendedModelBakery {
             throw new IllegalStateException("Exception dropping entries in baked cache", e);
         }
         try {
-            ((LRUMap<?, ?>)this.topLevelModels).dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
+            this.mfix$rawTopLevelModels.dropEntriesToMeetSize(MAXIMUM_CACHE_SIZE);
         } catch(RuntimeException e) {
             throw new IllegalStateException("Exception dropping entries in top level models", e);
         }

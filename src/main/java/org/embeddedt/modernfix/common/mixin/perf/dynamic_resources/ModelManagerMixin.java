@@ -34,7 +34,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import java.io.BufferedReader;
+import java.io.EOFException;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -62,11 +65,11 @@ public class ModelManagerMixin implements IExtendedModelManager {
     }
 
     @ModifyArg(method = "loadBlockModels", at = @At(value = "INVOKE", target = "Ljava/util/concurrent/CompletableFuture;thenCompose(Ljava/util/function/Function;)Ljava/util/concurrent/CompletableFuture;", ordinal = 0), index = 0)
-    private static Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> deferBlockModelLoad(Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> fn) {
+    private static Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> deferBlockModelLoad(Function<Map<ResourceLocation, Resource>, ? extends CompletionStage<Map<ResourceLocation, BlockModel>>> fn, @Local(ordinal = 0, argsOnly = true) ResourceManager manager) {
         return resourceMap -> {
             var resourceMapSnapshot = Map.copyOf(resourceMap);
             var fallbackModel = BlockModel.fromString(ModelBakery.MISSING_MODEL_MESH);
-            var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(resourceMapSnapshot, location, fallbackModel), 100L);
+            var cache = CacheUtil.<ResourceLocation, BlockModel>simpleCacheForLambda(location -> loadSingleBlockModel(manager, resourceMapSnapshot, location, fallbackModel), 100L);
             return CompletableFuture.completedFuture(Maps.asMap(resourceMapSnapshot.keySet(), location -> cache.getUnchecked(location)));
         };
     }
@@ -83,17 +86,37 @@ public class ModelManagerMixin implements IExtendedModelManager {
         return ImmutableList.of();
     }
 
-    private static BlockModel loadSingleBlockModel(Map<ResourceLocation, Resource> resourceMap, ResourceLocation location, BlockModel fallbackModel) {
-        Resource resource = resourceMap.get(location);
-        if(resource == null) {
-            return null;
-        }
-        try (BufferedReader reader = resource.openAsReader()) {
-            return BlockModel.fromStream(reader);
+    private static BlockModel parseResource(Resource resource, ResourceLocation location, BlockModel fallbackModel) {
+        try {
+            try (var stream = resource.open()) {
+                if (stream.available() == 0) {
+                    return null; // nothing to read
+                }
+                BufferedReader reader = new BufferedReader(new InputStreamReader(stream, StandardCharsets.UTF_8));
+                return BlockModel.fromStream(reader);
+            }
         } catch (Exception e) {
             ModernFix.LOGGER.error("Couldn't load model {}, substituting missing", location, e);
             return fallbackModel;
         }
+    }
+
+    private static BlockModel loadSingleBlockModel(ResourceManager manager, Map<ResourceLocation, Resource> resourceMap, ResourceLocation location, BlockModel fallbackModel) {
+        Resource resource = resourceMap.get(location);
+        if(resource == null) {
+            return null;
+        }
+        BlockModel model = parseResource(resource, location, fallbackModel);
+        if (model == null) {
+            // Fall back to using the resource manager itself if reading from the stream fails, as sometimes mods hand
+            // out single-use streams:
+            // https://github.com/team-abnormals/blueprint/blob/73ef82e4922a50f5a14bcc920b3e7e5a8f915304/src/main/java/com/teamabnormals/blueprint/common/remolder/data/MoldingTypes.java#L99-L101
+            var fallbackResource = manager.getResource(location);
+            if (fallbackResource.isPresent()) {
+                model = parseResource(fallbackResource.get(), location, fallbackModel);
+            }
+        }
+        return model != null ? model : fallbackModel;
     }
 
     private List<BlockStateModelLoader.LoadedJson> loadSingleBlockState(ResourceManager manager, ResourceLocation location) {

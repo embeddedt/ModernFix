@@ -3,6 +3,7 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 import com.google.common.base.Stopwatch;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.neoforged.bus.api.Event;
 import net.neoforged.fml.ModContainer;
@@ -62,5 +63,29 @@ public class ForgeHooksClientMixin {
                         ModernFix.LOGGER.warn("    {}: {}", entry.getKey(), entry.getValue().toString());
                     });
         }
+    }
+
+    /**
+     * Post a separate BakingCompleted event per mod so they (a) see the wrapped registry and (b) are not able to
+     * break other mods by trying to modify the event object (see https://github.com/embeddedt/ModernFix/issues/610
+     * for an example).
+     */
+    @Redirect(method = "onModelBake", at = @At(value = "INVOKE", target = "Lnet/neoforged/fml/ModLoader;postEvent(Lnet/neoforged/bus/api/Event;)V"), remap = false)
+    private static void postNamespacedKeySetBakingCompletedEvent(Event event) {
+        if(ModLoader.hasErrors())
+            return;
+        ModelEvent.BakingCompleted bakeEvent = ((ModelEvent.BakingCompleted)event);
+        ModelManager modelManager = bakeEvent.getModelManager();
+        ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
+        Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
+        ModList.get().forEachModContainer((id, mc) -> {
+            Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
+            ModelEvent.BakingCompleted postedEvent = new ModelEvent.BakingCompleted(modelManager, newRegistry, bakeEvent.getModelBakery());
+            try {
+                acceptEv.invoke(mc, postedEvent);
+            } catch(ReflectiveOperationException e) {
+                e.printStackTrace();
+            }
+        });
     }
 }

@@ -26,13 +26,9 @@ public class CoreLaunchPluginService implements ILaunchPluginService {
             pluginsField.setAccessible(true);
             Map<String, ILaunchPluginService> plugins = (Map<String, ILaunchPluginService>)pluginsField.get(launchPluginHandler);
             var service = new CoreLaunchPluginService();
-            try {
-                plugins.put(service.name(), service);
-            } catch (Exception e) {
-                var newMap = new LinkedHashMap<>(plugins);
-                newMap.put(service.name(), service);
-                pluginsField.set(launchPluginHandler, newMap);
-            }
+            var newMap = new LinkedHashMap<>(plugins);
+            newMap.put(service.name(), service);
+            pluginsField.set(launchPluginHandler, newMap);
         } catch(Exception e) {
             LOGGER.error("Error installing launch plugin service", e);
         }

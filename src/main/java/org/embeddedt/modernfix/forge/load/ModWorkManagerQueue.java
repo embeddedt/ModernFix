@@ -8,11 +8,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.locks.LockSupport;
 
 public class ModWorkManagerQueue extends ConcurrentLinkedDeque<Runnable> {
-    private static final long PARK_TIME = TimeUnit.MILLISECONDS.toNanos(25);
 
-    private static final Runnable DUMMY_TASK = () -> {};
-
-    private boolean shouldReturnDummyTask = false;
+    private static final long PARK_TIME = TimeUnit.MICROSECONDS.toNanos(250);
 
     /**
      * Sleep for a bit if there are no tasks.
@@ -22,17 +19,7 @@ public class ModWorkManagerQueue extends ConcurrentLinkedDeque<Runnable> {
         Runnable r = super.pollFirst();
         if(r == null) {
             LockSupport.parkNanos(PARK_TIME);
-            boolean isReturning = shouldReturnDummyTask;
-            shouldReturnDummyTask = !shouldReturnDummyTask;
-            /*
-             * We need to kick FML to redraw the loading screen periodically,
-             * but also allow actually exiting the executor loop, so that
-             * loading can complete if async work is done.
-             *
-             * This is accomplished by alternating between returning a dummy
-             * task and nothing.
-             */
-            return isReturning ? DUMMY_TASK : null;
+            return null;
         } else {
             return r;
         }

@@ -14,6 +14,7 @@ import me.lucko.spark.common.sampler.async.AsyncSampler;
 import me.lucko.spark.common.sampler.async.SampleCollector;
 import me.lucko.spark.common.sampler.java.JavaSampler;
 import me.lucko.spark.common.sampler.node.MergeMode;
+import me.lucko.spark.common.util.MediaTypes;
 import me.lucko.spark.common.util.MethodDisambiguator;
 import me.lucko.spark.lib.adventure.text.Component;
 import me.lucko.spark.proto.SparkSamplerProtos;
@@ -21,6 +22,7 @@ import net.minecraft.SharedConstants;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.platform.ModernFixPlatformHooks;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Map;
 import java.util.UUID;
@@ -42,12 +44,14 @@ public class SparkLaunchProfiler {
     private static final boolean ALLOW_SPARK_PROFILING = Boolean.getBoolean(ALLOW_SPARK_PROFILING_PROP);
     private static final int SAMPLING_INTERVAL = Integer.getInteger("modernfix.profileSamplingIntervalMicroseconds", 4000);
     private static final String THREAD_GROUPER = System.getProperty("modernfix.profileSamplingThreadGrouper", "by-pool");
+    private static final boolean SAVE_TO_FILE = Boolean.getBoolean("modernfix.profileSaveToFile");
 
     private static boolean checkSparkProfilingAllowed() {
-        if (!ALLOW_SPARK_PROFILING) {
+        if (!ALLOW_SPARK_PROFILING && !SAVE_TO_FILE) {
             ModernFixMixinPlugin.instance.logger.fatal("To reduce excessive load on the Spark servers, you must set " +
-                    "-D{}=true in your JVM arguments for profiling to proceed. Please do " +
-                    "this and relaunch the game.", ALLOW_SPARK_PROFILING_PROP);
+                    "-Dmodernfix.allowSparkProfiling=true in your JVM arguments for profiling to proceed. Please do " +
+                    "this and relaunch the game. Alternatively, set -Dmodernfix.profileSaveToFile=true " +
+                    "to write the results to disk instead of uploading them.");
             return false;
         }
         return true;
@@ -71,6 +75,12 @@ public class SparkLaunchProfiler {
             ongoingSamplers.put(key, sampler);
             ModernFixMixinPlugin.instance.logger.warn("Profiler has started for stage [{}]...", key);
             sampler.start();
+            /* the sampler swallows any exception thrown by its sampling task into this future, so make sure we log it */
+            sampler.getFuture().whenComplete((s, throwable) -> {
+                if(throwable != null) {
+                    ModernFixMixinPlugin.instance.logger.error("Profiler for stage [" + key + "] terminated abnormally", throwable);
+                }
+            });
         }
     }
 
@@ -84,20 +94,35 @@ public class SparkLaunchProfiler {
 
     private static void output(String key, Sampler sampler) {
         executor.execute(() -> {
-            ModernFixMixinPlugin.instance.logger.warn("Stage [{}] profiler has stopped! Uploading results...", key);
+            ModernFixMixinPlugin.instance.logger.warn("Stage [{}] profiler has stopped! Exporting results...", key);
             SparkSamplerProtos.SamplerData output = sampler.toProto(platform, new Sampler.ExportProps()
                     .creator(new CommandSender.Data(commandSender.getName(), commandSender.getUniqueId()))
                     .comment("Stage: " + key)
                     .mergeMode(() -> MergeMode.sameMethod(new MethodDisambiguator()))
                     .classSourceLookup(platform::createClassSourceLookup));
-            try {
-                String urlKey = platform.getBytebinClient().postContent(output, "application/x-spark-sampler").key();
-                String url = "https://spark.lucko.me/" + urlKey;
-                ModernFixMixinPlugin.instance.logger.warn("Profiler results for Stage [{}]: {}", key, url);
-            } catch (Exception e) {
-                ModernFixMixinPlugin.instance.logger.fatal("An error occurred whilst uploading the results.", e);
+            if (!SAVE_TO_FILE) {
+                try {
+                    String urlKey = platform.getBytebinClient().postContent(output, MediaTypes.SPARK_SAMPLER_MEDIA_TYPE).key();
+                    String url = platform.getViewerUrl() + urlKey;
+                    ModernFixMixinPlugin.instance.logger.warn("Profiler results for Stage [{}]: {}", key, url);
+                    return;
+                } catch (Throwable e) {
+                    ModernFixMixinPlugin.instance.logger.error("An error occurred whilst uploading the results, attempting to save them to disk instead.", e);
+                }
             }
+            saveToDisk(key, output);
         });
+    }
+
+    private static void saveToDisk(String key, SparkSamplerProtos.SamplerData output) {
+        try {
+            Path file = platform.resolveSaveFile("profile-" + key, "sparkprofile");
+            Files.write(file, output.toByteArray());
+            ModernFixMixinPlugin.instance.logger.warn("Profiler results for Stage [{}] have been written to {}", key, file);
+            ModernFixMixinPlugin.instance.logger.warn("You can view the profile file using the web app @ {}", platform.getViewerUrl());
+        } catch (Throwable e) {
+            ModernFixMixinPlugin.instance.logger.fatal("An error occurred whilst saving the results for Stage [{}] to disk.", key, e);
+        }
     }
 
     static class ModernFixPlatformInfo implements PlatformInfo {

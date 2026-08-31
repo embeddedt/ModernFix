@@ -125,6 +125,23 @@ jobs:
                   });
                   console.log(`Created comment on issue #${issueNumber}`);
                 }
+
+                const { data: issue } = await github.rest.issues.get({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issueNumber
+                });
+
+                if (issue.state === 'open' && !issue.pull_request) {
+                  await github.rest.issues.update({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    issue_number: issueNumber,
+                    state: 'closed',
+                    state_reason: 'completed'
+                  });
+                  console.log(`Closed issue #${issueNumber}`);
+                }
               } catch (e) {
                 console.log(`Could not comment on #${issueNumber}: ${e.message}`);
               }

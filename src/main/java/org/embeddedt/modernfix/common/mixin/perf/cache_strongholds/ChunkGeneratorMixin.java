@@ -71,6 +71,11 @@ public class ChunkGeneratorMixin implements IChunkGenerator {
 
         String cacheKey = mfix$makeCacheKey(placement);
 
+        if (cacheKey == null) {
+            // Fall back to the uncached path
+            return original.call(structureSet, placement);
+        }
+
         // Try reading from cache
         List<ChunkPos> cached = mfix$readFromCache(cacheKey);
         if (cached != null) {

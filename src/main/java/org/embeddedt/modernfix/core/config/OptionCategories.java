@@ -46,7 +46,7 @@ public class OptionCategories {
         if(category == null) {
             int lastDotIdx = optionName.lastIndexOf('.');
             if(lastDotIdx > 0) {
-                category = getCategoryForOption(optionName.substring(0, lastDotIdx - 1));
+                category = getCategoryForOption(optionName.substring(0, lastDotIdx));
             } else
                 category = defaultCategory;
         }

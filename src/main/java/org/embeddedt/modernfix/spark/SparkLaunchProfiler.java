@@ -77,7 +77,7 @@ public class SparkLaunchProfiler {
     public static void stop(String key) {
         Sampler sampler = ongoingSamplers.remove(key);
         if (sampler != null) {
-            sampler.stop(true);
+            sampler.stop(false);
             output(key, sampler);
         }
     }

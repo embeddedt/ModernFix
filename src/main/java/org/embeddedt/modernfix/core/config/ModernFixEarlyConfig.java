@@ -310,7 +310,7 @@ public class ModernFixEarlyConfig {
         disableIfModPresent("mixin.bugfix.paper_chunk_patches", "c2me");
         disableIfModPresent("mixin.bugfix.preserve_early_window_pos", "better_loading_screen");
         disableIfModPresent("mixin.perf.dynamic_dfu", "litematica");
-        disableIfModPresent("mixin.perf.cache_strongholds", "littletiles", "c2me");
+        disableIfModPresent("mixin.perf.cache_strongholds", "littletiles");
         // content overlap
         disableIfModPresent("mixin.perf.deduplicate_wall_shapes", "dashloader");
         disableIfModPresent("mixin.perf.nbt_memory_usage", "c2me");

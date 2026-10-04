@@ -33,7 +33,8 @@ public class JEIRuntimeCapturer implements IModPlugin {
 
             var allTabs = CreativeModeTabs.allTabs().stream().filter(t -> t.getType() != CreativeModeTab.Type.SEARCH).toList();
 
-            for (var stack : runtimeHandle.getIngredientManager().getAllItemStacks()) {
+            for (var stack : RepresentedTabsIndex.count(
+                    runtimeHandle.getIngredientManager().getAllItemStacks(), allTabs, countsByTab)) {
                 //noinspection ForLoopReplaceableByForEach
                 for (int i = 0; i < allTabs.size(); i++) {
                     var tab = allTabs.get(i);

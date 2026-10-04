@@ -2,6 +2,7 @@ package org.embeddedt.modernfix.forge.dynresources;
 
 import com.google.common.collect.ForwardingMap;
 import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 import com.google.common.graph.GraphBuilder;
 import com.google.common.graph.MutableGraph;
@@ -64,7 +65,7 @@ public class ModelBakeEventHelper {
         for (var b : BuiltInRegistries.BLOCK) {
             blockStateCount += b.getStateDefinition().getPossibleStates().size();
         }
-        this.topLevelModelLocations = new ObjectLinkedOpenHashSet<>(blockStateCount + BuiltInRegistries.ITEM.size());
+        Set<ResourceLocation> topLevelModelLocations = new ObjectLinkedOpenHashSet<>(blockStateCount + BuiltInRegistries.ITEM.size());
         this.namespacesWithModels = new ObjectOpenHashSet<>(ModList.get().size());
         var modelLocationBuilder = new ModelLocationBuilder();
         BuiltInRegistries.BLOCK.entrySet().forEach(entry -> {
@@ -76,10 +77,13 @@ public class ModelBakeEventHelper {
             topLevelModelLocations.add(new ModelResourceLocation(key, "inventory"));
             namespacesWithModels.add(key.getNamespace());
         });
-        this.topLevelModelLocations.addAll(modelRegistry.keySet());
+        topLevelModelLocations.addAll(modelRegistry.keySet());
         for (var loc : modelRegistry.keySet()) {
             this.namespacesWithModels.add(loc.getNamespace());
         }
+        // Iteration uses a compact array instead of following links through the hash table.
+        // These locations are only exposed through read-only views after construction.
+        this.topLevelModelLocations = ImmutableSet.copyOf(topLevelModelLocations);
         this.dependencyGraph = buildDependencyGraph();
     }
 

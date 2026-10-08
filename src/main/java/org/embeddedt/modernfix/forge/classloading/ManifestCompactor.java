@@ -13,6 +13,10 @@ public class ManifestCompactor {
             if (!(mfi.getFile().getSecureJar() instanceof Jar jar)) {
                 continue;
             }
+            // Digests are only consulted for signed jars, and some signed mods verify their own manifest at runtime.
+            if (jar.getManifestSigners() != null && mfi.getMods().stream().noneMatch(m -> m.getModId().equals("minecraft"))) {
+                continue;
+            }
             var manifest = jar.moduleDataProvider().getManifest();
             if (manifest == null) {
                 continue;

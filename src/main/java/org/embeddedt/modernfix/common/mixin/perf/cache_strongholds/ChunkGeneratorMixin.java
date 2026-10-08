@@ -107,7 +107,9 @@ public class ChunkGeneratorMixin implements IChunkGenerator {
      */
     @Redirect(method = "generateRingPositions", at = @At(value = "INVOKE", target = "Lnet/minecraft/util/Util;backgroundExecutor()Lnet/minecraft/TracingExecutor;"))
     private TracingExecutor useDedicatedService(@Share("threadPool") LocalRef<TracingExecutor> threadPoolRef) {
-        return threadPoolRef.get();
+        // No dedicated pool is created when the uncached fallback path is taken
+        TracingExecutor pool = threadPoolRef.get();
+        return pool != null ? pool : Util.backgroundExecutor();
     }
 
     private String mfix$makeCacheKey(ConcentricRingsStructurePlacement placement) {

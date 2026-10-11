@@ -28,7 +28,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.io.BufferedReader;
 import java.io.EOFException;
-import java.io.IOException;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
@@ -112,8 +111,8 @@ public class ModelManagerMixin {
         return manager.getResourceStack(location).stream().map(resource -> {
             try (BufferedReader reader = resource.openAsReader()) {
                 return new ModelBakery.LoadedJson(resource.sourcePackId(), GsonHelper.parse(reader));
-            } catch(IOException e) {
-                ModernFix.LOGGER.error("Couldn't load blockstate", e);
+            } catch(Exception e) {
+                ModernFix.LOGGER.error("Couldn't load blockstate {} from pack {}", location, resource.sourcePackId(), e);
                 return null;
             }
         }).filter(Objects::nonNull).collect(Collectors.toList());

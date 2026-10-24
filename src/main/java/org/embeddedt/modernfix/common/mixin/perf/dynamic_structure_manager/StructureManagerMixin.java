@@ -2,6 +2,8 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_structure_manager;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.mojang.datafixers.DataFixer;
 import net.minecraft.core.HolderGetter;
 import net.minecraft.resources.Identifier;
@@ -20,6 +22,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 
 @Mixin(StructureTemplateManager.class)
 public class StructureManagerMixin {
@@ -33,5 +36,18 @@ public class StructureManagerMixin {
                 .softValues()
                 .build();
         this.structureRepository = structureCache.asMap();
+    }
+
+    /* Guava's computeIfAbsent holds a segment lock for the entire load, stalling all other lookups in that segment */
+    @WrapOperation(method = "get", at = @At(value = "INVOKE", target = "Ljava/util/Map;computeIfAbsent(Ljava/lang/Object;Ljava/util/function/Function;)Ljava/lang/Object;"))
+    private Object loadOutsideLock(Map<Identifier, Optional<StructureTemplate>> map, Object key, Function<Identifier, Optional<StructureTemplate>> loader, Operation<Object> original) {
+        Optional<StructureTemplate> existing = map.get(key);
+        if (existing != null) {
+            return existing;
+        }
+        Identifier id = (Identifier)key;
+        Optional<StructureTemplate> loaded = loader.apply(id);
+        Optional<StructureTemplate> raced = map.putIfAbsent(id, loaded);
+        return raced != null ? raced : loaded;
     }
 }

@@ -148,6 +148,7 @@
   "modernfix.option.mixin.feature.remove_telemetry": "Prevents the Minecraft client from sending telemetry to Mojang. The telemetry is generally not relevant to them anyway for a modded instance.",
   "modernfix.option.mixin.perf.chunk_meshing": "Implements some minor optimizations to the vanilla chunk meshing logic (they will have no effect with a mod that replaces chunk rendering entirely).",
   "modernfix.option.mixin.perf.faster_structure_location": "Improves the speed at which structures like buried treasure can be located.",
+  "modernfix.option.mixin.perf.flat_climate_search": "Speeds up the biome lookup during world generation by searching a flat copy of the climate parameter tree. Returns exactly the same biomes as vanilla.",
   "modernfix.option.mixin.perf.forge_registry_alloc": "Fixes more oversights in Forge that lead to excessive allocation in hot registry methods.",
   "modernfix.option.mixin.perf.memoize_creative_tab_build": "Improves on vanilla's existing caching for creative tab contents in a way that is compatible with the timing requirements of mods like JEI/EMI. This can reduce the lag spike when opening the creative inventory for the first time in a modpack.",
   "modernfix.option.mixin.perf.potential_spawns_alloc": "Optimizes the Forge event for finding potential mobs that can spawn. This reduces allocations and the overhead of rebuilding a weighted list when no mods modify the potential spawns.",

@@ -1,6 +1,5 @@
 package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources;
 
-import com.google.common.collect.Maps;
 import com.llamalad7.mixinextras.sugar.Local;
 import com.llamalad7.mixinextras.sugar.ref.LocalRef;
 import net.minecraft.client.renderer.item.ClientItem;
@@ -8,6 +7,7 @@ import net.minecraft.client.resources.model.ModelBakery;
 import net.minecraft.resources.Identifier;
 import org.embeddedt.modernfix.annotation.ClientOnlyMixin;
 import org.embeddedt.modernfix.dynresources.DynamicModelSystem;
+import org.embeddedt.modernfix.dynresources.DynamicRegistryMap;
 import org.objectweb.asm.Opcodes;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -39,7 +39,10 @@ public class MixinModelBakery {
             at = @At(value = "INVOKE", target = "Ljava/util/Map;forEach(Ljava/util/function/BiConsumer;)V", ordinal = 0))
     private void dynamicItemProperties(Map<Identifier, ClientItem> clientItems, BiConsumer<? super Identifier, ? super ClientItem> action,
                                @Local(name = "itemStackModelProperties") LocalRef<Map<Identifier, ClientItem.Properties>> modelProperties) {
-        modelProperties.set(Maps.asMap(clientItems.keySet(), id -> {
+        modelProperties.set(new DynamicRegistryMap<>(clientItems.keySet(), id -> {
+            if (!clientItems.containsKey(id)) {
+                return null;
+            }
             var item = clientItems.get(id);
             var props = ClientItem.Properties.DEFAULT;
             if (item != null && !props.equals(item.properties())) {

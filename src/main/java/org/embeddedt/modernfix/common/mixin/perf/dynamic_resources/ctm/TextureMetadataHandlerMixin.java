@@ -3,7 +3,6 @@ package org.embeddedt.modernfix.common.mixin.perf.dynamic_resources.ctm;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Sets;
 import com.mojang.datafixers.util.Pair;
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
@@ -51,7 +50,7 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
     }
 
     @Override
-    public BakedModel onBakedModelLoad(ResourceLocation rl, UnbakedModel rootModel, BakedModel baked, ModelState state, ModelBakery bakery) {
+    public BakedModel onBakedModelLoad(ResourceLocation rl, UnbakedModel rootModel, BakedModel baked, ModelState state, ModelBakery bakery, Function<Material, TextureAtlasSprite> textureGetter) {
         if (rl instanceof ModelResourceLocation && !(baked instanceof AbstractCTMBakedModel) && !baked.isCustomRenderer()) {
             Deque<ResourceLocation> dependencies = new ArrayDeque<>();
             Set<ResourceLocation> seenModels = new HashSet<>();
@@ -92,7 +91,7 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
             if (shouldWrap) {
                 try {
                     baked = wrap(rootModel, baked);
-                    handleInit(rl, baked, bakery);
+                    handleInit(rl, baked, bakery, textureGetter);
                     dependencies.clear();
                 } catch (IOException e) {
                     CTM.logger.error("Could not wrap model " + rl + ". Aborting...", e);
@@ -102,16 +101,13 @@ public abstract class TextureMetadataHandlerMixin implements ModernFixClientInte
         return baked;
     }
 
-    private void handleInit(ResourceLocation key, BakedModel wrappedModel, ModelBakery bakery) {
+    private void handleInit(ResourceLocation key, BakedModel wrappedModel, ModelBakery bakery, Function<Material, TextureAtlasSprite> spriteGetter) {
         if(wrappedModel instanceof AbstractCTMBakedModel baked) {
             IModelCTM var10 = baked.getModel();
             if (var10 instanceof ModelCTM ctmModel) {
                 if (!ctmModel.isInitialized()) {
                     // Clear the baked cache as upstream CTM does
                     ((CTMModelBakeryAccessor)bakery).mfix$getBakedCache().clear();
-                    Function<Material, TextureAtlasSprite> spriteGetter = (m) -> {
-                        return Minecraft.getInstance().getModelManager().getAtlas(m.atlasLocation()).getSprite(m.texture());
-                    };
                     ModelBakery.ModelBakerImpl baker = bakery.new ModelBakerImpl(($, m) -> {
                         return spriteGetter.apply(m);
                     }, key);

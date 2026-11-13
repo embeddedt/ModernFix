@@ -67,8 +67,9 @@ public class ModFileScanDataCompactor {
                     Object annValue = e.getValue();
                     if (annValue instanceof ArrayList<?> list) {
                         // We cannot properly compact annValue using List.of() because there are mods that
-                        // (unnecessarily) rely on the list implementation being ArrayList.
-                        list.trimToSize();
+                        // (unnecessarily) rely on the list implementation being ArrayList. Copy instead of
+                        // trimming the original, which other mod construction threads may be iterating.
+                        return new ArrayList<>(list);
                     }
                     return annValue;
                 }))

@@ -8,8 +8,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.level.storage.loot.LootDataManager;
 import net.minecraft.world.level.storage.loot.LootDataType;
-import org.embeddedt.modernfix.annotation.FeatureLevel;
-import org.embeddedt.modernfix.annotation.RequiresFeatureLevel;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
@@ -18,7 +16,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import java.util.Map;
 
 @Mixin(LootDataManager.class)
-@RequiresFeatureLevel(FeatureLevel.BETA)
 public class LootDataManagerMixin {
     /**
      * @author embeddedt

@@ -9,8 +9,6 @@ import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraftforge.common.ForgeHooks;
 import org.apache.commons.lang3.function.TriFunction;
 import org.apache.logging.log4j.Logger;
-import org.embeddedt.modernfix.annotation.FeatureLevel;
-import org.embeddedt.modernfix.annotation.RequiresFeatureLevel;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Overwrite;
@@ -21,7 +19,6 @@ import java.util.Optional;
 import static net.minecraftforge.common.ForgeHooks.loadLootTable;
 
 @Mixin(value = ForgeHooks.class, remap = false)
-@RequiresFeatureLevel(FeatureLevel.BETA)
 public class ForgeHooksMixin {
     @Shadow
     @Final

@@ -6,7 +6,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.annotation.FeatureLevel;
 import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalysisResult;
 import org.embeddedt.modernfix.forge.capability.analysis.CapabilityAnalyzer;
@@ -105,8 +104,7 @@ public class CapabilityProviderDispatcherGenerator {
 
     /** Production entry point: reads the analysis flag from the mixin config (requires the game loaded). */
     public static GeneratedDispatcher getOrGenerateDispatcher(ICapabilityProvider[] providers) {
-        boolean analysisEnabled = ModernFixMixinPlugin.activeFeatureLevel().isAtLeast(FeatureLevel.BETA) &&
-                ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_capabilities.bytecode_analysis.CapabilityAnalyzer");
+        boolean analysisEnabled = ModernFixMixinPlugin.instance.isOptionEnabled("perf.faster_capabilities.bytecode_analysis.CapabilityAnalyzer");
         return getOrGenerateDispatcher(providers, analysisEnabled);
     }
 

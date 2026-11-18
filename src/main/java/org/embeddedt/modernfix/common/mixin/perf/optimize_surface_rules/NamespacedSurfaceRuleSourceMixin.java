@@ -7,8 +7,6 @@ import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.levelgen.SurfaceRules;
-import org.embeddedt.modernfix.annotation.FeatureLevel;
-import org.embeddedt.modernfix.annotation.RequiresFeatureLevel;
 import org.embeddedt.modernfix.annotation.RequiresMod;
 import org.embeddedt.modernfix.world.gen.ExtendedSurfaceContext;
 import org.spongepowered.asm.mixin.Final;
@@ -26,7 +24,6 @@ import java.util.function.Consumer;
 
 @Mixin(NamespacedSurfaceRuleSource.class)
 @RequiresMod("terrablender")
-@RequiresFeatureLevel(FeatureLevel.BETA)
 public class NamespacedSurfaceRuleSourceMixin {
     @Shadow
     @Final

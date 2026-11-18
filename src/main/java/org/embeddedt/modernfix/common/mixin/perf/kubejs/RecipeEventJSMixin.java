@@ -1,15 +1,14 @@
 package org.embeddedt.modernfix.common.mixin.perf.kubejs;
 
 import com.google.gson.JsonElement;
+import dev.latvian.mods.kubejs.DevProperties;
 import dev.latvian.mods.kubejs.recipe.RecipeJS;
 import dev.latvian.mods.kubejs.recipe.RecipesEventJS;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeManager;
 import org.embeddedt.modernfix.ModernFix;
-import org.embeddedt.modernfix.annotation.FeatureLevel;
 import org.embeddedt.modernfix.annotation.RequiresMod;
-import org.embeddedt.modernfix.core.ModernFixMixinPlugin;
 import org.embeddedt.modernfix.core.config.ModernFixEarlyConfig;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
@@ -66,9 +65,7 @@ public class RecipeEventJSMixin {
      */
     @Inject(method = "post", at = @At(value = "NEW", target = "()Ljava/util/concurrent/ConcurrentLinkedQueue;", ordinal = 0), remap = false)
     private void modernfix$clearDatapackRecipeMap(RecipeManager recipeManager, Map<ResourceLocation, JsonElement> datapackRecipeMap, CallbackInfo ci) {
-        if (ModernFixMixinPlugin.activeFeatureLevel().isAtLeast(FeatureLevel.BETA)) {
-            datapackRecipeMap.clear();
-        }
+        datapackRecipeMap.clear();
     }
 
     /**
@@ -78,7 +75,8 @@ public class RecipeEventJSMixin {
      */
     @Inject(method = "createRecipe", at = @At("RETURN"), remap = false)
     private void modernfix$clearJson(RecipeJS r, CallbackInfoReturnable<Recipe<?>> cir) {
-        if (!ModernFixMixinPlugin.activeFeatureLevel().isAtLeast(FeatureLevel.BETA)) {
+        // KubeJS's debugInfo output prints these after all recipes are created.
+        if (DevProperties.get().debugInfo) {
             return;
         }
         r.json = null;

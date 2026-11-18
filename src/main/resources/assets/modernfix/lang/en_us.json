@@ -153,5 +153,10 @@
   "modernfix.option.mixin.perf.potential_spawns_alloc": "Optimizes the Forge event for finding potential mobs that can spawn. This reduces allocations and the overhead of rebuilding a weighted list when no mods modify the potential spawns.",
   "modernfix.option.mixin.perf.ticking_chunk_alloc": "Optimizes chunk ticking in vanilla to reduce allocations.",
   "modernfix.option.mixin.perf.worldgen_allocation": "Optimizes some world generation logic in vanilla to reduce object allocations.",
-  "modernfix.option.mixin.feature.suppress_narrator_stacktrace": "Prevents the game from logging a very long stacktrace when the narrator fails to load on Linux (usually caused by not having libflite installed)."
+  "modernfix.option.mixin.feature.suppress_narrator_stacktrace": "Prevents the game from logging a very long stacktrace when the narrator fails to load on Linux (usually caused by not having libflite installed).",
+  "modernfix.option.mixin.perf.compact_entity_models": "Reduces the memory used by mob and other entity models by sharing identical parts between them. If a mod that changes entity models makes other entities look wrong, try disabling this option.",
+  "modernfix.option.mixin.perf.faster_capabilities": "Speeds up how mods look up the features and data they attach to items, entities, block entities and worlds (\"capabilities\").",
+  "modernfix.option.mixin.perf.faster_capabilities.bytecode_analysis": "Speeds up capability lookups further by working out ahead of time which mods can answer them. If a feature from another mod stops working (for example a backpack's abilities, or an inventory that pipes or hoppers can no longer reach), try disabling this option.",
+  "modernfix.option.mixin.perf.ingredient_item_deduplication": "Reduces memory usage in modpacks with many recipes by sharing identical recipe ingredients instead of storing a separate copy for every recipe. If recipes start asking for the wrong items or amounts, try disabling this option.",
+  "modernfix.option.mixin.perf.faster_loot_loading": "Speeds up loading loot tables when joining a world or running /reload, especially in modpacks with many mods and datapacks."
 }

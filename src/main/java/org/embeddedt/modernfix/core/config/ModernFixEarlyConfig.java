@@ -272,7 +272,6 @@ public class ModernFixEarlyConfig {
             .put("mixin.perf.remove_spawn_chunks", isDevEnv)
             .putConditionally(() -> !isFabric, "mixin.bugfix.fix_config_crashes", true)
             .putConditionally(() -> !isFabric, "mixin.bugfix.forge_at_inject_error", true)
-            .putConditionally(() -> !isFabric, "mixin.feature.registry_event_progress", false)
             .build();
 
     private ModernFixEarlyConfig(File file) {

@@ -16,6 +16,7 @@ import net.neoforged.neoforge.client.event.ModelEvent;
 import org.embeddedt.modernfix.ModernFix;
 import org.embeddedt.modernfix.neoforge.dynresources.ModelBakeEventHelper;
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
@@ -30,6 +31,12 @@ import java.util.concurrent.TimeUnit;
 @Mixin(ClientHooks.class)
 public class ForgeHooksClientMixin {
     /**
+     * The helper built for the last ModifyBakingResult, handed to the BakingCompleted event of the same reload.
+     */
+    @Unique
+    private static volatile ModelBakeEventHelper mfix$lastHelper;
+
+    /**
      * Generate a more realistic keySet that contains every item and block model location, to help with mod compat.
      */
     @Redirect(method = "onModifyBakingResult", at = @At(value = "INVOKE", target = "Lnet/neoforged/fml/ModLoader;postEvent(Lnet/neoforged/bus/api/Event;)V"), remap = false)
@@ -40,6 +47,7 @@ public class ForgeHooksClientMixin {
         Stopwatch globalTimer = Stopwatch.createStarted();
         Stopwatch selfTimer = Stopwatch.createStarted();
         ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
+        mfix$lastHelper = helper;
         selfTimer.stop();
         Map<String, Stopwatch> times = new Object2ObjectOpenHashMap<>();
         times.put("modernfix", selfTimer);
@@ -73,7 +81,11 @@ public class ForgeHooksClientMixin {
             return;
         ModelEvent.BakingCompleted bakeEvent = ((ModelEvent.BakingCompleted)event);
         ModelManager modelManager = bakeEvent.getModelManager();
-        ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
+        // reuse the model location universe computed for ModifyBakingResult earlier in this reload; building it
+        // again here would block the render thread for another 1-2 s in large packs
+        ModelBakeEventHelper previous = mfix$lastHelper;
+        mfix$lastHelper = null;
+        ModelBakeEventHelper helper = previous != null ? previous.withRegistry(bakeEvent.getModels()) : new ModelBakeEventHelper(bakeEvent.getModels());
         List<ModContainer> mods = ModList.get().getSortedMods();
         List<Event> events = new ArrayList<>(mods.size());
         for (ModContainer mc : mods) {

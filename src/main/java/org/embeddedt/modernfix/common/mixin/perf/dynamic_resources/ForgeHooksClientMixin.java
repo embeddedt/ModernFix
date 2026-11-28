@@ -42,7 +42,10 @@ public class ForgeHooksClientMixin {
         Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
         Map<String, Stopwatch> times = new Object2ObjectOpenHashMap<>();
         times.put("modernfix", selfTimer);
-        ModList.get().forEachModContainer((id, mc) -> {
+        // Must follow the dependency-sorted order ModLoader.postEvent uses; mods rely on ordering="AFTER" to see
+        // (and wrap) models that other mods replaced in this event.
+        ModList.get().forEachModInOrder(mc -> {
+            String id = mc.getModId();
             Map<ResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
             ModelEvent.ModifyBakingResult postedEvent = new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getModelBakery());
             Stopwatch timer = times.computeIfAbsent(id, $ -> Stopwatch.createUnstarted());
@@ -82,8 +85,8 @@ public class ForgeHooksClientMixin {
         ModelManager modelManager = bakeEvent.getModelManager();
         ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
         Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
-        ModList.get().forEachModContainer((id, mc) -> {
-            Map<ResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
+        ModList.get().forEachModInOrder(mc -> {
+            Map<ResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(mc.getModId());
             ModelEvent.BakingCompleted postedEvent = new ModelEvent.BakingCompleted(modelManager, newRegistry, bakeEvent.getModelBakery());
             try {
                 acceptEv.invoke(mc, postedEvent);

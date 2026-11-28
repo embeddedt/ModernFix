@@ -56,6 +56,7 @@ public class ModelBakeEventHelper {
             .put("alexscaves", UniverseVisibility.SELF_AND_DEPS)
             .put("refinedstorage", UniverseVisibility.SELF_AND_DEPS)
             .put("cabletiers", UniverseVisibility.SELF_AND_DEPS)
+            .put("estrogen", UniverseVisibility.SELF_AND_DEPS)
             .build();
     private final Map<ModelResourceLocation, BakedModel> modelRegistry;
     private final Set<ModelResourceLocation> topLevelModelLocations;

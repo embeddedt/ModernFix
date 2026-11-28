@@ -6,6 +6,7 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.neoforged.bus.api.Event;
+import net.neoforged.bus.api.EventPriority;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.ModLoader;
@@ -20,7 +21,9 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 
 import java.lang.reflect.Method;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
 
@@ -38,21 +41,15 @@ public class ForgeHooksClientMixin {
         Stopwatch selfTimer = Stopwatch.createStarted();
         ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
         selfTimer.stop();
-        Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
         Map<String, Stopwatch> times = new Object2ObjectOpenHashMap<>();
         times.put("modernfix", selfTimer);
-        ModList.get().forEachModContainer((id, mc) -> {
-            Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
-            ModelEvent.ModifyBakingResult postedEvent = new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getTextureGetter(), bakeEvent.getModelBakery());
-            Stopwatch timer = times.computeIfAbsent(id, $ -> Stopwatch.createUnstarted());
-            timer.start();
-            try {
-                acceptEv.invoke(mc, postedEvent);
-            } catch(ReflectiveOperationException e) {
-                e.printStackTrace();
-            }
-            timer.stop();
-        });
+        List<ModContainer> mods = ModList.get().getSortedMods();
+        List<Event> events = new ArrayList<>(mods.size());
+        for (ModContainer mc : mods) {
+            Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(mc.getModId());
+            events.add(new ModelEvent.ModifyBakingResult(newRegistry, bakeEvent.getTextureGetter(), bakeEvent.getModelBakery()));
+        }
+        postInModOrder(mods, events, times);
         globalTimer.stop();
         if (globalTimer.elapsed(TimeUnit.SECONDS) >= 1) {
             ModernFix.LOGGER.warn("Posting dynamic ModelEvent.ModifyBakingResult to mods took {}, breakdown below:", globalTimer);
@@ -77,15 +74,38 @@ public class ForgeHooksClientMixin {
         ModelEvent.BakingCompleted bakeEvent = ((ModelEvent.BakingCompleted)event);
         ModelManager modelManager = bakeEvent.getModelManager();
         ModelBakeEventHelper helper = new ModelBakeEventHelper(bakeEvent.getModels());
-        Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", Event.class);
-        ModList.get().forEachModContainer((id, mc) -> {
-            Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(id);
-            ModelEvent.BakingCompleted postedEvent = new ModelEvent.BakingCompleted(modelManager, newRegistry, bakeEvent.getModelBakery());
-            try {
-                acceptEv.invoke(mc, postedEvent);
-            } catch(ReflectiveOperationException e) {
-                e.printStackTrace();
+        List<ModContainer> mods = ModList.get().getSortedMods();
+        List<Event> events = new ArrayList<>(mods.size());
+        for (ModContainer mc : mods) {
+            Map<ModelResourceLocation, BakedModel> newRegistry = helper.wrapRegistry(mc.getModId());
+            events.add(new ModelEvent.BakingCompleted(modelManager, newRegistry, bakeEvent.getModelBakery()));
+        }
+        postInModOrder(mods, events, null);
+    }
+
+    /**
+     * Dispatches each mod's own event instance in the same order as {@link ModLoader#postEvent}: every priority phase
+     * in turn, and within a phase, mods in dependency order. Mods rely on this (e.g. via ordering="AFTER") to see and
+     * wrap models that other mods replaced in the same event.
+     */
+    private static void postInModOrder(List<ModContainer> mods, List<Event> events, Map<String, Stopwatch> times) {
+        Method acceptEv = ObfuscationReflectionHelper.findMethod(ModContainer.class, "acceptEvent", EventPriority.class, Event.class);
+        for (EventPriority phase : EventPriority.values()) {
+            for (int i = 0; i < mods.size(); i++) {
+                ModContainer mc = mods.get(i);
+                Stopwatch timer = times != null ? times.computeIfAbsent(mc.getModId(), $ -> Stopwatch.createUnstarted()) : null;
+                if (timer != null) {
+                    timer.start();
+                }
+                try {
+                    acceptEv.invoke(mc, phase, events.get(i));
+                } catch(ReflectiveOperationException e) {
+                    e.printStackTrace();
+                }
+                if (timer != null) {
+                    timer.stop();
+                }
             }
-        });
+        }
     }
 }

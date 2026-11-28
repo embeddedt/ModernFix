@@ -2,8 +2,6 @@ package org.embeddedt.modernfix.common.mixin.perf.cache_strongholds;
 
 import net.minecraft.world.level.chunk.ChunkGeneratorStructureState;
 import net.minecraft.world.level.levelgen.structure.placement.ConcentricRingsStructurePlacement;
-import org.embeddedt.modernfix.annotation.FeatureLevel;
-import org.embeddedt.modernfix.annotation.RequiresFeatureLevel;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
@@ -14,7 +12,6 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 @Mixin(ConcentricRingsStructurePlacement.class)
-@RequiresFeatureLevel(FeatureLevel.BETA)
 public class ConcentricRingsStructurePlacementMixin {
 
     @Shadow @Final private int distance;

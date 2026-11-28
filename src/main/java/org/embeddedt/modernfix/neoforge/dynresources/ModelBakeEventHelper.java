@@ -97,6 +97,28 @@ public class ModelBakeEventHelper {
         this.dependencyGraph = buildDependencyGraph();
     }
 
+    private ModelBakeEventHelper(ModelBakeEventHelper universe, Map<ModelResourceLocation, BakedModel> modelRegistry) {
+        this.modelRegistry = modelRegistry;
+        this.topLevelModelLocations = universe.topLevelModelLocations;
+        this.namespacesWithModels = universe.namespacesWithModels;
+        this.dependencyGraph = universe.dependencyGraph;
+    }
+
+    /**
+     * Returns a helper for another model event of the same resource reload, reusing the universe of model locations
+     * (which only depends on the block/item registries, the resource manager and the mod list, none of which change
+     * between ModifyBakingResult and BakingCompleted) instead of computing it again.
+     * Falls back to a full rebuild if the new registry exposes keys this universe has not seen.
+     */
+    public ModelBakeEventHelper withRegistry(Map<ModelResourceLocation, BakedModel> modelRegistry) {
+        for (var loc : modelRegistry.keySet()) {
+            if (!this.topLevelModelLocations.contains(loc)) {
+                return new ModelBakeEventHelper(modelRegistry);
+            }
+        }
+        return new ModelBakeEventHelper(this, modelRegistry);
+    }
+
     private MutableGraph<String> buildDependencyGraph() {
         MutableGraph<String> dependencyGraph = GraphBuilder.undirected().build();
         ModList.get().forEachModContainer((id, mc) -> {
